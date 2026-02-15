@@ -24,4 +24,4 @@ package-lock.json
 *.db-shm
 rebel.db
 план.txt
-tasks
+mytasks
