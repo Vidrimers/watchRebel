@@ -1,0 +1,27 @@
+# ПАПКИ
+
+node_modules/
+temp/
+.vscode/
+.DS_Store
+npm/
+backups/
+.kiro/
+roadmap/
+docs/
+
+# ФАЙЛЫ
+
+package-lock.json
+.env
+.env copy
+* copy*.js
+*-copy*.js
+*-copy*.db
+* copy*.db
+*.db
+*.db-wal
+*.db-shm
+rebel.db
+план.txt
+tasks
