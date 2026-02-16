@@ -12,6 +12,7 @@ import notificationsRoutes from './routes/notifications.js';
 import mediaRoutes from './routes/media.js';
 import adminRoutes from './routes/admin.js';
 import webhookRoutes from './routes/webhook.js';
+import feedRoutes from './routes/feed.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 
 // Загрузка переменных окружения
@@ -71,6 +72,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/feed', feedRoutes);
 app.use('/webhook', webhookRoutes);
 
 // Базовый route для проверки

@@ -180,10 +180,13 @@ bot.onText(/\/menu/, async (msg) => {
       ],
       [
         { text: '⭐ Список желаемого', callback_data: 'menu_watchlist' },
-        { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+        { text: '📰 Лента', callback_data: 'menu_feed' }
       ],
       [
-        { text: '👤 Мой профиль', callback_data: 'menu_profile' },
+        { text: '🔔 Уведомления', callback_data: 'menu_notifications' },
+        { text: '👤 Мой профиль', callback_data: 'menu_profile' }
+      ],
+      [
         { text: '⚙️ Настройки', callback_data: 'menu_settings' }
       ]
     ];
@@ -312,6 +315,120 @@ bot.on('callback_query', async (query) => {
 });
 
 /**
+ * Обработка действия "Лента"
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} token - Токен сессии для авторизации
+ */
+async function handleFeedAction(chatId, userId, token) {
+  try {
+    // Получаем ленту активности через API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/feed/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    const feed = await response.json();
+
+    // Если лента пуста
+    if (feed.length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '📰 <b>Лента активности</b>\n\n' +
+        'Пока нет постов от ваших друзей.\n\n' +
+        'Добавьте друзей, чтобы видеть их активность!',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    // Форматируем посты
+    let feedText = '📰 <b>Лента активности</b>\n\n';
+    feedText += `Последние ${feed.length} постов от ваших друзей:\n\n`;
+
+    feed.forEach((post, index) => {
+      // Форматируем дату
+      const date = new Date(post.createdAt);
+      const formattedDate = formatDate(date);
+
+      // Обрезаем длинные посты до 100 символов
+      let content = post.content || '';
+      if (content.length > 100) {
+        content = content.substring(0, 100) + '...';
+      }
+
+      // Добавляем пост в текст
+      feedText += `${index + 1}. <b>${post.author.displayName}</b>\n`;
+      feedText += `   ${formattedDate}\n`;
+      feedText += `   ${content}\n\n`;
+    });
+
+    // Добавляем кнопку "Открыть на сайте"
+    const session = await createSession(userId, { id: userId });
+    const webAppUrl = `${publicUrl}?session=${session.token}`;
+
+    await bot.sendMessage(
+      chatId,
+      feedText,
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '🌐 Открыть на сайте', url: webAppUrl }
+          ]]
+        }
+      }
+    );
+
+    console.log(`✅ Лента отправлена пользователю ${userId}`);
+  } catch (error) {
+    console.error('❌ Ошибка получения ленты:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при загрузке ленты. Попробуйте позже.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Форматирование даты для отображения
+ * @param {Date} date - Дата для форматирования
+ * @returns {string} Отформатированная дата
+ */
+function formatDate(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) {
+    return 'только что';
+  } else if (diffMins < 60) {
+    return `${diffMins} мин. назад`;
+  } else if (diffHours < 24) {
+    return `${diffHours} ч. назад`;
+  } else if (diffDays < 7) {
+    return `${diffDays} дн. назад`;
+  } else {
+    // Форматируем как "ДД.ММ.ГГГГ"
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+}
+
+/**
  * Обработка действий меню
  * @param {number} chatId - ID чата
  * @param {string} userId - ID пользователя
@@ -335,6 +452,12 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       text: '⭐ <b>Список желаемого</b>\n\nЗдесь будут фильмы и сериалы, которые вы хотите посмотреть.\nОткройте сайт для полного функционала.',
       button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/watchlist?session=${session.token}` }
     },
+    'menu_feed': {
+      text: '📰 <b>Лента активности</b>\n\nЗагружаю последние посты ваших друзей...',
+      handler: async () => {
+        await handleFeedAction(chatId, userId, session.token);
+      }
+    },
     'menu_notifications': {
       text: '🔔 <b>Уведомления</b>\n\nЗдесь будут уведомления о действиях ваших друзей.\nОткройте сайт для полного функционала.',
       button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/notifications?session=${session.token}` }
@@ -354,6 +477,12 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
 
   const actionData = actionMap[action];
   if (actionData) {
+    // Если есть специальный обработчик, вызываем его
+    if (actionData.handler) {
+      await actionData.handler();
+      return;
+    }
+
     // Формируем inline_keyboard в зависимости от структуры данных
     let inlineKeyboard;
     if (actionData.buttons) {
