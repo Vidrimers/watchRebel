@@ -1,0 +1,249 @@
+/* Тема Cyberpunk - неоновые эффекты и яркие цвета */
+
+[data-theme="cyberpunk"] {
+  /* Основные цвета фона */
+  --bg-primary: #0a0e27;         /* Основной фон - очень темный синий */
+  --bg-secondary: #0f1729;       /* Вторичный фон */
+  --bg-tertiary: #1a1f3a;        /* Третичный фон */
+  --bg-hover: #252a4a;           /* Фон при наведении */
+  --bg-active: #2d3250;          /* Фон активного элемента */
+  --bg-input: #0d1225;           /* Фон полей ввода */
+  --bg-disabled: #1c2038;        /* Фон отключенных элементов */
+
+  /* Цвета текста */
+  --text-primary: #e0f2fe;       /* Основной текст - светло-голубой */
+  --text-secondary: #bae6fd;     /* Вторичный текст */
+  --text-tertiary: #7dd3fc;      /* Третичный текст */
+  --text-disabled: #475569;      /* Отключенный текст */
+  --text-inverse: #0a0e27;       /* Инверсный текст */
+  --text-link: #22d3ee;          /* Цвет ссылок - циан */
+  --text-link-hover: #67e8f9;    /* Цвет ссылок при наведении */
+
+  /* Акцентные цвета - неоновые */
+  --accent-primary: #f0f;        /* Основной акцент - неоновый пурпурный */
+  --accent-primary-hover: #f5f;
+  --accent-primary-active: #faf;
+  --accent-secondary: #0ff;      /* Вторичный акцент - неоновый циан */
+  --accent-secondary-hover: #5ff;
+  --accent-tertiary: #ff0080;    /* Третичный акцент - неоновый розовый */
+
+  /* Цвета состояний */
+  --color-success: #0f0;         /* Успех - неоновый зеленый */
+  --color-success-bg: rgba(0, 255, 0, 0.1);
+  --color-success-border: #0f0;
+  
+  --color-warning: #ff0;         /* Предупреждение - неоновый желтый */
+  --color-warning-bg: rgba(255, 255, 0, 0.1);
+  --color-warning-border: #ff0;
+  
+  --color-error: #f00;           /* Ошибка - неоновый красный */
+  --color-error-bg: rgba(255, 0, 0, 0.1);
+  --color-error-border: #f00;
+  
+  --color-info: #0ff;            /* Информация - неоновый циан */
+  --color-info-bg: rgba(0, 255, 255, 0.1);
+  --color-info-border: #0ff;
+
+  /* Границы */
+  --border-color: rgba(255, 0, 255, 0.3);  /* Основной цвет границ */
+  --border-color-light: rgba(255, 0, 255, 0.2);
+  --border-color-dark: rgba(255, 0, 255, 0.5);
+  --border-color-focus: #f0f;
+
+  /* Тени с неоновым свечением */
+  --shadow-xs: 0 1px 2px rgba(255, 0, 255, 0.3);
+  --shadow-sm: 0 2px 8px rgba(255, 0, 255, 0.4);
+  --shadow-md: 0 4px 12px rgba(255, 0, 255, 0.5);
+  --shadow-lg: 0 8px 24px rgba(255, 0, 255, 0.6);
+  --shadow-xl: 0 12px 32px rgba(255, 0, 255, 0.7);
+
+  /* Оверлеи */
+  --overlay-light: rgba(255, 0, 255, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.8);
+
+  /* Рейтинги */
+  --rating-star-filled: #ff0;
+  --rating-star-empty: #1a1f3a;
+
+  /* Уведомления */
+  --notification-badge: #f00;
+  --notification-dot: #0f0;
+
+  /* Скроллбар */
+  --scrollbar-track: #0f1729;
+  --scrollbar-thumb: rgba(255, 0, 255, 0.5);
+  --scrollbar-thumb-hover: rgba(255, 0, 255, 0.8);
+}
+
+/* Дополнительные стили для темы Cyberpunk */
+[data-theme="cyberpunk"] body {
+  color-scheme: dark;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0e27 0%, #0f1729 100%);
+}
+
+/* Неоновое свечение для карточек */
+[data-theme="cyberpunk"] .card,
+[data-theme="cyberpunk"] .modal,
+[data-theme="cyberpunk"] .panel {
+  background: rgba(15, 23, 41, 0.8);
+  border: 2px solid rgba(255, 0, 255, 0.5);
+  box-shadow: 
+    0 0 20px rgba(255, 0, 255, 0.5),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+  position: relative;
+}
+
+/* Анимация неонового свечения */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 0, 255, 0.5),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 0, 255, 0.8),
+      inset 0 0 30px rgba(0, 255, 255, 0.2);
+  }
+}
+
+[data-theme="cyberpunk"] .card:hover,
+[data-theme="cyberpunk"] .modal:hover {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Неоновые кнопки */
+[data-theme="cyberpunk"] button:not(:disabled) {
+  background: transparent;
+  color: #f0f;
+  border: 2px solid #f0f;
+  text-shadow: 0 0 10px #f0f;
+  box-shadow: 
+    0 0 10px rgba(255, 0, 255, 0.5),
+    inset 0 0 10px rgba(255, 0, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+[data-theme="cyberpunk"] button:not(:disabled):hover {
+  background: rgba(255, 0, 255, 0.2);
+  box-shadow: 
+    0 0 20px rgba(255, 0, 255, 0.8),
+    inset 0 0 20px rgba(255, 0, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Неоновые инпуты */
+[data-theme="cyberpunk"] input,
+[data-theme="cyberpunk"] textarea {
+  background: rgba(13, 18, 37, 0.8);
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  color: #e0f2fe;
+  box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.3),
+    inset 0 0 10px rgba(0, 255, 255, 0.1);
+}
+
+[data-theme="cyberpunk"] input:focus,
+[data-theme="cyberpunk"] textarea:focus {
+  border-color: #0ff;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.6),
+    inset 0 0 20px rgba(0, 255, 255, 0.2);
+  outline: none;
+}
+
+/* Неоновый эффект для изображений */
+[data-theme="cyberpunk"] img {
+  opacity: 0.9;
+  border: 2px solid rgba(255, 0, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+  filter: saturate(1.2) contrast(1.1);
+}
+
+[data-theme="cyberpunk"] img:hover {
+  opacity: 1;
+  border-color: rgba(255, 0, 255, 0.6);
+  box-shadow: 0 0 25px rgba(255, 0, 255, 0.7);
+}
+
+/* Стили для выделения текста */
+[data-theme="cyberpunk"] ::selection {
+  background-color: rgba(255, 0, 255, 0.5);
+  color: #e0f2fe;
+  text-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
+}
+
+/* Неоновый скроллбар */
+[data-theme="cyberpunk"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="cyberpunk"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-left: 2px solid rgba(255, 0, 255, 0.2);
+}
+
+[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+}
+
+[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.9);
+}
+
+/* Неоновое свечение для ссылок и активных элементов */
+[data-theme="cyberpunk"] a,
+[data-theme="cyberpunk"] .active {
+  color: #22d3ee;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+  transition: all 0.3s ease;
+}
+
+[data-theme="cyberpunk"] a:hover {
+  color: #67e8f9;
+  text-shadow: 0 0 15px rgba(103, 232, 249, 1);
+}
+
+/* Неоновые заголовки */
+[data-theme="cyberpunk"] h1,
+[data-theme="cyberpunk"] h2,
+[data-theme="cyberpunk"] h3 {
+  color: #f0f;
+  text-shadow: 
+    0 0 10px rgba(255, 0, 255, 0.8),
+    0 0 20px rgba(255, 0, 255, 0.5),
+    0 0 30px rgba(255, 0, 255, 0.3);
+}
+
+/* Эффект сканирующей линии */
+@keyframes scan-line {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+[data-theme="cyberpunk"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 255, 0.8) 50%, 
+    transparent 100%);
+  animation: scan-line 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}

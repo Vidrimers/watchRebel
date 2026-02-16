@@ -1,0 +1,245 @@
+/* Тема Dark Neon Obsidian - темный фон с неоновыми акцентами */
+/* Цвета из temp/example/1: #05060a (фон), #3cffc4 (неоновый акцент) */
+
+[data-theme="dark-neon-obsidian"] {
+  /* Основные цвета фона */
+  --bg-primary: #05060a;         /* Основной фон - очень темный обсидиан */
+  --bg-secondary: #0a0c14;       /* Вторичный фон */
+  --bg-tertiary: #0f1119;        /* Третичный фон */
+  --bg-hover: #14161f;           /* Фон при наведении */
+  --bg-active: #191c26;          /* Фон активного элемента */
+  --bg-input: #080a10;           /* Фон полей ввода */
+  --bg-disabled: #0d0f16;        /* Фон отключенных элементов */
+
+  /* Цвета текста */
+  --text-primary: #e8f4f0;       /* Основной текст - светлый с зеленоватым оттенком */
+  --text-secondary: #b8d4cc;     /* Вторичный текст */
+  --text-tertiary: #88b4a8;      /* Третичный текст */
+  --text-disabled: #586860;      /* Отключенный текст */
+  --text-inverse: #05060a;       /* Инверсный текст */
+  --text-link: #3cffc4;          /* Цвет ссылок - неоновый мятный */
+  --text-link-hover: #6fffd4;    /* Цвет ссылок при наведении */
+
+  /* Акцентные цвета */
+  --accent-primary: #3cffc4;     /* Основной акцент - неоновый мятный */
+  --accent-primary-hover: #6fffd4;
+  --accent-primary-active: #9fffe4;
+  --accent-secondary: #2dd4a8;   /* Вторичный акцент - темно-мятный */
+  --accent-secondary-hover: #3cffc4;
+  --accent-tertiary: #1aa87c;    /* Третичный акцент - изумрудный */
+
+  /* Цвета состояний */
+  --color-success: #3cffc4;      /* Успех - неоновый мятный */
+  --color-success-bg: rgba(60, 255, 196, 0.1);
+  --color-success-border: #2dd4a8;
+  
+  --color-warning: #ffc43c;      /* Предупреждение - золотой */
+  --color-warning-bg: rgba(255, 196, 60, 0.1);
+  --color-warning-border: #d4a82d;
+  
+  --color-error: #ff3c6f;        /* Ошибка - неоновый розовый */
+  --color-error-bg: rgba(255, 60, 111, 0.1);
+  --color-error-border: #d42d5a;
+  
+  --color-info: #3c9fff;         /* Информация - неоновый синий */
+  --color-info-bg: rgba(60, 159, 255, 0.1);
+  --color-info-border: #2d7fd4;
+
+  /* Границы */
+  --border-color: rgba(60, 255, 196, 0.2);  /* Основной цвет границ */
+  --border-color-light: rgba(60, 255, 196, 0.1);
+  --border-color-dark: rgba(60, 255, 196, 0.3);
+  --border-color-focus: #3cffc4;
+
+  /* Тени с неоновым свечением */
+  --shadow-xs: 0 1px 2px rgba(60, 255, 196, 0.2);
+  --shadow-sm: 0 2px 8px rgba(60, 255, 196, 0.3);
+  --shadow-md: 0 4px 12px rgba(60, 255, 196, 0.4);
+  --shadow-lg: 0 8px 24px rgba(60, 255, 196, 0.5);
+  --shadow-xl: 0 12px 32px rgba(60, 255, 196, 0.6);
+
+  /* Оверлеи */
+  --overlay-light: rgba(60, 255, 196, 0.05);
+  --overlay-dark: rgba(0, 0, 0, 0.85);
+
+  /* Рейтинги */
+  --rating-star-filled: #ffc43c;
+  --rating-star-empty: #14161f;
+
+  /* Уведомления */
+  --notification-badge: #ff3c6f;
+  --notification-dot: #3cffc4;
+
+  /* Скроллбар */
+  --scrollbar-track: #0a0c14;
+  --scrollbar-thumb: rgba(60, 255, 196, 0.3);
+  --scrollbar-thumb-hover: rgba(60, 255, 196, 0.5);
+}
+
+/* Дополнительные стили для темы Dark Neon Obsidian */
+[data-theme="dark-neon-obsidian"] body {
+  color-scheme: dark;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(60, 255, 196, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(60, 255, 196, 0.03) 0%, transparent 50%),
+    #05060a;
+}
+
+/* Неоновое свечение для карточек */
+[data-theme="dark-neon-obsidian"] .card,
+[data-theme="dark-neon-obsidian"] .modal,
+[data-theme="dark-neon-obsidian"] .panel {
+  background: rgba(10, 12, 20, 0.9);
+  border: 1px solid rgba(60, 255, 196, 0.3);
+  box-shadow: 
+    0 0 20px rgba(60, 255, 196, 0.2),
+    inset 0 1px 0 rgba(60, 255, 196, 0.1);
+}
+
+[data-theme="dark-neon-obsidian"] .card:hover,
+[data-theme="dark-neon-obsidian"] .modal:hover {
+  border-color: rgba(60, 255, 196, 0.5);
+  box-shadow: 
+    0 0 30px rgba(60, 255, 196, 0.3),
+    inset 0 1px 0 rgba(60, 255, 196, 0.2);
+}
+
+/* Неоновые кнопки */
+[data-theme="dark-neon-obsidian"] button:not(:disabled) {
+  background: rgba(60, 255, 196, 0.1);
+  color: #3cffc4;
+  border: 2px solid rgba(60, 255, 196, 0.5);
+  text-shadow: 0 0 8px rgba(60, 255, 196, 0.6);
+  box-shadow: 
+    0 0 15px rgba(60, 255, 196, 0.3),
+    inset 0 0 10px rgba(60, 255, 196, 0.05);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark-neon-obsidian"] button:not(:disabled):hover {
+  background: rgba(60, 255, 196, 0.2);
+  border-color: #3cffc4;
+  box-shadow: 
+    0 0 25px rgba(60, 255, 196, 0.5),
+    inset 0 0 15px rgba(60, 255, 196, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Неоновые инпуты */
+[data-theme="dark-neon-obsidian"] input,
+[data-theme="dark-neon-obsidian"] textarea {
+  background: rgba(8, 10, 16, 0.9);
+  border: 1px solid rgba(60, 255, 196, 0.3);
+  color: #e8f4f0;
+  box-shadow: 
+    0 0 10px rgba(60, 255, 196, 0.2),
+    inset 0 0 5px rgba(60, 255, 196, 0.05);
+}
+
+[data-theme="dark-neon-obsidian"] input:focus,
+[data-theme="dark-neon-obsidian"] textarea:focus {
+  border-color: #3cffc4;
+  box-shadow: 
+    0 0 20px rgba(60, 255, 196, 0.4),
+    inset 0 0 10px rgba(60, 255, 196, 0.1);
+  outline: none;
+}
+
+/* Неоновый эффект для изображений */
+[data-theme="dark-neon-obsidian"] img {
+  opacity: 0.9;
+  border: 1px solid rgba(60, 255, 196, 0.2);
+  box-shadow: 0 0 15px rgba(60, 255, 196, 0.2);
+}
+
+[data-theme="dark-neon-obsidian"] img:hover {
+  opacity: 1;
+  border-color: rgba(60, 255, 196, 0.4);
+  box-shadow: 0 0 25px rgba(60, 255, 196, 0.4);
+}
+
+/* Стили для выделения текста */
+[data-theme="dark-neon-obsidian"] ::selection {
+  background-color: rgba(60, 255, 196, 0.3);
+  color: #e8f4f0;
+  text-shadow: 0 0 8px rgba(60, 255, 196, 0.6);
+}
+
+/* Неоновый скроллбар */
+[data-theme="dark-neon-obsidian"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="dark-neon-obsidian"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-left: 1px solid rgba(60, 255, 196, 0.1);
+}
+
+[data-theme="dark-neon-obsidian"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(60, 255, 196, 0.4);
+}
+
+[data-theme="dark-neon-obsidian"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  box-shadow: 0 0 15px rgba(60, 255, 196, 0.6);
+}
+
+/* Неоновое свечение для ссылок и активных элементов */
+[data-theme="dark-neon-obsidian"] a {
+  color: #3cffc4;
+  text-shadow: 0 0 8px rgba(60, 255, 196, 0.5);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark-neon-obsidian"] a:hover {
+  color: #6fffd4;
+  text-shadow: 0 0 12px rgba(111, 255, 212, 0.7);
+}
+
+[data-theme="dark-neon-obsidian"] .active {
+  color: #3cffc4;
+  text-shadow: 0 0 10px rgba(60, 255, 196, 0.8);
+  border-left: 3px solid #3cffc4;
+  box-shadow: 0 0 15px rgba(60, 255, 196, 0.3);
+}
+
+/* Неоновые заголовки */
+[data-theme="dark-neon-obsidian"] h1,
+[data-theme="dark-neon-obsidian"] h2,
+[data-theme="dark-neon-obsidian"] h3 {
+  color: #3cffc4;
+  text-shadow: 
+    0 0 10px rgba(60, 255, 196, 0.6),
+    0 0 20px rgba(60, 255, 196, 0.4),
+    0 0 30px rgba(60, 255, 196, 0.2);
+}
+
+/* Эффект пульсации для важных элементов */
+@keyframes neon-pulse-obsidian {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(60, 255, 196, 0.3),
+      inset 0 0 10px rgba(60, 255, 196, 0.05);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(60, 255, 196, 0.5),
+      inset 0 0 15px rgba(60, 255, 196, 0.1);
+  }
+}
+
+[data-theme="dark-neon-obsidian"] .notification,
+[data-theme="dark-neon-obsidian"] .badge {
+  animation: neon-pulse-obsidian 2s ease-in-out infinite;
+}
+
+/* Эффект обсидианового стекла */
+[data-theme="dark-neon-obsidian"] .glass-effect {
+  background: rgba(10, 12, 20, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(60, 255, 196, 0.2);
+}

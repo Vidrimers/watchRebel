@@ -10,7 +10,16 @@ import { configureStore } from '@reduxjs/toolkit';
 import themeReducer, { setTheme } from '../themeSlice.js';
 
 // Генератор валидных тем
-const themeArbitrary = fc.constantFrom('light-cream', 'dark');
+const themeArbitrary = fc.constantFrom(
+  'light-cream',
+  'dark',
+  'die-my-darling',
+  'steam',
+  'discord',
+  'metal-and-glass',
+  'cyberpunk',
+  'dark-neon-obsidian'
+);
 
 // Вспомогательная функция для создания store
 function createTestStore() {

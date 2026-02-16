@@ -46,6 +46,8 @@
 .themeLabel {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
   font-size: var(--font-size-base);
   color: var(--text-primary);
   font-weight: var(--font-weight-medium);
@@ -54,4 +56,32 @@
 .themeIcon {
   margin-right: var(--spacing-sm);
   font-size: var(--font-size-xl);
+}
+
+.themeName {
+  flex: 1;
+}
+
+.themePreview {
+  display: flex;
+  gap: 6px;
+  margin-left: var(--spacing-md);
+}
+
+.colorDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-fast);
+}
+
+.themeOption:hover .colorDot {
+  transform: scale(1.1);
+}
+
+.themeOption input[type="radio"]:checked ~ .themeLabel .colorDot {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-primary);
 }

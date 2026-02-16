@@ -1,0 +1,133 @@
+/* Тема Die my Darling - кроваво-красная с прозрачностью */
+
+[data-theme="die-my-darling"] {
+  /* Основные цвета фона */
+  --bg-primary: #0a0000;         /* Основной фон - очень темный красный */
+  --bg-secondary: rgba(26, 0, 0, 0.9);  /* Вторичный фон - темно-красный с прозрачностью */
+  --bg-tertiary: rgba(38, 0, 0, 0.85);  /* Третичный фон */
+  --bg-hover: rgba(51, 0, 0, 0.8);      /* Фон при наведении */
+  --bg-active: rgba(64, 0, 0, 0.9);     /* Фон активного элемента */
+  --bg-input: rgba(20, 0, 0, 0.7);      /* Фон полей ввода */
+  --bg-disabled: rgba(30, 0, 0, 0.5);   /* Фон отключенных элементов */
+
+  /* Цвета текста */
+  --text-primary: #ffebeb;       /* Основной текст - светло-красноватый */
+  --text-secondary: #ffcccc;     /* Вторичный текст */
+  --text-tertiary: #ff9999;      /* Третичный текст */
+  --text-disabled: #994444;      /* Отключенный текст */
+  --text-inverse: #0a0000;       /* Инверсный текст */
+  --text-link: #ff4444;          /* Цвет ссылок - яркий красный */
+  --text-link-hover: #ff6666;    /* Цвет ссылок при наведении */
+
+  /* Акцентные цвета */
+  --accent-primary: #cc0000;     /* Основной акцент - кроваво-красный */
+  --accent-primary-hover: #ff0000;
+  --accent-primary-active: #ff3333;
+  --accent-secondary: #990000;   /* Вторичный акцент - темно-красный */
+  --accent-secondary-hover: #bb0000;
+  --accent-tertiary: #ff1a1a;    /* Третичный акцент - светло-красный */
+
+  /* Цвета состояний */
+  --color-success: #ff6666;      /* Успех - светло-красный */
+  --color-success-bg: rgba(51, 0, 0, 0.5);
+  --color-success-border: #cc0000;
+  
+  --color-warning: #ff9933;      /* Предупреждение - оранжево-красный */
+  --color-warning-bg: rgba(51, 20, 0, 0.5);
+  --color-warning-border: #cc6600;
+  
+  --color-error: #ff0000;        /* Ошибка - ярко-красный */
+  --color-error-bg: rgba(64, 0, 0, 0.5);
+  --color-error-border: #ff3333;
+  
+  --color-info: #ff4466;         /* Информация - розово-красный */
+  --color-info-bg: rgba(51, 0, 20, 0.5);
+  --color-info-border: #cc0033;
+
+  /* Границы */
+  --border-color: rgba(204, 0, 0, 0.3);  /* Основной цвет границ */
+  --border-color-light: rgba(153, 0, 0, 0.2);
+  --border-color-dark: rgba(255, 0, 0, 0.4);
+  --border-color-focus: #ff0000;
+
+  /* Тени с красным оттенком */
+  --shadow-xs: 0 1px 2px rgba(204, 0, 0, 0.3);
+  --shadow-sm: 0 2px 8px rgba(204, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(204, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(204, 0, 0, 0.6);
+  --shadow-xl: 0 12px 32px rgba(204, 0, 0, 0.7);
+
+  /* Оверлеи */
+  --overlay-light: rgba(255, 0, 0, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.8);
+
+  /* Рейтинги */
+  --rating-star-filled: #ff3333;
+  --rating-star-empty: #4d0000;
+
+  /* Уведомления */
+  --notification-badge: #ff0000;
+  --notification-dot: #ff6666;
+
+  /* Скроллбар */
+  --scrollbar-track: rgba(26, 0, 0, 0.5);
+  --scrollbar-thumb: rgba(204, 0, 0, 0.6);
+  --scrollbar-thumb-hover: rgba(255, 0, 0, 0.8);
+}
+
+/* Дополнительные стили для темы Die my Darling */
+[data-theme="die-my-darling"] body {
+  color-scheme: dark;
+  background: radial-gradient(circle at 50% 50%, #1a0000 0%, #0a0000 100%);
+}
+
+/* Эффект свечения для интерактивных элементов */
+[data-theme="die-my-darling"] button:hover,
+[data-theme="die-my-darling"] a:hover {
+  text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+}
+
+/* Улучшенная читаемость */
+[data-theme="die-my-darling"] img {
+  opacity: 0.85;
+  filter: sepia(0.2) hue-rotate(-10deg);
+}
+
+[data-theme="die-my-darling"] img:hover {
+  opacity: 1;
+  filter: none;
+}
+
+/* Стили для выделения текста */
+[data-theme="die-my-darling"] ::selection {
+  background-color: rgba(204, 0, 0, 0.5);
+  color: #ffebeb;
+}
+
+/* Стили для скроллбара */
+[data-theme="die-my-darling"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="die-my-darling"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="die-my-darling"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="die-my-darling"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Эффект кровавых капель для декоративных элементов */
+[data-theme="die-my-darling"] .card,
+[data-theme="die-my-darling"] .modal {
+  box-shadow: 
+    0 4px 12px rgba(204, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 0, 0, 0.1);
+}

@@ -1,0 +1,183 @@
+/* Тема Discord - в стиле платформы Discord */
+
+[data-theme="discord"] {
+  /* Основные цвета фона - цветовая схема Discord */
+  --bg-primary: #36393f;         /* Основной фон - темно-серый Discord */
+  --bg-secondary: #2f3136;       /* Вторичный фон - еще темнее */
+  --bg-tertiary: #40444b;        /* Третичный фон */
+  --bg-hover: #4e5058;           /* Фон при наведении */
+  --bg-active: #5865f2;          /* Фон активного элемента - фирменный синий Discord */
+  --bg-input: #2b2d31;           /* Фон полей ввода */
+  --bg-disabled: #3a3d43;        /* Фон отключенных элементов */
+
+  /* Цвета текста */
+  --text-primary: #dcddde;       /* Основной текст - светло-серый */
+  --text-secondary: #b9bbbe;     /* Вторичный текст */
+  --text-tertiary: #8e9297;      /* Третичный текст */
+  --text-disabled: #6d6f78;      /* Отключенный текст */
+  --text-inverse: #ffffff;       /* Инверсный текст */
+  --text-link: #00b0f4;          /* Цвет ссылок - голубой Discord */
+  --text-link-hover: #00c8ff;    /* Цвет ссылок при наведении */
+
+  /* Акцентные цвета */
+  --accent-primary: #5865f2;     /* Основной акцент - фирменный синий Discord */
+  --accent-primary-hover: #7289da;
+  --accent-primary-active: #949cf7;
+  --accent-secondary: #3ba55d;   /* Вторичный акцент - зеленый Discord */
+  --accent-secondary-hover: #4bc76d;
+  --accent-tertiary: #eb459e;    /* Третичный акцент - розовый */
+
+  /* Цвета состояний */
+  --color-success: #3ba55d;      /* Успех - зеленый Discord */
+  --color-success-bg: #1e3a28;
+  --color-success-border: #2d7d46;
+  
+  --color-warning: #faa81a;      /* Предупреждение - оранжевый Discord */
+  --color-warning-bg: #3d2f0f;
+  --color-warning-border: #d88e15;
+  
+  --color-error: #ed4245;        /* Ошибка - красный Discord */
+  --color-error-bg: #3d1a1b;
+  --color-error-border: #c73537;
+  
+  --color-info: #5865f2;         /* Информация - синий Discord */
+  --color-info-bg: #1e2340;
+  --color-info-border: #4752c4;
+
+  /* Границы */
+  --border-color: #202225;       /* Основной цвет границ */
+  --border-color-light: #2f3136;
+  --border-color-dark: #40444b;
+  --border-color-focus: #5865f2;
+
+  /* Тени */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.7);
+
+  /* Оверлеи */
+  --overlay-light: rgba(88, 101, 242, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+
+  /* Рейтинги */
+  --rating-star-filled: #faa81a;
+  --rating-star-empty: #4e5058;
+
+  /* Уведомления */
+  --notification-badge: #ed4245;
+  --notification-dot: #3ba55d;
+
+  /* Скроллбар */
+  --scrollbar-track: #2f3136;
+  --scrollbar-thumb: #202225;
+  --scrollbar-thumb-hover: #40444b;
+}
+
+/* Дополнительные стили для темы Discord */
+[data-theme="discord"] body {
+  color-scheme: dark;
+  background: #36393f;
+}
+
+/* Стиль кнопок в духе Discord */
+[data-theme="discord"] button:not(:disabled) {
+  background-color: #5865f2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.17s ease;
+}
+
+[data-theme="discord"] button:not(:disabled):hover {
+  background-color: #4752c4;
+}
+
+[data-theme="discord"] button:not(:disabled):active {
+  background-color: #3c45a5;
+}
+
+/* Стиль карточек в духе Discord */
+[data-theme="discord"] .card {
+  background-color: #2f3136;
+  border-radius: 8px;
+  border: 1px solid #202225;
+}
+
+/* Стиль для сообщений/постов */
+[data-theme="discord"] .message,
+[data-theme="discord"] .post {
+  background-color: transparent;
+  border-left: 4px solid transparent;
+  padding-left: 12px;
+  transition: all 0.1s ease;
+}
+
+[data-theme="discord"] .message:hover,
+[data-theme="discord"] .post:hover {
+  background-color: #32353b;
+  border-left-color: #5865f2;
+}
+
+/* Улучшенная читаемость */
+[data-theme="discord"] img {
+  opacity: 0.95;
+  border-radius: 8px;
+}
+
+[data-theme="discord"] img:hover {
+  opacity: 1;
+}
+
+/* Стили для выделения текста */
+[data-theme="discord"] ::selection {
+  background-color: rgba(88, 101, 242, 0.3);
+  color: #dcddde;
+}
+
+/* Стили для скроллбара в стиле Discord */
+[data-theme="discord"] ::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme="discord"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="discord"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 4px solid var(--scrollbar-track);
+}
+
+[data-theme="discord"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Эффект для активных элементов */
+[data-theme="discord"] .active {
+  background-color: rgba(88, 101, 242, 0.1);
+  color: #5865f2;
+}
+
+/* Стиль для инпутов */
+[data-theme="discord"] input,
+[data-theme="discord"] textarea {
+  background-color: #2b2d31;
+  border: 1px solid #202225;
+  border-radius: 4px;
+  color: #dcddde;
+}
+
+[data-theme="discord"] input:focus,
+[data-theme="discord"] textarea:focus {
+  border-color: #5865f2;
+  outline: none;
+}
+
+/* Стиль для разделителей */
+[data-theme="discord"] hr {
+  border-color: #202225;
+}
