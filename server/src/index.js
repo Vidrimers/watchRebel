@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import listsRoutes from './routes/lists.js';
+import watchlistRoutes from './routes/watchlist.js';
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/lists', listsRoutes);
+app.use('/api/watchlist', watchlistRoutes);
 
 // Базовый route для проверки
 app.get('/api/health', (req, res) => {
