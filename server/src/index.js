@@ -18,8 +18,35 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 1313;
 
+// CORS настройки для development и production
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (например, мобильные приложения, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Список разрешенных origins
+    const allowedOrigins = [
+      'http://localhost:3000',           // Vite dev server
+      'http://localhost:1313',           // Backend server
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:1313',
+      process.env.PUBLIC_URL,            // Production URL
+    ].filter(Boolean); // Убираем undefined значения
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS: Запрос от неразрешенного origin: ${origin}`);
+      callback(null, true); // В development разрешаем все
+    }
+  },
+  credentials: true, // Разрешаем отправку cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

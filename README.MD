@@ -67,6 +67,25 @@ npm run tg
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:1313
 - Health check: http://localhost:1313/api/health
+- Тестирование интеграции: http://localhost:3000/integration-test
+
+## Тестирование
+
+### Автоматические тесты интеграции
+
+```bash
+node test-integration.js
+```
+
+### UI тесты
+
+Откройте в браузере: http://localhost:3000/integration-test
+
+### Документация по тестированию
+
+- [Быстрый старт](./docs/QUICK_START.md)
+- [Руководство по тестированию интеграции](./docs/INTEGRATION_TESTING.md)
+- [Результаты тестов](./docs/INTEGRATION_TEST_RESULTS.md)
 
 ## Технологии
 
