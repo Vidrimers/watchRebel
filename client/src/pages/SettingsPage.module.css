@@ -1,0 +1,174 @@
+.settingsContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 30px 0;
+  color: var(--text-primary, #333);
+}
+
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 18px;
+  color: var(--text-secondary, #666);
+}
+
+/* Карточки настроек */
+.settingsCard {
+  background: var(--card-background, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary, #333);
+}
+
+/* Информация о профиле */
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.infoValue {
+  color: var(--text-primary, #333);
+}
+
+/* Кнопка выхода */
+.logoutButton {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--error-color, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: var(--error-color-hover, #dc2626);
+}
+
+/* Контактная информация */
+.contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary, #333);
+}
+
+.contactIcon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.contactLink {
+  color: var(--primary-color, #6366f1);
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.2s ease;
+}
+
+.contactLink:hover {
+  color: var(--primary-color-hover, #4f46e5);
+  text-decoration: underline;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .settingsContainer {
+    padding: 16px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .settingsCard {
+    padding: 16px;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Темная тема */
+:global(.dark) .pageTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .settingsCard {
+  background: var(--card-background-dark, #2a2a2a);
+}
+
+:global(.dark) .cardTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .infoRow {
+  border-bottom-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .infoLabel {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .infoValue {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .contactItem {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .contactLink {
+  color: var(--primary-color-dark, #818cf8);
+}
+
+:global(.dark) .contactLink:hover {
+  color: var(--primary-color-hover-dark, #a5b4fc);
+}

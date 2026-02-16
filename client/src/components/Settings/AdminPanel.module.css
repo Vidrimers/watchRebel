@@ -1,0 +1,236 @@
+.adminCard {
+  background: var(--card-background, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: var(--text-primary, #333);
+}
+
+.section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-secondary, #666);
+}
+
+.error {
+  color: var(--error-color, #ef4444);
+  margin: 0;
+}
+
+/* Список пользователей */
+.usersList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.userItem {
+  padding: 16px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background: var(--item-background, #fafafa);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.userName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blockedBadge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: var(--error-color, #ef4444);
+  color: white;
+  border-radius: 4px;
+}
+
+.userUsername {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+.userActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Форма редактирования */
+.editForm {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  background: var(--input-background, #fff);
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary, #333);
+  background: var(--input-background, #fff);
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+/* Кнопки */
+.btnPrimary,
+.btnEdit,
+.btnBlock,
+.btnUnblock,
+.btnDelete,
+.btnSave,
+.btnCancel {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnPrimary {
+  background: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.btnPrimary:hover {
+  background: var(--primary-color-hover, #4f46e5);
+}
+
+.btnEdit {
+  background: var(--info-color, #3b82f6);
+  color: white;
+}
+
+.btnEdit:hover {
+  background: var(--info-color-hover, #2563eb);
+}
+
+.btnBlock {
+  background: var(--warning-color, #f59e0b);
+  color: white;
+}
+
+.btnBlock:hover {
+  background: var(--warning-color-hover, #d97706);
+}
+
+.btnUnblock {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.btnUnblock:hover {
+  background: var(--success-color-hover, #059669);
+}
+
+.btnDelete {
+  background: var(--error-color, #ef4444);
+  color: white;
+}
+
+.btnDelete:hover {
+  background: var(--error-color-hover, #dc2626);
+}
+
+.btnSave {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.btnSave:hover {
+  background: var(--success-color-hover, #059669);
+}
+
+.btnCancel {
+  background: var(--secondary-color, #6b7280);
+  color: white;
+}
+
+.btnCancel:hover {
+  background: var(--secondary-color-hover, #4b5563);
+}
+
+/* Темная тема */
+:global(.dark) .adminCard {
+  background: var(--card-background-dark, #2a2a2a);
+}
+
+:global(.dark) .cardTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .section {
+  border-bottom-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .sectionTitle {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .userItem {
+  border-color: var(--border-color-dark, #444);
+  background: var(--item-background-dark, #333);
+}
+
+:global(.dark) .userName {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .userUsername {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .input,
+:global(.dark) .textarea {
+  border-color: var(--border-color-dark, #444);
+  background: var(--input-background-dark, #1a1a1a);
+  color: var(--text-primary-dark, #e0e0e0);
+}

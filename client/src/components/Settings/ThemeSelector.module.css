@@ -1,0 +1,74 @@
+.themeSelectorCard {
+  background: var(--card-background, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary, #333);
+}
+
+.themeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.themeOption {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.themeOption:hover {
+  border-color: var(--primary-color, #6366f1);
+  background: var(--hover-background, #f9f9f9);
+}
+
+.themeOption input[type="radio"] {
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.themeLabel {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: var(--text-primary, #333);
+}
+
+.themeIcon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+/* Темная тема */
+:global(.dark) .themeSelectorCard {
+  background: var(--card-background-dark, #2a2a2a);
+}
+
+:global(.dark) .cardTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .themeOption {
+  border-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .themeOption:hover {
+  border-color: var(--primary-color-dark, #818cf8);
+  background: var(--hover-background-dark, #333);
+}
+
+:global(.dark) .themeLabel {
+  color: var(--text-primary-dark, #e0e0e0);
+}
