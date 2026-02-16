@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { searchMedia, setSearchQuery } from '../../store/slices/mediaSlice';
+import { searchMedia, setSearchQuery, clearError } from '../../store/slices/mediaSlice';
+import { ErrorMessageInline } from '../ErrorMessage';
 import styles from './SearchBar.module.css';
 
 /**
@@ -12,7 +13,7 @@ import styles from './SearchBar.module.css';
 const SearchBar = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { searchResults, loading } = useAppSelector((state) => state.media);
+  const { searchResults, loading, error } = useAppSelector((state) => state.media);
   
   const [query, setQuery] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -67,6 +68,11 @@ const SearchBar = () => {
     const value = e.target.value;
     setQuery(value);
     dispatch(setSearchQuery(value));
+    
+    // Очищаем ошибку при новом вводе
+    if (error) {
+      dispatch(clearError());
+    }
   };
 
   // Обработка нажатия Enter - переход на полную страницу поиска
@@ -106,6 +112,16 @@ const SearchBar = () => {
       {/* Preview результатов */}
       {showPreview && query.trim() && (
         <div className={styles.searchPreview}>
+          {/* Отображение ошибки */}
+          {error && (
+            <div className={styles.previewError}>
+              <ErrorMessageInline 
+                error={error} 
+                onClose={() => dispatch(clearError())} 
+              />
+            </div>
+          )}
+          
           {loading ? (
             <div className={styles.previewLoading}>
               <span>Поиск...</span>

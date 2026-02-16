@@ -51,26 +51,41 @@ const mediaSlice = createSlice({
     },
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
     builder
       .addCase(searchMedia.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(searchMedia.fulfilled, (state, action) => {
         state.searchResults = action.payload;
         state.loading = false;
+        state.error = null;
       })
       .addCase(searchMedia.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(getMediaDetails.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(getMediaDetails.fulfilled, (state, action) => {
         state.selectedMedia = action.payload;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(getMediaDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   }
 });
 
-export const { clearSearch, setSearchQuery } = mediaSlice.actions;
+export const { clearSearch, setSearchQuery, clearError } = mediaSlice.actions;
 export default mediaSlice.reducer;

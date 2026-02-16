@@ -1,0 +1,160 @@
+.errorMessage {
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error {
+  background: #ffebee;
+  border-left: 4px solid #d32f2f;
+  color: #c62828;
+}
+
+.warning {
+  background: #fff3e0;
+  border-left: 4px solid #f57c00;
+  color: #e65100;
+}
+
+.info {
+  background: #e3f2fd;
+  border-left: 4px solid #1976d2;
+  color: #0d47a1;
+}
+
+.errorHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.errorIcon {
+  font-size: 1.2rem;
+}
+
+.errorTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  color: inherit;
+}
+
+.closeButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.errorText {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.errorDetails {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.errorDetails summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.errorDetailsContent {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* Inline версия */
+.errorInline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #c62828;
+  margin: 8px 0;
+}
+
+.errorInlineIcon {
+  font-size: 1rem;
+}
+
+.errorInlineText {
+  flex: 1;
+}
+
+.errorInlineClose {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  color: inherit;
+}
+
+.errorInlineClose:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .errorMessage {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .errorTitle {
+    font-size: 0.95rem;
+  }
+
+  .errorText {
+    font-size: 0.9rem;
+  }
+}

@@ -40,14 +40,34 @@ const notificationsSlice = createSlice({
   initialState: {
     notifications: [],
     unreadCount: 0,
-    loading: false
+    loading: false,
+    error: null
   },
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch Notifications
+      .addCase(fetchNotifications.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.notifications = action.payload;
         state.unreadCount = action.payload.filter(n => !n.isRead).length;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(fetchNotifications.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Mark as Read
+      .addCase(markAsRead.pending, (state) => {
+        state.error = null;
       })
       .addCase(markAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find(n => n.id === action.payload);
@@ -55,8 +75,13 @@ const notificationsSlice = createSlice({
           notification.isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
+        state.error = null;
+      })
+      .addCase(markAsRead.rejected, (state, action) => {
+        state.error = action.payload;
       });
   }
 });
 
+export const { clearError } = notificationsSlice.actions;
 export default notificationsSlice.reducer;
