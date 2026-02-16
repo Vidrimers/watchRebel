@@ -28,12 +28,12 @@ const Sidebar = ({ user }) => {
       <nav className={styles.navigation}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <a href="/lists/movies" className={styles.navLink}>
+            <a href="/lists?type=movie" className={styles.navLink}>
               🎬 Мои фильмы
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/lists/tv" className={styles.navLink}>
+            <a href="/lists?type=tv" className={styles.navLink}>
               📺 Мои сериалы
             </a>
           </li>

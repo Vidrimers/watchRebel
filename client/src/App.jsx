@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
 import SearchPage from './pages/SearchPage';
 import MediaDetailPage from './pages/MediaDetailPage';
+import ListsPage from './pages/ListsPage';
+import WatchlistPage from './pages/WatchlistPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Временный компонент главной страницы - редирект на профиль пользователя
@@ -63,6 +65,26 @@ function App() {
             element={
               <ProtectedRoute>
                 <MediaDetailPage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Страница списков */}
+          <Route 
+            path="/lists" 
+            element={
+              <ProtectedRoute>
+                <ListsPage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Страница списка желаемого */}
+          <Route 
+            path="/watchlist" 
+            element={
+              <ProtectedRoute>
+                <WatchlistPage />
               </ProtectedRoute>
             } 
           />

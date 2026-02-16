@@ -83,6 +83,30 @@ export const addToWatchlist = createAsyncThunk(
   }
 );
 
+export const removeFromWatchlist = createAsyncThunk(
+  'lists/removeFromWatchlist',
+  async (itemId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/watchlist/${itemId}`);
+      return itemId;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+export const removeFromList = createAsyncThunk(
+  'lists/removeFromList',
+  async ({ listId, itemId }, { rejectWithValue }) => {
+    try {
+      await api.delete(`/lists/${listId}/items/${itemId}`);
+      return { listId, itemId };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 // Получить прогресс просмотра сериала
 export const fetchEpisodeProgress = createAsyncThunk(
   'lists/fetchEpisodeProgress',
@@ -163,6 +187,15 @@ const listsSlice = createSlice({
       })
       .addCase(addToWatchlist.fulfilled, (state, action) => {
         state.watchlist.push(action.payload);
+      })
+      .addCase(removeFromWatchlist.fulfilled, (state, action) => {
+        state.watchlist = state.watchlist.filter(item => item.id !== action.payload);
+      })
+      .addCase(removeFromList.fulfilled, (state, action) => {
+        const list = state.customLists.find(l => l.id === action.payload.listId);
+        if (list) {
+          list.items = list.items.filter(item => item.id !== action.payload.itemId);
+        }
       })
       .addCase(fetchEpisodeProgress.fulfilled, (state, action) => {
         state.episodeProgress[action.payload.seriesId] = action.payload.progress;
