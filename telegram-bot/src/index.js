@@ -29,6 +29,38 @@ const bot = process.env.NODE_ENV === 'test'
       webHook: false // Webhook настраивается отдельно через setWebhook
     });
 
+// Система состояний пользователей для отслеживания процессов (например, смена имени)
+const userStates = new Map();
+
+/**
+ * Установить состояние пользователя
+ * @param {string} userId - ID пользователя
+ * @param {string} state - Состояние (например, 'awaiting_name_change')
+ * @param {Object} data - Дополнительные данные состояния
+ */
+function setUserState(userId, state, data = {}) {
+  userStates.set(userId, { state, data, timestamp: Date.now() });
+  console.log(`📝 Установлено состояние для пользователя ${userId}: ${state}`);
+}
+
+/**
+ * Получить состояние пользователя
+ * @param {string} userId - ID пользователя
+ * @returns {Object|null} Объект состояния или null
+ */
+function getUserState(userId) {
+  return userStates.get(userId) || null;
+}
+
+/**
+ * Очистить состояние пользователя
+ * @param {string} userId - ID пользователя
+ */
+function clearUserState(userId) {
+  userStates.delete(userId);
+  console.log(`🗑️ Очищено состояние пользователя ${userId}`);
+}
+
 if (bot) {
   console.log('🤖 Telegram бот запущен в режиме:', isProduction ? 'production (webhook)' : 'development (polling)');
   
@@ -208,6 +240,49 @@ bot.onText(/\/help/, async (msg) => {
 });
 
 /**
+ * Команда /cancel - отмена текущего действия
+ */
+bot.onText(/\/cancel/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id.toString();
+
+  const userState = getUserState(userId);
+  if (userState) {
+    clearUserState(userId);
+    await bot.sendMessage(
+      chatId,
+      '❌ Действие отменено.',
+      { parse_mode: 'HTML' }
+    );
+  } else {
+    await bot.sendMessage(
+      chatId,
+      'ℹ️ Нет активных действий для отмены.',
+      { parse_mode: 'HTML' }
+    );
+  }
+});
+
+/**
+ * Обработчик текстовых сообщений (не команд)
+ */
+bot.on('message', async (msg) => {
+  // Игнорируем команды (они обрабатываются отдельно)
+  if (msg.text && msg.text.startsWith('/')) {
+    return;
+  }
+
+  const chatId = msg.chat.id;
+  const userId = msg.from.id.toString();
+  const userState = getUserState(userId);
+
+  // Если пользователь в состоянии ожидания нового имени
+  if (userState && userState.state === 'awaiting_name_change') {
+    await handleNameChange(chatId, userId, msg.text, userState.data.userFrom);
+  }
+});
+
+/**
  * Обработчик callback кнопок
  */
 bot.on('callback_query', async (query) => {
@@ -224,6 +299,8 @@ bot.on('callback_query', async (query) => {
     // Обрабатываем различные действия меню
     if (data.startsWith('menu_')) {
       await handleMenuAction(chatId, userId, data, query.from);
+    } else if (data.startsWith('settings_')) {
+      await handleSettingsAction(chatId, userId, data, query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -267,22 +344,136 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       button: { text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }
     },
     'menu_settings': {
-      text: '⚙️ <b>Настройки</b>\n\nОткройте сайт для настройки темы и других параметров.',
-      button: { text: '🌐 Открыть настройки', url: `${publicUrl}/settings?session=${session.token}` }
+      text: '⚙️ <b>Настройки</b>\n\nВыберите действие:',
+      buttons: [
+        [{ text: '✏️ Сменить имя', callback_data: 'settings_change_name' }],
+        [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings?session=${session.token}` }]
+      ]
     }
   };
 
   const actionData = actionMap[action];
   if (actionData) {
+    // Формируем inline_keyboard в зависимости от структуры данных
+    let inlineKeyboard;
+    if (actionData.buttons) {
+      // Если есть массив кнопок (для настроек)
+      inlineKeyboard = actionData.buttons;
+    } else if (actionData.button) {
+      // Если одна кнопка (для остальных пунктов меню)
+      inlineKeyboard = [[actionData.button]];
+    }
+
     await bot.sendMessage(
       chatId,
       actionData.text,
       {
         parse_mode: 'HTML',
         reply_markup: {
-          inline_keyboard: [[actionData.button]]
+          inline_keyboard: inlineKeyboard
         }
       }
+    );
+  }
+}
+
+/**
+ * Обработка действий настроек
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} action - Действие (settings_change_name и т.д.)
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ */
+async function handleSettingsAction(chatId, userId, action, userFrom) {
+  if (action === 'settings_change_name') {
+    // Устанавливаем состояние ожидания нового имени
+    setUserState(userId, 'awaiting_name_change', { chatId, userFrom });
+    
+    await bot.sendMessage(
+      chatId,
+      '✏️ <b>Смена имени</b>\n\n' +
+      'Отправьте новое имя (от 2 до 50 символов).\n\n' +
+      'Для отмены отправьте /cancel',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка смены имени пользователя
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} newName - Новое имя
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ */
+async function handleNameChange(chatId, userId, newName, userFrom) {
+  try {
+    // Валидация имени
+    if (!newName || newName.trim().length < 2) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Имя слишком короткое. Минимум 2 символа.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    if (newName.trim().length > 50) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Имя слишком длинное. Максимум 50 символов.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    // Очищаем имя от лишних пробелов
+    const trimmedName = newName.trim();
+
+    // Отправляем запрос на обновление имени через API
+    console.log(`📝 Обновление имени для пользователя ${userId}: "${trimmedName}"`);
+
+    // Создаем сессию для авторизации запроса
+    const session = await createSession(userId, userFrom);
+    
+    // Отправляем PUT запрос к API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        display_name: trimmedName
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+
+    // Отправляем подтверждение
+    await bot.sendMessage(
+      chatId,
+      `✅ <b>Имя успешно изменено!</b>\n\nВаше новое имя: <b>${trimmedName}</b>`,
+      { parse_mode: 'HTML' }
+    );
+
+    console.log(`✅ Имя пользователя ${userId} обновлено на "${trimmedName}"`);
+  } catch (error) {
+    console.error('❌ Ошибка обновления имени:', error.message);
+    
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при обновлении имени. Попробуйте позже или обратитесь к администратору.',
+      { parse_mode: 'HTML' }
     );
   }
 }
@@ -296,6 +487,7 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
 export async function sendNotification(userId, message, options = {}) {
   try {
     console.log(`📤 Отправка уведомления пользователю ${userId}`);
+
     
     await bot.sendMessage(userId, message, {
       parse_mode: 'HTML',
