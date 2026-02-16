@@ -1,0 +1,29 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: #ff4444;
+  color: white;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 8px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .badge {
+  background-color: #ff5555;
+}

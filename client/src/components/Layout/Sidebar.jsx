@@ -1,6 +1,7 @@
 import React from 'react';
 import UserAvatar from '../User/UserAvatar';
 import SearchBar from '../Search/SearchBar';
+import { NotificationBadge } from '../Notifications';
 import styles from './Sidebar.module.css';
 
 /**
@@ -54,7 +55,7 @@ const Sidebar = ({ user }) => {
       <div className={styles.notificationsContainer}>
         <a href="/notifications" className={styles.notificationsLink}>
           🔔 Уведомления
-          <span className={styles.notificationBadge}>0</span>
+          <NotificationBadge />
         </a>
       </div>
 
