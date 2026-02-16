@@ -83,11 +83,60 @@ export const addToWatchlist = createAsyncThunk(
   }
 );
 
+// Получить прогресс просмотра сериала
+export const fetchEpisodeProgress = createAsyncThunk(
+  'lists/fetchEpisodeProgress',
+  async (seriesId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/progress/${seriesId}`);
+      return { seriesId, progress: response.data };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Отметить серию как просмотренную
+export const markEpisodeWatched = createAsyncThunk(
+  'lists/markEpisodeWatched',
+  async ({ tmdbId, seasonNumber, episodeNumber }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/progress', {
+        tmdbId,
+        seasonNumber,
+        episodeNumber
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Поставить рейтинг
+export const addRating = createAsyncThunk(
+  'lists/addRating',
+  async ({ tmdbId, mediaType, rating }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/ratings', {
+        tmdbId,
+        mediaType,
+        rating
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 const listsSlice = createSlice({
   name: 'lists',
   initialState: {
     customLists: [],
     watchlist: [],
+    episodeProgress: {}, // { seriesId: [progress items] }
+    ratings: {}, // { tmdbId: rating }
     loading: false,
     error: null
   },
@@ -114,6 +163,19 @@ const listsSlice = createSlice({
       })
       .addCase(addToWatchlist.fulfilled, (state, action) => {
         state.watchlist.push(action.payload);
+      })
+      .addCase(fetchEpisodeProgress.fulfilled, (state, action) => {
+        state.episodeProgress[action.payload.seriesId] = action.payload.progress;
+      })
+      .addCase(markEpisodeWatched.fulfilled, (state, action) => {
+        const seriesId = action.payload.tmdbId;
+        if (!state.episodeProgress[seriesId]) {
+          state.episodeProgress[seriesId] = [];
+        }
+        state.episodeProgress[seriesId].push(action.payload);
+      })
+      .addCase(addRating.fulfilled, (state, action) => {
+        state.ratings[action.payload.tmdbId] = action.payload.rating;
       });
   }
 });

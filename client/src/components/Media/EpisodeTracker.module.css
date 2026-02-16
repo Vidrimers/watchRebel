@@ -1,0 +1,210 @@
+.episodeTracker {
+  background: var(--card-bg, #fff);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary, #666);
+}
+
+.seasonsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.seasonItem {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.seasonItem:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.seasonHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  background: var(--season-header-bg, #f8f9fa);
+  transition: background 0.2s ease;
+}
+
+.seasonHeader:hover {
+  background: var(--season-header-hover, #e9ecef);
+}
+
+.seasonInfo {
+  flex: 1;
+}
+
+.seasonTitle {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.seasonProgress {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+.seasonActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.markAllButton {
+  padding: 6px 12px;
+  background: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.markAllButton:hover {
+  background: var(--primary-hover, #0056b3);
+  transform: translateY(-1px);
+}
+
+.markAllButton:active {
+  transform: translateY(0);
+}
+
+.expandIcon {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  transition: transform 0.2s ease;
+}
+
+.progressBar {
+  height: 4px;
+  background: var(--progress-bg, #e9ecef);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--primary-color, #007bff);
+  transition: width 0.3s ease;
+}
+
+.episodesList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 8px;
+  padding: 16px;
+  background: var(--episodes-bg, #fff);
+}
+
+.episodeButton {
+  position: relative;
+  aspect-ratio: 1;
+  border: 2px solid var(--border-color, #e0e0e0);
+  background: var(--episode-bg, #fff);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+}
+
+.episodeButton:hover {
+  border-color: var(--primary-color, #007bff);
+  background: var(--episode-hover-bg, #f0f8ff);
+  transform: scale(1.05);
+}
+
+.episodeButton.watched {
+  background: var(--primary-color, #007bff);
+  border-color: var(--primary-color, #007bff);
+  color: white;
+}
+
+.episodeButton.watched:hover {
+  background: var(--primary-hover, #0056b3);
+  border-color: var(--primary-hover, #0056b3);
+}
+
+.episodeNumber {
+  font-weight: 600;
+}
+
+.checkmark {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+}
+
+.lastWatched {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+  background: var(--last-watched-bg, #f8f9fa);
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .episodesList {
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .episodeButton {
+    font-size: 13px;
+  }
+
+  .seasonHeader {
+    padding: 12px;
+  }
+
+  .markAllButton {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .episodeTracker {
+    --card-bg: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border-color: #444;
+    --season-header-bg: #333;
+    --season-header-hover: #3a3a3a;
+    --progress-bg: #444;
+    --episodes-bg: #2a2a2a;
+    --episode-bg: #333;
+    --episode-hover-bg: #3a4a5a;
+    --last-watched-bg: #333;
+  }
+}
