@@ -8,10 +8,9 @@ import {
   addToList, 
   addToWatchlist,
   fetchEpisodeProgress,
-  markEpisodeWatched,
-  addRating
+  markEpisodeWatched
 } from '../store/slices/listsSlice';
-import EpisodeTracker from '../components/Media/EpisodeTracker';
+import { EpisodeTracker, RatingSelector } from '../components/Media';
 import styles from './MediaDetailPage.module.css';
 
 /**
@@ -29,9 +28,7 @@ const MediaDetailPage = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   const [selectedListId, setSelectedListId] = useState('');
-  const [userRating, setUserRating] = useState(0);
   const [showListSelector, setShowListSelector] = useState(false);
-  const [showRatingSelector, setShowRatingSelector] = useState(false);
 
   // Загрузка данных при монтировании
   useEffect(() => {
@@ -45,13 +42,6 @@ const MediaDetailPage = () => {
       }
     }
   }, [dispatch, mediaType, mediaId]);
-
-  // Установка текущего рейтинга пользователя
-  useEffect(() => {
-    if (ratings[mediaId]) {
-      setUserRating(ratings[mediaId]);
-    }
-  }, [ratings, mediaId]);
 
   // Обработка добавления в список
   const handleAddToList = async () => {
@@ -87,25 +77,6 @@ const MediaDetailPage = () => {
       alert('Добавлено в список желаемого!');
     } catch (error) {
       alert('Ошибка при добавлении в watchlist');
-    }
-  };
-
-  // Обработка оценки
-  const handleRating = async (rating) => {
-    if (!selectedMedia) return;
-
-    try {
-      await dispatch(addRating({
-        tmdbId: selectedMedia.id,
-        mediaType: selectedMedia.media_type || mediaType,
-        rating
-      })).unwrap();
-      
-      setUserRating(rating);
-      setShowRatingSelector(false);
-      alert(`Оценка ${rating}/10 сохранена!`);
-    } catch (error) {
-      alert('Ошибка при сохранении оценки');
     }
   };
 
@@ -150,6 +121,9 @@ const MediaDetailPage = () => {
   );
 
   const currentProgress = episodeProgress[mediaId] || [];
+  
+  // Получаем текущий рейтинг пользователя
+  const currentRating = ratings[mediaId] || null;
 
   return (
     <div className={styles.mediaDetailPage}>
@@ -223,13 +197,6 @@ const MediaDetailPage = () => {
               >
                 + В список желаемого
               </button>
-
-              <button 
-                className={`${styles.actionButton} ${userRating > 0 ? styles.rated : ''}`}
-                onClick={() => setShowRatingSelector(!showRatingSelector)}
-              >
-                {userRating > 0 ? `★ ${userRating}/10` : '★ Оценить'}
-              </button>
             </div>
 
             {/* Селектор списка */}
@@ -257,20 +224,18 @@ const MediaDetailPage = () => {
               </div>
             )}
 
-            {/* Селектор рейтинга */}
-            {showRatingSelector && (
-              <div className={styles.ratingSelector}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(rating => (
-                  <button
-                    key={rating}
-                    className={`${styles.ratingButton} ${userRating === rating ? styles.selected : ''}`}
-                    onClick={() => handleRating(rating)}
-                  >
-                    {rating}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Компонент рейтинга */}
+            <RatingSelector
+              media={{
+                tmdbId: selectedMedia.id,
+                mediaType: selectedMedia.media_type || mediaType,
+                title: selectedMedia.title || selectedMedia.name
+              }}
+              currentRating={currentRating}
+              onRatingSet={(rating) => {
+                alert(`Оценка ${rating}/10 сохранена и добавлена на стену!`);
+              }}
+            />
           </div>
         </div>
 

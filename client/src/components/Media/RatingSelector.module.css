@@ -1,0 +1,111 @@
+/* Контейнер компонента рейтинга */
+.ratingSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--card-background, #fff);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Метка рейтинга */
+.ratingLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  text-align: center;
+}
+
+/* Контейнер кнопок рейтинга */
+.ratingButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Кнопка рейтинга */
+.ratingButton {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border-color, #ddd);
+  background-color: var(--button-background, #fff);
+  color: var(--text-secondary, #666);
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ratingButton:hover:not(:disabled) {
+  transform: scale(1.1);
+  border-color: var(--primary-color, #007bff);
+  background-color: var(--primary-light, #e7f3ff);
+}
+
+/* Активная кнопка (при наведении или выбранная) */
+.ratingButton.active {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border-color: var(--primary-color, #007bff);
+}
+
+/* Выбранная кнопка (текущий рейтинг) */
+.ratingButton.selected {
+  background-color: var(--success-color, #28a745);
+  color: white;
+  border-color: var(--success-color, #28a745);
+  font-weight: 700;
+}
+
+.ratingButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Индикатор загрузки */
+.loadingIndicator {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  font-style: italic;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .ratingButtons {
+    gap: 6px;
+  }
+
+  .ratingButton {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .ratingSelector {
+    background-color: var(--card-background-dark, #2a2a2a);
+  }
+
+  .ratingLabel {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .ratingButton {
+    border-color: var(--border-color-dark, #444);
+    background-color: var(--button-background-dark, #333);
+    color: var(--text-secondary-dark, #ccc);
+  }
+
+  .ratingButton:hover:not(:disabled) {
+    background-color: var(--primary-light-dark, #1a4d7a);
+  }
+}
