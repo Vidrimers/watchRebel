@@ -15,6 +15,12 @@ describe('TMDb Service - Property-Based Tests', () => {
     }
   });
 
+  // Закрываем все соединения после тестов
+  afterAll(async () => {
+    // Даем время на завершение всех асинхронных операций
+    await new Promise(resolve => setTimeout(resolve, 100));
+  });
+
   /**
    * Property 24: TMDb API Version
    * Validates: Requirements 10.1
@@ -171,7 +177,8 @@ describe('TMDb Service - Property-Based Tests', () => {
             expect(imageUrl).toBeDefined();
             expect(imageUrl).toContain('https://');
             expect(imageUrl).toContain(size);
-            expect(imageUrl).toContain(posterPath.replace('/', ''));
+            // Удаляем ВСЕ начальные слеши, как это делает функция buildImageUrl
+            expect(imageUrl).toContain(posterPath.replace(/^\/+/, ''));
             
             // Проверяем что используется базовый URL (либо из конфигурации, либо дефолтный)
             const expectedBase = tmdbService.imageBaseUrl || 'https://image.tmdb.org/t/p/';
@@ -301,9 +308,9 @@ describe('TMDb Service - Property-Based Tests', () => {
     it('should construct consistent image URLs', () => {
       fc.assert(
         fc.property(
-          // Генерируем валидные пути (не только пробелы) и trim их
+          // Генерируем валидные пути (не только пробелы и не только слеши) и trim их
           fc.string({ minLength: 5, maxLength: 50 })
-            .filter(s => s.trim().length > 0)
+            .filter(s => s.trim().length > 0 && s.trim() !== '/')
             .map(s => s.trim()),
           fc.constantFrom('w500', 'w780', 'original'),
           (path, size) => {

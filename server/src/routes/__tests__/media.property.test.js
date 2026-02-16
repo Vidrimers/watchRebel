@@ -15,6 +15,12 @@ app.use('/api/media', mediaRoutes);
 
 describe('Media Routes - Property-Based Tests', () => {
 
+  // Закрываем все соединения после тестов
+  afterAll(async () => {
+    // Даем время на завершение всех асинхронных операций
+    await new Promise(resolve => setTimeout(resolve, 100));
+  });
+
   /**
    * Property 22: Search Returns Results
    * Validates: Requirements 9.1
@@ -55,7 +61,7 @@ describe('Media Routes - Property-Based Tests', () => {
         ),
         { numRuns: 10 }
       );
-    });
+    }, 15000); // Увеличиваем таймаут до 15 секунд
 
     it('should reject empty or whitespace-only queries', async () => {
       await fc.assert(

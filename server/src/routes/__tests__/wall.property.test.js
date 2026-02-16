@@ -7,7 +7,17 @@ import fc from 'fast-check';
 import request from 'supertest';
 import app from '../../index.js';
 import { executeQuery, closeDatabase } from '../../database/db.js';
+import { runMigrations } from '../../database/migrations.js';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Путь к тестовой базе данных
+const TEST_DB_PATH = path.join(__dirname, '../../../test-rebel.db');
 
 describe('Wall API - Property-Based Tests', () => {
   let testUser;
@@ -15,6 +25,18 @@ describe('Wall API - Property-Based Tests', () => {
   let anotherUser;
 
   beforeAll(async () => {
+    // Удаляем тестовую базу данных если она существует
+    if (fs.existsSync(TEST_DB_PATH)) {
+      fs.unlinkSync(TEST_DB_PATH);
+    }
+    
+    // Запускаем миграции для создания всех таблиц
+    const migrationResult = await runMigrations();
+    
+    if (!migrationResult.success) {
+      throw new Error(`Ошибка инициализации БД: ${migrationResult.error}`);
+    }
+
     // Создаем тестового пользователя
     const userId = uuidv4();
     testUser = {
@@ -62,6 +84,11 @@ describe('Wall API - Property-Based Tests', () => {
     await executeQuery('DELETE FROM sessions WHERE user_id = ?', [testUser.id]);
     await executeQuery('DELETE FROM users WHERE id IN (?, ?)', [testUser.id, anotherUser.id]);
     await closeDatabase();
+    
+    // Удаляем тестовую базу данных после тестов
+    if (fs.existsSync(TEST_DB_PATH)) {
+      fs.unlinkSync(TEST_DB_PATH);
+    }
   });
 
   afterEach(async () => {

@@ -215,8 +215,13 @@ class TMDbService {
     // Инициализируем базовый URL если еще не инициализирован
     const baseUrl = this.imageBaseUrl || 'https://image.tmdb.org/t/p/';
     
-    // Убираем начальный слеш если он есть
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    // Убираем все начальные слеши
+    const cleanPath = path.replace(/^\/+/, '');
+    
+    // Если после очистки путь пустой (был только "/"), возвращаем null
+    if (!cleanPath) {
+      return null;
+    }
     
     // Убираем конечный слеш из baseUrl если он есть, затем добавляем один
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;

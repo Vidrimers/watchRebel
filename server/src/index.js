@@ -10,6 +10,7 @@ import wallRoutes from './routes/wall.js';
 import progressRoutes from './routes/progress.js';
 import notificationsRoutes from './routes/notifications.js';
 import mediaRoutes from './routes/media.js';
+import adminRoutes from './routes/admin.js';
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/wall', wallRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Базовый route для проверки
 app.get('/api/health', (req, res) => {
@@ -44,9 +46,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Что-то пошло не так!' });
 });
 
-// Запуск сервера
-app.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
-});
+// Запуск сервера только если это не тестовая среда
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+  });
+}
 
 export default app;

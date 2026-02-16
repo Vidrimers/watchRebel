@@ -7,6 +7,7 @@ import fc from 'fast-check';
 import request from 'supertest';
 import app from '../../index.js';
 import { executeQuery, closeDatabase } from '../../database/db.js';
+import { runMigrations } from '../../database/migrations.js';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyFriendActivity } from '../../services/notificationService.js';
 
@@ -17,6 +18,9 @@ describe('Notifications API - Property-Based Tests', () => {
   let friendToken;
 
   beforeAll(async () => {
+    // Запускаем миграции перед тестами
+    await runMigrations();
+    
     // Создаем тестового пользователя
     const userId = uuidv4();
     testUser = {
