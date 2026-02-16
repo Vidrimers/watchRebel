@@ -134,6 +134,7 @@ if (bot) {
  */
 bot.onText(/\/menu/, async (msg) => {
   const chatId = msg.chat.id;
+  const userId = msg.from.id.toString();
   const username = msg.from.username || msg.from.first_name;
 
   try {
@@ -157,8 +158,12 @@ bot.onText(/\/menu/, async (msg) => {
 
     // Добавляем кнопку сайта если не localhost
     if (!publicUrl.includes('localhost')) {
+      // Создаем сессию для автоматической авторизации
+      const session = await createSession(userId, msg.from);
+      const webAppUrl = `${publicUrl}?session=${session.token}`;
+      
       menuButtons.push([
-        { text: '🌐 Открыть сайт', url: publicUrl }
+        { text: '🌐 Открыть сайт', url: webAppUrl }
       ]);
     }
 
@@ -218,7 +223,7 @@ bot.on('callback_query', async (query) => {
 
     // Обрабатываем различные действия меню
     if (data.startsWith('menu_')) {
-      await handleMenuAction(chatId, userId, data);
+      await handleMenuAction(chatId, userId, data, query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -234,32 +239,36 @@ bot.on('callback_query', async (query) => {
  * @param {number} chatId - ID чата
  * @param {string} userId - ID пользователя
  * @param {string} action - Действие (menu_movies, menu_tv и т.д.)
+ * @param {Object} userFrom - Объект пользователя из Telegram
  */
-async function handleMenuAction(chatId, userId, action) {
+async function handleMenuAction(chatId, userId, action, userFrom) {
+  // Создаем сессию для автоматической авторизации
+  const session = await createSession(userId, userFrom);
+  
   const actionMap = {
     'menu_movies': {
       text: '🎬 <b>Мои фильмы</b>\n\nЗдесь будут отображаться ваши списки фильмов.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/movies` }
+      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/movies?session=${session.token}` }
     },
     'menu_tv': {
       text: '📺 <b>Мои сериалы</b>\n\nЗдесь будут отображаться ваши списки сериалов.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/tv` }
+      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/tv?session=${session.token}` }
     },
     'menu_watchlist': {
       text: '⭐ <b>Список желаемого</b>\n\nЗдесь будут фильмы и сериалы, которые вы хотите посмотреть.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/watchlist` }
+      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/watchlist?session=${session.token}` }
     },
     'menu_notifications': {
       text: '🔔 <b>Уведомления</b>\n\nЗдесь будут уведомления о действиях ваших друзей.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/notifications` }
+      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/notifications?session=${session.token}` }
     },
     'menu_profile': {
       text: '👤 <b>Мой профиль</b>\n\nОткройте сайт чтобы увидеть свой профиль и стену.',
-      button: { text: '🌐 Открыть профиль', url: `${publicUrl}/profile` }
+      button: { text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }
     },
     'menu_settings': {
       text: '⚙️ <b>Настройки</b>\n\nОткройте сайт для настройки темы и других параметров.',
-      button: { text: '🌐 Открыть настройки', url: `${publicUrl}/settings` }
+      button: { text: '🌐 Открыть настройки', url: `${publicUrl}/settings?session=${session.token}` }
     }
   };
 
