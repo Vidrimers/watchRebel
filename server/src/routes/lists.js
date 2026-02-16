@@ -2,6 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { notifyFriendActivity } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -326,6 +327,16 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
     }
 
     const item = itemResult.data[0];
+
+    // Отправляем уведомления друзьям об активности
+    // Не блокируем ответ, если уведомления не отправятся
+    notifyFriendActivity(userId, 'added_to_list', {
+      tmdbId,
+      mediaType,
+      title: `контент #${tmdbId}` // В реальном приложении нужно получить название из TMDb
+    }).catch(err => {
+      console.error('Ошибка отправки уведомлений друзьям:', err);
+    });
 
     res.status(201).json({
       id: item.id,

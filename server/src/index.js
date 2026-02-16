@@ -8,6 +8,7 @@ import watchlistRoutes from './routes/watchlist.js';
 import ratingsRoutes from './routes/ratings.js';
 import wallRoutes from './routes/wall.js';
 import progressRoutes from './routes/progress.js';
+import notificationsRoutes from './routes/notifications.js';
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/wall', wallRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Базовый route для проверки
 app.get('/api/health', (req, res) => {
