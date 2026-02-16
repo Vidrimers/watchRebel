@@ -239,9 +239,72 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
   }
 }
 
+/**
+ * Отправить уведомление о действии модерации
+ * @param {string} userId - ID пользователя, которого модерируют
+ * @param {string} actionType - Тип действия ('post_ban' | 'permanent_ban' | 'unban')
+ * @param {Object} actionData - Данные о действии (reason, duration, expiresAt)
+ * @returns {Promise<Object>} - Результат отправки уведомления
+ */
+export async function notifyModeration(userId, actionType, actionData = {}) {
+  try {
+    let message = '';
+
+    switch (actionType) {
+      case 'post_ban':
+        {
+          const expiresDate = new Date(actionData.expiresAt);
+          const formattedDate = expiresDate.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          message = `🚫 <b>Ограничение на создание постов</b>\n\n` +
+                   `<b>Причина:</b> ${actionData.reason}\n` +
+                   `<b>Длительность:</b> ${actionData.durationMinutes} минут\n` +
+                   `<b>До:</b> ${formattedDate}\n\n` +
+                   `Вы не сможете создавать посты до указанного времени.`;
+        }
+        break;
+
+      case 'permanent_ban':
+        message = `⛔ <b>Ваш аккаунт заблокирован</b>\n\n` +
+                 `<b>Причина:</b> ${actionData.reason}\n\n` +
+                 `Блокировка постоянная. Если вы считаете, что это ошибка, обратитесь к администратору.`;
+        break;
+
+      case 'unban':
+        message = `✅ <b>Ваш аккаунт разблокирован</b>\n\n` +
+                 `Все ограничения сняты. Добро пожаловать обратно!`;
+        break;
+
+      default:
+        message = `⚠️ <b>Действие модерации</b>\n\nВаш аккаунт был изменен администратором.`;
+    }
+
+    // Отправляем уведомление в Telegram
+    const result = await sendTelegramNotification(userId, message);
+
+    if (result.success) {
+      console.log(`✅ Уведомление о модерации (${actionType}) отправлено пользователю ${userId}`);
+    } else {
+      console.error(`❌ Ошибка отправки уведомления о модерации пользователю ${userId}:`, result.error);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о модерации:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   createNotification,
   sendTelegramNotification,
   notifyReaction,
-  notifyFriendActivity
+  notifyFriendActivity,
+  notifyModeration
 };

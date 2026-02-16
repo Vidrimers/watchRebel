@@ -1,11 +1,13 @@
 import React from 'react';
 import styles from './UserAvatar.module.css';
+import BanIndicator from './BanIndicator';
 
 /**
  * Компонент аватара пользователя
  * Отображает изображение или placeholder с первой буквой имени
+ * Может отображать индикатор блокировки поверх аватара
  */
-const UserAvatar = ({ user, size = 'medium', className = '' }) => {
+const UserAvatar = ({ user, size = 'medium', className = '', showBanIndicator = false }) => {
   const sizeClass = styles[`avatar-${size}`];
 
   return (
@@ -21,6 +23,9 @@ const UserAvatar = ({ user, size = 'medium', className = '' }) => {
           {user?.displayName?.charAt(0).toUpperCase() || '?'}
         </div>
       )}
+      
+      {/* Индикатор блокировки */}
+      {showBanIndicator && <BanIndicator user={user} />}
     </div>
   );
 };

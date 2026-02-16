@@ -1,0 +1,283 @@
+import React, { useState } from 'react';
+import styles from './AdminModerationPanel.module.css';
+import api from '../../services/api';
+
+/**
+ * Компонент панели модерации для администратора
+ * Отображается только для пользователей с правами администратора
+ */
+function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [banType, setBanType] = useState(null); // 'posts' или 'permanent'
+  const [reason, setReason] = useState('');
+  const [duration, setDuration] = useState(1440); // 24 часа по умолчанию
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Если не админ, не показываем панель
+  if (!isAdmin) {
+    return null;
+  }
+
+  /**
+   * Обработчик блокировки постов
+   */
+  const handleBanPosts = async () => {
+    if (!reason.trim()) {
+      setError('Необходимо указать причину блокировки');
+      return;
+    }
+
+    if (duration <= 0) {
+      setError('Длительность должна быть больше 0');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post(`/admin/users/${userId}/ban-posts`, {
+        reason: reason.trim(),
+        durationMinutes: duration
+      });
+
+      // Закрываем модальное окно
+      setShowBanModal(false);
+      setReason('');
+      setDuration(1440);
+
+      // Уведомляем родительский компонент
+      if (onModerationAction) {
+        onModerationAction('post_ban');
+      }
+
+      alert('Пользователю запрещено создавать посты');
+    } catch (err) {
+      console.error('Ошибка блокировки постов:', err);
+      setError(err.response?.data?.error || 'Ошибка блокировки постов');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Обработчик постоянной блокировки
+   */
+  const handlePermanentBan = async () => {
+    if (!reason.trim()) {
+      setError('Необходимо указать причину блокировки');
+      return;
+    }
+
+    if (!confirm('Вы уверены, что хотите навсегда заблокировать этого пользователя?')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post(`/admin/users/${userId}/ban-permanent`, {
+        reason: reason.trim()
+      });
+
+      // Закрываем модальное окно
+      setShowBanModal(false);
+      setReason('');
+
+      // Уведомляем родительский компонент
+      if (onModerationAction) {
+        onModerationAction('permanent_ban');
+      }
+
+      alert('Пользователь заблокирован навсегда');
+    } catch (err) {
+      console.error('Ошибка постоянной блокировки:', err);
+      setError(err.response?.data?.error || 'Ошибка постоянной блокировки');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Обработчик разблокировки
+   */
+  const handleUnban = async () => {
+    if (!confirm('Вы уверены, что хотите разблокировать этого пользователя?')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post(`/admin/users/${userId}/unban`);
+
+      // Уведомляем родительский компонент
+      if (onModerationAction) {
+        onModerationAction('unban');
+      }
+
+      alert('Пользователь разблокирован');
+    } catch (err) {
+      console.error('Ошибка разблокировки:', err);
+      setError(err.response?.data?.error || 'Ошибка разблокировки');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Открыть модальное окно для блокировки постов
+   */
+  const openPostBanModal = () => {
+    setBanType('posts');
+    setShowBanModal(true);
+    setError(null);
+  };
+
+  /**
+   * Открыть модальное окно для постоянной блокировки
+   */
+  const openPermanentBanModal = () => {
+    setBanType('permanent');
+    setShowBanModal(true);
+    setError(null);
+  };
+
+  /**
+   * Закрыть модальное окно
+   */
+  const closeModal = () => {
+    setShowBanModal(false);
+    setBanType(null);
+    setReason('');
+    setDuration(1440);
+    setError(null);
+  };
+
+  return (
+    <div className={styles.moderationPanel}>
+      <h3 className={styles.title}>⚠️ Модерация</h3>
+      
+      <div className={styles.actions}>
+        <button 
+          className={`${styles.button} ${styles.banPostsButton}`}
+          onClick={openPostBanModal}
+          disabled={loading}
+        >
+          🚫 Запретить посты
+        </button>
+        
+        <button 
+          className={`${styles.button} ${styles.permanentBanButton}`}
+          onClick={openPermanentBanModal}
+          disabled={loading}
+        >
+          ⛔ Забанить навсегда
+        </button>
+        
+        <button 
+          className={`${styles.button} ${styles.unbanButton}`}
+          onClick={handleUnban}
+          disabled={loading}
+        >
+          ✅ Разбанить
+        </button>
+      </div>
+
+      {/* Модальное окно */}
+      {showBanModal && (
+        <div className={styles.modalOverlay} onClick={closeModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>
+              {banType === 'posts' ? '🚫 Запретить посты' : '⛔ Постоянная блокировка'}
+            </h3>
+
+            {error && (
+              <div className={styles.error}>{error}</div>
+            )}
+
+            <div className={styles.formGroup}>
+              <label htmlFor="reason">Причина блокировки:</label>
+              <textarea
+                id="reason"
+                className={styles.textarea}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Укажите причину блокировки..."
+                rows={4}
+                disabled={loading}
+              />
+            </div>
+
+            {banType === 'posts' && (
+              <div className={styles.formGroup}>
+                <label htmlFor="duration">Длительность (минуты):</label>
+                <input
+                  id="duration"
+                  type="number"
+                  className={styles.input}
+                  value={duration}
+                  onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                  min="1"
+                  disabled={loading}
+                />
+                <div className={styles.durationPresets}>
+                  <button 
+                    className={styles.presetButton}
+                    onClick={() => setDuration(60)}
+                    disabled={loading}
+                  >
+                    1 час
+                  </button>
+                  <button 
+                    className={styles.presetButton}
+                    onClick={() => setDuration(1440)}
+                    disabled={loading}
+                  >
+                    1 день
+                  </button>
+                  <button 
+                    className={styles.presetButton}
+                    onClick={() => setDuration(10080)}
+                    disabled={loading}
+                  >
+                    1 неделя
+                  </button>
+                  <button 
+                    className={styles.presetButton}
+                    onClick={() => setDuration(43200)}
+                    disabled={loading}
+                  >
+                    1 месяц
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.button} ${styles.cancelButton}`}
+                onClick={closeModal}
+                disabled={loading}
+              >
+                Отмена
+              </button>
+              <button
+                className={`${styles.button} ${banType === 'posts' ? styles.banPostsButton : styles.permanentBanButton}`}
+                onClick={banType === 'posts' ? handleBanPosts : handlePermanentBan}
+                disabled={loading}
+              >
+                {loading ? 'Обработка...' : 'Подтвердить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AdminModerationPanel;

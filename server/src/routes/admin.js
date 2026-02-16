@@ -1,6 +1,7 @@
 import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { notifyModeration } from '../services/notificationService.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -409,6 +410,327 @@ router.post('/backup', async (req, res) => {
       error: 'Ошибка создания резервной копии',
       code: 'BACKUP_ERROR',
       details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/ban-posts
+ * Запретить пользователю создавать посты на определенное время
+ * Только для администратора
+ * 
+ * Body:
+ * - reason: string (причина блокировки)
+ * - durationMinutes: number (длительность блокировки в минутах)
+ */
+router.post('/users/:id/ban-posts', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, durationMinutes } = req.body;
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Необходимо указать причину блокировки',
+        code: 'REASON_REQUIRED' 
+      });
+    }
+
+    if (!durationMinutes || durationMinutes <= 0) {
+      return res.status(400).json({ 
+        error: 'Необходимо указать длительность блокировки',
+        code: 'DURATION_REQUIRED' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id, display_name FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success || userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Вычисляем время окончания блокировки
+    const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
+
+    // Обновляем пользователя
+    const updateResult = await executeQuery(
+      'UPDATE users SET ban_reason = ?, post_ban_until = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [reason, expiresAt.toISOString(), id]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Создаем запись о действии модерации
+    const { v4: uuidv4 } = await import('uuid');
+    const actionId = uuidv4();
+
+    await executeQuery(
+      `INSERT INTO moderation_actions (id, user_id, admin_id, action_type, reason, duration_minutes, expires_at)
+       VALUES (?, ?, ?, 'post_ban', ?, ?, ?)`,
+      [actionId, id, req.user.id, reason, durationMinutes, expiresAt.toISOString()]
+    );
+
+    res.json({
+      success: true,
+      action: {
+        id: actionId,
+        userId: id,
+        actionType: 'post_ban',
+        reason,
+        durationMinutes,
+        expiresAt: expiresAt.toISOString()
+      }
+    });
+
+    // Отправляем уведомление в Telegram (не блокируем ответ)
+    notifyModeration(id, 'post_ban', {
+      reason,
+      durationMinutes,
+      expiresAt: expiresAt.toISOString()
+    }).catch(err => {
+      console.error('Ошибка отправки уведомления о блокировке постов:', err);
+    });
+
+  } catch (error) {
+    console.error('Ошибка блокировки постов:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/ban-permanent
+ * Постоянно заблокировать пользователя
+ * Только для администратора
+ * 
+ * Body:
+ * - reason: string (причина блокировки)
+ */
+router.post('/users/:id/ban-permanent', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Необходимо указать причину блокировки',
+        code: 'REASON_REQUIRED' 
+      });
+    }
+
+    // Проверяем, что админ не пытается заблокировать самого себя
+    if (req.user.id === id) {
+      return res.status(400).json({ 
+        error: 'Нельзя заблокировать самого себя',
+        code: 'CANNOT_BLOCK_SELF' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id, display_name FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success || userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Обновляем пользователя
+    const updateResult = await executeQuery(
+      'UPDATE users SET is_blocked = 1, ban_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [reason, id]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Создаем запись о действии модерации
+    const { v4: uuidv4 } = await import('uuid');
+    const actionId = uuidv4();
+
+    await executeQuery(
+      `INSERT INTO moderation_actions (id, user_id, admin_id, action_type, reason)
+       VALUES (?, ?, ?, 'permanent_ban', ?)`,
+      [actionId, id, req.user.id, reason]
+    );
+
+    res.json({
+      success: true,
+      action: {
+        id: actionId,
+        userId: id,
+        actionType: 'permanent_ban',
+        reason
+      }
+    });
+
+    // Отправляем уведомление в Telegram (не блокируем ответ)
+    notifyModeration(id, 'permanent_ban', {
+      reason
+    }).catch(err => {
+      console.error('Ошибка отправки уведомления о постоянной блокировке:', err);
+    });
+
+  } catch (error) {
+    console.error('Ошибка постоянной блокировки:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/unban
+ * Разблокировать пользователя (снять все ограничения)
+ * Только для администратора
+ */
+router.post('/users/:id/unban', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id, display_name FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success || userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Снимаем все ограничения
+    const updateResult = await executeQuery(
+      'UPDATE users SET is_blocked = 0, ban_reason = NULL, post_ban_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [id]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Деактивируем все активные действия модерации
+    await executeQuery(
+      'UPDATE moderation_actions SET is_active = 0 WHERE user_id = ? AND is_active = 1',
+      [id]
+    );
+
+    // Создаем запись о разбане
+    const { v4: uuidv4 } = await import('uuid');
+    const actionId = uuidv4();
+
+    await executeQuery(
+      `INSERT INTO moderation_actions (id, user_id, admin_id, action_type)
+       VALUES (?, ?, ?, 'unban')`,
+      [actionId, id, req.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Пользователь разблокирован',
+      userId: id
+    });
+
+    // Отправляем уведомление в Telegram (не блокируем ответ)
+    notifyModeration(id, 'unban').catch(err => {
+      console.error('Ошибка отправки уведомления о разблокировке:', err);
+    });
+
+  } catch (error) {
+    console.error('Ошибка разблокировки:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/admin/users/:id/moderation
+ * Получить историю модерации пользователя
+ * Только для администратора
+ */
+router.get('/users/:id/moderation', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success || userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Получаем историю модерации
+    const actionsResult = await executeQuery(
+      `SELECT ma.*, u.display_name as admin_name
+       FROM moderation_actions ma
+       LEFT JOIN users u ON ma.admin_id = u.id
+       WHERE ma.user_id = ?
+       ORDER BY ma.created_at DESC`,
+      [id]
+    );
+
+    if (!actionsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения истории модерации',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const actions = actionsResult.data.map(action => ({
+      id: action.id,
+      userId: action.user_id,
+      adminId: action.admin_id,
+      adminName: action.admin_name,
+      actionType: action.action_type,
+      reason: action.reason,
+      durationMinutes: action.duration_minutes,
+      createdAt: action.created_at,
+      expiresAt: action.expires_at,
+      isActive: Boolean(action.is_active)
+    }));
+
+    res.json(actions);
+
+  } catch (error) {
+    console.error('Ошибка получения истории модерации:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
     });
   }
 });

@@ -1,7 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, checkPostBan } from '../middleware/auth.js';
 import { notifyReaction } from '../services/notificationService.js';
 
 const router = express.Router();
@@ -90,7 +90,7 @@ router.get('/:userId', async (req, res) => {
  * - mediaType: 'movie' | 'tv' (опционально, обязательно для media_added, rating, review)
  * - rating: number 1-10 (опционально, обязательно для rating)
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, checkPostBan, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postType, content, tmdbId, mediaType, rating } = req.body;

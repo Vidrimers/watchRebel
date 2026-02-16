@@ -23,6 +23,8 @@ export async function runMigrations() {
         referral_code TEXT UNIQUE,
         referred_by TEXT,
         referrals_count INTEGER DEFAULT 0,
+        ban_reason TEXT,
+        post_ban_until DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
@@ -163,6 +165,21 @@ export async function runMigrations() {
         FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(referrer_id, referred_id)
+      );
+
+      -- Таблица действий модерации
+      CREATE TABLE IF NOT EXISTS moderation_actions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        admin_id TEXT NOT NULL,
+        action_type TEXT NOT NULL,
+        reason TEXT,
+        duration_minutes INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME,
+        is_active BOOLEAN DEFAULT 1,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (admin_id) REFERENCES users(id)
       );
     `;
 

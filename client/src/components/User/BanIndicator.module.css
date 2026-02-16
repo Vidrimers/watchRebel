@@ -1,0 +1,104 @@
+.banIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: inherit;
+  z-index: 10;
+  padding: 10px;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.permanentBan {
+  background: #f44336;
+  color: white;
+}
+
+.postBan {
+  background: #ff9800;
+  color: white;
+}
+
+.details {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  color: white;
+  text-align: center;
+  max-width: 90%;
+}
+
+.reason {
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.reason strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #ffeb3b;
+}
+
+.expires {
+  line-height: 1.3;
+  color: #b0bec5;
+}
+
+.expires strong {
+  color: #90caf9;
+}
+
+/* Адаптация для маленьких аватарок */
+.banIndicator.small .badge {
+  font-size: 0.6rem;
+  padding: 4px 8px;
+}
+
+.banIndicator.small .details {
+  font-size: 0.6rem;
+  padding: 6px 8px;
+}
+
+/* Адаптация для больших аватарок */
+.banIndicator.large .badge {
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+
+.banIndicator.large .details {
+  font-size: 0.8rem;
+  padding: 10px 12px;
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.banIndicator {
+  animation: fadeIn 0.3s ease-in-out;
+}

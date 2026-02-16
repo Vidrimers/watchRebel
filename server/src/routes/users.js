@@ -69,7 +69,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, is_admin, theme, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, ban_reason, post_ban_until, theme, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -95,6 +95,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
       displayName: user.display_name,
       avatarUrl: user.avatar_url,
       isAdmin: Boolean(user.is_admin),
+      isBlocked: Boolean(user.is_blocked),
+      banReason: user.ban_reason,
+      postBanUntil: user.post_ban_until,
       theme: user.theme,
       createdAt: user.created_at
     });

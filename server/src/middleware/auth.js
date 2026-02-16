@@ -94,7 +94,71 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
+/**
+ * Middleware для проверки блокировок на создание постов
+ * Должен использоваться после authenticateToken
+ * Проверяет постоянный бан и временный бан на посты
+ */
+export async function checkPostBan(req, res, next) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'Требуется аутентификация',
+        code: 'NO_AUTH' 
+      });
+    }
+
+    // Получаем актуальные данные пользователя
+    const result = await executeQuery(
+      'SELECT is_blocked, ban_reason, post_ban_until FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const user = result.data[0];
+
+    // Проверка постоянного бана
+    if (user.is_blocked) {
+      return res.status(403).json({ 
+        error: 'Ваш аккаунт заблокирован',
+        code: 'USER_BLOCKED',
+        reason: user.ban_reason
+      });
+    }
+
+    // Проверка временного бана на посты
+    if (user.post_ban_until) {
+      const banUntil = new Date(user.post_ban_until);
+      const now = new Date();
+
+      if (banUntil > now) {
+        return res.status(403).json({ 
+          error: 'Создание постов временно запрещено',
+          code: 'POST_BAN_ACTIVE',
+          reason: user.ban_reason,
+          expiresAt: user.post_ban_until
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Ошибка middleware проверки блокировок:', error);
+    return res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+}
+
 export default {
   authenticateToken,
-  requireAdmin
+  requireAdmin,
+  checkPostBan
 };
