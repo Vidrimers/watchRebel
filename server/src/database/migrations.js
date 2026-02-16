@@ -20,8 +20,12 @@ export async function runMigrations() {
         is_admin BOOLEAN DEFAULT 0,
         is_blocked BOOLEAN DEFAULT 0,
         theme TEXT DEFAULT 'light-cream',
+        referral_code TEXT UNIQUE,
+        referred_by TEXT,
+        referrals_count INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
       );
 
       -- Таблица сессий
@@ -147,6 +151,18 @@ export async function runMigrations() {
         created_by TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (created_by) REFERENCES users(id)
+      );
+
+      -- Таблица рефералов
+      CREATE TABLE IF NOT EXISTS referrals (
+        id TEXT PRIMARY KEY,
+        referrer_id TEXT NOT NULL,
+        referred_id TEXT NOT NULL,
+        referral_code TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(referrer_id, referred_id)
       );
     `;
 

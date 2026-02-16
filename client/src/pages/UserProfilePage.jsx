@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
+import ReferralStats from '../components/User/ReferralStats';
 import { Wall } from '../components/Wall';
 import styles from './UserProfilePage.module.css';
 
@@ -51,6 +52,9 @@ const UserProfilePage = () => {
             )}
           </div>
         </div>
+
+        {/* Статистика рефералов (только для своего профиля) */}
+        {isOwnProfile && <ReferralStats userId={userId} />}
 
         {/* Wall - лента активности */}
         <div className={styles.wallSection}>

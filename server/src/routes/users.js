@@ -410,4 +410,109 @@ router.get('/:id/genre-stats', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/users/:id/referral-code
+ * Получить реферальный код пользователя
+ */
+router.get('/:id/referral-code', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем права: пользователь может получить только свой реферальный код
+    if (req.user.id !== id && !req.user.isAdmin) {
+      return res.status(403).json({ 
+        error: 'Нет прав на просмотр реферального кода',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Получаем реферальный код пользователя
+    const userResult = await executeQuery(
+      'SELECT referral_code, referrals_count FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения реферального кода',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const user = userResult.data[0];
+
+    res.json({
+      referralCode: user.referral_code,
+      referralsCount: user.referrals_count || 0
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения реферального кода:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/users/:id/referrals
+ * Получить список приглашенных пользователей (рефералов)
+ */
+router.get('/:id/referrals', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем права: пользователь может получить только свой список рефералов
+    if (req.user.id !== id && !req.user.isAdmin) {
+      return res.status(403).json({ 
+        error: 'Нет прав на просмотр списка рефералов',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Получаем список рефералов
+    const referralsResult = await executeQuery(
+      `SELECT u.id, u.telegram_username, u.display_name, u.avatar_url, u.created_at, r.created_at as referral_created_at
+       FROM referrals r
+       JOIN users u ON r.referred_id = u.id
+       WHERE r.referrer_id = ?
+       ORDER BY r.created_at DESC`,
+      [id]
+    );
+
+    if (!referralsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения списка рефералов',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const referrals = referralsResult.data.map(referral => ({
+      id: referral.id,
+      telegramUsername: referral.telegram_username,
+      displayName: referral.display_name,
+      avatarUrl: referral.avatar_url,
+      createdAt: referral.created_at,
+      referralCreatedAt: referral.referral_created_at
+    }));
+
+    res.json(referrals);
+
+  } catch (error) {
+    console.error('Ошибка получения списка рефералов:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;

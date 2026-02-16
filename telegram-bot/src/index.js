@@ -114,32 +114,49 @@ async function setupWebhook() {
  * Команда /start - создание сессии и отправка ссылки
  */
 if (bot) {
-  bot.onText(/\/start/, async (msg) => {
+  bot.onText(/\/start(.*)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id.toString();
     const username = msg.from.username || msg.from.first_name;
+    const startParam = match[1].trim(); // Получаем параметр после /start
 
     try {
       console.log(`📥 Команда /start от пользователя ${username} (ID: ${userId})`);
 
-      // Создаем сессию
-      const session = await createSession(userId, msg.from);
+      // Проверяем, есть ли реферальный код
+      let referralCode = null;
+      if (startParam && startParam.startsWith('ref_')) {
+        referralCode = startParam.substring(4); // Убираем префикс "ref_"
+        console.log(`🔗 Обнаружен реферальный код: ${referralCode}`);
+      }
+
+      // Создаем сессию с реферальным кодом
+      const session = await createSession(userId, msg.from, referralCode);
       
       // Формируем ссылку на сайт с токеном
       const webAppUrl = `${publicUrl}?session=${session.token}`;
       
       // Отправляем приветственное сообщение с кнопкой
-      await bot.sendMessage(
-        chatId,
-        `🎬 <b>Добро пожаловать в watchRebel!</b>\n\n` +
-        `Привет, ${username}! 👋\n\n` +
-        `watchRebel - это социальная сеть для любителей кино, где ты можешь:\n` +
+      let welcomeMessage = `🎬 <b>Добро пожаловать в watchRebel!</b>\n\n` +
+        `Привет, ${username}! 👋\n\n`;
+
+      // Если регистрация по реферальной ссылке
+      if (referralCode && session.referralUsed) {
+        welcomeMessage += `✨ Вы зарегистрировались по приглашению друга!\n` +
+          `Вы автоматически добавлены в друзья. 🤝\n\n`;
+      }
+
+      welcomeMessage += `watchRebel - это социальная сеть для любителей кино, где ты можешь:\n` +
         `• 📝 Вести списки просмотренных фильмов и сериалов\n` +
         `• ⭐ Оценивать контент от 1 до 10\n` +
         `• 💬 Делиться отзывами на своей стене\n` +
         `• 👥 Следить за активностью друзей\n` +
         `• 🔔 Получать уведомления о новинках\n\n` +
-        `Нажми на кнопку ниже, чтобы начать!`,
+        `Нажми на кнопку ниже, чтобы начать!`;
+
+      await bot.sendMessage(
+        chatId,
+        welcomeMessage,
         {
           parse_mode: 'HTML',
           reply_markup: {
@@ -150,7 +167,7 @@ if (bot) {
         }
       );
 
-      console.log(`✅ Сессия создана для пользователя ${username}`);
+      console.log(`✅ Сессия создана для пользователя ${username}${referralCode ? ' (с реферальным кодом)' : ''}`);
     } catch (error) {
       console.error('Ошибка обработки /start:', error.message);
       await bot.sendMessage(
@@ -185,6 +202,9 @@ bot.onText(/\/menu/, async (msg) => {
       [
         { text: '🔔 Уведомления', callback_data: 'menu_notifications' },
         { text: '👤 Мой профиль', callback_data: 'menu_profile' }
+      ],
+      [
+        { text: '👥 Пригласить друга', callback_data: 'menu_invite' }
       ],
       [
         { text: '⚙️ Настройки', callback_data: 'menu_settings' }
@@ -466,6 +486,12 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       text: '👤 <b>Мой профиль</b>\n\nОткройте сайт чтобы увидеть свой профиль и стену.',
       button: { text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }
     },
+    'menu_invite': {
+      text: '👥 <b>Пригласить друга</b>\n\nГенерирую вашу реферальную ссылку...',
+      handler: async () => {
+        await handleInviteAction(chatId, userId, session.token);
+      }
+    },
     'menu_settings': {
       text: '⚙️ <b>Настройки</b>\n\nВыберите действие:',
       buttons: [
@@ -502,6 +528,73 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
           inline_keyboard: inlineKeyboard
         }
       }
+    );
+  }
+}
+
+/**
+ * Обработка действия "Пригласить друга"
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} token - Токен сессии для авторизации
+ */
+async function handleInviteAction(chatId, userId, token) {
+  try {
+    // Получаем реферальный код через API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/users/${userId}/referral-code`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const { referralCode, referralsCount } = data;
+
+    // Формируем реферальную ссылку
+    const botUsername = (await bot.getMe()).username;
+    const referralLink = `https://t.me/${botUsername}?start=ref_${referralCode}`;
+
+    // Формируем текст сообщения
+    let messageText = '👥 <b>Пригласить друга</b>\n\n';
+    messageText += `Ваша реферальная ссылка:\n<code>${referralLink}</code>\n\n`;
+    messageText += `📊 Приглашено друзей: <b>${referralsCount}</b>\n\n`;
+    messageText += 'Когда друг зарегистрируется по вашей ссылке:\n';
+    messageText += '• Вы автоматически станете друзьями\n';
+    messageText += '• Оба получите уведомление\n';
+    messageText += '• Сможете видеть активность друг друга\n\n';
+    messageText += 'Поделитесь ссылкой с друзьями!';
+
+    // Отправляем сообщение с кнопкой "Поделиться"
+    await bot.sendMessage(
+      chatId,
+      messageText,
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [[
+            { 
+              text: '📤 Поделиться ссылкой', 
+              url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к watchRebel - социальной сети для любителей кино! 🎬')}` 
+            }
+          ]]
+        }
+      }
+    );
+
+    console.log(`✅ Реферальная ссылка отправлена пользователю ${userId}`);
+  } catch (error) {
+    console.error('❌ Ошибка получения реферальной ссылки:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при генерации реферальной ссылки. Попробуйте позже.',
+      { parse_mode: 'HTML' }
     );
   }
 }
