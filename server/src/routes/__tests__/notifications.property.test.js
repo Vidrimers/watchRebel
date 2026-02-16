@@ -87,6 +87,9 @@ describe('Notifications API - Property-Based Tests', () => {
     await executeQuery('DELETE FROM sessions WHERE user_id IN (?, ?)', [testUser.id, friendUser.id]);
     await executeQuery('DELETE FROM users WHERE id IN (?, ?)', [testUser.id, friendUser.id]);
     await closeDatabase();
+    
+    // Даем время на полное закрытие соединения
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   afterEach(async () => {

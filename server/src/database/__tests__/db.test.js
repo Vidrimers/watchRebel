@@ -37,10 +37,19 @@ describe('Database Persistence Tests', () => {
   });
 
   afterAll(async () => {
+    // Закрываем соединение с БД
     await closeDatabase();
+    
+    // Даем время на полное закрытие соединения
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Удаляем тестовую базу данных после тестов
     if (fs.existsSync(TEST_DB_PATH)) {
-      fs.unlinkSync(TEST_DB_PATH);
+      try {
+        fs.unlinkSync(TEST_DB_PATH);
+      } catch (error) {
+        console.error('Не удалось удалить тестовую БД:', error.message);
+      }
     }
   });
 

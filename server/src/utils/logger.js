@@ -155,12 +155,24 @@ const logger = {
 export function httpLogger(req, res, next) {
   const start = Date.now();
   
-  // Логируем после завершения ответа
-  res.on('finish', () => {
+  // Сохраняем оригинальный метод res.end
+  const originalEnd = res.end;
+  
+  // Переопределяем res.end чтобы установить заголовок ДО отправки ответа
+  res.end = function(...args) {
     const duration = Date.now() - start;
-    res.set('X-Response-Time', `${duration}ms`);
+    
+    // Устанавливаем заголовок только если ответ еще не отправлен
+    if (!res.headersSent) {
+      res.set('X-Response-Time', `${duration}ms`);
+    }
+    
+    // Вызываем оригинальный метод
+    originalEnd.apply(res, args);
+    
+    // Логируем после отправки
     logger.http(req, res);
-  });
+  };
   
   next();
 }

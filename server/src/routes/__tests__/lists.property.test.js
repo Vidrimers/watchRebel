@@ -184,6 +184,9 @@ describe('Lists Management Properties', () => {
   after(async () => {
     // Закрываем соединение с БД после всех тестов
     await closeDatabase();
+    
+    // Даем время на полное закрытие соединения
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   /**

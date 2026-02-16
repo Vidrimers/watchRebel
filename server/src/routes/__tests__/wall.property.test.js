@@ -27,7 +27,12 @@ describe('Wall API - Property-Based Tests', () => {
   beforeAll(async () => {
     // Удаляем тестовую базу данных если она существует
     if (fs.existsSync(TEST_DB_PATH)) {
-      fs.unlinkSync(TEST_DB_PATH);
+      try {
+        fs.unlinkSync(TEST_DB_PATH);
+      } catch (error) {
+        // Игнорируем ошибку если файл заблокирован
+        console.log('Не удалось удалить тестовую БД перед запуском, продолжаем...');
+      }
     }
     
     // Запускаем миграции для создания всех таблиц
@@ -85,9 +90,16 @@ describe('Wall API - Property-Based Tests', () => {
     await executeQuery('DELETE FROM users WHERE id IN (?, ?)', [testUser.id, anotherUser.id]);
     await closeDatabase();
     
+    // Даем время на полное закрытие соединения
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Удаляем тестовую базу данных после тестов
     if (fs.existsSync(TEST_DB_PATH)) {
-      fs.unlinkSync(TEST_DB_PATH);
+      try {
+        fs.unlinkSync(TEST_DB_PATH);
+      } catch (error) {
+        console.error('Не удалось удалить тестовую БД:', error.message);
+      }
     }
   });
 
