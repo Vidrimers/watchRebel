@@ -2,6 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { notifyReaction } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -354,24 +355,11 @@ router.post('/:postId/reactions', authenticateToken, async (req, res) => {
 
       // Создаем уведомление для владельца поста (если это не он сам)
       if (post.user_id !== userId) {
-        const notificationId = uuidv4();
-        const notificationResult = await executeQuery(
-          `INSERT INTO notifications (id, user_id, type, content, related_user_id, related_post_id)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            notificationId,
-            post.user_id,
-            'reaction',
-            `Пользователь отреагировал на вашу запись: ${emoji}`,
-            userId,
-            postId
-          ]
-        );
-
-        if (!notificationResult.success) {
-          console.error('Ошибка создания уведомления:', notificationResult.error);
-          // Не возвращаем ошибку, так как реакция уже создана
-        }
+        // Отправляем уведомление через notificationService
+        // Не блокируем ответ, если уведомление не отправится
+        notifyReaction(post.user_id, userId, emoji, postId).catch(err => {
+          console.error('Ошибка отправки уведомления о реакции:', err);
+        });
       }
     }
 

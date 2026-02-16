@@ -59,8 +59,7 @@ export async function createNotification(userId, type, content, relatedUserId = 
 }
 
 /**
- * Отправить уведомление в Telegram
- * Эта функция будет вызывать sendNotification из telegram-bot
+ * Отправить уведомление в Telegram через HTTP запрос к Telegram Bot API
  * @param {string} userId - Telegram ID пользователя
  * @param {string} message - Текст уведомления
  * @param {Object} options - Дополнительные опции
@@ -68,13 +67,42 @@ export async function createNotification(userId, type, content, relatedUserId = 
  */
 export async function sendTelegramNotification(userId, message, options = {}) {
   try {
-    // Динамический импорт для избежания циклических зависимостей
-    const { sendNotification } = await import('../../../telegram-bot/src/index.js');
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
     
-    const result = await sendNotification(userId, message, options);
-    return result;
+    if (!botToken) {
+      console.error('❌ TELEGRAM_BOT_TOKEN не найден в переменных окружения');
+      return { success: false, error: 'Bot token not configured' };
+    }
+
+    // Отправляем сообщение напрямую через Telegram Bot API
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    
+    const payload = {
+      chat_id: userId,
+      text: message,
+      parse_mode: options.parse_mode || 'HTML',
+      ...options
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error(`❌ Ошибка отправки Telegram уведомления пользователю ${userId}:`, data.description);
+      return { success: false, error: data.description };
+    }
+
+    console.log(`✅ Telegram уведомление отправлено пользователю ${userId}`);
+    return { success: true, messageId: data.result.message_id };
   } catch (error) {
-    console.error('Ошибка отправки Telegram уведомления:', error);
+    console.error('❌ Ошибка отправки Telegram уведомления:', error);
     return { success: false, error: error.message };
   }
 }
