@@ -1,5 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api, { APIError, NetworkError } from '../../services/api';
+
+// Вспомогательная функция для обработки ошибок
+const handleError = (error, rejectWithValue) => {
+  if (error instanceof APIError) {
+    return rejectWithValue(error.data || error.message);
+  } else if (error instanceof NetworkError) {
+    return rejectWithValue({ message: error.message });
+  }
+  return rejectWithValue({ message: 'Неизвестная ошибка' });
+};
 
 export const fetchLists = createAsyncThunk(
   'lists/fetchLists',
@@ -8,7 +18,7 @@ export const fetchLists = createAsyncThunk(
       const response = await api.get('/lists');
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -20,7 +30,7 @@ export const createList = createAsyncThunk(
       const response = await api.post('/lists', { name, mediaType });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -32,7 +42,7 @@ export const deleteList = createAsyncThunk(
       await api.delete(`/lists/${listId}`);
       return listId;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -44,7 +54,7 @@ export const addToList = createAsyncThunk(
       const response = await api.post(`/lists/${listId}/items`, media);
       return { listId, item: response.data };
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -56,7 +66,7 @@ export const fetchWatchlist = createAsyncThunk(
       const response = await api.get('/watchlist');
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -68,7 +78,7 @@ export const addToWatchlist = createAsyncThunk(
       const response = await api.post('/watchlist', media);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api, { APIError, NetworkError } from '../../services/api';
 
 export const searchMedia = createAsyncThunk(
   'media/search',
@@ -8,7 +8,12 @@ export const searchMedia = createAsyncThunk(
       const response = await api.get('/media/search', { params: { query, ...filters } });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
     }
   }
 );
@@ -20,7 +25,12 @@ export const getMediaDetails = createAsyncThunk(
       const response = await api.get(`/media/${type}/${id}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
     }
   }
 );

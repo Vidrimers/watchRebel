@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api, { APIError, NetworkError } from '../../services/api';
 
 // Async thunks
 export const login = createAsyncThunk(
@@ -9,7 +9,12 @@ export const login = createAsyncThunk(
       const response = await api.post('/auth/telegram', telegramData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
     }
   }
 );
@@ -20,7 +25,12 @@ export const logout = createAsyncThunk(
     try {
       await api.delete('/auth/logout');
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
     }
   }
 );
@@ -32,7 +42,12 @@ export const updateProfile = createAsyncThunk(
       const response = await api.put(`/users/${data.userId}`, data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
     }
   }
 );

@@ -1,5 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api, { APIError, NetworkError } from '../../services/api';
+
+// Вспомогательная функция для обработки ошибок
+const handleError = (error, rejectWithValue) => {
+  if (error instanceof APIError) {
+    return rejectWithValue(error.data || error.message);
+  } else if (error instanceof NetworkError) {
+    return rejectWithValue({ message: error.message });
+  }
+  return rejectWithValue({ message: 'Неизвестная ошибка' });
+};
 
 export const fetchWall = createAsyncThunk(
   'wall/fetchWall',
@@ -8,7 +18,7 @@ export const fetchWall = createAsyncThunk(
       const response = await api.get(`/wall/${userId}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -20,7 +30,7 @@ export const createPost = createAsyncThunk(
       const response = await api.post('/wall', postData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
@@ -32,7 +42,7 @@ export const addReaction = createAsyncThunk(
       const response = await api.post(`/wall/${postId}/reactions`, { emoji });
       return { postId, reaction: response.data };
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return handleError(error, rejectWithValue);
     }
   }
 );
