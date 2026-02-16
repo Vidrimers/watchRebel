@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест тем watchRebel</title>
+  <style>
+    @import './variables.css';
+    @import './themes/light-cream.css';
+    @import './themes/dark.css';
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 2rem;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .theme-switcher {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .theme-button {
+      padding: var(--spacing-md);
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: var(--font-size-base);
+      transition: background var(--transition-base);
+    }
+
+    .theme-button:hover {
+      background: var(--accent-primary-hover);
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card h2 {
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .card p {
+      color: var(--text-secondary);
+      line-height: var(--line-height-normal);
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .color-sample {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .bg-primary { background: var(--bg-primary); color: var(--text-primary); }
+    .bg-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .accent-primary { background: var(--accent-primary); color: white; }
+    .accent-secondary { background: var(--accent-secondary); color: white; }
+    .success { background: var(--color-success); color: white; }
+    .error { background: var(--color-error); color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Тест системы тем watchRebel</h1>
+    </div>
+
+    <div class="theme-switcher">
+      <button class="theme-button" onclick="setTheme('light-cream')">☀️ Светлая</button>
+      <button class="theme-button" onclick="setTheme('dark')">🌙 Темная</button>
+    </div>
+
+    <div class="card">
+      <h2>Основные цвета</h2>
+      <div class="color-grid">
+        <div class="color-sample bg-primary">Основной фон</div>
+        <div class="color-sample bg-secondary">Вторичный фон</div>
+        <div class="color-sample accent-primary">Акцент основной</div>
+        <div class="color-sample accent-secondary">Акцент вторичный</div>
+        <div class="color-sample success">Успех</div>
+        <div class="color-sample error">Ошибка</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Типографика</h2>
+      <p>Это основной текст с цветом var(--text-primary)</p>
+      <p style="color: var(--text-secondary)">Это вторичный текст с цветом var(--text-secondary)</p>
+      <p style="color: var(--text-tertiary)">Это третичный текст с цветом var(--text-tertiary)</p>
+    </div>
+
+    <div class="card">
+      <h2>Интерактивные элементы</h2>
+      <button class="theme-button">Кнопка</button>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    }
+
+    // Загрузка сохраненной темы
+    const savedTheme = localStorage.getItem('theme') || 'light-cream';
+    setTheme(savedTheme);
+  </script>
+</body>
+</html>

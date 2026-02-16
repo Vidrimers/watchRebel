@@ -14,10 +14,8 @@ const ThemeSelector = () => {
 
   const handleThemeChange = (e) => {
     const newTheme = e.target.value;
+    // Тема применяется автоматически в themeSlice через setTheme
     dispatch(setTheme(newTheme));
-    
-    // Применяем тему к document.body
-    document.body.className = newTheme;
   };
 
   return (

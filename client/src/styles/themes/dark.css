@@ -1,0 +1,115 @@
+/* Темная тема */
+
+[data-theme="dark"] {
+  /* Основные цвета фона */
+  --bg-primary: #0f0f0f;         /* Основной фон - очень темный */
+  --bg-secondary: #1a1a1a;       /* Вторичный фон - темно-серый для карточек */
+  --bg-tertiary: #242424;        /* Третичный фон */
+  --bg-hover: #2a2a2a;           /* Фон при наведении */
+  --bg-active: #303030;          /* Фон активного элемента */
+  --bg-input: #1f1f1f;           /* Фон полей ввода */
+  --bg-disabled: #2d2d2d;        /* Фон отключенных элементов */
+
+  /* Цвета текста */
+  --text-primary: #e8e8e8;       /* Основной текст - светло-серый */
+  --text-secondary: #b8b8b8;     /* Вторичный текст */
+  --text-tertiary: #888888;      /* Третичный текст */
+  --text-disabled: #5a5a5a;      /* Отключенный текст */
+  --text-inverse: #0f0f0f;       /* Инверсный текст (на светлом фоне) */
+  --text-link: #818cf8;          /* Цвет ссылок - светлый индиго */
+  --text-link-hover: #a5b4fc;    /* Цвет ссылок при наведении */
+
+  /* Акцентные цвета */
+  --accent-primary: #818cf8;     /* Основной акцент - светлый индиго */
+  --accent-primary-hover: #a5b4fc;
+  --accent-primary-active: #c7d2fe;
+  --accent-secondary: #a78bfa;   /* Вторичный акцент - светлый фиолетовый */
+  --accent-secondary-hover: #c4b5fd;
+  --accent-tertiary: #f472b6;    /* Третичный акцент - светлый розовый */
+
+  /* Цвета состояний */
+  --color-success: #34d399;      /* Успех - светло-зеленый */
+  --color-success-bg: #064e3b;
+  --color-success-border: #059669;
+  
+  --color-warning: #fbbf24;      /* Предупреждение - светло-оранжевый */
+  --color-warning-bg: #78350f;
+  --color-warning-border: #d97706;
+  
+  --color-error: #f87171;        /* Ошибка - светло-красный */
+  --color-error-bg: #7f1d1d;
+  --color-error-border: #dc2626;
+  
+  --color-info: #60a5fa;         /* Информация - светло-синий */
+  --color-info-bg: #1e3a8a;
+  --color-info-border: #2563eb;
+
+  /* Границы */
+  --border-color: #2d2d2d;       /* Основной цвет границ */
+  --border-color-light: #242424;
+  --border-color-dark: #3a3a3a;
+  --border-color-focus: #818cf8;
+
+  /* Тени для темной темы */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.7);
+
+  /* Оверлеи */
+  --overlay-light: rgba(255, 255, 255, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+
+  /* Рейтинги */
+  --rating-star-filled: #fbbf24;
+  --rating-star-empty: #4b5563;
+
+  /* Уведомления */
+  --notification-badge: #f87171;
+  --notification-dot: #34d399;
+
+  /* Скроллбар */
+  --scrollbar-track: #1a1a1a;
+  --scrollbar-thumb: #3a3a3a;
+  --scrollbar-thumb-hover: #4a4a4a;
+}
+
+/* Дополнительные стили для темной темы */
+[data-theme="dark"] body {
+  color-scheme: dark;
+}
+
+/* Улучшенная читаемость для темной темы */
+[data-theme="dark"] img {
+  opacity: 0.9;
+}
+
+[data-theme="dark"] img:hover {
+  opacity: 1;
+}
+
+/* Стили для выделения текста в темной теме */
+[data-theme="dark"] ::selection {
+  background-color: rgba(129, 140, 248, 0.3);
+  color: #e8e8e8;
+}
+
+/* Стили для скроллбара в темной теме */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
