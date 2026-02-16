@@ -4,6 +4,7 @@ import { useAppSelector } from './hooks/useAppSelector';
 import AppInitializer from './components/AppInitializer';
 import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
+import SearchPage from './pages/SearchPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Временный компонент главной страницы - редирект на профиль пользователя
@@ -41,6 +42,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Страница поиска */}
+          <Route 
+            path="/search" 
+            element={
+              <ProtectedRoute>
+                <SearchPage />
               </ProtectedRoute>
             } 
           />

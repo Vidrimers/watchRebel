@@ -1,5 +1,6 @@
 import React from 'react';
 import UserAvatar from '../User/UserAvatar';
+import SearchBar from '../Search/SearchBar';
 import styles from './Sidebar.module.css';
 
 /**
@@ -10,13 +11,7 @@ const Sidebar = ({ user }) => {
   return (
     <aside className={styles.sidebar}>
       {/* Поисковая строка */}
-      <div className={styles.searchContainer}>
-        <input
-          type="text"
-          placeholder="Поиск фильмов, сериалов, пользователей..."
-          className={styles.searchInput}
-        />
-      </div>
+      <SearchBar />
 
       {/* Информация о пользователе */}
       {user && (
