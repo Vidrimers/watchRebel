@@ -11,9 +11,16 @@ import progressRoutes from './routes/progress.js';
 import notificationsRoutes from './routes/notifications.js';
 import mediaRoutes from './routes/media.js';
 import adminRoutes from './routes/admin.js';
+import webhookRoutes from './routes/webhook.js';
+import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 
 // Загрузка переменных окружения
 dotenv.config();
+
+// Очистка старых логов при запуске (в production)
+if (process.env.NODE_ENV === 'production') {
+  cleanOldLogs(30); // Храним логи за последние 30 дней
+}
 
 const app = express();
 const PORT = process.env.PORT || 1313;
@@ -50,6 +57,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// HTTP логирование
+app.use(httpLogger);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
@@ -61,6 +71,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/webhook', webhookRoutes);
 
 // Базовый route для проверки
 app.get('/api/health', (req, res) => {
@@ -69,14 +80,22 @@ app.get('/api/health', (req, res) => {
 
 // Обработка ошибок
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Необработанная ошибка', { 
+    error: err.message, 
+    stack: err.stack,
+    url: req.url,
+    method: req.method
+  });
   res.status(500).json({ error: 'Что-то пошло не так!' });
 });
 
 // Запуск сервера только если это не тестовая среда
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    logger.info(`Сервер запущен на порту ${PORT}`, { 
+      port: PORT, 
+      env: process.env.NODE_ENV || 'development' 
+    });
   });
 }
 

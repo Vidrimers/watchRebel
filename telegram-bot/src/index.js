@@ -12,6 +12,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
+const webhookUrl = process.env.WEBHOOK_URL;
 const isProduction = process.env.NODE_ENV === 'production';
 
 if (!token) {
@@ -25,13 +26,16 @@ const bot = process.env.NODE_ENV === 'test'
   ? null 
   : new TelegramBot(token, { 
       polling: !isProduction,
-      webHook: isProduction ? {
-        port: process.env.WEBHOOK_PORT || 8443
-      } : false
+      webHook: false // Webhook настраивается отдельно через setWebhook
     });
 
 if (bot) {
   console.log('🤖 Telegram бот запущен в режиме:', isProduction ? 'production (webhook)' : 'development (polling)');
+  
+  // В production режиме настраиваем webhook
+  if (isProduction && webhookUrl) {
+    setupWebhook();
+  }
 }
 
 /**
@@ -56,6 +60,21 @@ async function setupCommands() {
     console.log('✅ Команды бота настроены');
   } catch (error) {
     console.error('❌ Ошибка настройки команд:', error.message);
+  }
+}
+
+/**
+ * Настройка webhook для production
+ */
+async function setupWebhook() {
+  if (!bot || !webhookUrl) return;
+  
+  try {
+    const fullWebhookUrl = `${webhookUrl}/webhook/${token}`;
+    await bot.setWebHook(fullWebhookUrl);
+    console.log('✅ Webhook настроен:', fullWebhookUrl);
+  } catch (error) {
+    console.error('❌ Ошибка настройки webhook:', error.message);
   }
 }
 

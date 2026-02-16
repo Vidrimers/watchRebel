@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "migrate": "node scripts/migrate.js",
+    "backup": "node scripts/backup.js",
     "test": "set NODE_ENV=test&& npx --node-options=\"--experimental-vm-modules\" jest --runInBand"
   },
   "dependencies": {

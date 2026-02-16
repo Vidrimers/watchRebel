@@ -9,6 +9,8 @@ backups/
 .kiro/
 roadmap/
 docs/
+logs/
+server/backups/
 
 # ФАЙЛЫ
 
@@ -25,3 +27,4 @@ package-lock.json
 rebel.db
 план.txt
 mytasks
+*.log

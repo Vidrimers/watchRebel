@@ -87,6 +87,41 @@ node test-integration.js
 - [Руководство по тестированию интеграции](./docs/INTEGRATION_TESTING.md)
 - [Результаты тестов](./docs/INTEGRATION_TEST_RESULTS.md)
 
+## Production развертывание
+
+### Быстрый деплой
+
+```bash
+export NODE_ENV=production
+./scripts/deploy.sh
+```
+
+### Миграции базы данных
+
+```bash
+npm run migrate
+```
+
+### Резервное копирование
+
+```bash
+npm run backup
+```
+
+### Настройка Telegram Webhook
+
+```bash
+# Установить webhook
+./scripts/setup-webhook.sh set
+
+# Проверить статус
+./scripts/setup-webhook.sh info
+```
+
+### Подробная документация
+
+См. [Production Setup Guide](./docs/PRODUCTION_SETUP.md) для полной инструкции по развертыванию.
+
 ## Технологии
 
 ### Frontend
