@@ -1,0 +1,210 @@
+/* Контейнер поста */
+.wallPost {
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.wallPost:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Контент поста */
+.postContent {
+  margin-bottom: 16px;
+}
+
+/* Текстовый пост */
+.textContent p {
+  margin: 0;
+  color: var(--text-primary, #1f2937);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Общие стили для постов с медиа */
+.actionText {
+  margin: 0 0 12px 0;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mediaInfo {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mediaInfo:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.mediaPoster {
+  width: 60px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.mediaDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.mediaTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  line-height: 1.4;
+}
+
+.mediaType {
+  font-size: 13px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+/* Рейтинг */
+.ratingValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ratingStars {
+  color: var(--rating-color, #fbbf24);
+  font-size: 18px;
+}
+
+.ratingNumber {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+/* Отзыв */
+.reviewText {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-secondary, #f9fafb);
+  border-left: 3px solid var(--primary-color, #6366f1);
+  border-radius: 4px;
+}
+
+.reviewText p {
+  margin: 0;
+  color: var(--text-primary, #1f2937);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Футер поста */
+.postFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.postDate {
+  font-size: 13px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+/* Контейнер реакций */
+.reactionsContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reactionsList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reactionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: default;
+  transition: background-color 0.2s;
+}
+
+.reactionBadge:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+/* Кнопка добавления реакции */
+.addReactionContainer {
+  position: relative;
+}
+
+.addReactionButton {
+  padding: 4px 8px;
+  background: var(--bg-secondary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addReactionButton:hover {
+  background: var(--bg-hover, #f3f4f6);
+  border-color: var(--primary-color, #6366f1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .wallPost {
+    padding: 16px;
+  }
+
+  .mediaInfo {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .mediaPoster {
+    width: 50px;
+    height: 75px;
+  }
+
+  .mediaTitle {
+    font-size: 15px;
+  }
+
+  .postFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .reactionsContainer {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
