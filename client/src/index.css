@@ -11,6 +11,8 @@
   --text-secondary: #666666;
 
   /* Акцентные цвета */
+  --accent-primary: #6366f1;
+  --accent-hover: #4f46e5;
   --accent-color: #6366f1;
   --accent-secondary: #8b5cf6;
 
@@ -20,6 +22,7 @@
   /* Тени */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* Темная тема */
@@ -32,6 +35,8 @@
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
 
+  --accent-primary: #818cf8;
+  --accent-hover: #6366f1;
   --accent-color: #818cf8;
   --accent-secondary: #a78bfa;
 
@@ -39,6 +44,7 @@
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -62,4 +68,11 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Анимация спиннера */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

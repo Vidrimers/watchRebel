@@ -2,6 +2,31 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { APIError, NetworkError } from '../../services/api';
 
 // Async thunks
+export const checkSession = createAsyncThunk(
+  'auth/checkSession',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        return rejectWithValue({ message: 'Нет токена' });
+      }
+      
+      const response = await api.get('/auth/session');
+      return response.data;
+    } catch (error) {
+      // Очищаем токен если сессия невалидна
+      localStorage.removeItem('authToken');
+      
+      if (error instanceof APIError) {
+        return rejectWithValue(error.data || error.message);
+      } else if (error instanceof NetworkError) {
+        return rejectWithValue({ message: error.message });
+      }
+      return rejectWithValue({ message: 'Неизвестная ошибка' });
+    }
+  }
+);
+
 export const login = createAsyncThunk(
   'auth/login',
   async (telegramData, { rejectWithValue }) => {
@@ -67,6 +92,21 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Check Session
+      .addCase(checkSession.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkSession.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+        state.loading = false;
+      })
+      .addCase(checkSession.rejected, (state) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+      })
       // Login
       .addCase(login.pending, (state) => {
         state.loading = true;
@@ -85,6 +125,8 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
+        // Очищаем токен из localStorage
+        localStorage.removeItem('authToken');
       })
       // Update Profile
       .addCase(updateProfile.fulfilled, (state, action) => {
