@@ -1,0 +1,115 @@
+.userCard {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.userCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.avatar {
+  align-self: center;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userName {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+}
+
+.username {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  text-align: center;
+}
+
+.genres {
+  margin-top: 8px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+
+.genreList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.genreTag {
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.commonSection {
+  margin-top: 4px;
+}
+
+.commonText {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.commonText strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.addFriendButton {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.addFriendButton:hover {
+  background: var(--primary-hover);
+  transform: scale(1.02);
+}
+
+.addFriendButton:active {
+  transform: scale(0.98);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .userCard {
+    padding: 16px;
+  }
+
+  .userName {
+    font-size: 18px;
+  }
+}

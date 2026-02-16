@@ -3,33 +3,18 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from './hooks/useAppSelector';
 import AppInitializer from './components/AppInitializer';
 import LoginPage from './pages/LoginPage';
+import UserProfilePage from './pages/UserProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
-import UserPageLayout from './components/Layout/UserPageLayout';
 
-// Временный компонент главной страницы
+// Временный компонент главной страницы - редирект на профиль пользователя
 function HomePage() {
   const { user } = useAppSelector((state) => state.auth);
 
-  return (
-    <UserPageLayout user={user}>
-      {/* Здесь будет Wall компонент */}
-      <div style={{ 
-        background: 'var(--bg-secondary)', 
-        padding: '20px', 
-        borderRadius: '12px',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <h1>watchRebel</h1>
-        <p>Социальная сеть для любителей кино</p>
-        <p style={{ marginTop: '20px', color: 'var(--text-secondary)' }}>
-          Добро пожаловать, {user?.displayName || 'Пользователь'}!
-        </p>
-        <p style={{ marginTop: '10px', color: 'var(--text-secondary)' }}>
-          Здесь будет отображаться Wall пользователя.
-        </p>
-      </div>
-    </UserPageLayout>
-  );
+  if (user) {
+    return <Navigate to={`/user/${user.id}`} replace />;
+  }
+
+  return <Navigate to="/login" replace />;
 }
 
 function App() {
@@ -46,6 +31,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <HomePage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Страница профиля пользователя */}
+          <Route 
+            path="/user/:userId" 
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
               </ProtectedRoute>
             } 
           />

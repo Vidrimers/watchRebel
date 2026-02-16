@@ -1,0 +1,194 @@
+.profileContainer {
+  width: 100%;
+}
+
+.profileHeader {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.profileName {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.profileUsername {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.wallSection {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.loadingContainer,
+.errorMessage,
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.errorMessage {
+  color: var(--error-color);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyHint {
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
+.postsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.postCard {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.postCard:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-color);
+}
+
+.postHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.postDate {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.postType {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.postContent {
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.postContent p {
+  margin: 0;
+}
+
+.ratingDisplay {
+  margin-top: 8px;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.ratingDisplay strong {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.reactions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.reaction {
+  font-size: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.reaction:hover {
+  transform: scale(1.2);
+}
+
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .profileHeader {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .profileName {
+    font-size: 24px;
+  }
+
+  .profileUsername {
+    font-size: 16px;
+  }
+
+  .wallSection {
+    padding: 16px;
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+  }
+
+  .postCard {
+    padding: 16px;
+  }
+
+  .postHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

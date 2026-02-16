@@ -1,4 +1,5 @@
 import React from 'react';
+import UserAvatar from '../User/UserAvatar';
 import styles from './Sidebar.module.css';
 
 /**
@@ -21,19 +22,7 @@ const Sidebar = ({ user }) => {
       {user && (
         <div className={styles.userInfo}>
           {/* Аватар */}
-          <div className={styles.avatarContainer}>
-            {user.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.displayName}
-                className={styles.avatar}
-              />
-            ) : (
-              <div className={styles.avatarPlaceholder}>
-                {user.displayName?.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
+          <UserAvatar user={user} size="medium" />
 
           {/* Имя пользователя */}
           <h2 className={styles.userName}>{user.displayName}</h2>
