@@ -47,6 +47,18 @@ export const deleteList = createAsyncThunk(
   }
 );
 
+export const renameList = createAsyncThunk(
+  'lists/renameList',
+  async ({ listId, name }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/lists/${listId}`, { name });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 export const addToList = createAsyncThunk(
   'lists/addToList',
   async ({ listId, media }, { rejectWithValue }) => {
@@ -210,6 +222,23 @@ const listsSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Rename List
+      .addCase(renameList.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(renameList.fulfilled, (state, action) => {
+        const list = state.customLists.find(l => l.id === action.payload.id);
+        if (list) {
+          list.name = action.payload.name;
+        }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(renameList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

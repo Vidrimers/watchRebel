@@ -132,6 +132,102 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 /**
+ * PUT /api/lists/:id
+ * Переименовать пользовательский список
+ * Пользователь может переименовать только свой список
+ * 
+ * Body:
+ * - name: string (обязательно)
+ */
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { name } = req.body;
+
+    // Валидация входных данных
+    if (!name || !name.trim()) {
+      return res.status(400).json({ 
+        error: 'Название списка не может быть пустым',
+        code: 'EMPTY_NAME' 
+      });
+    }
+
+    // Проверяем, существует ли список и принадлежит ли он пользователю
+    const listCheck = await executeQuery(
+      'SELECT * FROM custom_lists WHERE id = ?',
+      [id]
+    );
+
+    if (!listCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки списка',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (listCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Список не найден',
+        code: 'LIST_NOT_FOUND' 
+      });
+    }
+
+    const list = listCheck.data[0];
+
+    if (list.user_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Нет прав на изменение этого списка',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Обновляем название списка
+    const updateResult = await executeQuery(
+      'UPDATE custom_lists SET name = ? WHERE id = ?',
+      [name.trim(), id]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления списка',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем обновленный список
+    const updatedListResult = await executeQuery(
+      'SELECT * FROM custom_lists WHERE id = ?',
+      [id]
+    );
+
+    if (!updatedListResult.success || updatedListResult.data.length === 0) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения обновленного списка',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const updatedList = updatedListResult.data[0];
+
+    res.json({
+      id: updatedList.id,
+      userId: updatedList.user_id,
+      name: updatedList.name,
+      mediaType: updatedList.media_type,
+      createdAt: updatedList.created_at
+    });
+
+  } catch (error) {
+    console.error('Ошибка переименования списка:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
  * DELETE /api/lists/:id
  * Удалить пользовательский список
  * Пользователь может удалить только свой список

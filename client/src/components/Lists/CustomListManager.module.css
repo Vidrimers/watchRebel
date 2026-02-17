@@ -177,14 +177,21 @@
   word-break: break-word;
 }
 
+.listActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.editButton,
 .deleteButton {
   background: transparent;
   border: none;
   color: var(--text-tertiary);
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -193,6 +200,15 @@
   border-radius: 4px;
   transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.deleteButton {
+  font-size: 28px;
 }
 
 .deleteButton:hover {
@@ -262,6 +278,100 @@
 
   .submitButton,
   .cancelButton {
+    width: 100%;
+  }
+}
+
+/* Модальное окно */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.2s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modalClose {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    padding: 20px;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .modalActions .submitButton,
+  .modalActions .cancelButton {
     width: 100%;
   }
 }

@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { createList, deleteList } from '../../store/slices/listsSlice';
+import { createList, deleteList, renameList } from '../../store/slices/listsSlice';
 import styles from './CustomListManager.module.css';
 
 /**
  * Компонент для управления пользовательскими списками
- * Позволяет создавать и удалять списки
+ * Позволяет создавать, переименовывать и удалять списки
  */
 const CustomListManager = ({ lists, mediaType, onListSelect }) => {
   const dispatch = useAppDispatch();
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [error, setError] = useState(null);
+  
+  // Состояние для переименования
+  const [renamingListId, setRenamingListId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   // Фильтруем списки по типу медиа
   const filteredLists = lists.filter(list => list.mediaType === mediaType);
@@ -49,6 +53,43 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
       await dispatch(deleteList(listId)).unwrap();
     } catch (err) {
       setError(err.message || 'Ошибка при удалении списка');
+    }
+  };
+
+  // Начать переименование списка
+  const handleStartRename = (listId, currentName) => {
+    setRenamingListId(listId);
+    setRenameValue(currentName);
+    setError(null);
+  };
+
+  // Отменить переименование
+  const handleCancelRename = () => {
+    setRenamingListId(null);
+    setRenameValue('');
+    setError(null);
+  };
+
+  // Сохранить новое название
+  const handleSaveRename = async (e) => {
+    e.preventDefault();
+    
+    if (!renameValue.trim()) {
+      setError('Введите название списка');
+      return;
+    }
+
+    try {
+      await dispatch(renameList({ 
+        listId: renamingListId, 
+        name: renameValue.trim() 
+      })).unwrap();
+      
+      setRenamingListId(null);
+      setRenameValue('');
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Ошибка при переименовании списка');
     }
   };
 
@@ -130,16 +171,28 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
               >
                 <div className={styles.listHeader}>
                   <h3 className={styles.listName}>{list.name}</h3>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteList(list.id, list.name);
-                    }}
-                    title="Удалить список"
-                  >
-                    ×
-                  </button>
+                  <div className={styles.listActions}>
+                    <button
+                      className={styles.editButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartRename(list.id, list.name);
+                      }}
+                      title="Переименовать список"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteList(list.id, list.name);
+                      }}
+                      title="Удалить список"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
                 
                 <div className={styles.listInfo}>
@@ -172,6 +225,49 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
           </div>
         )}
       </div>
+
+      {/* Модальное окно для переименования */}
+      {renamingListId && (
+        <div className={styles.modal} onClick={handleCancelRename}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Переименовать список</h3>
+              <button 
+                className={styles.modalClose}
+                onClick={handleCancelRename}
+                title="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveRename}>
+              <input
+                type="text"
+                className={styles.input}
+                placeholder="Новое название списка"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                autoFocus
+                maxLength={50}
+              />
+              
+              <div className={styles.modalActions}>
+                <button type="submit" className={styles.submitButton}>
+                  Сохранить
+                </button>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={handleCancelRename}
+                >
+                  Отмена
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
