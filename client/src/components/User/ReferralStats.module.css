@@ -1,5 +1,5 @@
 .referralStats {
-  background: var(--card-background);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -24,7 +24,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: var(--accent-color);
+  background: var(--accent-primary);
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
@@ -45,8 +45,8 @@
 .toggleButton {
   width: 100%;
   padding: 10px;
-  background: var(--button-secondary-background);
-  color: var(--button-secondary-text);
+  background: var(--bg-hover);
+  color: var(--text-primary);
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -56,7 +56,7 @@
 }
 
 .toggleButton:hover {
-  background: var(--button-secondary-hover);
+  background: var(--bg-active);
   transform: translateY(-1px);
 }
 
@@ -76,14 +76,14 @@
   display: flex;
   align-items: center;
   padding: 12px;
-  background: var(--background-secondary);
+  background: var(--bg-tertiary);
   border-radius: 8px;
   margin-bottom: 10px;
   transition: all 0.2s ease;
 }
 
 .referralItem:hover {
-  background: var(--background-hover);
+  background: var(--bg-hover);
   transform: translateX(4px);
 }
 
@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-color);
+  background: var(--accent-primary);
   color: white;
   font-size: 1.2rem;
   font-weight: 600;
@@ -154,7 +154,7 @@
 
 .error {
   text-align: center;
-  color: var(--error-color);
+  color: var(--color-error);
   padding: 20px;
   margin: 0;
 }

@@ -21,8 +21,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--text-primary);
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
 }
 
