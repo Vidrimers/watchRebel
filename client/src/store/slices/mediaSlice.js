@@ -63,7 +63,8 @@ const mediaSlice = createSlice({
         state.error = null;
       })
       .addCase(searchMedia.fulfilled, (state, action) => {
-        state.searchResults = action.payload;
+        // Гарантируем, что searchResults всегда массив
+        state.searchResults = Array.isArray(action.payload) ? action.payload : [];
         state.loading = false;
         state.error = null;
       })

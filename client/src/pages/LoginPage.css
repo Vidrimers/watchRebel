@@ -43,6 +43,12 @@
   margin-bottom: 16px;
 }
 
+.login-icon img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
 .login-content h2 {
   font-size: 1.75rem;
   margin: 0 0 12px 0;
@@ -111,6 +117,15 @@
 
 .telegram-icon {
   font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.telegram-icon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 /* Состояние загрузки */

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { logout } from '../store/slices/authSlice';
+import { logout, updateProfile } from '../store/slices/authSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import ThemeSelector from '../components/Settings/ThemeSelector';
 import AdminPanel from '../components/Settings/AdminPanel';
@@ -15,7 +15,11 @@ import styles from './SettingsPage.module.css';
 const SettingsPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
+  const [saveError, setSaveError] = useState(null);
 
   // Проверяем, является ли пользователь админом
   const isAdmin = user?.isAdmin || user?.id === '137981675';
@@ -25,6 +29,35 @@ const SettingsPage = () => {
       await dispatch(logout());
       navigate('/login');
     }
+  };
+  
+  const handleSaveName = async () => {
+    if (!newDisplayName || newDisplayName.trim().length < 2) {
+      setSaveError('Имя должно содержать минимум 2 символа');
+      return;
+    }
+    
+    if (newDisplayName.trim().length > 50) {
+      setSaveError('Имя не должно превышать 50 символов');
+      return;
+    }
+    
+    try {
+      setSaveError(null);
+      await dispatch(updateProfile({ 
+        userId: user.id, 
+        displayName: newDisplayName.trim() 
+      })).unwrap();
+      setIsEditingName(false);
+    } catch (error) {
+      setSaveError(error.message || 'Ошибка сохранения имени');
+    }
+  };
+  
+  const handleCancelEdit = () => {
+    setNewDisplayName(user?.displayName || '');
+    setIsEditingName(false);
+    setSaveError(null);
   };
 
   if (!isAuthenticated) {
@@ -49,7 +82,47 @@ const SettingsPage = () => {
           <div className={styles.profileInfo}>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Имя:</span>
-              <span className={styles.infoValue}>{user.displayName}</span>
+              {isEditingName ? (
+                <div className={styles.editNameContainer}>
+                  <input
+                    type="text"
+                    value={newDisplayName}
+                    onChange={(e) => setNewDisplayName(e.target.value)}
+                    className={styles.nameInput}
+                    placeholder="Введите новое имя"
+                    maxLength={50}
+                  />
+                  <div className={styles.editButtons}>
+                    <button 
+                      onClick={handleSaveName} 
+                      className={styles.saveButton}
+                      disabled={loading}
+                    >
+                      {loading ? 'Сохранение...' : 'Сохранить'}
+                    </button>
+                    <button 
+                      onClick={handleCancelEdit} 
+                      className={styles.cancelButton}
+                      disabled={loading}
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                  {saveError && (
+                    <div className={styles.errorMessage}>{saveError}</div>
+                  )}
+                </div>
+              ) : (
+                <div className={styles.nameDisplay}>
+                  <span className={styles.infoValue}>{user.displayName}</span>
+                  <button 
+                    onClick={() => setIsEditingName(true)} 
+                    className={styles.editButton}
+                  >
+                    ✏️ Изменить
+                  </button>
+                </div>
+              )}
             </div>
             {user.telegramUsername && (
               <div className={styles.infoRow}>

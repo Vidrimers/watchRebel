@@ -107,7 +107,9 @@ function LoginPage() {
           </div>
           
           <div className="login-content">
-            <div className="login-icon">🎬</div>
+            <div className="login-icon">
+              <img src="/images/logo-animation.gif" alt="watchRebel" />
+            </div>
             <h2>Добро пожаловать!</h2>
             <p className="login-description">
               Ведите учет просмотренных фильмов и сериалов, делитесь отзывами 
@@ -130,7 +132,9 @@ function LoginPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span className="telegram-icon">✈️</span>
+                <span className="telegram-icon">
+                  <img src="/images/telegram-icon.png" alt="Telegram" />
+                </span>
                 Открыть Telegram бота
               </a>
             </div>

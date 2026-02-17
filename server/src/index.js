@@ -38,6 +38,8 @@ const corsOptions = {
       'http://localhost:1313',           // Backend server
       'http://127.0.0.1:3000',
       'http://127.0.0.1:1313',
+      'http://192.168.1.162:3000',       // Local network IP
+      'http://172.19.0.1:3000',          // Docker network IP
       process.env.PUBLIC_URL,            // Production URL
     ].filter(Boolean); // Убираем undefined значения
     

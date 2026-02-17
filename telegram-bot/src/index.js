@@ -133,8 +133,8 @@ if (bot) {
       // Создаем сессию с реферальным кодом
       const session = await createSession(userId, msg.from, referralCode);
       
-      // Формируем ссылку на сайт с токеном
-      const webAppUrl = `${publicUrl}?session=${session.token}`;
+      // Формируем ссылку на сайт с токеном и данными пользователя
+      const webAppUrl = `${publicUrl}/login?token=${session.token}&userId=${userId}&username=${encodeURIComponent(username)}&displayName=${encodeURIComponent(msg.from.first_name || username)}&avatarUrl=${encodeURIComponent(msg.from.photo_url || '')}`;
       
       // Отправляем приветственное сообщение с кнопкой
       let welcomeMessage = `🎬 <b>Добро пожаловать в watchRebel!</b>\n\n` +

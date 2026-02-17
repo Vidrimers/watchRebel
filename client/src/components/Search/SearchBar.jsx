@@ -95,7 +95,8 @@ const SearchBar = () => {
   };
 
   // Получаем первые 5 результатов для preview
-  const previewResults = searchResults.slice(0, 5);
+  // Проверяем, что searchResults это массив
+  const previewResults = Array.isArray(searchResults) ? searchResults.slice(0, 5) : [];
 
   return (
     <div className={styles.searchContainer} ref={searchRef}>
