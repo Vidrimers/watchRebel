@@ -37,13 +37,22 @@ const ReferralStats = ({ userId }) => {
       // Получаем реферальный код и количество рефералов
       const response = await api.get(`/users/${userId}/referral-code`);
       setReferralCode(response.data.referralCode);
-      setReferralsCount(response.data.referralsCount);
+      setReferralsCount(response.data.referralsCount || 0);
 
       setLoading(false);
     } catch (err) {
       console.error('Ошибка загрузки статистики рефералов:', err);
-      setError('Не удалось загрузить статистику');
-      setLoading(false);
+      
+      // Если ошибка 404 или пользователь не найден, показываем fallback
+      if (err.response?.status === 404 || err.response?.data?.code === 'USER_NOT_FOUND') {
+        setReferralCode(null);
+        setReferralsCount(0);
+        setLoading(false);
+      } else {
+        // Для других ошибок показываем сообщение
+        setError('Не удалось загрузить статистику');
+        setLoading(false);
+      }
     }
   };
 
@@ -56,7 +65,13 @@ const ReferralStats = ({ userId }) => {
       setReferrals(response.data);
     } catch (err) {
       console.error('Ошибка загрузки списка рефералов:', err);
-      setError('Не удалось загрузить список рефералов');
+      
+      // Если ошибка 404, просто показываем пустой список
+      if (err.response?.status === 404) {
+        setReferrals([]);
+      } else {
+        setError('Не удалось загрузить список рефералов');
+      }
     }
   };
 

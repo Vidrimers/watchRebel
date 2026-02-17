@@ -540,20 +540,31 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
  */
 async function handleInviteAction(chatId, userId, token) {
   try {
+    console.log(`📝 Запрос реферальной ссылки для пользователя ${userId}`);
+    
     // Получаем реферальный код через API
     const apiUrl = process.env.API_URL || 'http://localhost:1313';
-    const response = await fetch(`${apiUrl}/api/users/${userId}/referral-code`, {
+    const url = `${apiUrl}/api/users/${userId}/referral-code`;
+    console.log(`📡 Отправка запроса к: ${url}`);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
 
+    console.log(`📥 Ответ API: статус ${response.status}`);
+
     if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
       throw new Error(`API вернул ошибку: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log(`✅ Получены данные:`, data);
+    
     const { referralCode, referralsCount } = data;
 
     // Формируем реферальную ссылку
