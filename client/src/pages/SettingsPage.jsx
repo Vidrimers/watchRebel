@@ -4,7 +4,7 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { logout, updateProfile } from '../store/slices/authSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
-import ThemeSelector from '../components/Settings/ThemeSelector';
+import ThemeDropdown from '../components/Settings/ThemeDropdown';
 import AdminPanel from '../components/Settings/AdminPanel';
 import styles from './SettingsPage.module.css';
 
@@ -74,7 +74,7 @@ const SettingsPage = () => {
         <h1 className={styles.pageTitle}>⚙️ Настройки</h1>
 
         {/* Карточка с темой */}
-        <ThemeSelector />
+        <ThemeDropdown />
 
         {/* Карточка с информацией о профиле */}
         <div className={styles.settingsCard}>
