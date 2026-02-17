@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import UserAvatar from './UserAvatar';
 import styles from './UserCard.module.css';
 
@@ -14,6 +15,10 @@ const UserCard = ({
   genrePreferences = [] 
 }) => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAppSelector((state) => state.auth);
+  
+  // Проверяем, это карточка текущего пользователя или нет
+  const isOwnCard = currentUser?.id === user.id;
 
   const handleClick = () => {
     navigate(`/user/${user.id}`);
@@ -28,7 +33,8 @@ const UserCard = ({
       <div className={styles.userInfo}>
         <h3 className={styles.userName}>{user.displayName}</h3>
         
-        {user.telegramUsername && (
+        {/* Telegram username показываем только для своей карточки */}
+        {isOwnCard && user.telegramUsername && (
           <p className={styles.username}>@{user.telegramUsername}</p>
         )}
 

@@ -126,7 +126,8 @@ const SearchPage = () => {
                       <div className={styles.userCardInfo}>
                         <h3 className={styles.userCardName}>{result.data.displayName}</h3>
                         <p className={styles.userCardType}>Пользователь</p>
-                        {result.data.telegramUsername && (
+                        {/* Telegram username скрыт для других пользователей */}
+                        {user?.id === result.data.id && result.data.telegramUsername && (
                           <p className={styles.userCardUsername}>@{result.data.telegramUsername}</p>
                         )}
                       </div>

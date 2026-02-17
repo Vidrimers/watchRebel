@@ -99,20 +99,20 @@ const UserProfilePage = () => {
   return (
     <UserPageLayout user={currentUser}>
       <div className={styles.profileContainer}>
-        {/* Заголовок профиля */}
-        <div className={styles.profileHeader}>
-          <UserAvatar 
-            user={profileUser} 
-            size="large" 
-            showBanIndicator={true}
-          />
-          <div className={styles.profileInfo}>
-            <h1 className={styles.profileName}>{profileUser.displayName}</h1>
-            {profileUser.telegramUsername && (
-              <p className={styles.profileUsername}>@{profileUser.telegramUsername}</p>
-            )}
+        {/* Заголовок профиля (только для чужих профилей) */}
+        {!isOwnProfile && (
+          <div className={styles.profileHeader}>
+            <UserAvatar 
+              user={profileUser} 
+              size="large" 
+              showBanIndicator={true}
+            />
+            <div className={styles.profileInfo}>
+              <h1 className={styles.profileName}>{profileUser.displayName}</h1>
+              {/* Telegram username скрыт у других пользователей */}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Панель модерации (только для админа и не для своего профиля) */}
         {isAdmin && !isOwnProfile && (
