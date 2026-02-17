@@ -45,6 +45,16 @@ const Wall = ({ userId, isOwnProfile = false }) => {
     }
   };
 
+  // Обработка нажатия Enter для отправки поста
+  const handleKeyDown = (e) => {
+    // Если нажат Enter без Shift - отправляем пост
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Предотвращаем перенос строки
+      handleCreatePost(e);
+    }
+    // Если нажат Enter с Shift - разрешаем перенос строки (стандартное поведение)
+  };
+
   if (loading && posts.length === 0) {
     return (
       <div className={styles.wall}>
@@ -74,6 +84,7 @@ const Wall = ({ userId, isOwnProfile = false }) => {
               placeholder="Что у вас нового?"
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
+              onKeyDown={handleKeyDown}
               rows={3}
               disabled={isCreating}
             />
