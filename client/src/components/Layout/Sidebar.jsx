@@ -29,6 +29,11 @@ const Sidebar = ({ user, narrow = false }) => {
       <nav className={styles.navigation}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
+            <a href="/" className={styles.navLink} title="Главная">
+              🏠 {!narrow && 'Главная'}
+            </a>
+          </li>
+          <li className={styles.navItem}>
             <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы">
               🎬 {!narrow && 'Мои фильмы'}
             </a>
