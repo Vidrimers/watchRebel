@@ -1,10 +1,39 @@
 /* Правый блок управления */
 .sidebar {
   width: 100%;
-  max-width: 500px;
+  max-width: 350px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+/* Узкий режим sidebar (только иконки) */
+.sidebar.narrow {
+  max-width: 150px;
+  gap: 15px;
+}
+
+.sidebar.narrow .userInfo {
+  padding: 15px;
+}
+
+.sidebar.narrow .navLink,
+.sidebar.narrow .notificationsLink,
+.sidebar.narrow .settingsLink {
+  justify-content: center;
+  padding: 12px;
+  font-size: 20px;
+}
+
+.sidebar.narrow .notificationBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 /* Информация о пользователе */

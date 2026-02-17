@@ -8,20 +8,20 @@ import styles from './Sidebar.module.css';
  * Правый блок управления
  * Содержит: поиск, аватар, навигацию, настройки, уведомления
  */
-const Sidebar = ({ user }) => {
+const Sidebar = ({ user, narrow = false }) => {
   return (
-    <aside className={styles.sidebar}>
-      {/* Поисковая строка */}
-      <SearchBar />
+    <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''}`}>
+      {/* Поисковая строка - скрыта в узком режиме */}
+      {!narrow && <SearchBar />}
 
       {/* Информация о пользователе */}
       {user && (
         <div className={styles.userInfo}>
           {/* Аватар */}
-          <UserAvatar user={user} size="medium" />
+          <UserAvatar user={user} size={narrow ? "small" : "medium"} />
 
-          {/* Имя пользователя */}
-          <h2 className={styles.userName}>{user.displayName}</h2>
+          {/* Имя пользователя - скрыто в узком режиме */}
+          {!narrow && <h2 className={styles.userName}>{user.displayName}</h2>}
         </div>
       )}
 
@@ -29,23 +29,23 @@ const Sidebar = ({ user }) => {
       <nav className={styles.navigation}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <a href="/lists?type=movie" className={styles.navLink}>
-              🎬 Мои фильмы
+            <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы">
+              🎬 {!narrow && 'Мои фильмы'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/lists?type=tv" className={styles.navLink}>
-              📺 Мои сериалы
+            <a href="/lists?type=tv" className={styles.navLink} title="Мои сериалы">
+              📺 {!narrow && 'Мои сериалы'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/watchlist" className={styles.navLink}>
-              ⭐ Список желаемого
+            <a href="/watchlist" className={styles.navLink} title="Список желаемого">
+              ⭐ {!narrow && 'Список желаемого'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/friends" className={styles.navLink}>
-              👥 Друзья
+            <a href="/friends" className={styles.navLink} title="Друзья">
+              👥 {!narrow && 'Друзья'}
             </a>
           </li>
         </ul>
@@ -53,16 +53,16 @@ const Sidebar = ({ user }) => {
 
       {/* Уведомления */}
       <div className={styles.notificationsContainer}>
-        <a href="/notifications" className={styles.notificationsLink}>
-          🔔 Уведомления
+        <a href="/notifications" className={styles.notificationsLink} title="Уведомления">
+          🔔 {!narrow && 'Уведомления'}
           <NotificationBadge />
         </a>
       </div>
 
       {/* Настройки */}
       <div className={styles.settingsContainer}>
-        <a href="/settings" className={styles.settingsLink}>
-          ⚙️ Настройки
+        <a href="/settings" className={styles.settingsLink} title="Настройки">
+          ⚙️ {!narrow && 'Настройки'}
         </a>
       </div>
     </aside>

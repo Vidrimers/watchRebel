@@ -55,7 +55,7 @@ const SearchPage = () => {
   };
 
   return (
-    <UserPageLayout user={user}>
+    <UserPageLayout user={user} narrowSidebar={true}>
       <div className={styles.searchPage}>
         {/* Заголовок */}
         <div className={styles.header}>
