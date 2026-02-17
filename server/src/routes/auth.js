@@ -101,11 +101,12 @@ router.post('/telegram', async (req, res) => {
       }
 
       // Обновляем информацию пользователя (на случай изменений в Telegram)
+      // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
       await executeQuery(
         `UPDATE users 
-         SET telegram_username = ?, display_name = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+         SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [telegramUsername || user.telegram_username, displayName, avatarUrl || user.avatar_url, telegramId]
+        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
       );
     }
 
@@ -351,11 +352,12 @@ router.post('/telegram-referral', async (req, res) => {
       }
 
       // Обновляем информацию пользователя (на случай изменений в Telegram)
+      // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
       await executeQuery(
         `UPDATE users 
-         SET telegram_username = ?, display_name = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+         SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [telegramUsername || user.telegram_username, displayName, avatarUrl || user.avatar_url, telegramId]
+        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
       );
     }
 
