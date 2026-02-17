@@ -1,5 +1,5 @@
 .adminCard {
-  background: var(--card-background, #fff);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -46,9 +46,9 @@
 
 .userItem {
   padding: 16px;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: var(--item-background, #fafafa);
+  background: var(--bg-tertiary);
 }
 
 .userInfo {
@@ -101,8 +101,8 @@
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 6px;
   font-size: 14px;
-  color: var(--text-primary, #333);
-  background: var(--input-background, #fff);
+  color: var(--text-primary);
+  background: var(--bg-input);
 }
 
 .textarea {
@@ -112,8 +112,8 @@
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
-  color: var(--text-primary, #333);
-  background: var(--input-background, #fff);
+  color: var(--text-primary);
+  background: var(--bg-input);
   resize: vertical;
   margin-bottom: 12px;
 }

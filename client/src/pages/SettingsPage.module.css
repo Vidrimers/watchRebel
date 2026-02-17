@@ -22,7 +22,7 @@
 
 /* Карточки настроек */
 .settingsCard {
-  background: var(--card-background, #fff);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -208,8 +208,8 @@
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 6px;
   font-size: 16px;
-  color: var(--text-primary, #333);
-  background: var(--input-background, #fff);
+  color: var(--text-primary);
+  background: var(--bg-input);
 }
 
 .nameInput:focus {

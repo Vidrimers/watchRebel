@@ -7,7 +7,7 @@
 
 /* Контейнер формы создания поста */
 .createPostContainer {
-  background: var(--card-bg, #ffffff);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -76,7 +76,7 @@
 .error {
   text-align: center;
   padding: 40px 20px;
-  background: var(--card-bg, #ffffff);
+  background: var(--bg-secondary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -89,7 +89,7 @@
 .emptyState {
   text-align: center;
   padding: 60px 20px;
-  background: var(--card-bg, #ffffff);
+  background: var(--bg-secondary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
