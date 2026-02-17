@@ -667,13 +667,18 @@ async function handleNameChange(chatId, userId, newName, userFrom) {
         'Authorization': `Bearer ${session.token}`
       },
       body: JSON.stringify({
-        display_name: trimmedName
+        displayName: trimmedName
       })
     });
 
     if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
       throw new Error(`API вернул ошибку: ${response.status}`);
     }
+    
+    const responseData = await response.json();
+    console.log('✅ API ответ:', responseData);
 
     // Очищаем состояние пользователя
     clearUserState(userId);
