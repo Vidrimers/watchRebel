@@ -98,17 +98,37 @@ const SearchBar = () => {
   // Проверяем, что searchResults это массив
   const previewResults = Array.isArray(searchResults) ? searchResults.slice(0, 5) : [];
 
+  // Обработка клика на кнопку поиска - переход на полную страницу
+  const handleSearchButtonClick = () => {
+    setShowPreview(false);
+    if (query.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    } else {
+      navigate('/search');
+    }
+  };
+
   return (
     <div className={styles.searchContainer} ref={searchRef}>
-      <input
-        type="text"
-        placeholder="Поиск фильмов, сериалов, пользователей..."
-        className={styles.searchInput}
-        value={query}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => query.trim() && setShowPreview(true)}
-      />
+      <div className={styles.searchInputWrapper}>
+        <input
+          type="text"
+          placeholder="Поиск фильмов, сериалов, пользователей..."
+          className={styles.searchInput}
+          value={query}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => query.trim() && setShowPreview(true)}
+        />
+        <button
+          className={styles.searchButton}
+          onClick={handleSearchButtonClick}
+          title="Открыть полный поиск"
+          aria-label="Открыть полный поиск"
+        >
+          🔍
+        </button>
+      </div>
 
       {/* Preview результатов */}
       {showPreview && query.trim() && (

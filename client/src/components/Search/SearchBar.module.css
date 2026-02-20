@@ -5,9 +5,17 @@
   margin-bottom: 20px;
 }
 
+/* Обертка для инпута и кнопки */
+.searchInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Поле ввода */
 .searchInput {
-  width: 100%;
+  flex: 1;
   padding: 12px 16px;
   font-size: 14px;
   border: 1px solid var(--border-color, #e0e0e0);
@@ -15,6 +23,33 @@
   background-color: var(--input-bg, #ffffff);
   color: var(--text-color, #333333);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Кнопка поиска */
+.searchButton {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background-color: var(--card-bg, #ffffff);
+  color: var(--text-color, #333333);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.searchButton:hover {
+  background-color: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+  transform: scale(1.05);
+}
+
+.searchButton:active {
+  transform: scale(0.95);
 }
 
 .searchInput:focus {
@@ -163,6 +198,17 @@
   color: var(--text-color, #e0e0e0);
 }
 
+[data-theme='dark'] .searchButton {
+  background-color: var(--card-bg, #1e1e1e);
+  border-color: var(--border-color, #404040);
+  color: var(--text-color, #e0e0e0);
+}
+
+[data-theme='dark'] .searchButton:hover {
+  background-color: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+}
+
 [data-theme='dark'] .searchPreview {
   background-color: var(--card-bg, #1e1e1e);
   border-color: var(--border-color, #404040);
@@ -174,4 +220,22 @@
 
 [data-theme='dark'] .previewFooter:hover {
   background-color: var(--hover-bg, #2a2a2a);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .searchInputWrapper {
+    gap: 6px;
+  }
+
+  .searchInput {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .searchButton {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
 }
