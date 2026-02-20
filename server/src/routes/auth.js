@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
+import { verifyTelegramAuth, extractUserData } from '../utils/telegramAuth.js';
 
 const router = express.Router();
 
@@ -397,6 +398,174 @@ router.post('/telegram-referral', async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка авторизации через Telegram с реферальным кодом:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/auth/telegram-widget
+ * Авторизация пользователя через Telegram Login Widget
+ * 
+ * Body:
+ * - id: number (обязательно) - Telegram user ID
+ * - first_name: string (обязательно)
+ * - username: string (опционально)
+ * - photo_url: string (опционально)
+ * - auth_date: number (обязательно) - Unix timestamp
+ * - hash: string (обязательно) - Подпись данных
+ */
+router.post('/telegram-widget', async (req, res) => {
+  try {
+    const widgetData = req.body;
+
+    console.log('📥 Получены данные от Telegram Login Widget:', {
+      id: widgetData.id,
+      username: widgetData.username,
+      auth_date: widgetData.auth_date
+    });
+
+    // Проверяем подлинность данных от Telegram
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!verifyTelegramAuth(widgetData, botToken)) {
+      console.error('❌ Проверка подлинности данных Telegram не прошла');
+      return res.status(401).json({ 
+        error: 'Неверные данные авторизации',
+        code: 'INVALID_AUTH_DATA' 
+      });
+    }
+
+    console.log('✅ Данные от Telegram подлинные');
+
+    // Извлекаем данные пользователя
+    const { telegramId, telegramUsername, displayName, avatarUrl } = extractUserData(widgetData);
+
+    // Валидация
+    if (!telegramId || !displayName) {
+      return res.status(400).json({ 
+        error: 'telegramId и displayName обязательны',
+        code: 'MISSING_FIELDS' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT * FROM users WHERE id = ?',
+      [telegramId]
+    );
+
+    if (!userCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    let user;
+
+    if (userCheck.data.length === 0) {
+      // Создаем нового пользователя (первый вход)
+      console.log(`📝 Создаем нового пользователя: ${displayName} (ID: ${telegramId})`);
+      
+      const isAdmin = telegramId === process.env.TELEGRAM_ADMIN_ID;
+      
+      // Генерируем уникальный реферальный код
+      let referralCode;
+      let isUnique = false;
+      
+      while (!isUnique) {
+        referralCode = generateReferralCode();
+        const codeCheck = await executeQuery(
+          'SELECT id FROM users WHERE referral_code = ?',
+          [referralCode]
+        );
+        if (codeCheck.success && codeCheck.data.length === 0) {
+          isUnique = true;
+        }
+      }
+      
+      const insertResult = await executeQuery(
+        `INSERT INTO users (id, telegram_username, display_name, avatar_url, is_admin, theme, referral_code)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [telegramId, telegramUsername || null, displayName, avatarUrl || null, isAdmin ? 1 : 0, 'light-cream', referralCode]
+      );
+
+      if (!insertResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка создания пользователя',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      // Получаем созданного пользователя
+      const newUserResult = await executeQuery(
+        'SELECT * FROM users WHERE id = ?',
+        [telegramId]
+      );
+
+      user = newUserResult.data[0];
+      console.log(`✅ Пользователь создан: ${displayName}`);
+    } else {
+      user = userCheck.data[0];
+      console.log(`✅ Пользователь найден: ${user.display_name} (ID: ${telegramId})`);
+
+      // Проверяем, не заблокирован ли пользователь
+      if (user.is_blocked) {
+        return res.status(403).json({ 
+          error: 'Пользователь заблокирован',
+          code: 'USER_BLOCKED' 
+        });
+      }
+
+      // Обновляем информацию пользователя (на случай изменений в Telegram)
+      // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
+      await executeQuery(
+        `UPDATE users 
+         SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
+      );
+    }
+
+    // Создаем новую сессию
+    const sessionId = uuidv4();
+    const token = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // Сессия на 30 дней
+
+    const sessionResult = await executeQuery(
+      `INSERT INTO sessions (id, user_id, token, expires_at)
+       VALUES (?, ?, ?, ?)`,
+      [sessionId, telegramId, token, expiresAt.toISOString()]
+    );
+
+    if (!sessionResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка создания сессии',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    console.log(`✅ Сессия создана для пользователя ${user.display_name}`);
+
+    // Возвращаем токен и информацию о пользователе
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        telegramUsername: user.telegram_username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar_url,
+        isAdmin: Boolean(user.is_admin),
+        theme: user.theme,
+        createdAt: user.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Ошибка авторизации через Telegram Widget:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

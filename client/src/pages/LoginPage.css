@@ -193,6 +193,52 @@
   transform: translateY(-1px);
 }
 
+/* Telegram Login Widget */
+.login-telegram-widget {
+  margin: 32px 0;
+  padding: 32px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+}
+
+.widget-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+#telegram-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50px;
+}
+
+/* Сообщение об ошибке */
+.login-error-message {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-error-message .error-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.login-error-message p {
+  margin: 0;
+  color: var(--text-primary);
+  text-align: left;
+  line-height: 1.5;
+}
+
 /* Адаптивность */
 @media (max-width: 600px) {
   .login-card {
@@ -207,8 +253,12 @@
     font-size: 1.5rem;
   }
 
-  .telegram-button {
-    padding: 12px 24px;
+  .login-telegram-widget {
+    padding: 24px 16px;
+  }
+
+  .widget-label {
     font-size: 1rem;
   }
 }
+

@@ -2,20 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { login } from '../store/slices/authSlice';
+import { checkSession } from '../store/slices/authSlice';
+import api from '../services/api';
 import './LoginPage.css';
 
 /**
- * Страница авторизации через Telegram
- * Автоматически авторизует пользователя по токену из URL параметров
+ * Страница авторизации через Telegram Login Widget
+ * Пользователь входит одним кликом через виджет Telegram
  */
 function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   
-  const { isAuthenticated, loading, error } = useAppSelector((state) => state.auth);
-  const [authAttempted, setAuthAttempted] = useState(false);
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const [authError, setAuthError] = useState(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
     // Если уже авторизован, перенаправляем на главную
@@ -24,40 +26,76 @@ function LoginPage() {
       return;
     }
 
-    // Получаем токен из URL параметров
-    const token = searchParams.get('token');
-    const userId = searchParams.get('userId');
-    const username = searchParams.get('username');
-    const displayName = searchParams.get('displayName');
-    const avatarUrl = searchParams.get('avatarUrl');
-
-    // Если есть токен и данные пользователя, пытаемся авторизоваться
-    if (token && userId && !authAttempted) {
-      setAuthAttempted(true);
-      
-      // Сохраняем токен в localStorage
-      localStorage.setItem('authToken', token);
-      
-      // Отправляем данные для авторизации
-      dispatch(login({
-        token,
-        userId,
-        username,
-        displayName,
-        avatarUrl
-      }));
+    // Проверяем сессию при загрузке страницы
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      dispatch(checkSession());
     }
-  }, [searchParams, isAuthenticated, navigate, dispatch, authAttempted]);
+  }, [isAuthenticated, navigate, dispatch]);
 
-  // Если идет загрузка
-  if (loading) {
+  // Глобальная функция для обработки ответа от Telegram Widget
+  useEffect(() => {
+    window.onTelegramAuth = async (user) => {
+      console.log('📥 Получены данные от Telegram:', user);
+      setIsAuthenticating(true);
+      setAuthError(null);
+
+      try {
+        // Отправляем данные на backend
+        const response = await api.post('/auth/telegram-widget', user);
+        
+        const { token, user: userData } = response.data;
+
+        // Сохраняем токен
+        localStorage.setItem('authToken', token);
+
+        console.log('✅ Авторизация успешна:', userData.displayName);
+
+        // Проверяем сессию (обновляет Redux store)
+        await dispatch(checkSession()).unwrap();
+
+        // Перенаправляем на главную
+        navigate('/', { replace: true });
+      } catch (error) {
+        console.error('❌ Ошибка авторизации:', error);
+        setAuthError(error.response?.data?.error || 'Не удалось авторизоваться');
+        setIsAuthenticating(false);
+      }
+    };
+
+    // Загружаем скрипт Telegram Widget
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', process.env.REACT_APP_TELEGRAM_BOT_USERNAME || 'watchRebel_bot');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '8');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+    script.async = true;
+
+    const container = document.getElementById('telegram-login-container');
+    if (container) {
+      container.appendChild(script);
+    }
+
+    return () => {
+      // Очистка при размонтировании
+      if (container && script.parentNode === container) {
+        container.removeChild(script);
+      }
+      delete window.onTelegramAuth;
+    };
+  }, [dispatch, navigate]);
+
+  // Если идет загрузка или авторизация
+  if (loading || isAuthenticating) {
     return (
       <div className="login-page">
         <div className="login-container">
           <div className="login-card">
             <div className="login-logo">
               <h1>watchRebel</h1>
-              <p className="login-subtitle">Социальная сеть для любителей кино</p>
+              <p className="login-subtitle">Социальная сеть для любителей кино и сериалов</p>
             </div>
             <div className="login-loading">
               <div className="spinner"></div>
@@ -69,75 +107,34 @@ function LoginPage() {
     );
   }
 
-  // Если есть ошибка
-  if (error) {
-    return (
-      <div className="login-page">
-        <div className="login-container">
-          <div className="login-card">
-            <div className="login-logo">
-              <h1>watchRebel</h1>
-              <p className="login-subtitle">Социальная сеть для любителей кино</p>
-            </div>
-            <div className="login-error">
-              <div className="error-icon">⚠️</div>
-              <h2>Ошибка авторизации</h2>
-              <p>{error.message || 'Не удалось авторизоваться'}</p>
-              <button 
-                className="retry-button"
-                onClick={() => window.location.href = '/'}
-              >
-                Попробовать снова
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Страница приглашения авторизоваться через Telegram
+  // Страница входа через Telegram
   return (
     <div className="login-page">
       <div className="login-container">
         <div className="login-card">
           <div className="login-logo">
             <h1>watchRebel</h1>
-            <p className="login-subtitle">Социальная сеть для любителей кино</p>
+            <p className="login-subtitle">Социальная сеть для любителей кино и сериалов</p>
           </div>
           
           <div className="login-content">
-            <div className="login-icon">
-              <img src="/images/logo-animation.gif" alt="watchRebel" />
-            </div>
             <h2>Добро пожаловать!</h2>
             <p className="login-description">
               Ведите учет просмотренных фильмов и сериалов, делитесь отзывами 
               и находите друзей с похожими вкусами
             </p>
             
-            <div className="login-instructions">
-              <h3>Как начать:</h3>
-              <ol>
-                <li>Откройте Telegram бота watchRebel</li>
-                <li>Нажмите команду /start</li>
-                <li>Перейдите по ссылке из бота</li>
-              </ol>
+            <div className="login-telegram-widget">
+              <p className="widget-label">Войти через Telegram:</p>
+              <div id="telegram-login-container"></div>
             </div>
 
-            <div className="login-telegram">
-              <a 
-                href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'watchrebel_bot'}`}
-                className="telegram-button"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="telegram-icon">
-                  <img src="/images/telegram-icon.png" alt="Telegram" />
-                </span>
-                Открыть Telegram бота
-              </a>
-            </div>
+            {authError && (
+              <div className="login-error-message">
+                <span className="error-icon">⚠️</span>
+                <p>{authError}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
