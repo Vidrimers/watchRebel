@@ -119,7 +119,11 @@ const SearchPage = () => {
                     // Карточка пользователя
                     <div className={styles.userCard}>
                       <img
-                        src={result.data.avatarUrl || '/default-avatar.png'}
+                        src={
+                          result.data.avatarUrl?.startsWith('/uploads/')
+                            ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${result.data.avatarUrl}`
+                            : result.data.avatarUrl || '/default-avatar.png'
+                        }
                         alt={result.data.displayName}
                         className={styles.userAvatar}
                       />

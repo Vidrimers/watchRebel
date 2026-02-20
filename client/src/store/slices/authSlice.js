@@ -64,6 +64,13 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (data, { rejectWithValue }) => {
     try {
+      // Если передан formData, используем его напрямую
+      if (data.formData) {
+        const response = await api.putFormData(`/users/${data.userId}`, data.formData);
+        return response.data;
+      }
+      
+      // Иначе отправляем обычный JSON
       const response = await api.put(`/users/${data.userId}`, data);
       return response.data;
     } catch (error) {

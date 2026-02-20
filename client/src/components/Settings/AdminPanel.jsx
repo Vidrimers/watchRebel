@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import useAlert from '../../hooks/useAlert.jsx';
+import useConfirm from '../../hooks/useConfirm.jsx';
 import styles from './AdminPanel.module.css';
 
 /**
@@ -7,6 +9,9 @@ import styles from './AdminPanel.module.css';
  * Доступна только для администратора (TELEGRAM_ADMIN_ID=137981675)
  */
 const AdminPanel = () => {
+  const { alertDialog, showAlert } = useAlert();
+  const { confirmDialog, showConfirm } = useConfirm();
+  
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,22 +38,43 @@ const AdminPanel = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm('Вы уверены, что хотите удалить этого пользователя? Все его данные будут удалены.')) {
+    const confirmed = await showConfirm({
+      title: 'Удалить пользователя?',
+      message: 'Вы уверены, что хотите удалить этого пользователя? Все его данные будут удалены безвозвратно.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
       await api.delete(`/admin/users/${userId}`);
       setUsers(users.filter(u => u.id !== userId));
+      await showAlert({
+        title: 'Успешно',
+        message: 'Пользователь удален',
+        type: 'success'
+      });
     } catch (err) {
-      alert('Ошибка удаления пользователя');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось удалить пользователя',
+        type: 'error'
+      });
       console.error(err);
     }
   };
 
   const handleRenameUser = async (userId) => {
     if (!newName.trim()) {
-      alert('Введите новое имя');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Введите новое имя',
+        type: 'warning'
+      });
       return;
     }
 
@@ -57,8 +83,17 @@ const AdminPanel = () => {
       setUsers(users.map(u => u.id === userId ? { ...u, displayName: newName } : u));
       setEditingUser(null);
       setNewName('');
+      await showAlert({
+        title: 'Успешно',
+        message: 'Пользователь переименован',
+        type: 'success'
+      });
     } catch (err) {
-      alert('Ошибка переименования пользователя');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось переименовать пользователя',
+        type: 'error'
+      });
       console.error(err);
     }
   };
@@ -67,24 +102,45 @@ const AdminPanel = () => {
     try {
       await api.post(`/admin/users/${userId}/block`, { blocked: !isBlocked });
       setUsers(users.map(u => u.id === userId ? { ...u, isBlocked: !isBlocked } : u));
+      await showAlert({
+        title: 'Успешно',
+        message: isBlocked ? 'Пользователь разблокирован' : 'Пользователь заблокирован',
+        type: 'success'
+      });
     } catch (err) {
-      alert('Ошибка блокировки пользователя');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось изменить статус блокировки',
+        type: 'error'
+      });
       console.error(err);
     }
   };
 
   const handleCreateAnnouncement = async () => {
     if (!announcement.trim()) {
-      alert('Введите текст объявления');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Введите текст объявления',
+        type: 'warning'
+      });
       return;
     }
 
     try {
       await api.post('/admin/announcements', { content: announcement });
       setAnnouncement('');
-      alert('Объявление создано и отправлено всем пользователям');
+      await showAlert({
+        title: 'Успешно',
+        message: 'Объявление создано и отправлено всем пользователям',
+        type: 'success'
+      });
     } catch (err) {
-      alert('Ошибка создания объявления');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось создать объявление',
+        type: 'error'
+      });
       console.error(err);
     }
   };
@@ -92,9 +148,17 @@ const AdminPanel = () => {
   const handleBackup = async () => {
     try {
       const response = await api.post('/admin/backup');
-      alert(`Бэкап создан: ${response.data.filename}`);
+      await showAlert({
+        title: 'Успешно',
+        message: `Бэкап создан: ${response.data.filename}`,
+        type: 'success'
+      });
     } catch (err) {
-      alert('Ошибка создания бэкапа');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось создать бэкап',
+        type: 'error'
+      });
       console.error(err);
     }
   };
@@ -118,7 +182,10 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className={styles.adminCard}>
+    <>
+      {alertDialog}
+      {confirmDialog}
+      <div className={styles.adminCard}>
       <h3 className={styles.cardTitle}>Админ-панель</h3>
 
       {/* Список пользователей */}
@@ -204,6 +271,7 @@ const AdminPanel = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 

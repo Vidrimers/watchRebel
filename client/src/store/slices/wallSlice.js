@@ -47,6 +47,18 @@ export const addReaction = createAsyncThunk(
   }
 );
 
+export const deletePost = createAsyncThunk(
+  'wall/deletePost',
+  async (postId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/wall/${postId}`);
+      return postId;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 const wallSlice = createSlice({
   name: 'wall',
   initialState: {
@@ -101,6 +113,17 @@ const wallSlice = createSlice({
         state.error = null;
       })
       .addCase(addReaction.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      // Delete Post
+      .addCase(deletePost.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(deletePost.fulfilled, (state, action) => {
+        state.posts = state.posts.filter(p => p.id !== action.payload);
+        state.error = null;
+      })
+      .addCase(deletePost.rejected, (state, action) => {
         state.error = action.payload;
       });
   }

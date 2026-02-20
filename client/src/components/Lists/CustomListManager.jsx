@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createList, deleteList, renameList } from '../../store/slices/listsSlice';
+import useConfirm from '../../hooks/useConfirm.jsx';
 import styles from './CustomListManager.module.css';
 
 /**
@@ -9,6 +10,7 @@ import styles from './CustomListManager.module.css';
  */
 const CustomListManager = ({ lists, mediaType, onListSelect }) => {
   const dispatch = useAppDispatch();
+  const { confirmDialog, showConfirm } = useConfirm();
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [error, setError] = useState(null);
@@ -45,7 +47,15 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
 
   // Удаление списка
   const handleDeleteList = async (listId, listName) => {
-    if (!window.confirm(`Удалить список "${listName}"? Все элементы будут удалены.`)) {
+    const confirmed = await showConfirm({
+      title: 'Удалить список?',
+      message: `Список "${listName}" будет удален вместе со всеми элементами. Это действие нельзя отменить.`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -101,7 +111,9 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
   };
 
   return (
-    <div className={styles.listManager}>
+    <>
+      {confirmDialog}
+      <div className={styles.listManager}>
       <div className={styles.header}>
         <h2 className={styles.title}>
           {mediaType === 'movie' ? 'Списки фильмов' : 'Списки сериалов'}
@@ -269,6 +281,7 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

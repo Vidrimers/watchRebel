@@ -135,7 +135,14 @@ const ReferralStats = ({ userId }) => {
                 <li key={referral.id} className={styles.referralItem}>
                   <div className={styles.referralAvatar}>
                     {referral.avatarUrl ? (
-                      <img src={referral.avatarUrl} alt={referral.displayName} />
+                      <img 
+                        src={
+                          referral.avatarUrl.startsWith('/uploads/')
+                            ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${referral.avatarUrl}`
+                            : referral.avatarUrl
+                        } 
+                        alt={referral.displayName} 
+                      />
                     ) : (
                       <div className={styles.avatarPlaceholder}>
                         {referral.displayName.charAt(0).toUpperCase()}

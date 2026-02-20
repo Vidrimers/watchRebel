@@ -1,0 +1,173 @@
+/* Backdrop с blur эффектом */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Диалоговое окно */
+.dialog {
+  background-color: var(--bg-primary);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+  text-align: center;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Контейнер иконки */
+.iconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* Иконка */
+.icon {
+  width: 64px;
+  height: 64px;
+}
+
+/* Иконки для разных типов */
+.info .icon {
+  color: #3b82f6;
+}
+
+.success .icon {
+  color: #10b981;
+}
+
+.error .icon {
+  color: #ef4444;
+}
+
+.warning .icon {
+  color: #f59e0b;
+}
+
+/* Заголовок */
+.title {
+  margin: 0 0 12px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Сообщение */
+.message {
+  margin: 0 0 24px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Кнопка */
+.button {
+  padding: 10px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  color: white;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+/* Кнопки для разных типов */
+.infoButton {
+  background-color: #3b82f6;
+}
+
+.infoButton:hover {
+  background-color: #2563eb;
+}
+
+.successButton {
+  background-color: #10b981;
+}
+
+.successButton:hover {
+  background-color: #059669;
+}
+
+.errorButton {
+  background-color: #ef4444;
+}
+
+.errorButton:hover {
+  background-color: #dc2626;
+}
+
+.warningButton {
+  background-color: #f59e0b;
+}
+
+.warningButton:hover {
+  background-color: #d97706;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 600px) {
+  .dialog {
+    padding: 20px;
+    width: 95%;
+  }
+
+  .icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .message {
+    font-size: 0.95rem;
+  }
+
+  .button {
+    width: 100%;
+  }
+}

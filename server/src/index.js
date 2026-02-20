@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import listsRoutes from './routes/lists.js';
@@ -14,6 +16,9 @@ import adminRoutes from './routes/admin.js';
 import webhookRoutes from './routes/webhook.js';
 import feedRoutes from './routes/feed.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -62,6 +67,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // HTTP логирование
 app.use(httpLogger);
+
+// Раздача статических файлов (аватарки)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);

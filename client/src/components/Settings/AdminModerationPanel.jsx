@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import styles from './AdminModerationPanel.module.css';
 import api from '../../services/api';
+import useAlert from '../../hooks/useAlert.jsx';
+import useConfirm from '../../hooks/useConfirm.jsx';
 
 /**
  * Компонент панели модерации для администратора
  * Отображается только для пользователей с правами администратора
  */
 function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
+  const { alertDialog, showAlert } = useAlert();
+  const { confirmDialog, showConfirm } = useConfirm();
+  
   const [showBanModal, setShowBanModal] = useState(false);
   const [banType, setBanType] = useState(null); // 'posts' или 'permanent'
   const [reason, setReason] = useState('');
@@ -52,7 +57,11 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
         onModerationAction('post_ban');
       }
 
-      alert('Пользователю запрещено создавать посты');
+      await showAlert({
+        title: 'Успешно',
+        message: 'Пользователю запрещено создавать посты',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Ошибка блокировки постов:', err);
       setError(err.response?.data?.error || 'Ошибка блокировки постов');
@@ -70,7 +79,15 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
       return;
     }
 
-    if (!confirm('Вы уверены, что хотите навсегда заблокировать этого пользователя?')) {
+    const confirmed = await showConfirm({
+      title: 'Постоянная блокировка',
+      message: 'Вы уверены, что хотите навсегда заблокировать этого пользователя?',
+      confirmText: 'Заблокировать',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -91,7 +108,11 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
         onModerationAction('permanent_ban');
       }
 
-      alert('Пользователь заблокирован навсегда');
+      await showAlert({
+        title: 'Успешно',
+        message: 'Пользователь заблокирован навсегда',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Ошибка постоянной блокировки:', err);
       setError(err.response?.data?.error || 'Ошибка постоянной блокировки');
@@ -104,7 +125,15 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
    * Обработчик разблокировки
    */
   const handleUnban = async () => {
-    if (!confirm('Вы уверены, что хотите разблокировать этого пользователя?')) {
+    const confirmed = await showConfirm({
+      title: 'Разблокировать пользователя',
+      message: 'Вы уверены, что хотите разблокировать этого пользователя?',
+      confirmText: 'Разблокировать',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'success'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -119,7 +148,11 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
         onModerationAction('unban');
       }
 
-      alert('Пользователь разблокирован');
+      await showAlert({
+        title: 'Успешно',
+        message: 'Пользователь разблокирован',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Ошибка разблокировки:', err);
       setError(err.response?.data?.error || 'Ошибка разблокировки');
@@ -158,7 +191,10 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
   };
 
   return (
-    <div className={styles.moderationPanel}>
+    <>
+      {alertDialog}
+      {confirmDialog}
+      <div className={styles.moderationPanel}>
       <h3 className={styles.title}>⚠️ Модерация</h3>
       
       <div className={styles.actions}>
@@ -277,6 +313,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
         </div>
       )}
     </div>
+    </>
   );
 }
 

@@ -6,6 +6,8 @@ import { logout, updateProfile } from '../store/slices/authSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import ThemeDropdown from '../components/Settings/ThemeDropdown';
 import AdminPanel from '../components/Settings/AdminPanel';
+import AvatarUpload from '../components/Settings/AvatarUpload';
+import useConfirm from '../hooks/useConfirm.jsx';
 import styles from './SettingsPage.module.css';
 
 /**
@@ -16,6 +18,7 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const { confirmDialog, showConfirm } = useConfirm();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
@@ -25,7 +28,15 @@ const SettingsPage = () => {
   const isAdmin = user?.isAdmin || user?.id === '137981675';
 
   const handleLogout = async () => {
-    if (confirm('Вы уверены, что хотите выйти?')) {
+    const confirmed = await showConfirm({
+      title: 'Выход из аккаунта',
+      message: 'Вы уверены, что хотите выйти?',
+      confirmText: 'Выйти',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'primary'
+    });
+
+    if (confirmed) {
       await dispatch(logout());
       navigate('/login');
     }
@@ -69,12 +80,20 @@ const SettingsPage = () => {
   }
 
   return (
-    <UserPageLayout user={user}>
+    <>
+      {confirmDialog}
+      <UserPageLayout user={user}>
       <div className={styles.settingsContainer}>
         <h1 className={styles.pageTitle}>⚙️ Настройки</h1>
 
         {/* Карточка с темой */}
         <ThemeDropdown />
+
+        {/* Карточка с аватаркой */}
+        <div className={styles.settingsCard}>
+          <h3 className={styles.cardTitle}>Аватарка</h3>
+          <AvatarUpload user={user} />
+        </div>
 
         {/* Карточка с информацией о профиле */}
         <div className={styles.settingsCard}>
@@ -164,6 +183,7 @@ const SettingsPage = () => {
         {isAdmin && <AdminPanel />}
       </div>
     </UserPageLayout>
+    </>
   );
 };
 

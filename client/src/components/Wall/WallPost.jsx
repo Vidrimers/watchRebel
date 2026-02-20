@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { addReaction } from '../../store/slices/wallSlice';
+import { addReaction, deletePost } from '../../store/slices/wallSlice';
 import ReactionPicker from './ReactionPicker';
+import useConfirm from '../../hooks/useConfirm.jsx';
+import useAlert from '../../hooks/useAlert.jsx';
 import styles from './WallPost.module.css';
 
 /**
@@ -14,7 +16,10 @@ const WallPost = ({ post, isOwnProfile }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
+  const { confirmDialog, showConfirm } = useConfirm();
+  const { alertDialog, showAlert } = useAlert();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
@@ -26,6 +31,34 @@ const WallPost = ({ post, isOwnProfile }) => {
       setShowReactionPicker(false);
     } catch (err) {
       console.error('Ошибка добавления реакции:', err);
+    }
+  };
+
+  // Обработка удаления поста
+  const handleDeletePost = async () => {
+    const confirmed = await showConfirm({
+      title: 'Удалить запись?',
+      message: 'Вы уверены, что хотите удалить эту запись? Это действие нельзя отменить.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await dispatch(deletePost(post.id)).unwrap();
+    } catch (err) {
+      console.error('Ошибка удаления поста:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось удалить запись. Попробуйте еще раз.',
+        type: 'error'
+      });
+      setIsDeleting(false);
     }
   };
 
@@ -167,7 +200,10 @@ const WallPost = ({ post, isOwnProfile }) => {
   const userReaction = post.reactions?.find(r => r.userId === currentUser?.id);
 
   return (
-    <div className={styles.wallPost}>
+    <>
+      {confirmDialog}
+      {alertDialog}
+      <div className={styles.wallPost}>
       {/* Контент поста */}
       <div className={styles.postContent}>
         {renderPostContent()}
@@ -175,7 +211,21 @@ const WallPost = ({ post, isOwnProfile }) => {
 
       {/* Футер с датой и реакциями */}
       <div className={styles.postFooter}>
-        <span className={styles.postDate}>{formatDate(post.createdAt)}</span>
+        <div className={styles.postFooterLeft}>
+          <span className={styles.postDate}>{formatDate(post.createdAt)}</span>
+
+          {/* Кнопка удаления (только для своих постов) */}
+          {isOwnProfile && currentUser && post.userId === currentUser.id && (
+            <button
+              className={styles.deleteButton}
+              onClick={handleDeletePost}
+              disabled={isDeleting}
+              title="Удалить запись"
+            >
+              {isDeleting ? '⏳' : '🗑️'}
+            </button>
+          )}
+        </div>
 
         {/* Реакции */}
         <div className={styles.reactionsContainer}>
@@ -217,6 +267,7 @@ const WallPost = ({ post, isOwnProfile }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

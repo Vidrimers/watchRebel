@@ -125,6 +125,22 @@ const api = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // PUT запрос с FormData (для загрузки файлов)
+  putFormData: async (url, formData, config = {}) => {
+    try {
+      const response = await apiClient.put(url, formData, {
+        ...config,
+        headers: {
+          ...config.headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

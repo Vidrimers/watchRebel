@@ -1,6 +1,13 @@
 import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import upload from '../middleware/upload.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -116,17 +123,23 @@ router.get('/:id', authenticateToken, async (req, res) => {
  * Обновить профиль пользователя
  * Требует аутентификации и права на редактирование (свой профиль или админ)
  * 
- * Body:
+ * Body (multipart/form-data):
  * - displayName: string (опционально)
  * - theme: string (опционально)
+ * - avatar: file (опционально) - изображение для аватарки
  */
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const { id } = req.params;
     const { displayName, theme } = req.body;
+    const avatarFile = req.file;
 
     // Проверяем права: пользователь может редактировать только свой профиль или админ может редактировать любой
     if (req.user.id !== id && !req.user.isAdmin) {
+      // Удаляем загруженный файл, если нет прав
+      if (avatarFile) {
+        fs.unlinkSync(avatarFile.path);
+      }
       return res.status(403).json({ 
         error: 'Нет прав на редактирование этого профиля',
         code: 'FORBIDDEN' 
@@ -135,11 +148,15 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     // Проверяем, существует ли пользователь
     const userCheck = await executeQuery(
-      'SELECT id FROM users WHERE id = ?',
+      'SELECT id, avatar_url FROM users WHERE id = ?',
       [id]
     );
 
     if (!userCheck.success) {
+      // Удаляем загруженный файл при ошибке
+      if (avatarFile) {
+        fs.unlinkSync(avatarFile.path);
+      }
       return res.status(500).json({ 
         error: 'Ошибка проверки пользователя',
         code: 'DATABASE_ERROR' 
@@ -147,11 +164,17 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
     if (userCheck.data.length === 0) {
+      // Удаляем загруженный файл, если пользователь не найден
+      if (avatarFile) {
+        fs.unlinkSync(avatarFile.path);
+      }
       return res.status(404).json({ 
         error: 'Пользователь не найден',
         code: 'USER_NOT_FOUND' 
       });
     }
+
+    const oldAvatarUrl = userCheck.data[0].avatar_url;
 
     // Формируем запрос на обновление
     const updates = [];
@@ -165,6 +188,26 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (theme !== undefined) {
       updates.push('theme = ?');
       params.push(theme);
+    }
+
+    // Если загружена новая аватарка
+    if (avatarFile) {
+      // Формируем URL для аватарки
+      const avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+      updates.push('avatar_url = ?');
+      params.push(avatarUrl);
+
+      // Удаляем старую аватарку, если она была загружена пользователем (не из Telegram)
+      if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/')) {
+        const oldAvatarPath = path.join(__dirname, '../../', oldAvatarUrl);
+        if (fs.existsSync(oldAvatarPath)) {
+          try {
+            fs.unlinkSync(oldAvatarPath);
+          } catch (err) {
+            console.error('Ошибка удаления старой аватарки:', err);
+          }
+        }
+      }
     }
 
     if (updates.length === 0) {
@@ -183,6 +226,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     );
 
     if (!updateResult.success) {
+      // Удаляем загруженный файл при ошибке обновления
+      if (avatarFile) {
+        fs.unlinkSync(avatarFile.path);
+      }
       return res.status(500).json({ 
         error: 'Ошибка обновления профиля',
         code: 'DATABASE_ERROR' 
@@ -209,6 +256,31 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка обновления профиля пользователя:', error);
+    
+    // Удаляем загруженный файл при ошибке
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error('Ошибка удаления файла:', err);
+      }
+    }
+    
+    // Обработка ошибок multer
+    if (error.message && error.message.includes('Недопустимый тип файла')) {
+      return res.status(400).json({ 
+        error: error.message,
+        code: 'INVALID_FILE_TYPE' 
+      });
+    }
+    
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        error: 'Файл слишком большой. Максимальный размер: 5MB',
+        code: 'FILE_TOO_LARGE' 
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

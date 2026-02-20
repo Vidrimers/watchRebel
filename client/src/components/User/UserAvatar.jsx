@@ -10,11 +10,26 @@ import BanIndicator from './BanIndicator';
 const UserAvatar = ({ user, size = 'medium', className = '', showBanIndicator = false }) => {
   const sizeClass = styles[`avatar-${size}`];
 
+  // Функция для получения правильного URL аватарки
+  const getAvatarUrl = () => {
+    if (!user?.avatarUrl) return null;
+    
+    // Если аватарка загружена на сервер (начинается с /uploads/)
+    if (user.avatarUrl.startsWith('/uploads/')) {
+      return `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`;
+    }
+    
+    // Если аватарка из Telegram или другой внешний URL
+    return user.avatarUrl;
+  };
+
+  const avatarUrl = getAvatarUrl();
+
   return (
     <div className={`${styles.avatarContainer} ${sizeClass} ${className}`}>
-      {user?.avatarUrl ? (
+      {avatarUrl ? (
         <img
-          src={user.avatarUrl}
+          src={avatarUrl}
           alt={user.displayName || 'Пользователь'}
           className={styles.avatarImage}
         />

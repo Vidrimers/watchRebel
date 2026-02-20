@@ -11,6 +11,7 @@ import {
   markEpisodeWatched
 } from '../store/slices/listsSlice';
 import { EpisodeTracker, RatingSelector } from '../components/Media';
+import useAlert from '../hooks/useAlert.jsx';
 import styles from './MediaDetailPage.module.css';
 
 /**
@@ -22,6 +23,7 @@ const MediaDetailPage = () => {
   const { mediaType, mediaId } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { alertDialog, showAlert } = useAlert();
 
   const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
   const { customLists, episodeProgress, ratings } = useAppSelector((state) => state.lists);
@@ -58,9 +60,17 @@ const MediaDetailPage = () => {
       
       setShowListSelector(false);
       setSelectedListId('');
-      alert('Добавлено в список!');
+      await showAlert({
+        title: 'Успешно!',
+        message: 'Контент добавлен в список',
+        type: 'success'
+      });
     } catch (error) {
-      alert('Ошибка при добавлении в список');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось добавить в список',
+        type: 'error'
+      });
     }
   };
 
@@ -74,9 +84,17 @@ const MediaDetailPage = () => {
         mediaType: selectedMedia.media_type || mediaType
       })).unwrap();
       
-      alert('Добавлено в список желаемого!');
+      await showAlert({
+        title: 'Успешно!',
+        message: 'Добавлено в список желаемого',
+        type: 'success'
+      });
     } catch (error) {
-      alert('Ошибка при добавлении в watchlist');
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось добавить в список желаемого',
+        type: 'error'
+      });
     }
   };
 
@@ -126,7 +144,9 @@ const MediaDetailPage = () => {
   const currentRating = ratings[mediaId] || null;
 
   return (
-    <div className={styles.mediaDetailPage}>
+    <>
+      {alertDialog}
+      <div className={styles.mediaDetailPage}>
       {/* Фоновое изображение */}
       {backdropUrl && (
         <div 
@@ -232,8 +252,12 @@ const MediaDetailPage = () => {
                 title: selectedMedia.title || selectedMedia.name
               }}
               currentRating={currentRating}
-              onRatingSet={(rating) => {
-                alert(`Оценка ${rating}/10 сохранена и добавлена на стену!`);
+              onRatingSet={async (rating) => {
+                await showAlert({
+                  title: 'Оценка сохранена!',
+                  message: `Оценка ${rating}/10 добавлена на стену`,
+                  type: 'success'
+                });
               }}
             />
           </div>
@@ -252,6 +276,7 @@ const MediaDetailPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
