@@ -87,7 +87,19 @@ const WallPost = ({ post, isOwnProfile }) => {
   const handleMouseLeave = () => {
     tooltipTimeoutRef.current = setTimeout(() => {
       setTooltipData(null);
-    }, 200);
+    }, 300);
+  };
+
+  // Сохранить tooltip при наведении на него
+  const handleTooltipMouseEnter = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+  };
+
+  // Скрыть tooltip при уходе с него
+  const handleTooltipMouseLeave = () => {
+    setTooltipData(null);
   };
 
   // Очистка таймера при размонтировании
@@ -347,6 +359,8 @@ const WallPost = ({ post, isOwnProfile }) => {
           <ReactionTooltip
             users={tooltipData.users}
             position={tooltipData.position}
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
           />
         )}
       </div>

@@ -189,8 +189,9 @@
 }
 
 .reactionBadge.userReaction {
-  background: var(--primary-light, #e0e7ff);
+  background: var(--bg-secondary, #f9fafb);
   border-color: var(--primary-color, #6366f1);
+  border-width: 2px;
   font-weight: 600;
 }
 

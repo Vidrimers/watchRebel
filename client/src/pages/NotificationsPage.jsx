@@ -1,4 +1,6 @@
 import React from 'react';
+import { useAppSelector } from '../hooks/useAppSelector';
+import UserPageLayout from '../components/Layout/UserPageLayout';
 import { NotificationList } from '../components/Notifications';
 import styles from './NotificationsPage.module.css';
 
@@ -7,10 +9,14 @@ import styles from './NotificationsPage.module.css';
  * Отображает список всех уведомлений пользователя
  */
 const NotificationsPage = () => {
+  const { user } = useAppSelector((state) => state.auth);
+
   return (
-    <div className={styles.page}>
-      <NotificationList />
-    </div>
+    <UserPageLayout user={user} narrowSidebar={true}>
+      <div className={styles.page}>
+        <NotificationList />
+      </div>
+    </UserPageLayout>
   );
 };
 

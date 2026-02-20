@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchNotifications, markAsRead } from '../../store/slices/notificationsSlice';
+import { fetchNotifications, markAsRead, markAllAsRead } from '../../store/slices/notificationsSlice';
 import styles from './NotificationList.module.css';
 
 /**
@@ -10,27 +10,35 @@ import styles from './NotificationList.module.css';
  */
 const NotificationList = () => {
   const dispatch = useAppDispatch();
-  const { notifications, loading } = useAppSelector((state) => state.notifications);
+  const { notifications, loading, unreadCount } = useAppSelector((state) => state.notifications);
 
   // Загружаем уведомления при монтировании компонента
   useEffect(() => {
     dispatch(fetchNotifications());
   }, [dispatch]);
 
-  // Обработчик клика по уведомлению
-  const handleNotificationClick = (notification) => {
+  // Обработчик наведения на уведомление
+  const handleNotificationHover = (notification) => {
     if (!notification.isRead) {
       dispatch(markAsRead(notification.id));
     }
+  };
 
+  // Обработчик клика по уведомлению
+  const handleNotificationClick = (notification) => {
     // Переход к связанному контенту
     if (notification.relatedPostId) {
       // Переход к посту на стене
-      window.location.href = `/user/${notification.relatedUserId}#post-${notification.relatedPostId}`;
+      window.location.href = `/profile/${notification.userId}#post-${notification.relatedPostId}`;
     } else if (notification.relatedUserId) {
       // Переход к профилю пользователя
-      window.location.href = `/user/${notification.relatedUserId}`;
+      window.location.href = `/profile/${notification.relatedUserId}`;
     }
+  };
+
+  // Обработчик пометки всех как прочитанные
+  const handleMarkAllAsRead = () => {
+    dispatch(markAllAsRead());
   };
 
   // Форматирование даты
@@ -87,7 +95,18 @@ const NotificationList = () => {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Уведомления</h2>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Уведомления</h2>
+        {unreadCount > 0 && (
+          <button 
+            className={styles.markAllButton}
+            onClick={handleMarkAllAsRead}
+            title="Пометить все как прочитанные"
+          >
+            Прочитать все
+          </button>
+        )}
+      </div>
       
       <ul className={styles.list}>
         {notifications.map((notification) => (
@@ -95,6 +114,7 @@ const NotificationList = () => {
             key={notification.id}
             className={`${styles.item} ${!notification.isRead ? styles.unread : ''}`}
             onClick={() => handleNotificationClick(notification)}
+            onMouseEnter={() => handleNotificationHover(notification)}
           >
             <div className={styles.icon}>
               {getNotificationIcon(notification.type)}

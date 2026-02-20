@@ -30,3 +30,4 @@ rebel.db
 mytasks
 *.log
 test-output.txt
+migration-*.sql

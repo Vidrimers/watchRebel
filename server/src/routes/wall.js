@@ -458,6 +458,16 @@ router.delete('/:postId/reactions/:reactionId', authenticateToken, async (req, r
       });
     }
 
+    // Удаляем связанные уведомления о реакции
+    // (пока нет CASCADE в БД, делаем вручную)
+    await executeQuery(
+      `DELETE FROM notifications 
+       WHERE type = 'reaction' 
+       AND related_post_id = ? 
+       AND related_user_id = ?`,
+      [postId, userId]
+    );
+
     res.json({ 
       message: 'Реакция успешно удалена',
       reactionId 

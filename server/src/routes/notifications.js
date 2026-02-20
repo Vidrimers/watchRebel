@@ -70,6 +70,41 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 /**
+ * PUT /api/notifications/mark-all-read
+ * Отметить все уведомления как прочитанные
+ */
+router.put('/mark-all-read', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Отмечаем все уведомления пользователя как прочитанные
+    const updateResult = await executeQuery(
+      'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0',
+      [userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления уведомлений',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({ 
+      message: 'Все уведомления отмечены как прочитанные',
+      updatedCount: updateResult.changes || 0
+    });
+
+  } catch (error) {
+    console.error('Ошибка обновления всех уведомлений:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
  * PUT /api/notifications/:id/read
  * Отметить уведомление как прочитанное
  * Только владелец уведомления может его отметить
