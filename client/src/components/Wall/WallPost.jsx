@@ -244,8 +244,8 @@ const WallPost = ({ post, isOwnProfile }) => {
             </div>
           )}
 
-          {/* Кнопка добавления реакции (только для чужих постов) */}
-          {!isOwnProfile && currentUser && (
+          {/* Кнопка добавления реакции */}
+          {currentUser && (
             <div className={styles.addReactionContainer}>
               <button
                 className={styles.addReactionButton}

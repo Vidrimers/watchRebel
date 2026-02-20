@@ -108,7 +108,18 @@ const wallSlice = createSlice({
       .addCase(addReaction.fulfilled, (state, action) => {
         const post = state.posts.find(p => p.id === action.payload.postId);
         if (post) {
-          post.reactions.push(action.payload.reaction);
+          // Удаляем старую реакцию текущего пользователя (если есть)
+          const existingReactionIndex = post.reactions.findIndex(
+            r => r.userId === action.payload.reaction.userId
+          );
+          
+          if (existingReactionIndex !== -1) {
+            // Обновляем существующую реакцию
+            post.reactions[existingReactionIndex] = action.payload.reaction;
+          } else {
+            // Добавляем новую реакцию
+            post.reactions.push(action.payload.reaction);
+          }
         }
         state.error = null;
       })
