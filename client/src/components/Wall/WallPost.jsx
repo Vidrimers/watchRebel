@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { addReaction, deletePost } from '../../store/slices/wallSlice';
+import { addReaction, deletePost, fetchWall } from '../../store/slices/wallSlice';
 import ReactionPicker from './ReactionPicker';
+import ReactionTooltip from './ReactionTooltip';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
+import api from '../../services/api';
 import styles from './WallPost.module.css';
 
 /**
@@ -20,6 +22,8 @@ const WallPost = ({ post, isOwnProfile }) => {
   const { alertDialog, showAlert } = useAlert();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [tooltipData, setTooltipData] = useState(null);
+  const tooltipTimeoutRef = useRef(null);
 
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
@@ -33,6 +37,67 @@ const WallPost = ({ post, isOwnProfile }) => {
       console.error('Ошибка добавления реакции:', err);
     }
   };
+
+  // Обработка удаления реакции
+  const handleDeleteReaction = async (reactionId) => {
+    try {
+      await api.delete(`/wall/${post.id}/reactions/${reactionId}`);
+      // Перезагружаем посты
+      dispatch(fetchWall(post.userId));
+    } catch (err) {
+      console.error('Ошибка удаления реакции:', err);
+    }
+  };
+
+  // Обработка клика на badge реакции
+  const handleReactionBadgeClick = async (reaction) => {
+    if (!currentUser) return;
+
+    // Проверяем, есть ли реакция текущего пользователя с таким же эмоджи
+    const userReactionWithSameEmoji = post.reactions?.find(
+      r => r.userId === currentUser.id && r.emoji === reaction.emoji
+    );
+
+    if (userReactionWithSameEmoji) {
+      // Удаляем реакцию
+      await handleDeleteReaction(userReactionWithSameEmoji.id);
+    } else {
+      // Добавляем такую же реакцию
+      await handleAddReaction(reaction.emoji);
+    }
+  };
+
+  // Показать tooltip при наведении
+  const handleMouseEnter = (e, users) => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipData({
+      users,
+      position: {
+        x: rect.left,
+        y: rect.bottom + 5
+      }
+    });
+  };
+
+  // Скрыть tooltip при уходе мыши
+  const handleMouseLeave = () => {
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setTooltipData(null);
+    }, 200);
+  };
+
+  // Очистка таймера при размонтировании
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Обработка удаления поста
   const handleDeletePost = async () => {
@@ -190,7 +255,11 @@ const WallPost = ({ post, isOwnProfile }) => {
       };
     }
     acc[reaction.emoji].count++;
-    acc[reaction.emoji].users.push(reaction.userId);
+    acc[reaction.emoji].users.push({
+      id: reaction.userId,
+      name: reaction.user?.displayName || 'Пользователь',
+      avatarUrl: reaction.user?.avatarUrl || null
+    });
     return acc;
   }, {}) || {};
 
@@ -232,15 +301,22 @@ const WallPost = ({ post, isOwnProfile }) => {
           {/* Отображение существующих реакций */}
           {reactionsList.length > 0 && (
             <div className={styles.reactionsList}>
-              {reactionsList.map((reaction) => (
-                <span 
-                  key={reaction.emoji}
-                  className={styles.reactionBadge}
-                  title={`${reaction.count} ${reaction.count === 1 ? 'реакция' : 'реакций'}`}
-                >
-                  {reaction.emoji} {reaction.count}
-                </span>
-              ))}
+              {reactionsList.map((reaction) => {
+                // Проверяем, есть ли реакция текущего пользователя с таким эмоджи
+                const isUserReaction = currentUser && reaction.users.some(u => u.id === currentUser.id);
+                
+                return (
+                  <span 
+                    key={reaction.emoji}
+                    className={`${styles.reactionBadge} ${isUserReaction ? styles.userReaction : ''}`}
+                    onClick={() => handleReactionBadgeClick(reaction)}
+                    onMouseEnter={(e) => handleMouseEnter(e, reaction.users)}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    {reaction.emoji} {reaction.count}
+                  </span>
+                );
+              })}
             </div>
           )}
 
@@ -265,6 +341,14 @@ const WallPost = ({ post, isOwnProfile }) => {
             </div>
           )}
         </div>
+
+        {/* Tooltip с пользователями */}
+        {tooltipData && (
+          <ReactionTooltip
+            users={tooltipData.users}
+            position={tooltipData.position}
+          />
+        )}
       </div>
     </div>
     </>

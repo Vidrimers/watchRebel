@@ -353,12 +353,16 @@ router.post('/:postId/reactions', authenticateToken, async (req, res) => {
         });
       }
 
-      // Создаем уведомление для владельца поста (если это не он сам)
+      // Создаем уведомление для владельца поста
       if (post.user_id !== userId) {
-        // Отправляем уведомление через notificationService
-        // Не блокируем ответ, если уведомление не отправится
+        // Обычное уведомление о реакции от другого пользователя
         notifyReaction(post.user_id, userId, emoji, postId).catch(err => {
           console.error('Ошибка отправки уведомления о реакции:', err);
+        });
+      } else {
+        // Уведомление о самолайке
+        notifyReaction(post.user_id, userId, emoji, postId, true).catch(err => {
+          console.error('Ошибка отправки уведомления о самолайке:', err);
         });
       }
     }

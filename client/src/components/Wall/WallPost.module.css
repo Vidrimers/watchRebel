@@ -178,12 +178,20 @@
   background: var(--bg-secondary, #f9fafb);
   border-radius: 12px;
   font-size: 14px;
-  cursor: default;
-  transition: background-color 0.2s;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
 }
 
 .reactionBadge:hover {
   background: var(--bg-hover, #f3f4f6);
+  transform: scale(1.05);
+}
+
+.reactionBadge.userReaction {
+  background: var(--primary-light, #e0e7ff);
+  border-color: var(--primary-color, #6366f1);
+  font-weight: 600;
 }
 
 /* Кнопка добавления реакции */

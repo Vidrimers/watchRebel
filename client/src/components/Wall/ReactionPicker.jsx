@@ -1,19 +1,37 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './ReactionPicker.module.css';
 
 /**
  * Компонент для выбора эмоджи-реакции
  * Отображает популярные эмоджи для быстрого выбора
+ * Сортирует эмоджи по частоте использования
  */
 const ReactionPicker = ({ onSelect, onClose }) => {
   const pickerRef = useRef(null);
+  const [sortedEmojis, setSortedEmojis] = useState([]);
 
-  // Популярные эмоджи для реакций
-  const emojis = [
+  // Все доступные эмоджи для реакций
+  const allEmojis = [
     '❤️', '👍', '😂', '😮', '😢', '😡',
     '🔥', '👏', '🎉', '💯', '🤔', '😍',
-    '🤩', '😎', '🥳', '😱', '🤯', '👀'
+    '🤩', '😎', '🥳', '😱', '🤯', '👀',
+    '💩', '🤡', '🤮', '😤', '🙄', '😒',
+    '👎', '💀', '🤬', '😈'
   ];
+
+  // Загрузка и сортировка эмоджи при монтировании
+  useEffect(() => {
+    const emojiUsage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
+    
+    // Сортируем эмоджи по частоте использования
+    const sorted = [...allEmojis].sort((a, b) => {
+      const usageA = emojiUsage[a] || 0;
+      const usageB = emojiUsage[b] || 0;
+      return usageB - usageA; // От большего к меньшему
+    });
+    
+    setSortedEmojis(sorted);
+  }, []);
 
   // Закрытие picker при клике вне его области
   useEffect(() => {
@@ -44,6 +62,11 @@ const ReactionPicker = ({ onSelect, onClose }) => {
   }, [onClose]);
 
   const handleEmojiClick = (emoji) => {
+    // Обновляем статистику использования
+    const emojiUsage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
+    emojiUsage[emoji] = (emojiUsage[emoji] || 0) + 1;
+    localStorage.setItem('emojiUsage', JSON.stringify(emojiUsage));
+    
     onSelect(emoji);
   };
 
@@ -61,7 +84,7 @@ const ReactionPicker = ({ onSelect, onClose }) => {
       </div>
       
       <div className={styles.emojiGrid}>
-        {emojis.map((emoji) => (
+        {sortedEmojis.map((emoji) => (
           <button
             key={emoji}
             className={styles.emojiButton}

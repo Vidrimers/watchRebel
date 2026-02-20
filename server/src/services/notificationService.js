@@ -113,22 +113,33 @@ export async function sendTelegramNotification(userId, message, options = {}) {
  * @param {string} reactorId - ID пользователя, который поставил реакцию
  * @param {string} emoji - Эмоджи реакции
  * @param {string} postId - ID поста
+ * @param {boolean} isSelfReaction - Флаг самолайка (опционально)
  * @returns {Promise<Object>} - Результат создания и отправки уведомления
  */
-export async function notifyReaction(postOwnerId, reactorId, emoji, postId) {
+export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSelfReaction = false) {
   try {
-    // Получаем информацию о пользователе, который поставил реакцию
-    const userResult = await executeQuery(
-      'SELECT display_name FROM users WHERE id = ?',
-      [reactorId]
-    );
+    let content;
+    let telegramMessage;
 
-    if (!userResult.success || userResult.data.length === 0) {
-      return { success: false, error: 'Пользователь не найден' };
+    if (isSelfReaction) {
+      // Уведомление о самолайке
+      content = `Самолайк активирован ${emoji}`;
+      telegramMessage = `😎 <b>Самолайк активирован!</b>\n\n${content}`;
+    } else {
+      // Получаем информацию о пользователе, который поставил реакцию
+      const userResult = await executeQuery(
+        'SELECT display_name FROM users WHERE id = ?',
+        [reactorId]
+      );
+
+      if (!userResult.success || userResult.data.length === 0) {
+        return { success: false, error: 'Пользователь не найден' };
+      }
+
+      const reactorName = userResult.data[0].display_name;
+      content = `${reactorName} отреагировал на вашу запись: ${emoji}`;
+      telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${content}`;
     }
-
-    const reactorName = userResult.data[0].display_name;
-    const content = `${reactorName} отреагировал на вашу запись: ${emoji}`;
 
     // Создаем уведомление в базе данных
     const notificationResult = await createNotification(
@@ -144,7 +155,6 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId) {
     }
 
     // Отправляем уведомление в Telegram
-    const telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${content}`;
     await sendTelegramNotification(postOwnerId, telegramMessage);
 
     return notificationResult;
