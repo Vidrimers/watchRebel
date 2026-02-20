@@ -421,14 +421,29 @@ router.post('/telegram-widget', async (req, res) => {
   try {
     const widgetData = req.body;
 
-    console.log('📥 Получены данные от Telegram Login Widget:', {
-      id: widgetData.id,
-      username: widgetData.username,
-      auth_date: widgetData.auth_date
-    });
+    console.log('📥 Получены данные от Telegram Login Widget:', widgetData);
+
+    // Проверяем наличие hash
+    if (!widgetData.hash) {
+      console.error('❌ Отсутствует hash в данных от Telegram');
+      return res.status(400).json({ 
+        error: 'Отсутствует hash в данных авторизации',
+        code: 'MISSING_HASH' 
+      });
+    }
 
     // Проверяем подлинность данных от Telegram
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    console.log('🔑 Bot token:', botToken ? 'Есть' : 'Отсутствует');
+    
+    if (!botToken) {
+      console.error('❌ TELEGRAM_BOT_TOKEN не найден в переменных окружения');
+      return res.status(500).json({ 
+        error: 'Ошибка конфигурации сервера',
+        code: 'MISSING_BOT_TOKEN' 
+      });
+    }
+    
     if (!verifyTelegramAuth(widgetData, botToken)) {
       console.error('❌ Проверка подлинности данных Telegram не прошла');
       return res.status(401).json({ 

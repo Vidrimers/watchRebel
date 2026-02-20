@@ -20,8 +20,17 @@ import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Загрузка переменных окружения
-dotenv.config();
+// Загрузка переменных окружения из корневой директории
+const envPath = path.join(__dirname, '../../.env');
+console.log('📁 Загрузка .env из:', envPath);
+const envResult = dotenv.config({ path: envPath });
+
+if (envResult.error) {
+  console.error('❌ Ошибка загрузки .env:', envResult.error);
+} else {
+  console.log('✅ .env загружен успешно');
+  console.log('🔑 TELEGRAM_BOT_TOKEN:', process.env.TELEGRAM_BOT_TOKEN ? 'Есть' : 'Отсутствует');
+}
 
 // Очистка старых логов при запуске (в production)
 if (process.env.NODE_ENV === 'production') {
@@ -45,6 +54,7 @@ const corsOptions = {
       'http://127.0.0.1:1313',
       'http://192.168.1.162:3000',       // Local network IP
       'http://172.19.0.1:3000',          // Docker network IP
+      'https://prosurrender-rickety-brenda.ngrok-free.dev', // ngrok URL
       process.env.PUBLIC_URL,            // Production URL
     ].filter(Boolean); // Убираем undefined значения
     

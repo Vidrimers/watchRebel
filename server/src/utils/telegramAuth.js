@@ -15,6 +15,12 @@ export function verifyTelegramAuth(data, botToken) {
   try {
     const { hash, ...userData } = data;
 
+    // Проверяем наличие botToken
+    if (!botToken) {
+      console.error('❌ Bot token не передан в функцию verifyTelegramAuth');
+      return false;
+    }
+
     // Проверяем наличие обязательных полей
     if (!hash || !userData.id || !userData.auth_date) {
       console.error('❌ Отсутствуют обязательные поля');
@@ -31,11 +37,14 @@ export function verifyTelegramAuth(data, botToken) {
       return false;
     }
 
-    // Создаем data-check-string
+    // Создаем data-check-string (только поля с определенными значениями)
     const dataCheckString = Object.keys(userData)
+      .filter(key => userData[key] !== undefined && userData[key] !== null)
       .sort()
       .map(key => `${key}=${userData[key]}`)
       .join('\n');
+
+    console.log('🔍 Data-check-string:', dataCheckString);
 
     // Вычисляем secret_key = SHA256(bot_token)
     const secretKey = crypto
@@ -56,11 +65,14 @@ export function verifyTelegramAuth(data, botToken) {
       console.error('❌ Hash не совпадает');
       console.error('Получен:', hash);
       console.error('Вычислен:', calculatedHash);
+    } else {
+      console.log('✅ Hash совпадает');
     }
 
     return isValid;
   } catch (error) {
     console.error('❌ Ошибка проверки Telegram auth:', error.message);
+    console.error('Stack:', error.stack);
     return false;
   }
 }

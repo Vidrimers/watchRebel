@@ -7,6 +7,11 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true, // Слушать на всех интерфейсах
+    allowedHosts: [
+      'prosurrender-rickety-brenda.ngrok-free.dev',
+      '.ngrok-free.dev', // Разрешаем все ngrok домены
+      'localhost'
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:1313',
