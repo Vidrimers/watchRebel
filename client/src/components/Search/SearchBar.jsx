@@ -113,7 +113,7 @@ const SearchBar = () => {
       <div className={styles.searchInputWrapper}>
         <input
           type="text"
-          placeholder="Поиск фильмов, сериалов, пользователей..."
+          placeholder="Поиск"
           className={styles.searchInput}
           value={query}
           onChange={handleInputChange}

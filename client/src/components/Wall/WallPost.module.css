@@ -5,10 +5,15 @@
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
 .wallPost:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wallPost:hover .postActions {
+  opacity: 1;
 }
 
 /* Контент поста */
@@ -134,24 +139,42 @@
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* Кнопка удаления */
+.editedLabel {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Кнопки управления постом */
+.postActions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editButton,
 .deleteButton {
   padding: 4px 8px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
   opacity: 0.6;
 }
 
-.deleteButton:hover:not(:disabled) {
+.editButton:hover:not(:disabled) {
   opacity: 1;
-  background: var(--danger-bg, #fee2e2);
-  border-color: var(--danger-color, #ef4444);
+  color: var(--primary-color, #6366f1);
 }
 
+.deleteButton:hover:not(:disabled) {
+  opacity: 1;
+  color: var(--danger-color, #ef4444);
+}
+
+.editButton:disabled,
 .deleteButton:disabled {
   cursor: not-allowed;
   opacity: 0.4;
@@ -245,4 +268,97 @@
     width: 100%;
     justify-content: space-between;
   }
+}
+
+/* Режим редактирования */
+.editMode {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editTextarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--primary-color, #6366f1);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #1f2937);
+}
+
+.editTextarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.editButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.saveButton,
+.cancelButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.saveButton {
+  background: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--primary-dark, #4f46e5);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-primary, #1f2937);
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--bg-hover, #e5e7eb);
+}
+
+/* Темная тема - улучшенный контраст */
+[data-theme="dark"] .wallPost,
+[data-theme="die-my-darling"] .wallPost,
+[data-theme="cyberpunk"] .wallPost,
+[data-theme="dark-neon-obsidian"] .wallPost {
+  background: var(--bg-secondary, #2c2c2c);
+  border-color: var(--border-color, #444);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .wallPost:hover,
+[data-theme="die-my-darling"] .wallPost:hover,
+[data-theme="cyberpunk"] .wallPost:hover,
+[data-theme="dark-neon-obsidian"] .wallPost:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: var(--primary-color, #6366f1);
+}
+
+[data-theme="dark"] .editTextarea,
+[data-theme="die-my-darling"] .editTextarea,
+[data-theme="cyberpunk"] .editTextarea,
+[data-theme="dark-neon-obsidian"] .editTextarea {
+  background: var(--bg-primary, #1a1a1a);
+  color: var(--text-primary, #e0e0e0);
+  border-color: var(--primary-color, #6366f1);
 }

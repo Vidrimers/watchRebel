@@ -24,6 +24,9 @@ const WallPost = ({ post, isOwnProfile }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [tooltipData, setTooltipData] = useState(null);
   const tooltipTimeoutRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(post.content || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
@@ -139,6 +142,55 @@ const WallPost = ({ post, isOwnProfile }) => {
     }
   };
 
+  // Обработка редактирования поста
+  const handleEditPost = () => {
+    setIsEditing(true);
+    setEditedContent(post.content || '');
+  };
+
+  // Сохранение отредактированного поста
+  const handleSaveEdit = async () => {
+    if (!editedContent.trim()) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Контент не может быть пустым',
+        type: 'error'
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await api.put(`/wall/${post.id}`, { content: editedContent.trim() });
+      // Перезагружаем посты
+      dispatch(fetchWall(post.userId));
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Ошибка редактирования поста:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: err.response?.data?.error || 'Не удалось отредактировать запись',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Отмена редактирования
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(post.content || '');
+  };
+
+  // Проверка, можно ли редактировать пост (в течение часа)
+  const canEdit = () => {
+    const createdAt = new Date(post.createdAt);
+    const now = new Date();
+    const hourInMs = 60 * 60 * 1000;
+    return (now - createdAt) < hourInMs;
+  };
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -173,7 +225,35 @@ const WallPost = ({ post, isOwnProfile }) => {
       case 'text':
         return (
           <div className={styles.textContent}>
-            <p>{post.content}</p>
+            {isEditing ? (
+              <div className={styles.editMode}>
+                <textarea
+                  className={styles.editTextarea}
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  rows={4}
+                  disabled={isSaving}
+                />
+                <div className={styles.editButtons}>
+                  <button 
+                    className={styles.saveButton}
+                    onClick={handleSaveEdit}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Сохранение...' : 'Сохранить'}
+                  </button>
+                  <button 
+                    className={styles.cancelButton}
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p>{post.content}</p>
+            )}
           </div>
         );
 
@@ -293,18 +373,32 @@ const WallPost = ({ post, isOwnProfile }) => {
       {/* Футер с датой и реакциями */}
       <div className={styles.postFooter}>
         <div className={styles.postFooterLeft}>
-          <span className={styles.postDate}>{formatDate(post.createdAt)}</span>
+          <span className={styles.postDate}>
+            {formatDate(post.createdAt)}
+            {post.editedAt && <span className={styles.editedLabel}> (изменено)</span>}
+          </span>
 
-          {/* Кнопка удаления (только для своих постов) */}
+          {/* Кнопки управления (только для своих постов) */}
           {isOwnProfile && currentUser && post.userId === currentUser.id && (
-            <button
-              className={styles.deleteButton}
-              onClick={handleDeletePost}
-              disabled={isDeleting}
-              title="Удалить запись"
-            >
-              {isDeleting ? '⏳' : '🗑️'}
-            </button>
+            <div className={styles.postActions}>
+              {canEdit() && (post.postType === 'text' || post.postType === 'review') && !isEditing && (
+                <button
+                  className={styles.editButton}
+                  onClick={handleEditPost}
+                  title="Редактировать"
+                >
+                  ✏️
+                </button>
+              )}
+              <button
+                className={styles.deleteButton}
+                onClick={handleDeletePost}
+                disabled={isDeleting}
+                title="Удалить запись"
+              >
+                {isDeleting ? '⏳' : '🗑️'}
+              </button>
+            </div>
           )}
         </div>
 

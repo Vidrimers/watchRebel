@@ -7,6 +7,7 @@ import styles from './NotificationBadge.module.css';
 /**
  * Значок уведомлений с количеством непрочитанных
  * Отображается в правом блоке (Sidebar)
+ * Автоматически обновляется каждые 30 секунд
  */
 const NotificationBadge = () => {
   const dispatch = useAppDispatch();
@@ -15,6 +16,14 @@ const NotificationBadge = () => {
   // Загружаем уведомления при монтировании компонента
   useEffect(() => {
     dispatch(fetchNotifications());
+
+    // Устанавливаем интервал для периодического обновления
+    const interval = setInterval(() => {
+      dispatch(fetchNotifications());
+    }, 30000); // 30 секунд
+
+    // Очищаем интервал при размонтировании
+    return () => clearInterval(interval);
   }, [dispatch]);
 
   // Если нет непрочитанных уведомлений, не показываем значок

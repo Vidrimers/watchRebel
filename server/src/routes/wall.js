@@ -63,6 +63,7 @@ router.get('/:userId', async (req, res) => {
           mediaType: post.media_type,
           rating: post.rating,
           createdAt: post.created_at,
+          editedAt: post.edited_at,
           reactions
         };
       })
@@ -191,6 +192,117 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка создания записи на стене:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * PUT /api/wall/:postId
+ * Редактировать пост
+ * Только владелец поста может его редактировать
+ * Можно редактировать только в течение 1 часа после создания
+ */
+router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+    const { content } = req.body;
+
+    // Проверяем, существует ли пост и принадлежит ли он пользователю
+    const postCheck = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!postCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки записи',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (postCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Запись не найдена',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    const post = postCheck.data[0];
+
+    if (post.user_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Нет прав на редактирование этой записи',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Проверяем, прошло ли больше часа с момента создания
+    const createdAt = new Date(post.created_at);
+    const now = new Date();
+    const hourInMs = 60 * 60 * 1000;
+    
+    if (now - createdAt > hourInMs) {
+      return res.status(403).json({ 
+        error: 'Редактирование возможно только в течение часа после создания',
+        code: 'EDIT_TIME_EXPIRED' 
+      });
+    }
+
+    // Валидация контента
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ 
+        error: 'Контент не может быть пустым',
+        code: 'EMPTY_CONTENT' 
+      });
+    }
+
+    // Обновляем пост
+    const updateResult = await executeQuery(
+      "UPDATE wall_posts SET content = ?, edited_at = datetime('now', 'localtime') WHERE id = ?",
+      [content.trim(), postId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления записи',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем обновленный пост
+    const updatedPostResult = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!updatedPostResult.success || updatedPostResult.data.length === 0) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения обновленной записи',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const updatedPost = updatedPostResult.data[0];
+
+    res.json({
+      id: updatedPost.id,
+      userId: updatedPost.user_id,
+      postType: updatedPost.post_type,
+      content: updatedPost.content,
+      tmdbId: updatedPost.tmdb_id,
+      mediaType: updatedPost.media_type,
+      rating: updatedPost.rating,
+      createdAt: updatedPost.created_at,
+      editedAt: updatedPost.edited_at,
+      reactions: []
+    });
+
+  } catch (error) {
+    console.error('Ошибка редактирования записи на стене:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

@@ -95,6 +95,7 @@ export async function runMigrations() {
         media_type TEXT,
         rating INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        edited_at DATETIME,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
@@ -143,7 +144,8 @@ export async function runMigrations() {
         related_post_id TEXT,
         is_read BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (related_post_id) REFERENCES wall_posts(id) ON DELETE CASCADE
       );
 
       -- Таблица объявлений
