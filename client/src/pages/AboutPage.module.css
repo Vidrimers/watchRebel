@@ -1,0 +1,92 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  background-color: var(--background-color);
+}
+
+.content {
+  max-width: 800px;
+  width: 100%;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.section h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 15px;
+}
+
+.section p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.featureList li {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  padding: 8px 0;
+}
+
+.backLink {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-size: 16px;
+  transition: opacity 0.2s;
+}
+
+.link:hover {
+  opacity: 0.8;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .content {
+    padding: 30px 20px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .section h2 {
+    font-size: 20px;
+  }
+
+  .section p,
+  .featureList li {
+    font-size: 14px;
+  }
+}

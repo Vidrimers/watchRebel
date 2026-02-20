@@ -15,6 +15,9 @@ const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 
 // Компонент загрузки для Suspense
 function LoadingFallback() {
@@ -55,6 +58,11 @@ function App() {
               
               {/* Публичный маршрут - тестирование интеграции */}
               <Route path="/integration-test" element={<IntegrationTestPage />} />
+              
+              {/* Публичные страницы Footer */}
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
               
               {/* Защищенные маршруты */}
               <Route 

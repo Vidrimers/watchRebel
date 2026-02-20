@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Footer.module.css';
 
 /**
@@ -14,17 +15,17 @@ const Footer = () => {
           © {currentYear} watchRebel. Социальная сеть для любителей кино.
         </p>
         <div className={styles.links}>
-          <a href="/about" className={styles.link}>
+          <Link to="/about" className={styles.link}>
             О проекте
-          </a>
+          </Link>
           <span className={styles.separator}>•</span>
-          <a href="/privacy" className={styles.link}>
+          <Link to="/privacy" className={styles.link}>
             Конфиденциальность
-          </a>
+          </Link>
           <span className={styles.separator}>•</span>
-          <a href="/terms" className={styles.link}>
+          <Link to="/terms" className={styles.link}>
             Условия использования
-          </a>
+          </Link>
         </div>
       </div>
     </footer>
