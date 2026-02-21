@@ -227,16 +227,17 @@ const CatalogPage = () => {
       // Обновляем список после добавления
       await dispatch(fetchLists());
       
-      await showAlert({
-        title: 'Успешно!',
-        message: `"${selectedItem.title || selectedItem.name}" добавлен в список`,
-        type: 'success'
-      });
-      
-      // Закрываем модалку после показа алерта
+      // Закрываем модалку и очищаем состояние ПЕРЕД показом алерта
       setShowListSelector(false);
       setSelectedListId('');
+      const itemTitle = selectedItem.title || selectedItem.name;
       setSelectedItem(null);
+      
+      await showAlert({
+        title: 'Успешно!',
+        message: `"${itemTitle}" добавлен в список`,
+        type: 'success'
+      });
     } catch (error) {
       console.error('❌ Ошибка добавления в список:', error);
       console.error('📋 Детали ошибки:', error.response?.data || error);

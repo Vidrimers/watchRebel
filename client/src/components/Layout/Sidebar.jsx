@@ -34,6 +34,11 @@ const Sidebar = ({ user, narrow = false }) => {
             </a>
           </li>
           <li className={styles.navItem}>
+            <a href="/friends" className={styles.navLink} title="Друзья">
+              👥 {!narrow && 'Друзья'}
+            </a>
+          </li>
+          <li className={styles.navItem}>
             <a href="/messages" className={styles.navLink} title="Сообщения">
               💬 {!narrow && 'Сообщения'}
             </a>
@@ -56,11 +61,6 @@ const Sidebar = ({ user, narrow = false }) => {
           <li className={styles.navItem}>
             <a href="/watchlist" className={styles.navLink} title="Список желаемого">
               ⭐ {!narrow && 'Список желаемого'}
-            </a>
-          </li>
-          <li className={styles.navItem}>
-            <a href="/friends" className={styles.navLink} title="Друзья">
-              👥 {!narrow && 'Друзья'}
             </a>
           </li>
         </ul>

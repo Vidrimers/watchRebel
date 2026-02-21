@@ -12,6 +12,10 @@ export default defineConfig({
       '.ngrok-free.dev', // Разрешаем все ngrok домены
       'localhost'
     ],
+    hmr: {
+      clientPort: 443, // Используем HTTPS порт для ngrok
+      protocol: 'wss', // WebSocket Secure для HTTPS
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:1313',

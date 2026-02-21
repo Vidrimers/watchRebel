@@ -13,13 +13,19 @@ import styles from './SearchPage.module.css';
 const SearchPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const { searchResults, loading, error } = useAppSelector((state) => state.media);
   const { user } = useAppSelector((state) => state.auth);
   
   const query = searchParams.get('q') || '';
+  const [searchInput, setSearchInput] = useState(query);
   const [activeFilter, setActiveFilter] = useState('all'); // all, users, movies, tv
+
+  // Синхронизируем локальный инпут с URL параметром
+  useEffect(() => {
+    setSearchInput(query);
+  }, [query]);
 
   // Выполняем поиск при загрузке страницы или изменении query
   useEffect(() => {
@@ -27,6 +33,14 @@ const SearchPage = () => {
       dispatch(searchMedia({ query, filters: {} }));
     }
   }, [query, dispatch]);
+
+  // Обработка отправки формы поиска
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      setSearchParams({ q: searchInput.trim() });
+    }
+  };
 
   // Фильтруем результаты по активному фильтру
   const filteredResults = searchResults.filter((result) => {
@@ -57,14 +71,29 @@ const SearchPage = () => {
   return (
     <UserPageLayout user={user} narrowSidebar={true}>
       <div className={styles.searchPage}>
-        {/* Заголовок */}
+        {/* Заголовок и поисковая форма */}
         <div className={styles.header}>
-          <h1 className={styles.title}>
-            Результаты поиска: <span className={styles.query}>"{query}"</span>
-          </h1>
-          <p className={styles.subtitle}>
-            Найдено результатов: {filteredResults.length}
-          </p>
+          <h1 className={styles.title}>Поиск</h1>
+          
+          <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Поиск фильмов, сериалов и пользователей..."
+              className={styles.searchInput}
+              autoFocus
+            />
+            <button type="submit" className={styles.searchButton}>
+              🔍 Найти
+            </button>
+          </form>
+
+          {query && (
+            <p className={styles.subtitle}>
+              Результаты для: <span className={styles.query}>"{query}"</span> — найдено: {filteredResults.length}
+            </p>
+          )}
         </div>
 
         {/* Фильтры */}

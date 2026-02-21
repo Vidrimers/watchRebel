@@ -153,6 +153,119 @@
   color: var(--text-tertiary);
 }
 
+.searchLink {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.searchLink:hover {
+  color: var(--accent-primary-hover);
+  text-decoration: underline;
+}
+
+/* Обертка для карточки с кнопками действий */
+.mediaCardWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+/* Кнопки действий под карточкой */
+.itemActions {
+  display: flex;
+  gap: 6px;
+}
+
+.moveButton,
+.deleteButton {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.moveButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.moveButton:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.deleteButton {
+  background: var(--bg-tertiary);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+.deleteButton:hover {
+  background: var(--error-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Стили для содержимого диалогов */
+.dialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialogContent p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.listSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listSelect:hover {
+  border-color: var(--primary-color);
+}
+
+.listSelect:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.noListsMessage {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
 /* Адаптивность */
 @media (max-width: 1024px) {
   .mediaGrid {

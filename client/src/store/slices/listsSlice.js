@@ -119,6 +119,21 @@ export const removeFromList = createAsyncThunk(
   }
 );
 
+export const moveToList = createAsyncThunk(
+  'lists/moveToList',
+  async ({ fromListId, itemId, toListId, media }, { rejectWithValue }) => {
+    try {
+      // Сначала удаляем из старого списка
+      await api.delete(`/lists/${fromListId}/items/${itemId}`);
+      // Затем добавляем в новый список
+      const response = await api.post(`/lists/${toListId}/items`, media);
+      return { fromListId, itemId, toListId, newItem: response.data };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 // Получить прогресс просмотра сериала
 export const fetchEpisodeProgress = createAsyncThunk(
   'lists/fetchEpisodeProgress',
@@ -319,6 +334,30 @@ const listsSlice = createSlice({
         state.error = null;
       })
       .addCase(removeFromList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Move to List
+      .addCase(moveToList.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(moveToList.fulfilled, (state, action) => {
+        const { fromListId, itemId, toListId, newItem } = action.payload;
+        // Удаляем из старого списка
+        const fromList = state.customLists.find(l => l.id === fromListId);
+        if (fromList) {
+          fromList.items = fromList.items.filter(item => item.id !== itemId);
+        }
+        // Добавляем в новый список
+        const toList = state.customLists.find(l => l.id === toListId);
+        if (toList) {
+          toList.items.push(newItem);
+        }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(moveToList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
