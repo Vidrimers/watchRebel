@@ -17,7 +17,7 @@ const MessageThread = ({ conversation }) => {
 
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
-    if (conversation) {
+    if (conversation && conversation.id) {
       dispatch(fetchMessages(conversation.id));
     }
   }, [conversation, dispatch]);
@@ -40,10 +40,16 @@ const MessageThread = ({ conversation }) => {
     const content = messageText.trim();
     setMessageText('');
 
-    await dispatch(sendMessage({
+    const result = await dispatch(sendMessage({
       receiverId: conversation.otherUser.id,
       content
     }));
+
+    // Если это новый диалог (id === null), обновляем список диалогов
+    if (conversation.id === null && result.meta.requestStatus === 'fulfilled') {
+      // Диалог будет автоматически добавлен в список через fetchConversations
+      // который вызывается в ConversationList при монтировании
+    }
   };
 
   // Обработчик нажатия Enter

@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchConversations, setCurrentConversation } from '../../store/slices/messagesSlice';
+import api from '../../services/api';
 import styles from './ConversationList.module.css';
 
 /**
@@ -11,11 +12,35 @@ import styles from './ConversationList.module.css';
 const ConversationList = ({ onSelectConversation }) => {
   const dispatch = useAppDispatch();
   const { conversations, loading, currentConversation } = useAppSelector((state) => state.messages);
+  const { user } = useAppSelector((state) => state.auth);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Загружаем диалоги при монтировании компонента
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
+
+  // Загружаем список друзей при открытии модального окна
+  useEffect(() => {
+    if (showNewMessageModal && user) {
+      loadFriends();
+    }
+  }, [showNewMessageModal, user]);
+
+  const loadFriends = async () => {
+    try {
+      setLoadingFriends(true);
+      const response = await api.get(`/users/${user.id}/friends`);
+      setFriends(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки друзей:', error);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
 
   // Обработчик выбора диалога
   const handleSelectConversation = (conversation) => {
@@ -24,6 +49,32 @@ const ConversationList = ({ onSelectConversation }) => {
       onSelectConversation(conversation);
     }
   };
+
+  // Обработчик выбора друга для нового сообщения
+  const handleSelectFriend = (friend) => {
+    // Создаем временный объект диалога для нового сообщения
+    const newConversation = {
+      id: null, // null означает новый диалог
+      otherUser: {
+        id: friend.id,
+        displayName: friend.displayName,
+        avatarUrl: friend.avatarUrl
+      },
+      lastMessage: null,
+      unreadCount: 0,
+      lastMessageAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    
+    setShowNewMessageModal(false);
+    setSearchQuery('');
+    handleSelectConversation(newConversation);
+  };
+
+  // Фильтрация друзей по поисковому запросу
+  const filteredFriends = friends.filter(friend =>
+    friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Форматирование даты
   const formatDate = (dateString) => {
@@ -63,11 +114,80 @@ const ConversationList = ({ onSelectConversation }) => {
   if (conversations.length === 0) {
     return (
       <div className={styles.container}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Сообщения</h2>
+          <button 
+            className={styles.newMessageButton}
+            onClick={() => setShowNewMessageModal(true)}
+            title="Написать новое сообщение"
+          >
+            ✏️ Написать
+          </button>
+        </div>
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>💬</span>
           <p>Пока нет диалогов</p>
-          <p className={styles.emptyHint}>Найдите пользователя и отправьте ему сообщение</p>
+          <p className={styles.emptyHint}>Нажмите "Написать", чтобы начать переписку</p>
         </div>
+
+        {/* Модальное окно выбора друга */}
+        {showNewMessageModal && (
+          <div className={styles.modal} onClick={() => setShowNewMessageModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Выберите получателя</h3>
+                <button 
+                  className={styles.closeButton}
+                  onClick={() => setShowNewMessageModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Поиск друзей..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+
+              <div className={styles.friendsList}>
+                {loadingFriends ? (
+                  <div className={styles.modalLoading}>Загрузка друзей...</div>
+                ) : filteredFriends.length === 0 ? (
+                  <div className={styles.modalEmpty}>
+                    {searchQuery ? 'Друзья не найдены' : 'У вас пока нет друзей'}
+                  </div>
+                ) : (
+                  filteredFriends.map((friend) => (
+                    <div
+                      key={friend.id}
+                      className={styles.friendItem}
+                      onClick={() => handleSelectFriend(friend)}
+                    >
+                      <div className={styles.friendAvatar}>
+                        {friend.avatarUrl ? (
+                          <img 
+                            src={friend.avatarUrl} 
+                            alt={friend.displayName}
+                            className={styles.friendAvatarImage}
+                          />
+                        ) : (
+                          <div className={styles.friendAvatarPlaceholder}>
+                            {friend.displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <span className={styles.friendName}>{friend.displayName}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -76,6 +196,13 @@ const ConversationList = ({ onSelectConversation }) => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Сообщения</h2>
+        <button 
+          className={styles.newMessageButton}
+          onClick={() => setShowNewMessageModal(true)}
+          title="Написать новое сообщение"
+        >
+          ✏️ Написать
+        </button>
       </div>
       
       <ul className={styles.list}>
@@ -118,6 +245,65 @@ const ConversationList = ({ onSelectConversation }) => {
           </li>
         ))}
       </ul>
+
+      {/* Модальное окно выбора друга */}
+      {showNewMessageModal && (
+        <div className={styles.modal} onClick={() => setShowNewMessageModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Выберите получателя</h3>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setShowNewMessageModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Поиск друзей..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
+
+            <div className={styles.friendsList}>
+              {loadingFriends ? (
+                <div className={styles.modalLoading}>Загрузка друзей...</div>
+              ) : filteredFriends.length === 0 ? (
+                <div className={styles.modalEmpty}>
+                  {searchQuery ? 'Друзья не найдены' : 'У вас пока нет друзей'}
+                </div>
+              ) : (
+                filteredFriends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className={styles.friendItem}
+                    onClick={() => handleSelectFriend(friend)}
+                  >
+                    <div className={styles.friendAvatar}>
+                      {friend.avatarUrl ? (
+                        <img 
+                          src={friend.avatarUrl} 
+                          alt={friend.displayName}
+                          className={styles.friendAvatarImage}
+                        />
+                      ) : (
+                        <div className={styles.friendAvatarPlaceholder}>
+                          {friend.displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <span className={styles.friendName}>{friend.displayName}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -14,6 +14,8 @@ const ListsPage = lazy(() => import('./pages/ListsPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -130,6 +132,26 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <NotificationsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница сообщений */}
+              <Route 
+                path="/messages" 
+                element={
+                  <ProtectedRoute>
+                    <MessagesPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница друзей */}
+              <Route 
+                path="/friends" 
+                element={
+                  <ProtectedRoute>
+                    <FriendsPage />
                   </ProtectedRoute>
                 } 
               />

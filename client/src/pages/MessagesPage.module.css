@@ -1,9 +1,12 @@
 .container {
   display: flex;
-  height: calc(100vh - 60px); /* Вычитаем высоту header/footer */
-  max-width: 1400px;
+  height: calc(100vh - 200px); /* Вычитаем высоту header/footer и отступы */
+  max-width: 1200px;
   margin: 0 auto;
   background: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .conversationListPanel {
@@ -22,6 +25,7 @@
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
+    height: calc(100vh - 150px);
   }
 
   .conversationListPanel {

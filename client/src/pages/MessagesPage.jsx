@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import UserPageLayout from '../components/Layout/UserPageLayout';
 import ConversationList from '../components/Messages/ConversationList';
 import MessageThread from '../components/Messages/MessageThread';
 import styles from './MessagesPage.module.css';
@@ -15,14 +16,16 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.conversationListPanel}>
-        <ConversationList onSelectConversation={handleSelectConversation} />
+    <UserPageLayout>
+      <div className={styles.container}>
+        <div className={styles.conversationListPanel}>
+          <ConversationList onSelectConversation={handleSelectConversation} />
+        </div>
+        <div className={styles.messageThreadPanel}>
+          <MessageThread conversation={selectedConversation} />
+        </div>
       </div>
-      <div className={styles.messageThreadPanel}>
-        <MessageThread conversation={selectedConversation} />
-      </div>
-    </div>
+    </UserPageLayout>
   );
 };
 
