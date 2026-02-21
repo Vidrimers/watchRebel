@@ -27,10 +27,10 @@ export const fetchConversations = createAsyncThunk(
 // Получить сообщения из конкретного диалога
 export const fetchMessages = createAsyncThunk(
   'messages/fetchMessages',
-  async (conversationId, { rejectWithValue }) => {
+  async ({ conversationId, limit = 50, offset = 0 }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/messages/${conversationId}`);
-      return { conversationId, messages: response.data };
+      const response = await api.get(`/messages/${conversationId}?limit=${limit}&offset=${offset}`);
+      return { conversationId, ...response.data, offset };
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -69,7 +69,10 @@ const messagesSlice = createSlice({
     conversations: [],
     currentConversation: null,
     messages: [],
+    hasMoreMessages: false,
+    totalMessages: 0,
     loading: false,
+    loadingMore: false,
     sendingMessage: false,
     error: null
   },
@@ -83,6 +86,17 @@ const messagesSlice = createSlice({
     clearMessages: (state) => {
       state.messages = [];
       state.currentConversation = null;
+    },
+    addNewMessage: (state, action) => {
+      // Добавляем новое сообщение только если оно для текущего диалога
+      const message = action.payload;
+      if (message.conversationId === state.currentConversation) {
+        // Проверяем что сообщение еще не добавлено
+        const exists = state.messages.some(m => m.id === message.id);
+        if (!exists) {
+          state.messages.push(message);
+        }
+      }
     }
   },
   extraReducers: (builder) => {
@@ -102,18 +116,36 @@ const messagesSlice = createSlice({
         state.error = action.payload;
       })
       // Fetch Messages
-      .addCase(fetchMessages.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchMessages.pending, (state, action) => {
+        // Если offset > 0, это загрузка старых сообщений
+        if (action.meta.arg.offset > 0) {
+          state.loadingMore = true;
+        } else {
+          state.loading = true;
+        }
         state.error = null;
       })
       .addCase(fetchMessages.fulfilled, (state, action) => {
-        state.messages = action.payload.messages;
+        const { messages, pagination, offset } = action.payload;
+        
+        if (offset > 0) {
+          // Добавляем старые сообщения в начало
+          state.messages = [...messages, ...state.messages];
+          state.loadingMore = false;
+        } else {
+          // Заменяем все сообщения (первая загрузка или обновление)
+          state.messages = messages;
+          state.loading = false;
+        }
+        
         state.currentConversation = action.payload.conversationId;
-        state.loading = false;
+        state.hasMoreMessages = pagination.hasMore;
+        state.totalMessages = pagination.total;
         state.error = null;
       })
       .addCase(fetchMessages.rejected, (state, action) => {
         state.loading = false;
+        state.loadingMore = false;
         state.error = action.payload;
       })
       // Send Message
@@ -154,5 +186,5 @@ const messagesSlice = createSlice({
   }
 });
 
-export const { clearError, setCurrentConversation, clearMessages } = messagesSlice.actions;
+export const { clearError, setCurrentConversation, clearMessages, addNewMessage } = messagesSlice.actions;
 export default messagesSlice.reducer;

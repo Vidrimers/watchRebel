@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +38,7 @@ import feedRoutes from './routes/feed.js';
 import messagesRoutes from './routes/messages.js';
 import settingsRoutes from './routes/settings.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
+import { initWebSocket } from './services/websocketService.js';
 
 if (envResult.error) {
   console.error('❌ Ошибка загрузки .env:', envResult.error);
@@ -130,7 +132,12 @@ app.use((err, req, res, next) => {
 
 // Запуск сервера только если это не тестовая среда
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  
+  // Инициализация WebSocket
+  initWebSocket(server);
+  
+  server.listen(PORT, () => {
     logger.info(`Сервер запущен на порту ${PORT}`, { 
       port: PORT, 
       env: process.env.NODE_ENV || 'development' 

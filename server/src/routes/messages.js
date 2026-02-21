@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sendTelegramNotification } from '../services/notificationService.js';
+import { sendMessageToUser } from '../services/websocketService.js';
 
 const router = express.Router();
 
@@ -80,6 +81,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 /**
  * GET /api/messages/:conversationId
  * Получить все сообщения из конкретного диалога
+ * Query params: limit (default: 50), offset (default: 0)
  * Сообщения отсортированы по дате создания (старые сверху)
  * Автоматически отмечает непрочитанные сообщения как прочитанные
  */
@@ -87,6 +89,8 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
 
     // Проверяем, что пользователь является участником диалога
     const conversationCheck = await executeQuery(
@@ -108,19 +112,32 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       });
     }
 
-    // Получаем все сообщения из диалога
+    // Получаем общее количество сообщений
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM messages
+      WHERE conversation_id = ?
+    `;
+    
+    const countResult = await executeQuery(countQuery, [conversationId]);
+    const totalMessages = countResult.success ? countResult.data[0].total : 0;
+
+    // Получаем сообщения с пагинацией (сортируем по убыванию, берем limit, потом разворачиваем)
     const messagesQuery = `
-      SELECT 
-        m.*,
-        u.display_name as sender_name,
-        u.avatar_url as sender_avatar
-      FROM messages m
-      LEFT JOIN users u ON m.sender_id = u.id
-      WHERE m.conversation_id = ?
-      ORDER BY m.created_at ASC
+      SELECT * FROM (
+        SELECT 
+          m.*,
+          u.display_name as sender_name,
+          u.avatar_url as sender_avatar
+        FROM messages m
+        LEFT JOIN users u ON m.sender_id = u.id
+        WHERE m.conversation_id = ?
+        ORDER BY m.created_at DESC
+        LIMIT ? OFFSET ?
+      ) ORDER BY created_at ASC
     `;
 
-    const messagesResult = await executeQuery(messagesQuery, [conversationId]);
+    const messagesResult = await executeQuery(messagesQuery, [conversationId, limit, offset]);
 
     if (!messagesResult.success) {
       return res.status(500).json({ 
@@ -150,7 +167,15 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       }
     }));
 
-    res.json(messages);
+    res.json({
+      messages,
+      pagination: {
+        total: totalMessages,
+        limit,
+        offset,
+        hasMore: offset + messages.length < totalMessages
+      }
+    });
 
   } catch (error) {
     console.error('Ошибка получения сообщений:', error);
@@ -297,6 +322,29 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const m = messageResult.data[0];
 
+    // Формируем объект сообщения для ответа
+    const messageResponse = {
+      id: m.id,
+      conversationId: m.conversation_id,
+      senderId: m.sender_id,
+      receiverId: m.receiver_id,
+      content: m.content,
+      isRead: Boolean(m.is_read),
+      sentViaBot: Boolean(m.sent_via_bot),
+      createdAt: m.created_at ? m.created_at + 'Z' : null,
+      sender: {
+        displayName: m.sender_name,
+        avatarUrl: m.sender_avatar
+      }
+    };
+
+    // Отправляем сообщение получателю через WebSocket
+    const sentViaWebSocket = sendMessageToUser(receiverId, messageResponse);
+    
+    if (sentViaWebSocket) {
+      console.log(`✅ Сообщение отправлено через WebSocket пользователю ${receiverId}`);
+    }
+
     // Отправляем уведомление в Telegram получателю
     const senderResult = await executeQuery(
       'SELECT display_name FROM users WHERE id = ?',
@@ -323,20 +371,7 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    res.status(201).json({
-      id: m.id,
-      conversationId: m.conversation_id,
-      senderId: m.sender_id,
-      receiverId: m.receiver_id,
-      content: m.content,
-      isRead: Boolean(m.is_read),
-      sentViaBot: Boolean(m.sent_via_bot),
-      createdAt: m.created_at ? m.created_at + 'Z' : null, // Добавляем Z для UTC
-      sender: {
-        displayName: m.sender_name,
-        avatarUrl: m.sender_avatar
-      }
-    });
+    res.status(201).json(messageResponse);
 
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error);

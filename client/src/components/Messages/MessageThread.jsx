@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
+import { connectWebSocket, disconnectWebSocket, addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './MessageThread.module.css';
 
 /**
@@ -10,32 +11,93 @@ import styles from './MessageThread.module.css';
  */
 const MessageThread = ({ conversation }) => {
   const dispatch = useAppDispatch();
-  const { messages, loading, sendingMessage } = useAppSelector((state) => state.messages);
+  const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
 
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
     if (conversation && conversation.id) {
-      dispatch(fetchMessages(conversation.id));
-      
-      // Устанавливаем polling для автоматического обновления сообщений
-      const pollInterval = setInterval(() => {
-        dispatch(fetchMessages(conversation.id));
-      }, 3000); // Проверяем каждые 3 секунды
-      
-      return () => clearInterval(pollInterval);
+      dispatch(fetchMessages({ conversationId: conversation.id, limit: 50, offset: 0 }));
     }
   }, [conversation, dispatch]);
 
-  // Автоскролл к последнему сообщению
+  // Подключаем WebSocket для реалтайм сообщений
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const token = localStorage.getItem('token');
+    if (token) {
+      connectWebSocket(token);
+
+      // Обработчик новых сообщений через WebSocket
+      const handleWebSocketMessage = (data) => {
+        if (data.type === 'new_message' && data.message) {
+          // Добавляем новое сообщение в Redux store
+          dispatch({ 
+            type: 'messages/addNewMessage', 
+            payload: data.message 
+          });
+        }
+      };
+
+      addMessageHandler(handleWebSocketMessage);
+
+      return () => {
+        removeMessageHandler(handleWebSocketMessage);
+      };
+    }
+  }, [dispatch]);
+
+  // Показываем кнопку скролла вниз при появлении новых сообщений
+  useEffect(() => {
+    if (messages.length > previousMessageCount && previousMessageCount > 0) {
+      const container = messagesContainerRef.current;
+      if (container) {
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        if (!isNearBottom) {
+          setShowScrollButton(true);
+        }
+      }
+    }
+    setPreviousMessageCount(messages.length);
+  }, [messages.length, previousMessageCount]);
+
+  // Обработчик скролла для определения когда загружать старые сообщения
+  const handleScroll = (e) => {
+    const container = e.target;
+    
+    // Если проскроллили в самый верх и есть еще сообщения
+    if (container.scrollTop === 0 && hasMoreMessages && !loadingMore) {
+      loadOlderMessages();
+    }
+  };
+
+  // Загрузка старых сообщений
+  const loadOlderMessages = async () => {
+    if (!conversation || !conversation.id || loadingMore) return;
+    
+    const container = messagesContainerRef.current;
+    const previousScrollHeight = container.scrollHeight;
+    
+    await dispatch(fetchMessages({ 
+      conversationId: conversation.id, 
+      limit: 50, 
+      offset: messages.length 
+    }));
+    
+    // Сохраняем позицию скролла после загрузки
+    setTimeout(() => {
+      const newScrollHeight = container.scrollHeight;
+      container.scrollTop = newScrollHeight - previousScrollHeight;
+    }, 0);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowScrollButton(false);
   };
 
   // Обработчик отправки сообщения
@@ -195,13 +257,20 @@ const MessageThread = ({ conversation }) => {
       </div>
 
       {/* Список сообщений */}
-      <div className={styles.messagesContainer}>
+      <div 
+        className={styles.messagesContainer} 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+      >
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
             <p>Начните переписку с {conversation.otherUser.displayName}</p>
           </div>
         ) : (
           <div className={styles.messagesList}>
+            {loadingMore && (
+              <div className={styles.loadingMore}>Загрузка старых сообщений...</div>
+            )}
             {messages.map((message, index) => {
               const isOwnMessage = message.senderId === user.id;
               const showDateSeparator = shouldShowDateSeparator(message, messages[index - 1]);
@@ -301,6 +370,17 @@ const MessageThread = ({ conversation }) => {
             })}
             <div ref={messagesEndRef} />
           </div>
+        )}
+        
+        {/* Кнопка скролла вниз */}
+        {showScrollButton && (
+          <button 
+            className={styles.scrollDownButton}
+            onClick={scrollToBottom}
+            title="К новым сообщениям"
+          >
+            ↓
+          </button>
         )}
       </div>
 
