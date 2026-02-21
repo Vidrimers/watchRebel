@@ -40,9 +40,22 @@ export const fetchMessages = createAsyncThunk(
 // Отправить новое сообщение
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ receiverId, content }, { rejectWithValue }) => {
+  async ({ receiverId, content, files = [] }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/messages', { receiverId, content });
+      const formData = new FormData();
+      formData.append('receiverId', receiverId);
+      formData.append('content', content || '');
+      
+      // Добавляем файлы
+      files.forEach(file => {
+        formData.append('attachments', file);
+      });
+      
+      const response = await api.post('/messages', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);

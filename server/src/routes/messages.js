@@ -4,6 +4,7 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sendTelegramNotification } from '../services/notificationService.js';
 import { sendMessageToUser } from '../services/websocketService.js';
+import { uploadMessageFiles } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -160,6 +161,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       content: m.content,
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
+      attachments: m.attachments ? JSON.parse(m.attachments) : null,
       createdAt: m.created_at ? m.created_at + 'Z' : null, // Добавляем Z для UTC
       sender: {
         displayName: m.sender_name,
@@ -189,13 +191,15 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
 /**
  * POST /api/messages
  * Отправить новое сообщение
- * Body: { receiverId: string, content: string }
+ * Body: { receiverId: string, content: string, sentViaBot: boolean }
+ * Files: attachments[] (опционально, до 10 файлов, макс 50MB каждый)
  * Автоматически создает диалог, если его еще нет
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10), async (req, res) => {
   try {
     const { receiverId, content, sentViaBot } = req.body;
     const senderId = req.user.id;
+    const files = req.files || [];
 
     // Валидация
     if (!receiverId || !content) {
@@ -280,12 +284,24 @@ router.post('/', authenticateToken, async (req, res) => {
       conversationId = conversationCheck.data[0].id;
     }
 
+    // Обрабатываем загруженные файлы
+    let attachments = null;
+    if (files.length > 0) {
+      attachments = JSON.stringify(files.map(file => ({
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: `/uploads/messages/${file.filename}`
+      })));
+    }
+
     // Создаем сообщение
     const messageId = uuidv4();
     const createMessageResult = await executeQuery(
-      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?, datetime('now'))`,
-      [messageId, conversationId, senderId, receiverId, content.trim(), sentViaBot ? 1 : 0]
+      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, datetime('now'))`,
+      [messageId, conversationId, senderId, receiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments]
     );
 
     if (!createMessageResult.success) {
@@ -331,6 +347,7 @@ router.post('/', authenticateToken, async (req, res) => {
       content: m.content,
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
+      attachments: m.attachments ? JSON.parse(m.attachments) : null,
       createdAt: m.created_at ? m.created_at + 'Z' : null,
       sender: {
         displayName: m.sender_name,

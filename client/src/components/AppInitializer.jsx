@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
+import { connectWebSocket, disconnectWebSocket } from '../services/websocket';
 
 /**
  * Компонент для инициализации приложения
@@ -9,7 +10,7 @@ import { checkSession } from '../store/slices/authSlice';
  */
 function AppInitializer({ children }) {
   const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.auth);
+  const { loading, user } = useAppSelector((state) => state.auth);
   const [initialized, setInitialized] = React.useState(false);
 
   useEffect(() => {
@@ -21,6 +22,34 @@ function AppInitializer({ children }) {
 
     initializeAuth();
   }, [dispatch]);
+
+  // Подключаем WebSocket когда пользователь авторизован
+  useEffect(() => {
+    const token = localStorage.getItem('authToken'); // Правильный ключ!
+    
+    console.log('🔍 AppInitializer WebSocket check:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      hasToken: !!token 
+    });
+    
+    if (user && token) {
+      console.log('🔌 Инициализация WebSocket для пользователя:', user.id);
+      connectWebSocket(token);
+    } else {
+      console.log('⚠️ WebSocket не инициализирован:', { 
+        reason: !user ? 'нет пользователя' : 'нет токена' 
+      });
+    }
+    
+    // Отключаем только при выходе (когда компонент размонтируется)
+    return () => {
+      if (!user) {
+        console.log('🔌 Cleanup: отключаем WebSocket (пользователь вышел)');
+        disconnectWebSocket();
+      }
+    };
+  }, [user?.id]); // Зависимость только от ID пользователя
 
   // Показываем загрузку пока идет инициализация
   if (!initialized || loading) {

@@ -79,17 +79,29 @@ async function authenticateWebSocket(token) {
  * Отправить новое сообщение пользователю через WebSocket
  */
 export function sendMessageToUser(userId, message) {
+  console.log(`📤 Попытка отправить сообщение через WebSocket пользователю ${userId}`);
+  console.log(`📊 Активных подключений: ${clients.size}`);
+  console.log(`📋 Подключенные пользователи:`, Array.from(clients.keys()));
+  
   const ws = clients.get(userId);
   
-  if (ws && ws.readyState === 1) { // 1 = OPEN
-    ws.send(JSON.stringify({
-      type: 'new_message',
-      message
-    }));
-    return true;
+  if (!ws) {
+    console.log(`❌ WebSocket соединение не найдено для пользователя ${userId}`);
+    return false;
   }
   
-  return false;
+  if (ws.readyState !== 1) {
+    console.log(`❌ WebSocket не в состоянии OPEN для пользователя ${userId}, состояние: ${ws.readyState}`);
+    return false;
+  }
+  
+  ws.send(JSON.stringify({
+    type: 'new_message',
+    message
+  }));
+  
+  console.log(`✅ Сообщение отправлено через WebSocket пользователю ${userId}`);
+  return true;
 }
 
 /**

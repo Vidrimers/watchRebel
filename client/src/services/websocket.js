@@ -22,7 +22,11 @@ export function connectWebSocket(token) {
   }
 
   isConnecting = true;
-  const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:1313/ws';
+  
+  // Определяем протокол автоматически (ws для http, wss для https)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}//${host}/ws`;
   
   console.log('🔌 Подключение к WebSocket:', wsUrl);
   

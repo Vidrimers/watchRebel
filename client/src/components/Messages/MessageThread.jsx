@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
-import { connectWebSocket, disconnectWebSocket, addMessageHandler, removeMessageHandler } from '../../services/websocket';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './MessageThread.module.css';
 
 /**
@@ -16,54 +16,80 @@ const MessageThread = ({ conversation }) => {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [modalImages, setModalImages] = useState([]);
 
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
     if (conversation && conversation.id) {
       dispatch(fetchMessages({ conversationId: conversation.id, limit: 50, offset: 0 }));
+      
+      // Fallback: polling если WebSocket не работает (например через ngrok)
+      const pollInterval = setInterval(() => {
+        // Проверяем только если не получили сообщение через WebSocket недавно
+        dispatch(fetchMessages({ conversationId: conversation.id, limit: 50, offset: 0 }));
+      }, 5000); // Проверяем каждые 5 секунд
+      
+      return () => clearInterval(pollInterval);
     }
   }, [conversation, dispatch]);
 
-  // Подключаем WebSocket для реалтайм сообщений
+  // Подключаем обработчик WebSocket сообщений
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      connectWebSocket(token);
+    // Обработчик новых сообщений через WebSocket
+    const handleWebSocketMessage = (data) => {
+      if (data.type === 'new_message' && data.message) {
+        // Добавляем новое сообщение в Redux store
+        dispatch({ 
+          type: 'messages/addNewMessage', 
+          payload: data.message 
+        });
+      }
+    };
 
-      // Обработчик новых сообщений через WebSocket
-      const handleWebSocketMessage = (data) => {
-        if (data.type === 'new_message' && data.message) {
-          // Добавляем новое сообщение в Redux store
-          dispatch({ 
-            type: 'messages/addNewMessage', 
-            payload: data.message 
-          });
-        }
-      };
+    addMessageHandler(handleWebSocketMessage);
 
-      addMessageHandler(handleWebSocketMessage);
-
-      return () => {
-        removeMessageHandler(handleWebSocketMessage);
-      };
-    }
+    return () => {
+      removeMessageHandler(handleWebSocketMessage);
+    };
   }, [dispatch]);
 
   // Показываем кнопку скролла вниз при появлении новых сообщений
   useEffect(() => {
-    if (messages.length > previousMessageCount && previousMessageCount > 0) {
+    if (messages.length === 0) return;
+    
+    const currentLastMessage = messages[messages.length - 1];
+    const currentLastMessageId = currentLastMessage?.id;
+    
+    // Если ID последнего сообщения изменился - значит пришло новое
+    if (lastMessageId && currentLastMessageId !== lastMessageId) {
       const container = messagesContainerRef.current;
       if (container) {
-        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-        if (!isNearBottom) {
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 300;
+        
+        // Проверяем последнее сообщение - от меня или нет
+        const isMyMessage = currentLastMessage?.senderId === user?.id;
+        
+        if (isMyMessage) {
+          // Если я отправил - всегда скроллим
+          scrollToBottom();
+        } else if (isNearBottom) {
+          // Если пришло от другого и я внизу - скроллим
+          scrollToBottom();
+        } else {
+          // Если пришло от другого и я НЕ внизу - показываем кнопку
           setShowScrollButton(true);
         }
       }
     }
-    setPreviousMessageCount(messages.length);
-  }, [messages.length, previousMessageCount]);
+    
+    setLastMessageId(currentLastMessageId);
+  }, [messages, lastMessageId, user?.id]);
 
   // Обработчик скролла для определения когда загружать старые сообщения
   const handleScroll = (e) => {
@@ -104,14 +130,18 @@ const MessageThread = ({ conversation }) => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
-    if (!messageText.trim() || sendingMessage) return;
+    if ((!messageText.trim() && selectedFiles.length === 0) || sendingMessage) return;
 
     const content = messageText.trim();
+    const files = selectedFiles;
+    
     setMessageText('');
+    setSelectedFiles([]);
 
     const result = await dispatch(sendMessage({
       receiverId: conversation.otherUser.id,
-      content
+      content,
+      files
     }));
 
     // Если это новый диалог (id === null), обновляем список диалогов
@@ -119,6 +149,40 @@ const MessageThread = ({ conversation }) => {
       // Диалог будет автоматически добавлен в список через fetchConversations
       // который вызывается в ConversationList при монтировании
     }
+  };
+
+  // Обработчик выбора файлов
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        alert(`Файл ${file.name} слишком большой. Максимум 50МБ`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (selectedFiles.length + validFiles.length > 10) {
+      alert('Максимум 10 файлов за раз');
+      return;
+    }
+    
+    setSelectedFiles([...selectedFiles, ...validFiles]);
+  };
+
+  // Удаление файла из списка
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
+  // Открытие галереи изображений
+  const handleImageClick = (attachments, index) => {
+    const images = attachments.filter(att => att.mimetype.startsWith('image/'));
+    setModalImages(images);
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
   };
 
   // Обработчик нажатия Enter
@@ -345,7 +409,40 @@ const MessageThread = ({ conversation }) => {
                     </div>
                     
                     <div className={styles.messageBubble}>
-                      <p className={styles.messageText}>{message.content}</p>
+                      {message.content && (
+                        <p className={styles.messageText}>{message.content}</p>
+                      )}
+                      
+                      {/* Вложения */}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className={styles.attachments}>
+                          {message.attachments.map((attachment, attIndex) => (
+                            <div key={attIndex} className={styles.attachment}>
+                              {attachment.mimetype.startsWith('image/') ? (
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${attachment.path}`}
+                                  alt={attachment.originalName}
+                                  className={styles.attachmentImage}
+                                  onClick={() => handleImageClick(message.attachments, attIndex)}
+                                />
+                              ) : (
+                                <a
+                                  href={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${attachment.path}`}
+                                  download={attachment.originalName}
+                                  className={styles.attachmentFile}
+                                >
+                                  <span className={styles.attachmentIcon}>📄</span>
+                                  <span className={styles.attachmentName}>{attachment.originalName}</span>
+                                  <span className={styles.attachmentSize}>
+                                    {(attachment.size / 1024 / 1024).toFixed(2)} МБ
+                                  </span>
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
                       {message.sentViaBot && (
                         <div className={styles.botLabel}>
                           📱 Отвечено с помощью бота
@@ -386,23 +483,113 @@ const MessageThread = ({ conversation }) => {
 
       {/* Форма отправки сообщения */}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>
-        <textarea
-          className={styles.input}
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Напишите сообщение..."
-          rows={1}
-          disabled={sendingMessage}
-        />
-        <button
-          type="submit"
-          className={styles.sendButton}
-          disabled={!messageText.trim() || sendingMessage}
-        >
-          {sendingMessage ? '...' : '➤'}
-        </button>
+        <div className={styles.inputWrapper}>
+          {/* Превью выбранных файлов */}
+          {selectedFiles.length > 0 && (
+            <div className={styles.filesPreview}>
+              {selectedFiles.map((file, index) => (
+                <div key={index} className={styles.filePreviewItem}>
+                  {file.type.startsWith('image/') ? (
+                    <img 
+                      src={URL.createObjectURL(file)} 
+                      alt={file.name}
+                      className={styles.filePreviewImage}
+                    />
+                  ) : (
+                    <div className={styles.filePreviewIcon}>📄</div>
+                  )}
+                  <span className={styles.filePreviewName}>{file.name}</span>
+                  <button
+                    type="button"
+                    className={styles.fileRemoveButton}
+                    onClick={() => handleRemoveFile(index)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className={styles.inputRow}>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              multiple
+              accept="*/*"
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              className={styles.attachButton}
+              onClick={() => fileInputRef.current?.click()}
+              title="Прикрепить файл"
+            >
+              📎
+            </button>
+            <textarea
+              className={styles.input}
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Напишите сообщение..."
+              rows={1}
+              disabled={sendingMessage}
+            />
+            <button
+              type="submit"
+              className={styles.sendButton}
+              disabled={(!messageText.trim() && selectedFiles.length === 0) || sendingMessage}
+            >
+              {sendingMessage ? '...' : '➤'}
+            </button>
+          </div>
+        </div>
       </form>
+      
+      {/* Модалка для просмотра изображений */}
+      {showImageModal && (
+        <div className={styles.imageModal} onClick={() => setShowImageModal(false)}>
+          <div className={styles.imageModalContent} onClick={(e) => e.stopPropagation()}>
+            <button 
+              className={styles.imageModalClose}
+              onClick={() => setShowImageModal(false)}
+            >
+              ×
+            </button>
+            
+            {modalImages.length > 1 && (
+              <>
+                <button
+                  className={styles.imageModalPrev}
+                  onClick={() => setCurrentImageIndex((currentImageIndex - 1 + modalImages.length) % modalImages.length)}
+                >
+                  ‹
+                </button>
+                <button
+                  className={styles.imageModalNext}
+                  onClick={() => setCurrentImageIndex((currentImageIndex + 1) % modalImages.length)}
+                >
+                  ›
+                </button>
+              </>
+            )}
+            
+            <img
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${modalImages[currentImageIndex]?.path}`}
+              alt={modalImages[currentImageIndex]?.originalName}
+              className={styles.imageModalImage}
+            />
+            
+            {modalImages.length > 1 && (
+              <div className={styles.imageModalCounter}>
+                {currentImageIndex + 1} / {modalImages.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
