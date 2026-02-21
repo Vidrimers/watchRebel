@@ -1,0 +1,245 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: var(--text-primary);
+}
+
+/* Поиск */
+.searchSection {
+  margin-bottom: 30px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color 0.3s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Состояния */
+.loading,
+.error,
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.error {
+  color: var(--error-color);
+}
+
+/* Список пользователей */
+.usersList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.userCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Аватар */
+.avatarContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border-color);
+}
+
+/* Информация о пользователе */
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adminBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 4px;
+}
+
+.blockedBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  background: var(--error-color);
+  color: white;
+  border-radius: 4px;
+}
+
+.userUsername {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.userMeta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+/* Действия */
+.userActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btnProfile,
+.btnModeration {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btnProfile {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btnProfile:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btnModeration {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btnModeration:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+/* Кнопка "Загрузить еще" */
+.loadMoreContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.btnLoadMore {
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btnLoadMore:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.btnLoadMore:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .userCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .avatarContainer {
+    align-self: center;
+  }
+
+  .userInfo {
+    width: 100%;
+  }
+
+  .userActions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .btnProfile,
+  .btnModeration {
+    flex: 1;
+  }
+}

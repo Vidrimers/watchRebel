@@ -1,0 +1,361 @@
+/* Overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+/* Основное модальное окно */
+.modal {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Шапка */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border-color);
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.userUsername {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.closeButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: var(--error-color);
+  color: white;
+}
+
+/* Секции */
+.section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+}
+
+/* Действия */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.actionButton {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.banPostsButton {
+  background: var(--warning-color, #f59e0b);
+  color: white;
+}
+
+.banPostsButton:hover:not(:disabled) {
+  background: var(--warning-color-hover, #d97706);
+}
+
+.permanentBanButton {
+  background: var(--error-color, #ef4444);
+  color: white;
+}
+
+.permanentBanButton:hover:not(:disabled) {
+  background: var(--error-color-hover, #dc2626);
+}
+
+.unbanButton {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.unbanButton:hover:not(:disabled) {
+  background: var(--success-color-hover, #059669);
+}
+
+.editButton {
+  background: var(--info-color, #3b82f6);
+  color: white;
+}
+
+.editButton:hover:not(:disabled) {
+  background: var(--info-color-hover, #2563eb);
+}
+
+.deleteButton {
+  background: var(--error-color, #ef4444);
+  color: white;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: var(--error-color-hover, #dc2626);
+}
+
+.saveButton {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--success-color-hover, #059669);
+}
+
+.cancelButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+/* Форма переименования */
+.renameForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.renameActions {
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-input);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* Модальное окно бана */
+.banModal {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+}
+
+.error {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--error-color);
+  border-radius: 8px;
+  color: var(--error-color);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.durationPresets {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.presetButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetButton:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.presetButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .modal,
+  .banModal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .header {
+    padding: 20px;
+  }
+
+  .section {
+    padding: 16px 20px;
+  }
+
+  .avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .userName {
+    font-size: 18px;
+  }
+}

@@ -268,6 +268,31 @@
   background: var(--secondary-color-hover, #4b5563);
 }
 
+/* Кнопки навигации */
+.navigationButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btnNavigation {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--accent-primary);
+  color: white;
+  text-align: left;
+}
+
+.btnNavigation:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
 /* Темная тема */
 :global(.dark) .adminCard {
   background: var(--card-background-dark, #2a2a2a);
