@@ -190,14 +190,15 @@
 }
 
 .modalContent {
-  background: var(--card-bg);
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .modalHeader {

@@ -52,23 +52,35 @@ const ConversationList = ({ onSelectConversation }) => {
 
   // Обработчик выбора друга для нового сообщения
   const handleSelectFriend = (friend) => {
-    // Создаем временный объект диалога для нового сообщения
-    const newConversation = {
-      id: null, // null означает новый диалог
-      otherUser: {
-        id: friend.id,
-        displayName: friend.displayName,
-        avatarUrl: friend.avatarUrl
-      },
-      lastMessage: null,
-      unreadCount: 0,
-      lastMessageAt: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
-    
-    setShowNewMessageModal(false);
-    setSearchQuery('');
-    handleSelectConversation(newConversation);
+    // Проверяем, существует ли уже диалог с этим пользователем
+    const existingConversation = conversations.find(
+      conv => conv.otherUser.id === friend.id
+    );
+
+    if (existingConversation) {
+      // Если диалог уже существует, открываем его
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      handleSelectConversation(existingConversation);
+    } else {
+      // Создаем временный объект диалога для нового сообщения
+      const newConversation = {
+        id: null, // null означает новый диалог
+        otherUser: {
+          id: friend.id,
+          displayName: friend.displayName,
+          avatarUrl: friend.avatarUrl
+        },
+        lastMessage: null,
+        unreadCount: 0,
+        lastMessageAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+      
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      handleSelectConversation(newConversation);
+    }
   };
 
   // Фильтрация друзей по поисковому запросу
