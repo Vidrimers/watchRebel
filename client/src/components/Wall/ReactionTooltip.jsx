@@ -33,7 +33,18 @@ const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave }) => {
           >
             <div className={styles.avatar}>
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} />
+                <img 
+                  src={user.avatarUrl.startsWith('http') 
+                    ? user.avatarUrl 
+                    : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`
+                  }
+                  alt={user.name}
+                  onError={(e) => {
+                    // При ошибке показываем placeholder
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `<div class="${styles.avatarPlaceholder}">${user.name.charAt(0).toUpperCase()}</div>`;
+                  }}
+                />
               ) : (
                 <div className={styles.avatarPlaceholder}>
                   {user.name.charAt(0).toUpperCase()}

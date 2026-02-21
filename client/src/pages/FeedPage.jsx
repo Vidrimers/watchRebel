@@ -97,16 +97,31 @@ const FeedPage = () => {
                         href={`/user/${post.userId}`}
                         className={styles.authorLink}
                       >
-                        {post.author?.avatarUrl && (
-                          <img 
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${post.author.avatarUrl}`}
-                            alt={post.author.displayName}
-                            className={styles.authorAvatar}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        )}
+                        <div className={styles.avatarContainer}>
+                          {post.author?.avatarUrl ? (
+                            <img 
+                              src={post.author.avatarUrl.startsWith('http') 
+                                ? post.author.avatarUrl 
+                                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.author.avatarUrl}`
+                              }
+                              alt={post.author.displayName}
+                              className={styles.authorAvatar}
+                              onError={(e) => {
+                                console.error('Ошибка загрузки аватара:', e.target.src);
+                                // Заменяем на placeholder
+                                e.target.style.display = 'none';
+                                const placeholder = document.createElement('div');
+                                placeholder.className = styles.avatarPlaceholder;
+                                placeholder.textContent = (post.author?.displayName || 'U').charAt(0).toUpperCase();
+                                e.target.parentElement.appendChild(placeholder);
+                              }}
+                            />
+                          ) : (
+                            <div className={styles.avatarPlaceholder}>
+                              {(post.author?.displayName || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
                         <span className={styles.authorName}>
                           {post.author?.displayName || 'Пользователь'}
                         </span>
