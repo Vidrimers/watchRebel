@@ -6,8 +6,8 @@ const router = express.Router();
 
 /**
  * GET /api/feed/:userId
- * Получить ленту активности друзей пользователя
- * Возвращает последние 10 текстовых постов от друзей
+ * Получить ленту активности друзей и самого пользователя
+ * Возвращает последние 10 текстовых постов от друзей и пользователя
  */
 router.get('/:userId', authenticateToken, async (req, res) => {
   try {
@@ -34,18 +34,19 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       });
     }
 
-    // Если нет друзей, возвращаем пустой массив
-    if (friendsResult.data.length === 0) {
+    // Получаем ID всех друзей + сам пользователь
+    const friendIds = friendsResult.data.map(f => f.friend_id);
+    const allUserIds = [...friendIds, userId]; // Добавляем самого пользователя
+
+    // Если нет друзей, показываем только свои посты
+    if (allUserIds.length === 0) {
       return res.json([]);
     }
 
-    // Получаем ID всех друзей
-    const friendIds = friendsResult.data.map(f => f.friend_id);
-
     // Создаем плейсхолдеры для SQL запроса
-    const placeholders = friendIds.map(() => '?').join(',');
+    const placeholders = allUserIds.map(() => '?').join(',');
 
-    // Получаем последние 10 текстовых постов от друзей
+    // Получаем последние 10 текстовых постов от друзей и самого пользователя
     const postsResult = await executeQuery(
       `SELECT 
         wp.id,
@@ -62,7 +63,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
          AND wp.post_type = 'text'
        ORDER BY wp.created_at DESC
        LIMIT 10`,
-      friendIds
+      allUserIds
     );
 
     if (!postsResult.success) {
