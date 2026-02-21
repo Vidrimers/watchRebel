@@ -12,7 +12,7 @@ const Footer = () => {
     <footer className={styles.footer}>
       <div className={styles.footerContent}>
         <p className={styles.copyright}>
-          © {currentYear} watchRebel. Социальная сеть для любителей кино.
+          © {currentYear} watchRebel. Социальная сеть для любителей кино и сериалов.
         </p>
         <div className={styles.links}>
           <Link to="/about" className={styles.link}>

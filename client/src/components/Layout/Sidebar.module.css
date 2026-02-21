@@ -58,6 +58,7 @@
   gap: 12px;
   cursor: pointer;
   transition: box-shadow 0.2s;
+  position: relative; /* Для absolute позиционирования кнопки уведомлений */
 }
 
 .userInfoLink:hover .userInfo {
@@ -112,37 +113,34 @@
 
 /* Уведомления */
 .notificationsContainer {
-  background: var(--bg-secondary, #ffffff);
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 }
 
-.notificationsLink {
+.notificationsButton {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--text-primary, #333);
-  font-size: 15px;
-  transition: background-color 0.2s;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
 }
 
-.notificationsLink:hover {
-  background-color: var(--hover-bg, #f0f0f0);
+.notificationsButton:hover {
+  background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  transform: scale(1.1);
 }
 
-.notificationBadge {
-  background-color: var(--accent-color, #6366f1);
-  color: white;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  min-width: 20px;
-  text-align: center;
+.notificationsButton:active {
+  transform: scale(0.95);
 }
 
 /* Настройки */

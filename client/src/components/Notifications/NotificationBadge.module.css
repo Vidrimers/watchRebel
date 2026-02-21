@@ -2,15 +2,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   background-color: #ff4444;
   color: white;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 9px;
+  font-size: 11px;
   font-weight: bold;
-  margin-left: 8px;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  border: 2px solid var(--bg-secondary, #ffffff);
   animation: pulse 2s infinite;
 }
 
@@ -26,4 +29,5 @@
 /* Темная тема */
 [data-theme="dark"] .badge {
   background-color: #ff5555;
+  border-color: var(--bg-secondary, #2c2c2c);
 }

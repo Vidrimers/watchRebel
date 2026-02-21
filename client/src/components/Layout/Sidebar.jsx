@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import UserAvatar from '../User/UserAvatar';
 import SearchBar from '../Search/SearchBar';
-import { NotificationBadge } from '../Notifications';
+import { NotificationBadge, NotificationDropdown } from '../Notifications';
 import styles from './Sidebar.module.css';
 
 /**
@@ -9,6 +9,14 @@ import styles from './Sidebar.module.css';
  * Содержит: поиск, аватар, навигацию, настройки, уведомления
  */
 const Sidebar = ({ user, narrow = false }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const toggleDropdown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   return (
     <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''}`}>
       {/* Поисковая строка - скрыта в узком режиме */}
@@ -18,6 +26,22 @@ const Sidebar = ({ user, narrow = false }) => {
       {user && (
         <a href={`/user/${user.id}`} className={styles.userInfoLink}>
           <div className={styles.userInfo}>
+            {/* Уведомления - в правом верхнем углу */}
+            <div className={styles.notificationsContainer}>
+              <button 
+                className={styles.notificationsButton} 
+                title="Уведомления"
+                onClick={toggleDropdown}
+              >
+                🔔
+                <NotificationBadge />
+              </button>
+              <NotificationDropdown 
+                isOpen={isDropdownOpen} 
+                onClose={() => setIsDropdownOpen(false)} 
+              />
+            </div>
+
             {/* Аватар */}
             <UserAvatar user={user} size={narrow ? "small" : "medium"} />
 
@@ -67,14 +91,6 @@ const Sidebar = ({ user, narrow = false }) => {
           </li>
         </ul>
       </nav>
-
-      {/* Уведомления */}
-      <div className={styles.notificationsContainer}>
-        <a href="/notifications" className={styles.notificationsLink} title="Уведомления">
-          🔔 {!narrow && 'Уведомления'}
-          <NotificationBadge />
-        </a>
-      </div>
 
       {/* Настройки */}
       <div className={styles.settingsContainer}>
