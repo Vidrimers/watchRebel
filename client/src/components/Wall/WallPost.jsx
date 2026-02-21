@@ -14,7 +14,7 @@ import styles from './WallPost.module.css';
  * Компонент отдельной записи на стене
  * Поддерживает разные типы постов: text, media_added, rating, review
  */
-const WallPost = ({ post, isOwnProfile }) => {
+const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -36,6 +36,11 @@ const WallPost = ({ post, isOwnProfile }) => {
         emoji 
       })).unwrap();
       setShowReactionPicker(false);
+      
+      // Вызываем callback если он передан (для FeedPage)
+      if (onReactionChange) {
+        onReactionChange();
+      }
     } catch (err) {
       console.error('Ошибка добавления реакции:', err);
     }
@@ -47,6 +52,11 @@ const WallPost = ({ post, isOwnProfile }) => {
       await api.delete(`/wall/${post.id}/reactions/${reactionId}`);
       // Перезагружаем посты
       dispatch(fetchWall(post.userId));
+      
+      // Вызываем callback если он передан (для FeedPage)
+      if (onReactionChange) {
+        onReactionChange();
+      }
     } catch (err) {
       console.error('Ошибка удаления реакции:', err);
     }

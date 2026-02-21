@@ -53,6 +53,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         wp.post_type,
         wp.content,
         wp.created_at,
+        wp.edited_at,
         u.display_name,
         u.avatar_url
        FROM wall_posts wp
@@ -71,20 +72,47 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       });
     }
 
-    // Форматируем результат
-    const feed = postsResult.data.map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      postType: post.post_type,
-      content: post.content,
-      createdAt: post.created_at,
-      author: {
-        displayName: post.display_name,
-        avatarUrl: post.avatar_url
-      }
-    }));
+    // Для каждого поста получаем реакции
+    const postsWithReactions = await Promise.all(
+      postsResult.data.map(async (post) => {
+        const reactionsResult = await executeQuery(
+          `SELECT r.*, u.display_name, u.avatar_url 
+           FROM reactions r
+           LEFT JOIN users u ON r.user_id = u.id
+           WHERE r.post_id = ?
+           ORDER BY r.created_at ASC`,
+          [post.id]
+        );
 
-    res.json(feed);
+        const reactions = reactionsResult.success ? reactionsResult.data.map(r => ({
+          id: r.id,
+          postId: r.post_id,
+          userId: r.user_id,
+          emoji: r.emoji,
+          createdAt: r.created_at,
+          user: {
+            displayName: r.display_name,
+            avatarUrl: r.avatar_url
+          }
+        })) : [];
+
+        return {
+          id: post.id,
+          userId: post.user_id,
+          postType: post.post_type,
+          content: post.content,
+          createdAt: post.created_at,
+          editedAt: post.edited_at,
+          author: {
+            displayName: post.display_name,
+            avatarUrl: post.avatar_url
+          },
+          reactions
+        };
+      })
+    );
+
+    res.json(postsWithReactions);
 
   } catch (error) {
     console.error('Ошибка получения ленты:', error);

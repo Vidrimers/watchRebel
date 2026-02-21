@@ -16,6 +16,7 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
+const FeedPage = lazy(() => import('./pages/FeedPage'));
 const CatalogPage = lazy(() => import('./pages/CatalogPage'));
 const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
@@ -163,6 +164,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <FriendsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница ленты друзей */}
+              <Route 
+                path="/feed" 
+                element={
+                  <ProtectedRoute>
+                    <FeedPage />
                   </ProtectedRoute>
                 } 
               />
