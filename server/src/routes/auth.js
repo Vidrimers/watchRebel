@@ -103,11 +103,15 @@ router.post('/telegram', async (req, res) => {
 
       // Обновляем информацию пользователя (на случай изменений в Telegram)
       // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
+      // НЕ обновляем avatar_url, если пользователь загрузил кастомную аватарку через сайт
+      const shouldUpdateAvatar = !user.avatar_url || !user.avatar_url.startsWith('/uploads/');
+      const newAvatarUrl = shouldUpdateAvatar ? (avatarUrl || user.avatar_url) : user.avatar_url;
+      
       await executeQuery(
         `UPDATE users 
          SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
+        [telegramUsername || user.telegram_username, newAvatarUrl, telegramId]
       );
     }
 
@@ -354,11 +358,15 @@ router.post('/telegram-referral', async (req, res) => {
 
       // Обновляем информацию пользователя (на случай изменений в Telegram)
       // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
+      // НЕ обновляем avatar_url, если пользователь загрузил кастомную аватарку через сайт
+      const shouldUpdateAvatar = !user.avatar_url || !user.avatar_url.startsWith('/uploads/');
+      const newAvatarUrl = shouldUpdateAvatar ? (avatarUrl || user.avatar_url) : user.avatar_url;
+      
       await executeQuery(
         `UPDATE users 
          SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
+        [telegramUsername || user.telegram_username, newAvatarUrl, telegramId]
       );
     }
 
@@ -536,11 +544,15 @@ router.post('/telegram-widget', async (req, res) => {
 
       // Обновляем информацию пользователя (на случай изменений в Telegram)
       // НЕ обновляем display_name, чтобы сохранить изменения пользователя на сайте
+      // НЕ обновляем avatar_url, если пользователь загрузил кастомную аватарку через сайт
+      const shouldUpdateAvatar = !user.avatar_url || !user.avatar_url.startsWith('/uploads/');
+      const newAvatarUrl = shouldUpdateAvatar ? (avatarUrl || user.avatar_url) : user.avatar_url;
+      
       await executeQuery(
         `UPDATE users 
          SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [telegramUsername || user.telegram_username, avatarUrl || user.avatar_url, telegramId]
+        [telegramUsername || user.telegram_username, newAvatarUrl, telegramId]
       );
     }
 

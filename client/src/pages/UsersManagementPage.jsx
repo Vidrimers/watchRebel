@@ -232,12 +232,15 @@ const UsersManagementPage = () => {
                   >
                     👤 Профиль
                   </button>
-                  <button
-                    onClick={() => handleOpenModeration(user)}
-                    className={styles.btnModeration}
-                  >
-                    ⚖️ Модерация
-                  </button>
+                  {/* Не показываем кнопку модерации для самого админа */}
+                  {user.id !== currentUser?.id && (
+                    <button
+                      onClick={() => handleOpenModeration(user)}
+                      className={styles.btnModeration}
+                    >
+                      ⚖️ Модерация
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
