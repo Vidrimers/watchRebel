@@ -1,7 +1,7 @@
 import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
+import { uploadAvatar } from '../middleware/upload.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -128,7 +128,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
  * - theme: string (опционально)
  * - avatar: file (опционально) - изображение для аватарки
  */
-router.put('/:id', authenticateToken, upload.single('avatar'), async (req, res) => {
+router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
   try {
     const { id } = req.params;
     const { displayName, theme } = req.body;

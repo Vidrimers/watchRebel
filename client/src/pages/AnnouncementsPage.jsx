@@ -11,6 +11,8 @@ const AnnouncementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newAnnouncement, setNewAnnouncement] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   
@@ -55,11 +57,23 @@ const AnnouncementsPage = () => {
 
     try {
       setCreating(true);
-      await api.post('/admin/announcements', {
-        content: newAnnouncement.trim()
+      
+      // Создаем FormData для отправки файла
+      const formData = new FormData();
+      formData.append('content', newAnnouncement.trim());
+      if (selectedImage) {
+        formData.append('image', selectedImage);
+      }
+      
+      await api.post('/admin/announcements', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
       setNewAnnouncement('');
+      setSelectedImage(null);
+      setImagePreview(null);
       await fetchAnnouncements();
     } catch (err) {
       console.error('Ошибка создания объявления:', err);
@@ -67,6 +81,37 @@ const AnnouncementsPage = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Проверяем тип файла
+      if (!file.type.startsWith('image/')) {
+        setError('Можно загружать только изображения');
+        return;
+      }
+      
+      // Проверяем размер файла (макс 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Размер изображения не должен превышать 5MB');
+        return;
+      }
+      
+      setSelectedImage(file);
+      
+      // Создаем превью
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const handleDeleteAnnouncement = async (id) => {
@@ -145,14 +190,46 @@ const AnnouncementsPage = () => {
       <div className={styles.createSection}>
         <h2>Создать новое объявление</h2>
         <form onSubmit={handleCreateAnnouncement} className={styles.createForm}>
-          <textarea
-            value={newAnnouncement}
-            onChange={(e) => setNewAnnouncement(e.target.value)}
-            placeholder="Введите текст объявления..."
-            className={styles.textarea}
-            rows={4}
-            disabled={creating}
-          />
+          <div className={styles.textareaWrapper}>
+            <textarea
+              value={newAnnouncement}
+              onChange={(e) => setNewAnnouncement(e.target.value)}
+              placeholder="Введите текст объявления..."
+              className={styles.textarea}
+              rows={4}
+              disabled={creating}
+            />
+            
+            {/* Кнопка загрузки изображения внутри textarea */}
+            <label htmlFor="imageInput" className={styles.attachButton} title="Прикрепить изображение">
+              📎
+            </label>
+            <input
+              id="imageInput"
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className={styles.imageInput}
+              disabled={creating}
+            />
+          </div>
+          
+          {/* Превью изображения */}
+          {imagePreview && (
+            <div className={styles.imagePreview}>
+              <img src={imagePreview} alt="Превью" />
+              <button
+                type="button"
+                className={styles.removeImageButton}
+                onClick={handleRemoveImage}
+                disabled={creating}
+                title="Удалить изображение"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          
           <div className={styles.createButtons}>
             <button 
               type="submit" 
@@ -208,6 +285,16 @@ const AnnouncementsPage = () => {
                 <div className={styles.announcementContent}>
                   {announcement.content}
                 </div>
+                
+                {/* Изображение объявления */}
+                {announcement.imageUrl && (
+                  <div className={styles.announcementImage}>
+                    <img 
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${announcement.imageUrl}`} 
+                      alt="Изображение объявления" 
+                    />
+                  </div>
+                )}
 
                 {/* Модальное окно подтверждения удаления */}
                 {deleteConfirm === announcement.id && (

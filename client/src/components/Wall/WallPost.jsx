@@ -204,6 +204,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
   // Проверка, является ли пост объявлением администратора
   const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
 
+  // Функция для очистки контента от служебных маркеров
+  const cleanContent = (content) => {
+    if (!content) return content;
+    // Убираем маркер announcement_id и лишние переносы строк
+    return content
+      .replace(/\[announcement_id:[^\]]+\]/g, '')
+      .replace(/\n{3,}/g, '\n\n') // Заменяем 3+ переноса на 2
+      .trim();
+  };
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -265,7 +275,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                 </div>
               </div>
             ) : (
-              <p>{post.content}</p>
+              <p>{cleanContent(post.content)}</p>
             )}
           </div>
         );
@@ -339,7 +349,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
             )}
             {post.content && (
               <div className={styles.reviewText}>
-                <p>{post.content}</p>
+                <p>{cleanContent(post.content)}</p>
               </div>
             )}
           </div>

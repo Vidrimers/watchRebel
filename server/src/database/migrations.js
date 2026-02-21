@@ -152,6 +152,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS announcements (
         id TEXT PRIMARY KEY,
         content TEXT NOT NULL,
+        image_url TEXT,
         created_by TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (created_by) REFERENCES users(id)
