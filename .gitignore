@@ -1,6 +1,7 @@
 # ПАПКИ
 
 node_modules/
+dist/
 temp/
 .vscode/
 .DS_Store

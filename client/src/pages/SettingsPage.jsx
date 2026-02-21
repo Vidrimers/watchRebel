@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
@@ -8,6 +8,8 @@ import ThemeDropdown from '../components/Settings/ThemeDropdown';
 import AdminPanel from '../components/Settings/AdminPanel';
 import AvatarUpload from '../components/Settings/AvatarUpload';
 import useConfirm from '../hooks/useConfirm.jsx';
+import useAlert from '../hooks/useAlert.jsx';
+import api from '../services/api';
 import styles from './SettingsPage.module.css';
 
 /**
@@ -19,6 +21,7 @@ const SettingsPage = () => {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const { confirmDialog, showConfirm } = useConfirm();
+  const { alertDialog, showAlert } = useAlert();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
@@ -82,6 +85,7 @@ const SettingsPage = () => {
   return (
     <>
       {confirmDialog}
+      {alertDialog}
       <UserPageLayout user={user}>
       <div className={styles.settingsContainer}>
         <h1 className={styles.pageTitle}>⚙️ Настройки</h1>
@@ -162,21 +166,6 @@ const SettingsPage = () => {
           <button onClick={handleLogout} className={styles.logoutButton}>
             Выйти из аккаунта
           </button>
-        </div>
-
-        {/* Карточка с контактами админа */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Контакты для рекламы</h3>
-          <div className={styles.contactInfo}>
-            <p className={styles.contactItem}>
-              <span className={styles.contactIcon}>📧</span>
-              Email: <a href="mailto:admin@watchrebel.com" className={styles.contactLink}>admin@watchrebel.com</a>
-            </p>
-            <p className={styles.contactItem}>
-              <span className={styles.contactIcon}>💬</span>
-              Telegram: <a href="https://t.me/watchrebel_admin" className={styles.contactLink} target="_blank" rel="noopener noreferrer">@watchrebel_admin</a>
-            </p>
-          </div>
         </div>
 
         {/* Админ-панель (только для админа) */}

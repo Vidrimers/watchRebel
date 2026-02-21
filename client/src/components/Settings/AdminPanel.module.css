@@ -125,6 +125,64 @@
   font-style: italic;
 }
 
+/* Секция контактов */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.editContactsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #666);
+}
+
+.formButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.contactsDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contactText {
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.contactItem {
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contactIcon {
+  font-size: 16px;
+}
+
 /* Кнопки */
 .btnPrimary,
 .btnEdit,
@@ -248,5 +306,15 @@
 }
 
 :global(.dark) .lastUpdated {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+/* Темная тема для контактов */
+:global(.dark) .contactText,
+:global(.dark) .contactItem {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .formLabel {
   color: var(--text-secondary-dark, #aaa);
 }

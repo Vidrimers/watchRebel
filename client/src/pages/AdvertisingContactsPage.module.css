@@ -13,6 +13,28 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.backButton {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
 .title {
   font-size: 32px;
   font-weight: 700;
@@ -70,6 +92,23 @@
   margin-bottom: 0;
 }
 
+.contactIcon {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.contactLink {
+  color: var(--primary-color, #6366f1);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.contactLink:hover {
+  color: var(--primary-color-hover, #4f46e5);
+  text-decoration: underline;
+}
+
 /* Темная тема */
 :global(.dark) .container {
   background: var(--bg-primary-dark);
@@ -77,6 +116,18 @@
 
 :global(.dark) .content {
   background: var(--bg-secondary-dark);
+}
+
+:global(.dark) .backButton {
+  background: var(--bg-tertiary-dark);
+  border-color: var(--border-color-dark);
+  color: var(--text-primary-dark);
+}
+
+:global(.dark) .backButton:hover {
+  background: var(--bg-hover-dark);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 :global(.dark) .title {

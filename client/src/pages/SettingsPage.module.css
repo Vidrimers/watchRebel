@@ -36,6 +36,80 @@
   color: var(--text-primary, #333);
 }
 
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cardHeader .cardTitle {
+  margin: 0;
+}
+
+.cardHeader .editButton {
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cardHeader .editButton:hover {
+  background: var(--primary-color-hover, #4f46e5);
+}
+
+/* Форма редактирования контактов */
+.editContactsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+}
+
+.formInput,
+.formTextarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary, #333);
+  background: var(--bg-input);
+  transition: border-color 0.2s ease;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formButtons {
+  display: flex;
+  gap: 12px;
+}
+
 /* Информация о профиле */
 .profileInfo {
   display: flex;
@@ -89,12 +163,25 @@
   gap: 12px;
 }
 
+.loadingText {
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+  margin: 0;
+}
+
 .contactItem {
   display: flex;
   align-items: center;
   margin: 0;
   font-size: 16px;
   color: var(--text-primary, #333);
+}
+
+.contactText {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary, #333);
+  line-height: 1.6;
 }
 
 .contactIcon {

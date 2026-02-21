@@ -18,13 +18,18 @@ const AdminPanel = () => {
   const [announcement, setAnnouncement] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [newName, setNewName] = useState('');
-  const [advertisingContacts, setAdvertisingContacts] = useState('');
-  const [contactsLoading, setContactsLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  
+  // Состояние для контактов
+  const [contactsLoading, setContactsLoading] = useState(true);
+  const [isEditingContacts, setIsEditingContacts] = useState(false);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactTelegram, setContactTelegram] = useState('');
+  const [contactText, setContactText] = useState('');
+  const [contactsSaving, setContactsSaving] = useState(false);
 
   useEffect(() => {
     loadUsers();
-    loadAdvertisingContacts();
+    loadContacts();
   }, []);
 
   const loadUsers = async () => {
@@ -41,47 +46,74 @@ const AdminPanel = () => {
     }
   };
 
-  const loadAdvertisingContacts = async () => {
+  const loadContacts = async () => {
     try {
+      setContactsLoading(true);
       const response = await api.get('/settings/advertising_contacts');
-      setAdvertisingContacts(response.data.value || '');
-      setLastUpdated(response.data.updatedAt);
+      const value = response.data.value || '';
+      
+      // Парсим контакты
+      const lines = value.split('\n');
+      let email = 'admin@watchrebel.com';
+      let telegram = '@watchrebel_admin';
+      let text = '';
+      
+      lines.forEach(line => {
+        const emailMatch = line.match(/Email:\s*(.+)/i);
+        const telegramMatch = line.match(/Telegram:\s*(.+)/i);
+        
+        if (emailMatch) {
+          email = emailMatch[1].trim();
+        } else if (telegramMatch) {
+          telegram = telegramMatch[1].trim();
+        } else if (line.trim() && !line.includes('Email:') && !line.includes('Telegram:')) {
+          text += (text ? '\n' : '') + line;
+        }
+      });
+      
+      setContactEmail(email);
+      setContactTelegram(telegram);
+      setContactText(text);
     } catch (err) {
       console.error('Ошибка загрузки контактов:', err);
+      setContactEmail('admin@watchrebel.com');
+      setContactTelegram('@watchrebel_admin');
+      setContactText('Для размещения рекламы свяжитесь с нами:');
+    } finally {
+      setContactsLoading(false);
     }
   };
 
-  const handleSaveAdvertisingContacts = async () => {
-    if (!advertisingContacts.trim()) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Введите контактную информацию',
-        type: 'warning'
-      });
-      return;
-    }
-
+  const handleSaveContacts = async () => {
     try {
-      setContactsLoading(true);
-      const response = await api.put('/settings/advertising_contacts', { 
-        value: advertisingContacts 
-      });
-      setLastUpdated(response.data.updatedAt);
+      setContactsSaving(true);
+      
+      // Формируем текст контактов
+      const contactsValue = `${contactText}\n\nEmail: ${contactEmail}\nTelegram: ${contactTelegram}`;
+      
+      await api.put('/settings/advertising_contacts', { value: contactsValue });
+      
+      setIsEditingContacts(false);
       await showAlert({
         title: 'Успешно',
         message: 'Контакты для рекламы обновлены',
         type: 'success'
       });
     } catch (err) {
+      console.error('Ошибка сохранения контактов:', err);
       await showAlert({
         title: 'Ошибка',
-        message: 'Не удалось обновить контакты',
+        message: 'Не удалось сохранить контакты',
         type: 'error'
       });
-      console.error(err);
     } finally {
-      setContactsLoading(false);
+      setContactsSaving(false);
     }
+  };
+
+  const handleCancelEditContacts = () => {
+    setIsEditingContacts(false);
+    loadContacts(); // Перезагружаем оригинальные значения
   };
 
   const handleDeleteUser = async (userId) => {
@@ -294,30 +326,87 @@ const AdminPanel = () => {
           ))}
         </div>
       </div>
-
       {/* Контакты для рекламы */}
       <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>Контакты для рекламы</h4>
-        <textarea
-          value={advertisingContacts}
-          onChange={(e) => setAdvertisingContacts(e.target.value)}
-          placeholder="Введите контактную информацию для рекламодателей"
-          className={styles.textarea}
-          rows={6}
-          disabled={contactsLoading}
-        />
-        {lastUpdated && (
-          <p className={styles.lastUpdated}>
-            Последнее обновление: {new Date(lastUpdated).toLocaleString('ru-RU')}
-          </p>
+        <div className={styles.sectionHeader}>
+          <h4 className={styles.sectionTitle}>Контакты для рекламы</h4>
+          {!isEditingContacts && (
+            <button 
+              onClick={() => setIsEditingContacts(true)} 
+              className={styles.btnEdit}
+            >
+              Редактировать
+            </button>
+          )}
+        </div>
+        
+        {contactsLoading ? (
+          <p>Загрузка...</p>
+        ) : isEditingContacts ? (
+          <div className={styles.editContactsForm}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Текст:</label>
+              <textarea
+                value={contactText}
+                onChange={(e) => setContactText(e.target.value)}
+                className={styles.textarea}
+                rows={3}
+                placeholder="Введите текст (например: Для размещения рекламы свяжитесь с нами:)"
+              />
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Email:</label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                className={styles.input}
+                placeholder="admin@watchrebel.com"
+              />
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Telegram:</label>
+              <input
+                type="text"
+                value={contactTelegram}
+                onChange={(e) => setContactTelegram(e.target.value)}
+                className={styles.input}
+                placeholder="@watchrebel_admin"
+              />
+            </div>
+            
+            <div className={styles.formButtons}>
+              <button 
+                onClick={handleSaveContacts} 
+                className={styles.btnSave}
+                disabled={contactsSaving}
+              >
+                {contactsSaving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button 
+                onClick={handleCancelEditContacts} 
+                className={styles.btnCancel}
+                disabled={contactsSaving}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.contactsDisplay}>
+            {contactText && <p className={styles.contactText}>{contactText}</p>}
+            <p className={styles.contactItem}>
+              <span className={styles.contactIcon}>📧</span>
+              Email: {contactEmail}
+            </p>
+            <p className={styles.contactItem}>
+              <span className={styles.contactIcon}>💬</span>
+              Telegram: {contactTelegram}
+            </p>
+          </div>
         )}
-        <button 
-          onClick={handleSaveAdvertisingContacts} 
-          className={styles.btnPrimary}
-          disabled={contactsLoading}
-        >
-          {contactsLoading ? 'Сохранение...' : 'Сохранить контакты'}
-        </button>
       </div>
 
       {/* Объявления */}
