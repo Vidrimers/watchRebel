@@ -62,8 +62,8 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       },
       lastMessage: c.last_message_content,
       unreadCount: c.unread_count || 0,
-      lastMessageAt: c.last_message_at,
-      createdAt: c.created_at
+      lastMessageAt: c.last_message_at ? c.last_message_at + 'Z' : null, // Добавляем Z для UTC
+      createdAt: c.created_at ? c.created_at + 'Z' : null // Добавляем Z для UTC
     }));
 
     res.json(conversations);
@@ -143,7 +143,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       content: m.content,
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
-      createdAt: m.created_at,
+      createdAt: m.created_at ? m.created_at + 'Z' : null, // Добавляем Z для UTC
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
@@ -330,7 +330,8 @@ router.post('/', authenticateToken, async (req, res) => {
       receiverId: m.receiver_id,
       content: m.content,
       isRead: Boolean(m.is_read),
-      createdAt: m.created_at,
+      sentViaBot: Boolean(m.sent_via_bot),
+      createdAt: m.created_at ? m.created_at + 'Z' : null, // Добавляем Z для UTC
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
