@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
-import ReferralStats from '../components/User/ReferralStats';
 import { AdminModerationPanel } from '../components/Settings';
 import { Wall } from '../components/Wall';
 import api from '../services/api';
@@ -102,29 +101,29 @@ const UserProfilePage = () => {
         {/* Заголовок профиля (только для чужих профилей) */}
         {!isOwnProfile && (
           <div className={styles.profileHeader}>
-            <UserAvatar 
-              user={profileUser} 
-              size="large" 
-              showBanIndicator={true}
-            />
+            <div className={styles.avatarSection}>
+              <UserAvatar 
+                user={profileUser} 
+                size="large" 
+                showBanIndicator={true}
+              />
+              
+              {/* Панель модерации под аватаркой (только для админа) */}
+              {isAdmin && (
+                <AdminModerationPanel 
+                  userId={userId}
+                  isAdmin={isAdmin}
+                  onModerationAction={handleModerationAction}
+                />
+              )}
+            </div>
+            
             <div className={styles.profileInfo}>
               <h1 className={styles.profileName}>{profileUser.displayName}</h1>
               {/* Telegram username скрыт у других пользователей */}
             </div>
           </div>
         )}
-
-        {/* Панель модерации (только для админа и не для своего профиля) */}
-        {isAdmin && !isOwnProfile && (
-          <AdminModerationPanel 
-            userId={userId}
-            isAdmin={isAdmin}
-            onModerationAction={handleModerationAction}
-          />
-        )}
-
-        {/* Статистика рефералов (только для своего профиля) */}
-        {isOwnProfile && <ReferralStats userId={userId} />}
 
         {/* Wall - лента активности */}
         <div className={styles.wallSection}>

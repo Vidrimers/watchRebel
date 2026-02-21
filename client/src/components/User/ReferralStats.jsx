@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
 import styles from './ReferralStats.module.css';
@@ -8,6 +9,7 @@ import styles from './ReferralStats.module.css';
  * Показывает количество приглашенных друзей и список рефералов
  */
 const ReferralStats = ({ userId }) => {
+  const navigate = useNavigate();
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [referralCode, setReferralCode] = useState(null);
   const [referralsCount, setReferralsCount] = useState(0);
@@ -85,6 +87,13 @@ const ReferralStats = ({ userId }) => {
     setShowReferrals(!showReferrals);
   };
 
+  /**
+   * Обработчик клика по рефералу для перехода в профиль
+   */
+  const handleReferralClick = (referralId) => {
+    navigate(`/user/${referralId}`);
+  };
+
   // Не отображаем компонент для чужих профилей
   if (!isOwnProfile) {
     return null;
@@ -109,11 +118,9 @@ const ReferralStats = ({ userId }) => {
   return (
     <div className={styles.referralStats}>
       <div className={styles.statsHeader}>
-        <h3 className={styles.statsTitle}>👥 Приглашенные друзья</h3>
-        <div className={styles.statsCount}>
-          <span className={styles.countNumber}>{referralsCount}</span>
-          <span className={styles.countLabel}>друзей</span>
-        </div>
+        <h3 className={styles.statsTitle}>
+          👥 Приглашенные друзья ({referralsCount})
+        </h3>
       </div>
 
       {referralsCount > 0 && (
@@ -132,7 +139,11 @@ const ReferralStats = ({ userId }) => {
           ) : (
             <ul className={styles.referralsItems}>
               {referrals.map((referral) => (
-                <li key={referral.id} className={styles.referralItem}>
+                <li 
+                  key={referral.id} 
+                  className={styles.referralItem}
+                  onClick={() => handleReferralClick(referral.id)}
+                >
                   <div className={styles.referralAvatar}>
                     {referral.avatarUrl ? (
                       <img 

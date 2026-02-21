@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
+import ReferralStats from '../components/User/ReferralStats';
 import api from '../services/api';
 import styles from './FriendsPage.module.css';
 
@@ -63,6 +64,9 @@ const FriendsPage = () => {
     <UserPageLayout user={user}>
       <div className={styles.container}>
         <h1 className={styles.title}>Мои друзья</h1>
+        
+        {/* Статистика рефералов */}
+        <ReferralStats userId={user.id} />
         
         {friends.length === 0 ? (
           <div className={styles.empty}>

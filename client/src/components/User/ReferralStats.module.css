@@ -7,9 +7,6 @@
 }
 
 .statsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 15px;
 }
 
@@ -18,28 +15,6 @@
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-}
-
-.statsCount {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--accent-primary);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-}
-
-.countNumber {
-  font-size: 1.8rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.countLabel {
-  font-size: 0.85rem;
-  opacity: 0.9;
-  margin-top: 4px;
 }
 
 .toggleButton {
@@ -80,6 +55,7 @@
   border-radius: 8px;
   margin-bottom: 10px;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .referralItem:hover {
@@ -165,21 +141,8 @@
     padding: 15px;
   }
 
-  .statsHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-
-  .statsCount {
-    align-self: stretch;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 15px;
-  }
-
-  .countNumber {
-    font-size: 1.5rem;
+  .statsTitle {
+    font-size: 1rem;
   }
 
   .referralAvatar {

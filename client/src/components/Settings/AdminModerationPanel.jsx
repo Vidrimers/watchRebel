@@ -6,12 +6,13 @@ import useConfirm from '../../hooks/useConfirm.jsx';
 
 /**
  * Компонент панели модерации для администратора
- * Отображается только для пользователей с правами администратора
+ * Отображается как dropdown меню
  */
 function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
   const { alertDialog, showAlert } = useAlert();
   const { confirmDialog, showConfirm } = useConfirm();
   
+  const [isOpen, setIsOpen] = useState(false);
   const [showBanModal, setShowBanModal] = useState(false);
   const [banType, setBanType] = useState(null); // 'posts' или 'permanent'
   const [reason, setReason] = useState('');
@@ -125,6 +126,8 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
    * Обработчик разблокировки
    */
   const handleUnban = async () => {
+    setIsOpen(false);
+    
     const confirmed = await showConfirm({
       title: 'Разблокировать пользователя',
       message: 'Вы уверены, что хотите разблокировать этого пользователя?',
@@ -167,6 +170,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
   const openPostBanModal = () => {
     setBanType('posts');
     setShowBanModal(true);
+    setIsOpen(false);
     setError(null);
   };
 
@@ -176,6 +180,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
   const openPermanentBanModal = () => {
     setBanType('permanent');
     setShowBanModal(true);
+    setIsOpen(false);
     setError(null);
   };
 
@@ -195,33 +200,41 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
       {alertDialog}
       {confirmDialog}
       <div className={styles.moderationPanel}>
-      <h3 className={styles.title}>⚠️ Модерация</h3>
-      
-      <div className={styles.actions}>
         <button 
-          className={`${styles.button} ${styles.banPostsButton}`}
-          onClick={openPostBanModal}
+          className={styles.dropdownToggle}
+          onClick={() => setIsOpen(!isOpen)}
           disabled={loading}
         >
-          🚫 Запретить посты
+          ⚙️ {isOpen ? '▲' : '▼'}
         </button>
         
-        <button 
-          className={`${styles.button} ${styles.permanentBanButton}`}
-          onClick={openPermanentBanModal}
-          disabled={loading}
-        >
-          ⛔ Забанить навсегда
-        </button>
-        
-        <button 
-          className={`${styles.button} ${styles.unbanButton}`}
-          onClick={handleUnban}
-          disabled={loading}
-        >
-          ✅ Разбанить
-        </button>
-      </div>
+        {isOpen && (
+          <div className={styles.dropdownMenu}>
+            <button 
+              className={`${styles.dropdownItem} ${styles.banPostsButton}`}
+              onClick={openPostBanModal}
+              disabled={loading}
+            >
+              🚫 Запретить посты
+            </button>
+            
+            <button 
+              className={`${styles.dropdownItem} ${styles.permanentBanButton}`}
+              onClick={openPermanentBanModal}
+              disabled={loading}
+            >
+              ⛔ Забанить навсегда
+            </button>
+            
+            <button 
+              className={`${styles.dropdownItem} ${styles.unbanButton}`}
+              onClick={handleUnban}
+              disabled={loading}
+            >
+              ✅ Разбанить
+            </button>
+          </div>
+        )}
 
       {/* Модальное окно */}
       {showBanModal && (
