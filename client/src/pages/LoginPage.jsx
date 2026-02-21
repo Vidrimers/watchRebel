@@ -26,12 +26,38 @@ function LoginPage() {
       return;
     }
 
-    // Проверяем сессию при загрузке страницы
-    const token = localStorage.getItem('authToken');
+    // Проверяем старый способ авторизации через URL параметры (для кнопок в боте)
+    const token = searchParams.get('token') || searchParams.get('session');
+    const userId = searchParams.get('userId');
+
     if (token) {
+      console.log('📥 Обнаружен токен в URL, авторизуемся...');
+      
+      // Сохраняем токен в localStorage
+      localStorage.setItem('authToken', token);
+      
+      // Проверяем сессию (обновляет Redux store)
+      dispatch(checkSession())
+        .unwrap()
+        .then(() => {
+          console.log('✅ Авторизация через URL успешна');
+          navigate('/', { replace: true });
+        })
+        .catch((error) => {
+          console.error('❌ Ошибка авторизации через URL:', error);
+          setAuthError('Не удалось авторизоваться. Попробуйте войти через Telegram.');
+          localStorage.removeItem('authToken');
+        });
+      
+      return;
+    }
+
+    // Проверяем сессию при загрузке страницы (если токен уже есть в localStorage)
+    const existingToken = localStorage.getItem('authToken');
+    if (existingToken) {
       dispatch(checkSession());
     }
-  }, [isAuthenticated, navigate, dispatch]);
+  }, [isAuthenticated, navigate, dispatch, searchParams]);
 
   // Глобальная функция для обработки ответа от Telegram Widget
   useEffect(() => {
