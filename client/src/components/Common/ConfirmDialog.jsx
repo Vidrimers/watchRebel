@@ -45,7 +45,7 @@ const ConfirmDialog = ({
     <div className={styles.backdrop} onClick={handleBackdropClick}>
       <div className={styles.dialog}>
         {title && <h2 className={styles.title}>{title}</h2>}
-        <p className={styles.message}>{message}</p>
+        <div className={styles.message}>{message}</div>
         <div className={styles.buttons}>
           <button
             className={`${styles.button} ${styles.cancelButton}`}

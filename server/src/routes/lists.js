@@ -37,15 +37,72 @@ router.get('/', authenticateToken, async (req, res) => {
       });
     }
 
-    const lists = listsResult.data.map(list => ({
-      id: list.id,
-      userId: list.user_id,
-      name: list.name,
-      mediaType: list.media_type,
-      createdAt: list.created_at
-    }));
+    // Для каждого списка получаем его элементы
+    const tmdbService = (await import('../services/tmdbService.js')).default;
+    
+    const listsWithItems = await Promise.all(
+      listsResult.data.map(async (list) => {
+        const itemsResult = await executeQuery(
+          'SELECT * FROM list_items WHERE list_id = ? ORDER BY added_at DESC',
+          [list.id]
+        );
 
-    res.json(lists);
+        let items = [];
+        if (itemsResult.success) {
+          // Обогащаем данные информацией из TMDb
+          items = await Promise.all(
+            itemsResult.data.map(async (item) => {
+              try {
+                let mediaDetails;
+                if (item.media_type === 'movie') {
+                  mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
+                } else {
+                  mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
+                }
+
+                return {
+                  id: item.id,
+                  listId: item.list_id,
+                  tmdbId: item.tmdb_id,
+                  mediaType: item.media_type,
+                  addedAt: item.added_at,
+                  title: mediaDetails.title || mediaDetails.name,
+                  posterPath: mediaDetails.poster_path,
+                  releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
+                  voteAverage: mediaDetails.vote_average || 0,
+                  overview: mediaDetails.overview
+                };
+              } catch (error) {
+                console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
+                return {
+                  id: item.id,
+                  listId: item.list_id,
+                  tmdbId: item.tmdb_id,
+                  mediaType: item.media_type,
+                  addedAt: item.added_at,
+                  title: 'Неизвестно',
+                  posterPath: null,
+                  releaseDate: null,
+                  voteAverage: 0,
+                  overview: null
+                };
+              }
+            })
+          );
+        }
+
+        return {
+          id: list.id,
+          userId: list.user_id,
+          name: list.name,
+          mediaType: list.media_type,
+          createdAt: list.created_at,
+          items
+        };
+      })
+    );
+
+    res.json(listsWithItems);
 
   } catch (error) {
     console.error('Ошибка получения списков:', error);
@@ -424,12 +481,28 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
 
     const item = itemResult.data[0];
 
+    // Получаем название контента из TMDb для уведомления
+    let mediaTitle = `контент #${tmdbId}`;
+    try {
+      const tmdbService = (await import('../services/tmdbService.js')).default;
+      let mediaDetails;
+      if (mediaType === 'movie') {
+        mediaDetails = await tmdbService.getMovieDetails(tmdbId);
+        mediaTitle = mediaDetails.title;
+      } else {
+        mediaDetails = await tmdbService.getTVDetails(tmdbId);
+        mediaTitle = mediaDetails.name;
+      }
+    } catch (err) {
+      console.error('Ошибка получения названия из TMDb:', err);
+    }
+
     // Отправляем уведомления друзьям об активности
     // Не блокируем ответ, если уведомления не отправятся
     notifyFriendActivity(userId, 'added_to_list', {
       tmdbId,
       mediaType,
-      title: `контент #${tmdbId}` // В реальном приложении нужно получить название из TMDb
+      title: mediaTitle
     }).catch(err => {
       console.error('Ошибка отправки уведомлений друзьям:', err);
     });
@@ -589,15 +662,53 @@ router.get('/:id/items', authenticateToken, async (req, res) => {
       });
     }
 
-    const items = itemsResult.data.map(item => ({
-      id: item.id,
-      listId: item.list_id,
-      tmdbId: item.tmdb_id,
-      mediaType: item.media_type,
-      addedAt: item.added_at
-    }));
+    // Импортируем tmdbService для получения деталей медиа
+    const tmdbService = (await import('../services/tmdbService.js')).default;
 
-    res.json(items);
+    // Обогащаем данные информацией из TMDb
+    const enrichedItems = await Promise.all(
+      itemsResult.data.map(async (item) => {
+        try {
+          let mediaDetails;
+          if (item.media_type === 'movie') {
+            mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
+          } else {
+            mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
+          }
+
+          return {
+            id: item.id,
+            listId: item.list_id,
+            tmdbId: item.tmdb_id,
+            mediaType: item.media_type,
+            addedAt: item.added_at,
+            // Добавляем данные из TMDb
+            title: mediaDetails.title || mediaDetails.name,
+            posterPath: mediaDetails.poster_path,
+            releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
+            voteAverage: mediaDetails.vote_average || 0,
+            overview: mediaDetails.overview
+          };
+        } catch (error) {
+          console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
+          // Возвращаем базовые данные если не удалось получить детали
+          return {
+            id: item.id,
+            listId: item.list_id,
+            tmdbId: item.tmdb_id,
+            mediaType: item.media_type,
+            addedAt: item.added_at,
+            title: 'Неизвестно',
+            posterPath: null,
+            releaseDate: null,
+            voteAverage: 0,
+            overview: null
+          };
+        }
+      })
+    );
+
+    res.json(enrichedItems);
 
   } catch (error) {
     console.error('Ошибка получения элементов списка:', error);

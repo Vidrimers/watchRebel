@@ -203,7 +203,11 @@ const listsSlice = createSlice({
         state.error = null;
       })
       .addCase(createList.fulfilled, (state, action) => {
-        state.customLists.push(action.payload);
+        // Инициализируем items как пустой массив для нового списка
+        state.customLists.push({
+          ...action.payload,
+          items: []
+        });
         state.loading = false;
         state.error = null;
       })

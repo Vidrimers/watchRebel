@@ -86,6 +86,7 @@ const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist }) => {
             key={item.id}
             className={styles.mediaCard}
             onClick={() => handleCardClick(item)}
+            onMouseLeave={() => setActiveMenu(null)}
           >
             {/* Постер */}
             <div className={styles.posterContainer}>

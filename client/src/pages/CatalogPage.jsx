@@ -211,30 +211,52 @@ const CatalogPage = () => {
 
     try {
       const mediaType = activeTab === 'movies' ? 'movie' : 'tv';
-      await dispatch(addToList({
+      const payload = {
         listId: selectedListId,
         media: {
           tmdbId: selectedItem.id,
           mediaType
         }
-      })).unwrap();
+      };
       
-      setShowListSelector(false);
-      setSelectedListId('');
-      setSelectedItem(null);
+      console.log('📤 Отправка данных:', payload);
+      console.log('📝 Тип tmdbId:', typeof selectedItem.id);
+      
+      await dispatch(addToList(payload)).unwrap();
+      
+      // Обновляем список после добавления
+      await dispatch(fetchLists());
       
       await showAlert({
         title: 'Успешно!',
         message: `"${selectedItem.title || selectedItem.name}" добавлен в список`,
         type: 'success'
       });
+      
+      // Закрываем модалку после показа алерта
+      setShowListSelector(false);
+      setSelectedListId('');
+      setSelectedItem(null);
     } catch (error) {
-      console.error('Ошибка добавления в список:', error);
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось добавить в список. Попробуйте позже.',
-        type: 'error'
-      });
+      console.error('❌ Ошибка добавления в список:', error);
+      console.error('📋 Детали ошибки:', error.response?.data || error);
+      
+      // Обработка специфичной ошибки "уже в списке"
+      if (error.code === 'ALREADY_IN_LIST' || error.response?.data?.code === 'ALREADY_IN_LIST') {
+        const errorData = error.response?.data || error;
+        await showAlert({
+          title: 'Уже в списке',
+          message: `Этот контент уже находится в списке "${errorData.existingListName}". Контент может быть только в одном списке одновременно.`,
+          type: 'warning'
+        });
+      } else {
+        await showAlert({
+          title: 'Ошибка',
+          message: error.response?.data?.error || error.error || 'Не удалось добавить в список. Попробуйте позже.',
+          type: 'error'
+        });
+      }
+      // Не закрываем модалку при ошибке, чтобы пользователь мог попробовать снова
     }
   };
 

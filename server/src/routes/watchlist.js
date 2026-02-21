@@ -36,15 +36,53 @@ router.get('/', authenticateToken, async (req, res) => {
       });
     }
 
-    const items = watchlistResult.data.map(item => ({
-      id: item.id,
-      userId: item.user_id,
-      tmdbId: item.tmdb_id,
-      mediaType: item.media_type,
-      addedAt: item.added_at
-    }));
+    // Импортируем tmdbService для получения деталей медиа
+    const tmdbService = (await import('../services/tmdbService.js')).default;
 
-    res.json(items);
+    // Обогащаем данные информацией из TMDb
+    const enrichedItems = await Promise.all(
+      watchlistResult.data.map(async (item) => {
+        try {
+          let mediaDetails;
+          if (item.media_type === 'movie') {
+            mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
+          } else {
+            mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
+          }
+
+          return {
+            id: item.id,
+            userId: item.user_id,
+            tmdbId: item.tmdb_id,
+            mediaType: item.media_type,
+            addedAt: item.added_at,
+            // Добавляем данные из TMDb
+            title: mediaDetails.title || mediaDetails.name,
+            posterPath: mediaDetails.poster_path,
+            releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
+            voteAverage: mediaDetails.vote_average || 0,
+            overview: mediaDetails.overview
+          };
+        } catch (error) {
+          console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
+          // Возвращаем базовые данные если не удалось получить детали
+          return {
+            id: item.id,
+            userId: item.user_id,
+            tmdbId: item.tmdb_id,
+            mediaType: item.media_type,
+            addedAt: item.added_at,
+            title: 'Неизвестно',
+            posterPath: null,
+            releaseDate: null,
+            voteAverage: 0,
+            overview: null
+          };
+        }
+      })
+    );
+
+    res.json(enrichedItems);
 
   } catch (error) {
     console.error('Ошибка получения списка желаемого:', error);
