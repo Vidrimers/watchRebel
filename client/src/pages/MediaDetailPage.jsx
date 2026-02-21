@@ -7,6 +7,7 @@ import {
   fetchLists, 
   addToList, 
   addToWatchlist,
+  removeFromWatchlist,
   fetchEpisodeProgress,
   markEpisodeWatched
 } from '../store/slices/listsSlice';
@@ -26,7 +27,7 @@ const MediaDetailPage = () => {
   const { alertDialog, showAlert } = useAlert();
 
   const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
-  const { customLists, episodeProgress, ratings } = useAppSelector((state) => state.lists);
+  const { customLists, episodeProgress, ratings, watchlist } = useAppSelector((state) => state.lists);
   const { user } = useAppSelector((state) => state.auth);
 
   const [selectedListId, setSelectedListId] = useState('');
@@ -74,25 +75,44 @@ const MediaDetailPage = () => {
     }
   };
 
-  // Обработка добавления в watchlist
-  const handleAddToWatchlist = async () => {
+  // Обработка добавления/удаления из watchlist
+  const handleToggleWatchlist = async () => {
     if (!selectedMedia) return;
 
     try {
-      await dispatch(addToWatchlist({
-        tmdbId: selectedMedia.id,
-        mediaType: selectedMedia.media_type || mediaType
-      })).unwrap();
-      
-      await showAlert({
-        title: 'Успешно!',
-        message: 'Добавлено в список желаемого',
-        type: 'success'
-      });
+      if (isInWatchlist) {
+        // Находим элемент в watchlist
+        const watchlistItem = watchlist.find(
+          item => item.tmdbId === parseInt(mediaId) && item.mediaType === (selectedMedia.media_type || mediaType)
+        );
+        
+        if (watchlistItem) {
+          await dispatch(removeFromWatchlist(watchlistItem.id)).unwrap();
+          
+          await showAlert({
+            title: 'Успешно!',
+            message: 'Удалено из списка желаемого',
+            type: 'success'
+          });
+        }
+      } else {
+        await dispatch(addToWatchlist({
+          tmdbId: selectedMedia.id,
+          mediaType: selectedMedia.media_type || mediaType
+        })).unwrap();
+        
+        await showAlert({
+          title: 'Успешно!',
+          message: 'Добавлено в список желаемого',
+          type: 'success'
+        });
+      }
     } catch (error) {
       await showAlert({
         title: 'Ошибка',
-        message: 'Не удалось добавить в список желаемого',
+        message: isInWatchlist 
+          ? 'Не удалось удалить из списка желаемого'
+          : 'Не удалось добавить в список желаемого',
         type: 'error'
       });
     }
@@ -142,6 +162,18 @@ const MediaDetailPage = () => {
   
   // Получаем текущий рейтинг пользователя
   const currentRating = ratings[mediaId] || null;
+
+  // Проверяем, в каком списке находится элемент
+  const isInWatchlist = watchlist.some(
+    item => item.tmdbId === parseInt(mediaId) && item.mediaType === (selectedMedia.media_type || mediaType)
+  );
+
+  // Находим список, в котором находится элемент
+  const currentList = customLists.find(list => 
+    list.items && list.items.some(
+      item => item.tmdbId === parseInt(mediaId) && item.mediaType === (selectedMedia.media_type || mediaType)
+    )
+  );
 
   return (
     <>
@@ -204,18 +236,27 @@ const MediaDetailPage = () => {
 
             {/* Действия */}
             <div className={styles.actions}>
-              <button 
-                className={styles.actionButton}
-                onClick={() => setShowListSelector(!showListSelector)}
-              >
-                + Добавить в список
-              </button>
+              {currentList ? (
+                <button 
+                  className={`${styles.actionButton} ${styles.inList}`}
+                  disabled
+                >
+                  ✓ В списке: {currentList.name}
+                </button>
+              ) : (
+                <button 
+                  className={styles.actionButton}
+                  onClick={() => setShowListSelector(!showListSelector)}
+                >
+                  + Добавить в список
+                </button>
+              )}
 
               <button 
-                className={styles.actionButton}
-                onClick={handleAddToWatchlist}
+                className={`${styles.actionButton} ${isInWatchlist ? styles.inWatchlist : ''}`}
+                onClick={handleToggleWatchlist}
               >
-                + В список желаемого
+                {isInWatchlist ? '✓ В списке желаемого' : '+ В список желаемого'}
               </button>
             </div>
 
@@ -262,6 +303,80 @@ const MediaDetailPage = () => {
             />
           </div>
         </div>
+
+        {/* Актёры и съёмочная группа */}
+        {selectedMedia.credits && (
+          <div className={styles.creditsSection}>
+            {/* Актёры */}
+            {selectedMedia.credits.cast && selectedMedia.credits.cast.length > 0 && (
+              <div className={styles.castSection}>
+                <h2 className={styles.sectionTitle}>Актёры</h2>
+                <div className={styles.castGrid}>
+                  {selectedMedia.credits.cast.slice(0, 12).map((person) => (
+                    <div key={person.id} className={styles.castCard}>
+                      <div className={styles.castPhoto}>
+                        {person.profile_path ? (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            alt={person.name}
+                            className={styles.castImage}
+                          />
+                        ) : (
+                          <div className={styles.noPhoto}>👤</div>
+                        )}
+                      </div>
+                      <div className={styles.castInfo}>
+                        <p className={styles.castName}>{person.name}</p>
+                        <p className={styles.castCharacter}>{person.character}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Съёмочная группа */}
+            {selectedMedia.credits.crew && selectedMedia.credits.crew.length > 0 && (
+              <div className={styles.crewSection}>
+                <h2 className={styles.sectionTitle}>Съёмочная группа</h2>
+                <div className={styles.crewList}>
+                  {/* Режиссёры */}
+                  {selectedMedia.credits.crew
+                    .filter(person => person.job === 'Director')
+                    .slice(0, 3)
+                    .map((person) => (
+                      <div key={`director-${person.id}`} className={styles.crewItem}>
+                        <span className={styles.crewRole}>Режиссёр:</span>
+                        <span className={styles.crewName}>{person.name}</span>
+                      </div>
+                    ))}
+                  
+                  {/* Сценаристы */}
+                  {selectedMedia.credits.crew
+                    .filter(person => person.job === 'Screenplay' || person.job === 'Writer')
+                    .slice(0, 3)
+                    .map((person) => (
+                      <div key={`writer-${person.id}`} className={styles.crewItem}>
+                        <span className={styles.crewRole}>Сценарист:</span>
+                        <span className={styles.crewName}>{person.name}</span>
+                      </div>
+                    ))}
+                  
+                  {/* Продюсеры */}
+                  {selectedMedia.credits.crew
+                    .filter(person => person.job === 'Producer')
+                    .slice(0, 3)
+                    .map((person) => (
+                      <div key={`producer-${person.id}`} className={styles.crewItem}>
+                        <span className={styles.crewRole}>Продюсер:</span>
+                        <span className={styles.crewName}>{person.name}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Трекер серий для сериалов */}
         {(selectedMedia.media_type || mediaType) === 'tv' && selectedMedia.seasons && (
