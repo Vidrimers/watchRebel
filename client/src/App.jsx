@@ -24,6 +24,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const AdvertisingContactsPage = lazy(() => import('./pages/AdvertisingContactsPage'));
 const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
 
 // Компонент загрузки для Suspense
 function LoadingFallback() {
@@ -197,6 +198,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UsersManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница управления объявлениями (только для админа) */}
+              <Route 
+                path="/admin/announcements" 
+                element={
+                  <ProtectedRoute>
+                    <AnnouncementsPage />
                   </ProtectedRoute>
                 } 
               />

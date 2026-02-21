@@ -14,8 +14,6 @@ const AdminPanel = () => {
   const { alertDialog, showAlert } = useAlert();
   const { confirmDialog, showConfirm } = useConfirm();
   
-  const [announcement, setAnnouncement] = useState('');
-  
   // Состояние для контактов
   const [contactsLoading, setContactsLoading] = useState(true);
   const [isEditingContacts, setIsEditingContacts] = useState(false);
@@ -98,34 +96,6 @@ const AdminPanel = () => {
     loadContacts(); // Перезагружаем оригинальные значения
   };
 
-  const handleCreateAnnouncement = async () => {
-    if (!announcement.trim()) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Введите текст объявления',
-        type: 'warning'
-      });
-      return;
-    }
-
-    try {
-      await api.post('/admin/announcements', { content: announcement });
-      setAnnouncement('');
-      await showAlert({
-        title: 'Успешно',
-        message: 'Объявление создано и отправлено всем пользователям',
-        type: 'success'
-      });
-    } catch (err) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось создать объявление',
-        type: 'error'
-      });
-      console.error(err);
-    }
-  };
-
   const handleBackup = async () => {
     try {
       const response = await api.post('/admin/backup');
@@ -160,6 +130,12 @@ const AdminPanel = () => {
             className={styles.btnNavigation}
           >
             👥 Пользователи
+          </button>
+          <button
+            onClick={() => navigate('/admin/announcements')}
+            className={styles.btnNavigation}
+          >
+            📢 Объявления
           </button>
         </div>
       </div>
@@ -244,21 +220,6 @@ const AdminPanel = () => {
             </p>
           </div>
         )}
-      </div>
-
-      {/* Объявления */}
-      <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>Создать объявление</h4>
-        <textarea
-          value={announcement}
-          onChange={(e) => setAnnouncement(e.target.value)}
-          placeholder="Текст объявления для всех пользователей"
-          className={styles.textarea}
-          rows={4}
-        />
-        <button onClick={handleCreateAnnouncement} className={styles.btnPrimary}>
-          Отправить объявление
-        </button>
       </div>
 
       {/* Бэкап */}

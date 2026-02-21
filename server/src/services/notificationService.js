@@ -252,8 +252,8 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
 /**
  * Отправить уведомление о действии модерации
  * @param {string} userId - ID пользователя, которого модерируют
- * @param {string} actionType - Тип действия ('post_ban' | 'permanent_ban' | 'unban')
- * @param {Object} actionData - Данные о действии (reason, duration, expiresAt)
+ * @param {string} actionType - Тип действия ('post_ban' | 'permanent_ban' | 'unban' | 'announcement')
+ * @param {Object} actionData - Данные о действии (reason, duration, expiresAt, content)
  * @returns {Promise<Object>} - Результат отправки уведомления
  */
 export async function notifyModeration(userId, actionType, actionData = {}) {
@@ -289,6 +289,10 @@ export async function notifyModeration(userId, actionType, actionData = {}) {
       case 'unban':
         message = `✅ <b>Ваш аккаунт разблокирован</b>\n\n` +
                  `Все ограничения сняты. Добро пожаловать обратно!`;
+        break;
+
+      case 'announcement':
+        message = `📢 <b>Объявление от администрации</b>\n\n${actionData.content}`;
         break;
 
       default:

@@ -1,0 +1,435 @@
+.announcementsPage {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+}
+
+.backButton {
+  padding: 10px 20px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+/* Секция создания объявления */
+.createSection {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.createSection h2 {
+  margin: 0 0 15px 0;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.createButtons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.createButton {
+  align-self: flex-start;
+  padding: 12px 24px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.createButton:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.createButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.telegramButton {
+  padding: 12px 24px;
+  background: #0088cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.telegramButton:hover {
+  background: #006699;
+  transform: translateY(-1px);
+}
+
+/* Список объявлений */
+.announcementsList {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.announcementsList h2 {
+  margin: 0 0 20px 0;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.announcements {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.announcementCard {
+  position: relative;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  transition: all 0.2s;
+}
+
+.announcementCard:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.announcementHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.announcementMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.creatorName {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.date {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.deleteButton {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background: #ff4444;
+  border-color: #ff4444;
+  transform: scale(1.1);
+}
+
+.announcementContent {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Модальное окно подтверждения */
+.confirmModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirmContent {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.confirmContent p {
+  margin: 0 0 20px 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  text-align: center;
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.confirmDelete,
+.confirmCancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.confirmDelete {
+  background: #ff4444;
+  color: white;
+}
+
+.confirmDelete:hover {
+  background: #cc0000;
+  transform: translateY(-1px);
+}
+
+.confirmCancel {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.confirmCancel:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+/* Состояния */
+.loading,
+.empty,
+.error {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.error {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .announcementsPage {
+    padding: 15px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .createSection,
+  .announcementsList {
+    padding: 15px;
+  }
+
+  .confirmContent {
+    padding: 20px;
+  }
+
+  .createButtons {
+    flex-direction: column;
+  }
+
+  .createButton,
+  .telegramButton {
+    width: 100%;
+  }
+}
+
+/* Модальное окно Telegram */
+.telegramModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.telegramModalContent {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.telegramModalContent h3 {
+  margin: 0 0 10px 0;
+  color: var(--text-primary);
+  font-size: 22px;
+}
+
+.telegramModalDescription {
+  margin: 0 0 20px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.progressInfo {
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.progressInfo p {
+  margin: 0 0 5px 0;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.progressInfo p:last-child {
+  margin-bottom: 0;
+}
+
+.progressError {
+  color: #ff4444 !important;
+}
+
+.telegramModalButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.telegramSendButton,
+.telegramCancelButton {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.telegramSendButton {
+  background: #0088cc;
+  color: white;
+}
+
+.telegramSendButton:hover:not(:disabled) {
+  background: #006699;
+  transform: translateY(-1px);
+}
+
+.telegramSendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.telegramCancelButton {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.telegramCancelButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.telegramCancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -711,4 +711,170 @@ router.get('/users/:id/moderation', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/announcements
+ * Получить все объявления
+ * Только для администратора
+ */
+router.get('/announcements', async (req, res) => {
+  try {
+    const announcementsResult = await executeQuery(
+      `SELECT a.*, u.display_name as creator_name
+       FROM announcements a
+       LEFT JOIN users u ON a.created_by = u.id
+       ORDER BY a.created_at DESC`
+    );
+
+    if (!announcementsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения объявлений',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const announcements = announcementsResult.data.map(announcement => ({
+      id: announcement.id,
+      content: announcement.content,
+      createdBy: announcement.created_by,
+      creatorName: announcement.creator_name,
+      createdAt: announcement.created_at
+    }));
+
+    res.json(announcements);
+
+  } catch (error) {
+    console.error('Ошибка получения объявлений:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/announcements/:id
+ * Удалить объявление
+ * Только для администратора
+ */
+router.delete('/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем, существует ли объявление
+    const announcementCheck = await executeQuery(
+      'SELECT id FROM announcements WHERE id = ?',
+      [id]
+    );
+
+    if (!announcementCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки объявления',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (announcementCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Объявление не найдено',
+        code: 'ANNOUNCEMENT_NOT_FOUND' 
+      });
+    }
+
+    // Удаляем объявление
+    const deleteResult = await executeQuery(
+      'DELETE FROM announcements WHERE id = ?',
+      [id]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка удаления объявления',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Объявление успешно удалено',
+      announcementId: id
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления объявления:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/admin/telegram-announcement
+ * Отправить объявление всем пользователям в Telegram
+ * Только для администратора
+ * 
+ * Body:
+ * - content: string (текст объявления)
+ */
+router.post('/telegram-announcement', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Содержание объявления не может быть пустым',
+        code: 'EMPTY_CONTENT' 
+      });
+    }
+
+    // Получаем всех пользователей
+    const usersResult = await executeQuery(
+      'SELECT id FROM users WHERE is_blocked = 0'
+    );
+
+    if (!usersResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения списка пользователей',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const users = usersResult.data;
+    let successCount = 0;
+    let failCount = 0;
+    const errors = [];
+
+    // Отправляем объявление каждому пользователю
+    for (const user of users) {
+      try {
+        await notifyModeration(user.id, 'announcement', {
+          content: content.trim()
+        });
+        successCount++;
+      } catch (err) {
+        failCount++;
+        errors.push({
+          userId: user.id,
+          error: err.message
+        });
+        console.error(`Ошибка отправки объявления пользователю ${user.id}:`, err);
+      }
+    }
+
+    res.json({
+      message: 'Рассылка завершена',
+      total: users.length,
+      success: successCount,
+      failed: failCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error) {
+    console.error('Ошибка отправки объявления в Telegram:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;
