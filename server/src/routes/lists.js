@@ -433,14 +433,26 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
       });
     }
 
+    // Если элемент уже в другом списке - автоматически удаляем его оттуда
     if (existingItemCheck.data.length > 0) {
       const existingItem = existingItemCheck.data[0];
-      return res.status(400).json({ 
-        error: `Этот контент уже находится в списке "${existingItem.list_name}"`,
-        code: 'ALREADY_IN_LIST',
-        existingListId: existingItem.list_id,
-        existingListName: existingItem.list_name
-      });
+      
+      // Если это тот же список - возвращаем ошибку
+      if (existingItem.list_id === listId) {
+        return res.status(400).json({ 
+          error: `Этот контент уже находится в данном списке`,
+          code: 'ALREADY_IN_LIST',
+          existingListId: existingItem.list_id,
+          existingListName: existingItem.list_name
+        });
+      }
+      
+      // Удаляем из старого списка
+      console.log(`Автоматическое удаление ${tmdbId} из списка "${existingItem.list_name}" перед добавлением в новый список`);
+      await executeQuery(
+        'DELETE FROM list_items WHERE id = ?',
+        [existingItem.id]
+      );
     }
 
     // Добавляем контент в список
@@ -480,6 +492,19 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
     }
 
     const item = itemResult.data[0];
+
+    // Автоматически удаляем из "Хочу посмотреть" если там есть
+    // Не блокируем ответ, если удаление не удастся
+    try {
+      await executeQuery(
+        'DELETE FROM watchlist WHERE user_id = ? AND tmdb_id = ? AND media_type = ?',
+        [userId, tmdbId, mediaType]
+      );
+      console.log(`Элемент ${tmdbId} автоматически удален из watchlist пользователя ${userId}`);
+    } catch (err) {
+      console.error('Ошибка удаления из watchlist:', err);
+      // Не прерываем выполнение, это не критично
+    }
 
     // Получаем название контента из TMDb для уведомления
     let mediaTitle = `контент #${tmdbId}`;

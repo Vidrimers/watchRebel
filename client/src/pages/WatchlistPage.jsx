@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { fetchWatchlist, fetchLists, addToList } from '../store/slices/listsSlice';
+import { fetchWatchlist, fetchLists, addToList, removeFromWatchlist } from '../store/slices/listsSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import MediaCard from '../components/Media/MediaCard';
+import ConfirmDialog from '../components/Common/ConfirmDialog';
+import useAlert from '../hooks/useAlert';
 import styles from './WatchlistPage.module.css';
 
 /**
@@ -13,6 +15,7 @@ import styles from './WatchlistPage.module.css';
  */
 const WatchlistPage = () => {
   const dispatch = useAppDispatch();
+  const { showAlert } = useAlert();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -25,6 +28,10 @@ const WatchlistPage = () => {
   // Состояние для модального окна перемещения в список
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
+  
+  // Состояние для модального окна удаления
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -77,6 +84,38 @@ const WatchlistPage = () => {
   const handleCloseModal = () => {
     setMoveModalOpen(false);
     setSelectedMedia(null);
+  };
+
+  // Открытие диалога удаления
+  const handleOpenDeleteDialog = (item) => {
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+
+  // Удаление из watchlist
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      await dispatch(removeFromWatchlist(itemToDelete.id)).unwrap();
+
+      // Закрываем диалог и очищаем состояние ПЕРЕД показом алерта
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+
+      await showAlert({
+        title: 'Успешно!',
+        message: `"${itemToDelete.title}" удален из списка желаемого`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось удалить. Попробуйте позже.',
+        type: 'error'
+      });
+    }
   };
 
   // Получение доступных списков для выбранного медиа
@@ -166,13 +205,22 @@ const WatchlistPage = () => {
                       showProgress={item.mediaType === 'tv'}
                       progress={episodeProgress[item.tmdbId]?.[episodeProgress[item.tmdbId].length - 1]}
                     />
-                    <button
-                      className={styles.moveButton}
-                      onClick={() => handleMoveToList(item)}
-                      title="Переместить в список"
-                    >
-                      → Переместить в список
-                    </button>
+                    <div className={styles.itemActions}>
+                      <button
+                        className={styles.moveButton}
+                        onClick={() => handleMoveToList(item)}
+                        title="Переместить в список"
+                      >
+                        →
+                      </button>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => handleOpenDeleteDialog(item)}
+                        title="Удалить из списка желаемого"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -226,6 +274,21 @@ const WatchlistPage = () => {
             </div>
           </div>
         )}
+
+        {/* Модалка удаления */}
+        <ConfirmDialog
+          isOpen={showDeleteDialog}
+          title="Удалить из списка желаемого"
+          message={`Вы уверены, что хотите удалить "${itemToDelete?.title}" из списка желаемого?`}
+          onConfirm={handleDeleteItem}
+          onCancel={() => {
+            setShowDeleteDialog(false);
+            setItemToDelete(null);
+          }}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonStyle="danger"
+        />
       </div>
     </UserPageLayout>
   );

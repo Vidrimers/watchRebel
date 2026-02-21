@@ -271,6 +271,11 @@ const listsSlice = createSlice({
         if (list) {
           list.items.push(action.payload.item);
         }
+        // Автоматически удаляем из watchlist
+        const { tmdbId, mediaType } = action.payload.item;
+        state.watchlist = state.watchlist.filter(
+          item => !(item.tmdbId === tmdbId && item.mediaType === mediaType)
+        );
         state.loading = false;
         state.error = null;
       })
