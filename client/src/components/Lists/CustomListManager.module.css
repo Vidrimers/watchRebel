@@ -20,7 +20,7 @@
 
 .createButton {
   padding: 10px 20px;
-  background: var(--primary-color);
+  background: var(--accent-primary, #6366f1);
   color: white;
   border: none;
   border-radius: 8px;
@@ -31,9 +31,9 @@
 }
 
 .createButton:hover {
-  background: var(--primary-hover);
+  background: var(--accent-primary-hover, #4f46e5);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .createButton:active {
@@ -89,12 +89,12 @@
 }
 
 .submitButton {
-  background: var(--primary-color);
+  background: var(--accent-primary, #6366f1);
   color: white;
 }
 
 .submitButton:hover {
-  background: var(--primary-hover);
+  background: var(--accent-primary-hover, #4f46e5);
 }
 
 .cancelButton {

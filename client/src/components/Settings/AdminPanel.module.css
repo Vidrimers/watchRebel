@@ -283,14 +283,15 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: var(--accent-primary);
+  background: var(--accent-primary, #6366f1);
   color: white;
   text-align: left;
 }
 
 .btnNavigation:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-hover, #4f46e5);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 /* Темная тема */
