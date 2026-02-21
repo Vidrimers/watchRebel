@@ -200,7 +200,10 @@ bot.onText(/\/menu/, async (msg) => {
         { text: '📰 Лента', callback_data: 'menu_feed' }
       ],
       [
-        { text: '🔔 Уведомления', callback_data: 'menu_notifications' },
+        { text: '💬 Сообщения', callback_data: 'menu_messages' },
+        { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+      ],
+      [
         { text: '👤 Мой профиль', callback_data: 'menu_profile' }
       ],
       [
@@ -303,6 +306,10 @@ bot.on('message', async (msg) => {
   if (userState && userState.state === 'awaiting_name_change') {
     await handleNameChange(chatId, userId, msg.text, userState.data.userFrom);
   }
+  // Если пользователь в состоянии ожидания ответа на сообщение
+  else if (userState && userState.state === 'awaiting_message_reply') {
+    await handleSendMessageReply(chatId, userId, msg.text, userState.data);
+  }
 });
 
 /**
@@ -324,6 +331,10 @@ bot.on('callback_query', async (query) => {
       await handleMenuAction(chatId, userId, data, query.from);
     } else if (data.startsWith('settings_')) {
       await handleSettingsAction(chatId, userId, data, query.from);
+    } else if (data.startsWith('reply_message_')) {
+      // Обработка кнопки "Ответить" на сообщение
+      const receiverId = data.replace('reply_message_', '');
+      await handleReplyMessageAction(chatId, userId, receiverId, query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -478,6 +489,12 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
         await handleFeedAction(chatId, userId, session.token);
       }
     },
+    'menu_messages': {
+      text: '💬 <b>Сообщения</b>\n\nЗагружаю ваши диалоги...',
+      handler: async () => {
+        await handleMessagesAction(chatId, userId, session.token);
+      }
+    },
     'menu_notifications': {
       text: '🔔 <b>Уведомления</b>\n\nЗдесь будут уведомления о действиях ваших друзей.\nОткройте сайт для полного функционала.',
       button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/notifications?session=${session.token}` }
@@ -611,6 +628,201 @@ async function handleInviteAction(chatId, userId, token) {
 }
 
 /**
+ * Обработка действия "Сообщения"
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} token - Токен сессии для авторизации
+ */
+async function handleMessagesAction(chatId, userId, token) {
+  try {
+    console.log(`📝 Запрос диалогов для пользователя ${userId}`);
+    
+    // Получаем список диалогов через API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const url = `${apiUrl}/api/messages/conversations`;
+    console.log(`📡 Отправка запроса к: ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    console.log(`📥 Ответ API: статус ${response.status}`);
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    const conversations = await response.json();
+    console.log(`✅ Получено диалогов: ${conversations.length}`);
+
+    // Если нет диалогов
+    if (conversations.length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '💬 <b>Сообщения</b>\n\n' +
+        'У вас пока нет диалогов.\n\n' +
+        'Найдите пользователя на сайте и отправьте ему сообщение!',
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🌐 Открыть сайт', url: `${publicUrl}/messages?session=${token}` }
+            ]]
+          }
+        }
+      );
+      return;
+    }
+
+    // Фильтруем только диалоги с непрочитанными сообщениями
+    const unreadConversations = conversations.filter(c => c.unreadCount > 0);
+
+    if (unreadConversations.length === 0) {
+      // Если нет непрочитанных, показываем все диалоги
+      let messageText = '💬 <b>Сообщения</b>\n\n';
+      messageText += `У вас ${conversations.length} диалог(ов), но нет новых сообщений.\n\n`;
+      messageText += '<b>Последние диалоги:</b>\n\n';
+
+      // Показываем первые 5 диалогов
+      const displayConversations = conversations.slice(0, 5);
+      displayConversations.forEach((conv, index) => {
+        const lastMessage = conv.lastMessage ? 
+          (conv.lastMessage.length > 30 ? conv.lastMessage.substring(0, 30) + '...' : conv.lastMessage) : 
+          'Нет сообщений';
+        
+        messageText += `${index + 1}. <b>${conv.otherUser.displayName}</b>\n`;
+        messageText += `   ${lastMessage}\n\n`;
+      });
+
+      await bot.sendMessage(
+        chatId,
+        messageText,
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🌐 Открыть все сообщения', url: `${publicUrl}/messages?session=${token}` }
+            ]]
+          }
+        }
+      );
+      return;
+    }
+
+    // Формируем сообщение с непрочитанными диалогами
+    let messageText = '💬 <b>Новые сообщения</b>\n\n';
+    messageText += `У вас ${unreadConversations.length} диалог(ов) с новыми сообщениями:\n\n`;
+
+    // Формируем инлайн-кнопки для каждого диалога
+    const inlineButtons = [];
+
+    unreadConversations.forEach((conv, index) => {
+      const lastMessage = conv.lastMessage ? 
+        (conv.lastMessage.length > 50 ? conv.lastMessage.substring(0, 50) + '...' : conv.lastMessage) : 
+        'Нет сообщений';
+      
+      messageText += `${index + 1}. <b>${conv.otherUser.displayName}</b> (${conv.unreadCount} нов.)\n`;
+      messageText += `   ${lastMessage}\n\n`;
+
+      // Добавляем кнопки для каждого диалога
+      inlineButtons.push([
+        { 
+          text: `💬 Ответить ${conv.otherUser.displayName}`, 
+          callback_data: `reply_message_${conv.otherUser.id}` 
+        }
+      ]);
+    });
+
+    // Добавляем кнопку "Открыть на сайте"
+    inlineButtons.push([
+      { text: '🌐 Открыть все сообщения', url: `${publicUrl}/messages?session=${token}` }
+    ]);
+
+    await bot.sendMessage(
+      chatId,
+      messageText,
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: inlineButtons
+        }
+      }
+    );
+
+    console.log(`✅ Список сообщений отправлен пользователю ${userId}`);
+  } catch (error) {
+    console.error('❌ Ошибка получения сообщений:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при загрузке сообщений. Попробуйте позже.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка действия "Ответить на сообщение"
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} receiverId - ID получателя сообщения
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ */
+async function handleReplyMessageAction(chatId, userId, receiverId, userFrom) {
+  try {
+    console.log(`📝 Пользователь ${userId} хочет ответить пользователю ${receiverId}`);
+    
+    // Получаем информацию о получателе
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    
+    const response = await fetch(`${apiUrl}/api/users/${receiverId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    const receiverData = await response.json();
+    
+    // Устанавливаем состояние ожидания ответа
+    setUserState(userId, 'awaiting_message_reply', { 
+      chatId, 
+      userFrom, 
+      receiverId,
+      receiverName: receiverData.displayName 
+    });
+    
+    await bot.sendMessage(
+      chatId,
+      `💬 <b>Ответ для ${receiverData.displayName}</b>\n\n` +
+      'Отправьте текст сообщения.\n\n' +
+      'Для отмены отправьте /cancel',
+      { parse_mode: 'HTML' }
+    );
+
+    console.log(`✅ Состояние установлено для пользователя ${userId}`);
+  } catch (error) {
+    console.error('❌ Ошибка обработки ответа на сообщение:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка. Попробуйте позже.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
  * Обработка действий настроек
  * @param {number} chatId - ID чата
  * @param {string} userId - ID пользователя
@@ -711,6 +923,92 @@ async function handleNameChange(chatId, userId, newName, userFrom) {
     await bot.sendMessage(
       chatId,
       '⚠️ Произошла ошибка при обновлении имени. Попробуйте позже или обратитесь к администратору.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка отправки ответа на сообщение
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя (отправителя)
+ * @param {string} messageText - Текст сообщения
+ * @param {Object} stateData - Данные состояния (receiverId, receiverName, userFrom)
+ */
+async function handleSendMessageReply(chatId, userId, messageText, stateData) {
+  try {
+    // Валидация сообщения
+    if (!messageText || messageText.trim().length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Сообщение не может быть пустым.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    if (messageText.trim().length > 1000) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Сообщение слишком длинное. Максимум 1000 символов.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    // Добавляем префикс к сообщению
+    const prefixedMessage = `📱 Отвечено с помощью бота: ${messageText.trim()}`;
+
+    console.log(`📝 Отправка сообщения от ${userId} к ${stateData.receiverId}`);
+
+    // Создаем сессию для авторизации запроса
+    const session = await createSession(userId, stateData.userFrom);
+    
+    // Отправляем POST запрос к API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        receiverId: stateData.receiverId,
+        content: prefixedMessage
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+    
+    const responseData = await response.json();
+    console.log('✅ API ответ:', responseData);
+
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+
+    // Отправляем подтверждение
+    await bot.sendMessage(
+      chatId,
+      `✅ <b>Сообщение отправлено!</b>\n\n` +
+      `Получатель: <b>${stateData.receiverName}</b>\n\n` +
+      `Ваше сообщение:\n${messageText.trim()}`,
+      { parse_mode: 'HTML' }
+    );
+
+    console.log(`✅ Сообщение от ${userId} к ${stateData.receiverId} отправлено`);
+  } catch (error) {
+    console.error('❌ Ошибка отправки сообщения:', error.message);
+    
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при отправке сообщения. Попробуйте позже или обратитесь к администратору.',
       { parse_mode: 'HTML' }
     );
   }

@@ -310,8 +310,14 @@ router.post('/', authenticateToken, async (req, res) => {
                              `${content.substring(0, 100)}${content.length > 100 ? '...' : ''}\n\n` +
                              `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
       
-      // Отправляем уведомление (не блокируем ответ, если не удалось отправить)
-      sendTelegramNotification(receiverId, telegramMessage).catch(err => {
+      // Отправляем уведомление с кнопкой "Ответить"
+      sendTelegramNotification(receiverId, telegramMessage, {
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
+          ]]
+        }
+      }).catch(err => {
         console.error('Ошибка отправки Telegram уведомления:', err);
       });
     }
