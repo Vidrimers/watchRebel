@@ -1,8 +1,6 @@
 /* Dropdown контейнер */
 .dropdown {
-  position: absolute;
-  top: 50px;
-  right: 0;
+  /* position и top/right теперь устанавливаются через inline styles */
   width: 380px;
   max-height: 600px;
   background: var(--bg-secondary, #ffffff);

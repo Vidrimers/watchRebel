@@ -9,7 +9,7 @@
   top: 20px;
   align-self: flex-start;
   max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  overflow-y: auto; /* Возвращаем auto, так как dropdown теперь через портал */
 }
 
 /* Узкий режим sidebar (только иконки) */
@@ -59,6 +59,7 @@
   cursor: pointer;
   transition: box-shadow 0.2s;
   position: relative; /* Для absolute позиционирования кнопки уведомлений */
+  overflow: visible; /* Чтобы dropdown не обрезался */
 }
 
 .userInfoLink:hover .userInfo {
@@ -117,6 +118,7 @@
   top: 10px;
   right: 10px;
   z-index: 10;
+  overflow: visible; /* Чтобы dropdown не обрезался */
 }
 
 .notificationsButton {

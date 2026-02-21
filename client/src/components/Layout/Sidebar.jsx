@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import UserAvatar from '../User/UserAvatar';
 import SearchBar from '../Search/SearchBar';
 import { NotificationBadge, NotificationDropdown } from '../Notifications';
@@ -10,11 +10,19 @@ import styles from './Sidebar.module.css';
  */
 const Sidebar = ({ user, narrow = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const notificationButtonRef = useRef(null);
 
   const toggleDropdown = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleUserInfoClick = (e) => {
+    // Если клик был по кнопке уведомлений или dropdown, не переходим на профиль
+    if (e.target.closest(`.${styles.notificationsContainer}`)) {
+      e.preventDefault();
+    }
   };
 
   return (
@@ -24,12 +32,13 @@ const Sidebar = ({ user, narrow = false }) => {
 
       {/* Информация о пользователе */}
       {user && (
-        <a href={`/user/${user.id}`} className={styles.userInfoLink}>
+        <a href={`/user/${user.id}`} className={styles.userInfoLink} onClick={handleUserInfoClick}>
           <div className={styles.userInfo}>
             {/* Уведомления - в правом верхнем углу */}
             <div className={styles.notificationsContainer}>
               <button 
-                className={styles.notificationsButton} 
+                ref={notificationButtonRef}
+                className={`${styles.notificationsButton} notificationsButton`}
                 title="Уведомления"
                 onClick={toggleDropdown}
               >
@@ -38,7 +47,8 @@ const Sidebar = ({ user, narrow = false }) => {
               </button>
               <NotificationDropdown 
                 isOpen={isDropdownOpen} 
-                onClose={() => setIsDropdownOpen(false)} 
+                onClose={() => setIsDropdownOpen(false)}
+                buttonRef={notificationButtonRef}
               />
             </div>
 

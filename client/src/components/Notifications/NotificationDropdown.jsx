@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead } from '../../store/slices/notificationsSlice';
@@ -9,10 +10,22 @@ import styles from './NotificationDropdown.module.css';
  * Открывается при клике на колокольчик
  * Показывает последние 10-15 уведомлений
  */
-const NotificationDropdown = ({ isOpen, onClose }) => {
+const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   const dispatch = useAppDispatch();
   const { notifications, loading } = useAppSelector((state) => state.notifications);
   const dropdownRef = useRef(null);
+  const [position, setPosition] = useState({ top: 0, right: 0 });
+
+  // Вычисляем позицию dropdown относительно кнопки
+  useEffect(() => {
+    if (isOpen && buttonRef?.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: buttonRect.bottom + 10, // 10px отступ от кнопки
+        right: window.innerWidth - buttonRect.right - 10 // Выравниваем по правому краю кнопки
+      });
+    }
+  }, [isOpen, buttonRef]);
 
   // Загружаем уведомления при открытии
   useEffect(() => {
@@ -24,13 +37,19 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   // Закрытие при клике вне dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      // Проверяем, что клик не по кнопке уведомлений и не по dropdown
+      const notificationButton = event.target.closest('.notificationsButton');
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && !notificationButton) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Используем небольшую задержку, чтобы избежать немедленного закрытия при открытии
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 0);
+      
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
@@ -94,8 +113,17 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   // Показываем только последние 15 уведомлений
   const displayedNotifications = notifications.slice(0, 15);
 
-  return (
-    <div className={styles.dropdown} ref={dropdownRef}>
+  // Рендерим dropdown через портал в body
+  return createPortal(
+    <div 
+      className={styles.dropdown} 
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: `${position.top}px`,
+        right: `${position.right}px`
+      }}
+    >
       <div className={styles.header}>
         <h3 className={styles.title}>Уведомления</h3>
       </div>
@@ -142,7 +170,8 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
           </a>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 
