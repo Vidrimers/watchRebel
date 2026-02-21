@@ -150,7 +150,7 @@ const AdminPanel = () => {
       const response = await api.post('/admin/backup');
       await showAlert({
         title: 'Успешно',
-        message: `Бэкап создан: ${response.data.filename}`,
+        message: `Бэкап создан: ${response.data.backupPath}`,
         type: 'success'
       });
     } catch (err) {
