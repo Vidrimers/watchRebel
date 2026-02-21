@@ -6,8 +6,8 @@ const router = express.Router();
 
 /**
  * GET /api/feed/:userId
- * Получить ленту активности друзей и самого пользователя
- * Возвращает последние 10 текстовых постов от друзей и пользователя
+ * Получить ленту активности друзей, самого пользователя и объявлений администратора
+ * Возвращает последние 10 текстовых постов
  */
 router.get('/:userId', authenticateToken, async (req, res) => {
   try {
@@ -61,6 +61,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
        LEFT JOIN users u ON wp.user_id = u.id
        WHERE wp.user_id IN (${placeholders})
          AND wp.post_type = 'text'
+         AND wp.content NOT LIKE '📢 Объявление администратора:%'
        ORDER BY wp.created_at DESC
        LIMIT 10`,
       allUserIds
@@ -72,6 +73,36 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         code: 'DATABASE_ERROR' 
       });
     }
+
+    // Получаем последние объявления администратора (не более 3)
+    const announcementsResult = await executeQuery(
+      `SELECT 
+        a.id,
+        a.content,
+        a.created_at,
+        a.created_by as user_id,
+        u.display_name,
+        u.avatar_url
+       FROM announcements a
+       LEFT JOIN users u ON a.created_by = u.id
+       ORDER BY a.created_at DESC
+       LIMIT 3`
+    );
+
+    // Преобразуем объявления в формат постов
+    const announcementPosts = announcementsResult.success ? announcementsResult.data.map(a => ({
+      id: a.id,
+      userId: a.user_id,
+      postType: 'text',
+      content: `📢 Объявление администратора:\n\n${a.content}`,
+      createdAt: a.created_at,
+      editedAt: null,
+      author: {
+        displayName: a.display_name,
+        avatarUrl: a.avatar_url
+      },
+      reactions: [] // Объявления без реакций
+    })) : [];
 
     // Для каждого поста получаем реакции
     const postsWithReactions = await Promise.all(
@@ -113,7 +144,12 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       })
     );
 
-    res.json(postsWithReactions);
+    // Объединяем объявления и посты, сортируем по дате
+    const allPosts = [...announcementPosts, ...postsWithReactions]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10); // Берем только 10 последних
+
+    res.json(allPosts);
 
   } catch (error) {
     console.error('Ошибка получения ленты:', error);

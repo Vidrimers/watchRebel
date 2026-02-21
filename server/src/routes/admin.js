@@ -333,35 +333,11 @@ router.post('/announcements', async (req, res) => {
       });
     }
 
-    // Получаем всех пользователей
-    const usersResult = await executeQuery(
-      'SELECT id FROM users WHERE is_blocked = 0'
-    );
-
-    if (!usersResult.success) {
-      return res.status(500).json({ 
-        error: 'Ошибка получения списка пользователей',
-        code: 'DATABASE_ERROR' 
-      });
-    }
-
-    // Создаем wall post для каждого пользователя
-    const wallPostPromises = usersResult.data.map(async (user) => {
-      const postId = uuidv4();
-      return executeQuery(
-        `INSERT INTO wall_posts (id, user_id, post_type, content) 
-         VALUES (?, ?, 'text', ?)`,
-        [postId, user.id, `📢 Объявление администратора:\n\n${content}`]
-      );
-    });
-
-    await Promise.all(wallPostPromises);
-
     res.status(201).json({
       id: announcementId,
       content,
       createdBy: req.user.id,
-      message: 'Объявление создано и отправлено всем пользователям'
+      message: 'Объявление создано и будет видно всем пользователям в ленте'
     });
 
   } catch (error) {

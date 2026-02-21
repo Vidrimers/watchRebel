@@ -201,6 +201,9 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
     return (now - createdAt) < hourInMs;
   };
 
+  // Проверка, является ли пост объявлением администратора
+  const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -388,8 +391,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
             {post.editedAt && <span className={styles.editedLabel}> (изменено)</span>}
           </span>
 
-          {/* Кнопки управления (только для своих постов) */}
-          {isOwnProfile && currentUser && post.userId === currentUser.id && (
+          {/* Кнопки управления (только для своих постов, но не для объявлений) */}
+          {!isAnnouncement && isOwnProfile && currentUser && post.userId === currentUser.id && (
             <div className={styles.postActions}>
               {canEdit() && (post.postType === 'text' || post.postType === 'review') && !isEditing && (
                 <button
@@ -413,50 +416,52 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
         </div>
 
         {/* Реакции */}
-        <div className={styles.reactionsContainer}>
-          {/* Отображение существующих реакций */}
-          {reactionsList.length > 0 && (
-            <div className={styles.reactionsList}>
-              {reactionsList.map((reaction) => {
-                // Проверяем, есть ли реакция текущего пользователя с таким эмоджи
-                const isUserReaction = currentUser && reaction.users.some(u => u.id === currentUser.id);
-                
-                return (
-                  <span 
-                    key={reaction.emoji}
-                    className={`${styles.reactionBadge} ${isUserReaction ? styles.userReaction : ''}`}
-                    onClick={() => handleReactionBadgeClick(reaction)}
-                    onMouseEnter={(e) => handleMouseEnter(e, reaction.users)}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    {reaction.emoji} {reaction.count}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+        {!isAnnouncement && (
+          <div className={styles.reactionsContainer}>
+            {/* Отображение существующих реакций */}
+            {reactionsList.length > 0 && (
+              <div className={styles.reactionsList}>
+                {reactionsList.map((reaction) => {
+                  // Проверяем, есть ли реакция текущего пользователя с таким эмоджи
+                  const isUserReaction = currentUser && reaction.users.some(u => u.id === currentUser.id);
+                  
+                  return (
+                    <span 
+                      key={reaction.emoji}
+                      className={`${styles.reactionBadge} ${isUserReaction ? styles.userReaction : ''}`}
+                      onClick={() => handleReactionBadgeClick(reaction)}
+                      onMouseEnter={(e) => handleMouseEnter(e, reaction.users)}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      {reaction.emoji} {reaction.count}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
-          {/* Кнопка добавления реакции */}
-          {currentUser && (
-            <div className={styles.addReactionContainer}>
-              <button
-                className={styles.addReactionButton}
-                onClick={() => setShowReactionPicker(!showReactionPicker)}
-                title={userReaction ? 'Изменить реакцию' : 'Добавить реакцию'}
-              >
-                {userReaction ? userReaction.emoji : '😊'}
-              </button>
+            {/* Кнопка добавления реакции */}
+            {currentUser && (
+              <div className={styles.addReactionContainer}>
+                <button
+                  className={styles.addReactionButton}
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  title={userReaction ? 'Изменить реакцию' : 'Добавить реакцию'}
+                >
+                  {userReaction ? userReaction.emoji : '😊'}
+                </button>
 
-              {/* Picker реакций */}
-              {showReactionPicker && (
-                <ReactionPicker
-                  onSelect={handleAddReaction}
-                  onClose={() => setShowReactionPicker(false)}
-                />
-              )}
-            </div>
-          )}
-        </div>
+                {/* Picker реакций */}
+                {showReactionPicker && (
+                  <ReactionPicker
+                    onSelect={handleAddReaction}
+                    onClose={() => setShowReactionPicker(false)}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tooltip с пользователями */}
         {tooltipData && (
