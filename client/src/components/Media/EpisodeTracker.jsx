@@ -70,14 +70,14 @@ const EpisodeTracker = ({
       <h3 className={styles.title}>Прогресс просмотра</h3>
       
       <div className={styles.seasonsList}>
-        {seasons.map((season) => {
+        {seasons.map((season, index) => {
           const watchedCount = getWatchedCount(season.seasonNumber);
           const isExpanded = expandedSeason === season.seasonNumber;
           const lastWatched = getLastWatchedEpisode(season.seasonNumber);
           const progress = (watchedCount / season.episodeCount) * 100;
 
           return (
-            <div key={season.seasonNumber} className={styles.seasonItem}>
+            <div key={`season-${season.id || season.seasonNumber || index}`} className={styles.seasonItem}>
               <div 
                 className={styles.seasonHeader}
                 onClick={() => toggleSeason(season.seasonNumber)}
