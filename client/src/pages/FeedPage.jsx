@@ -51,7 +51,7 @@ const FeedPage = () => {
   };
 
   return (
-    <UserPageLayout>
+    <UserPageLayout user={user}>
       <div className={styles.feedPage}>
         <div className={styles.header}>
           <h1 className={styles.title}>📰 Лента друзей</h1>

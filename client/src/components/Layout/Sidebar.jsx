@@ -16,13 +16,15 @@ const Sidebar = ({ user, narrow = false }) => {
 
       {/* Информация о пользователе */}
       {user && (
-        <div className={styles.userInfo}>
-          {/* Аватар */}
-          <UserAvatar user={user} size={narrow ? "small" : "medium"} />
+        <a href={`/user/${user.id}`} className={styles.userInfoLink}>
+          <div className={styles.userInfo}>
+            {/* Аватар */}
+            <UserAvatar user={user} size={narrow ? "small" : "medium"} />
 
-          {/* Имя пользователя - скрыто в узком режиме */}
-          {!narrow && <h2 className={styles.userName}>{user.displayName}</h2>}
-        </div>
+            {/* Имя пользователя - скрыто в узком режиме */}
+            {!narrow && <h2 className={styles.userName}>{user.displayName}</h2>}
+          </div>
+        </a>
       )}
 
       {/* Навигация */}

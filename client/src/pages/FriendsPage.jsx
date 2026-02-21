@@ -40,7 +40,7 @@ const FriendsPage = () => {
 
   if (loading) {
     return (
-      <UserPageLayout>
+      <UserPageLayout user={user}>
         <div className={styles.container}>
           <div className={styles.loading}>Загрузка друзей...</div>
         </div>
@@ -50,7 +50,7 @@ const FriendsPage = () => {
 
   if (error) {
     return (
-      <UserPageLayout>
+      <UserPageLayout user={user}>
         <div className={styles.container}>
           <div className={styles.error}>{error}</div>
         </div>
@@ -59,7 +59,7 @@ const FriendsPage = () => {
   }
 
   return (
-    <UserPageLayout>
+    <UserPageLayout user={user}>
       <div className={styles.container}>
         <h1 className={styles.title}>Мои друзья</h1>
         
