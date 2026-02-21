@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import UserAvatar from '../components/User/UserAvatar';
 import api from '../services/api';
 import styles from './FriendsPage.module.css';
 
@@ -75,19 +76,11 @@ const FriendsPage = () => {
           <div className={styles.friendsList}>
             {friends.map((friend) => (
               <div key={friend.id} className={styles.friendCard}>
-                <div className={styles.friendAvatar}>
-                  {friend.avatarUrl ? (
-                    <img 
-                      src={friend.avatarUrl} 
-                      alt={friend.displayName}
-                      className={styles.avatarImage}
-                    />
-                  ) : (
-                    <div className={styles.avatarPlaceholder}>
-                      {friend.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+                <UserAvatar 
+                  user={friend} 
+                  size="medium" 
+                  className={styles.friendAvatar}
+                />
                 
                 <div className={styles.friendInfo}>
                   <h3 className={styles.friendName}>{friend.displayName}</h3>
