@@ -16,6 +16,7 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
 const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -92,6 +93,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <SearchPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница каталога */}
+              <Route 
+                path="/catalog" 
+                element={
+                  <ProtectedRoute>
+                    <CatalogPage />
                   </ProtectedRoute>
                 } 
               />

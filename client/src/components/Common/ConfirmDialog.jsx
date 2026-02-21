@@ -10,6 +10,7 @@ import styles from './ConfirmDialog.module.css';
  * @param {string} props.confirmText - Текст кнопки подтверждения (по умолчанию "Подтвердить")
  * @param {string} props.cancelText - Текст кнопки отмены (по умолчанию "Отмена")
  * @param {string} props.confirmButtonStyle - Стиль кнопки подтверждения: 'danger', 'primary', 'success'
+ * @param {boolean} props.confirmDisabled - Отключить кнопку подтверждения
  * @param {Function} props.onConfirm - Callback при подтверждении
  * @param {Function} props.onCancel - Callback при отмене
  */
@@ -20,6 +21,7 @@ const ConfirmDialog = ({
   confirmText = 'Подтвердить',
   cancelText = 'Отмена',
   confirmButtonStyle = 'primary',
+  confirmDisabled = false,
   onConfirm,
   onCancel
 }) => {
@@ -54,6 +56,7 @@ const ConfirmDialog = ({
           <button
             className={`${styles.button} ${styles.confirmButton} ${styles[confirmButtonStyle]}`}
             onClick={handleConfirm}
+            disabled={confirmDisabled}
           >
             {confirmText}
           </button>

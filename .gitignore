@@ -12,6 +12,7 @@ docs/
 logs/
 server/backups/
 server/uploads/
+succes-api/
 
 # ФАЙЛЫ
 
@@ -28,6 +29,7 @@ package-lock.json
 rebel.db
 план.txt
 mytasks
+ngrok-tutor
 *.log
 test-output.txt
 migration-*.sql

@@ -7,6 +7,7 @@ const LoginPage = lazy(() => import('../pages/LoginPage'));
 const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const SearchPage = lazy(() => import('../pages/SearchPage'));
 const MediaDetailPage = lazy(() => import('../pages/MediaDetailPage'));
+const CatalogPage = lazy(() => import('../pages/CatalogPage'));
 const ListsPage = lazy(() => import('../pages/ListsPage'));
 const WatchlistPage = lazy(() => import('../pages/WatchlistPage'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
@@ -35,6 +36,12 @@ export const routes = [
     element: <SearchPage />,
     protected: true,
     title: 'Поиск'
+  },
+  {
+    path: '/catalog',
+    element: <CatalogPage />,
+    protected: true,
+    title: 'Каталог'
   },
   {
     path: '/media/:mediaType/:mediaId',

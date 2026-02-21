@@ -1,7 +1,4 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 /**
  * TMDb Integration Service
@@ -10,10 +7,10 @@ dotenv.config();
 
 class TMDbService {
   constructor() {
-    this.apiKey = process.env.TMDB_API_KEY;
-    this.baseUrl = process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+    this.baseUrl = 'https://api.themoviedb.org/3';
     this.language = 'ru-RU';
     this.imageBaseUrl = null;
+    this._initialized = false;
     
     // Rate limiting: TMDb позволяет ~40 запросов в секунду
     this.requestQueue = [];
@@ -23,9 +20,31 @@ class TMDbService {
   }
 
   /**
+   * Ленивая инициализация - читаем переменные окружения при первом использовании
+   */
+  _ensureInitialized() {
+    if (this._initialized) {
+      return;
+    }
+
+    this.apiKey = process.env.TMDB_API_KEY;
+    this.accessToken = process.env.TMDB_API_ACCESS_KEY;
+    this.baseUrl = process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+    
+    console.log('🎬 TMDb Service инициализация:');
+    console.log('  API Key:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'Отсутствует');
+    console.log('  Access Token:', this.accessToken ? `${this.accessToken.substring(0, 20)}...` : 'Отсутствует');
+    console.log('  Base URL:', this.baseUrl);
+    
+    this._initialized = true;
+  }
+
+  /**
    * Инициализация сервиса - получение конфигурации для изображений
    */
   async initialize() {
+    this._ensureInitialized();
+    
     if (!this.imageBaseUrl) {
       try {
         const config = await this.makeRequest('/configuration');
@@ -42,6 +61,8 @@ class TMDbService {
    * Выполнение запроса с rate limiting
    */
   async makeRequest(endpoint, params = {}) {
+    this._ensureInitialized();
+    
     return new Promise((resolve, reject) => {
       this.requestQueue.push({ endpoint, params, resolve, reject });
       this.processQueue();
@@ -72,16 +93,47 @@ class TMDbService {
       const { endpoint, params, resolve, reject } = this.requestQueue.shift();
 
       try {
-        const response = await axios.get(`${this.baseUrl}${endpoint}`, {
-          params: {
-            api_key: this.apiKey,
-            language: this.language,
-            ...params
-          }
+        console.log(`🔑 TMDb запрос: ${endpoint}`);
+        console.log(`🔑 API Key: ${this.apiKey ? 'Есть' : 'Отсутствует'}`);
+        console.log(`🔑 Access Token: ${this.accessToken ? 'Есть' : 'Отсутствует'}`);
+        console.log(`🌍 Language: ${this.language}`);
+        
+        if (!this.accessToken && !this.apiKey) {
+          throw new Error('TMDb API Key или Access Token не настроены');
+        }
+        
+        // Формируем URL с параметрами
+        const url = new URL(`${this.baseUrl}${endpoint}`);
+        url.searchParams.append('language', this.language);
+        
+        // Добавляем дополнительные параметры
+        Object.entries(params).forEach(([key, value]) => {
+          url.searchParams.append(key, value);
         });
+        
+        // Если используем API Key (v3), добавляем его в параметры
+        if (!this.accessToken && this.apiKey) {
+          url.searchParams.append('api_key', this.apiKey);
+        }
+        
+        // Настройки запроса
+        const config = {};
+        
+        // Если используем Access Token (v4), добавляем в заголовки
+        if (this.accessToken) {
+          config.headers = {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json;charset=utf-8'
+          };
+        }
+        
+        const response = await axios.get(url.toString(), config);
+        
+        console.log(`✅ TMDb ответ для ${endpoint}:`, response.data);
         this.lastRequestTime = Date.now();
         resolve(response.data);
       } catch (error) {
+        console.error(`❌ TMDb ошибка для ${endpoint}:`, error.response?.data || error.message);
         this.lastRequestTime = Date.now();
         reject(this.handleError(error));
       }
@@ -199,6 +251,120 @@ class TMDbService {
     }
 
     return await this.makeRequest(`/tv/${tvId}/season/${seasonNumber}`);
+  }
+
+  /**
+   * Получение популярных фильмов
+   * @param {number} page - Номер страницы (по умолчанию 1)
+   * @returns {Promise<Object>} Популярные фильмы
+   */
+  async getPopularMovies(page = 1) {
+    return await this.makeRequest('/movie/popular', {
+      page
+    });
+  }
+
+  /**
+   * Получение популярных сериалов
+   * @param {number} page - Номер страницы (по умолчанию 1)
+   * @returns {Promise<Object>} Популярные сериалы
+   */
+  async getPopularTV(page = 1) {
+    return await this.makeRequest('/tv/popular', {
+      page
+    });
+  }
+
+  /**
+   * Получение фильмов с высоким рейтингом
+   * @param {number} page - Номер страницы (по умолчанию 1)
+   * @returns {Promise<Object>} Фильмы с высоким рейтингом
+   */
+  async getTopRatedMovies(page = 1) {
+    return await this.makeRequest('/movie/top_rated', {
+      page
+    });
+  }
+
+  /**
+   * Получение сериалов с высоким рейтингом
+   * @param {number} page - Номер страницы (по умолчанию 1)
+   * @returns {Promise<Object>} Сериалы с высоким рейтингом
+   */
+  async getTopRatedTV(page = 1) {
+    return await this.makeRequest('/tv/top_rated', {
+      page
+    });
+  }
+
+  /**
+   * Получение списка жанров фильмов
+   * @returns {Promise<Object>} Список жанров
+   */
+  async getMovieGenres() {
+    return await this.makeRequest('/genre/movie/list');
+  }
+
+  /**
+   * Получение списка жанров сериалов
+   * @returns {Promise<Object>} Список жанров
+   */
+  async getTVGenres() {
+    return await this.makeRequest('/genre/tv/list');
+  }
+
+  /**
+   * Поиск фильмов с фильтрами
+   * @param {Object} filters - Фильтры поиска
+   * @returns {Promise<Object>} Результаты поиска
+   */
+  async discoverMovies(filters = {}) {
+    const params = {
+      page: filters.page || 1,
+      sort_by: filters.sortBy || 'popularity.desc',
+      include_adult: false
+    };
+
+    if (filters.genres) {
+      params.with_genres = filters.genres;
+    }
+
+    if (filters.year) {
+      params.primary_release_year = filters.year;
+    }
+
+    if (filters.minRating) {
+      params['vote_average.gte'] = filters.minRating;
+    }
+
+    return await this.makeRequest('/discover/movie', params);
+  }
+
+  /**
+   * Поиск сериалов с фильтрами
+   * @param {Object} filters - Фильтры поиска
+   * @returns {Promise<Object>} Результаты поиска
+   */
+  async discoverTV(filters = {}) {
+    const params = {
+      page: filters.page || 1,
+      sort_by: filters.sortBy || 'popularity.desc',
+      include_adult: false
+    };
+
+    if (filters.genres) {
+      params.with_genres = filters.genres;
+    }
+
+    if (filters.year) {
+      params.first_air_date_year = filters.year;
+    }
+
+    if (filters.minRating) {
+      params['vote_average.gte'] = filters.minRating;
+    }
+
+    return await this.makeRequest('/discover/tv', params);
   }
 
   /**
