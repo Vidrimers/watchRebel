@@ -15,6 +15,7 @@ import mediaRoutes from './routes/media.js';
 import adminRoutes from './routes/admin.js';
 import webhookRoutes from './routes/webhook.js';
 import feedRoutes from './routes/feed.js';
+import messagesRoutes from './routes/messages.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -93,6 +94,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feed', feedRoutes);
+app.use('/api/messages', messagesRoutes);
 app.use('/webhook', webhookRoutes);
 
 // Базовый route для проверки

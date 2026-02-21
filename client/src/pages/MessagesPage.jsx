@@ -1,0 +1,29 @@
+import React, { useState } from 'react';
+import ConversationList from '../components/Messages/ConversationList';
+import MessageThread from '../components/Messages/MessageThread';
+import styles from './MessagesPage.module.css';
+
+/**
+ * Страница сообщений
+ * Отображает список диалогов и окно переписки
+ */
+const MessagesPage = () => {
+  const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const handleSelectConversation = (conversation) => {
+    setSelectedConversation(conversation);
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.conversationListPanel}>
+        <ConversationList onSelectConversation={handleSelectConversation} />
+      </div>
+      <div className={styles.messageThreadPanel}>
+        <MessageThread conversation={selectedConversation} />
+      </div>
+    </div>
+  );
+};
+
+export default MessagesPage;

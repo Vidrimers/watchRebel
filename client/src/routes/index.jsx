@@ -11,6 +11,7 @@ const ListsPage = lazy(() => import('../pages/ListsPage'));
 const WatchlistPage = lazy(() => import('../pages/WatchlistPage'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
+const MessagesPage = lazy(() => import('../pages/MessagesPage'));
 
 /**
  * Конфигурация маршрутов приложения
@@ -58,6 +59,12 @@ export const routes = [
     element: <NotificationsPage />,
     protected: true,
     title: 'Уведомления'
+  },
+  {
+    path: '/messages',
+    element: <MessagesPage />,
+    protected: true,
+    title: 'Сообщения'
   },
   {
     path: '/settings',

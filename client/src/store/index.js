@@ -5,6 +5,7 @@ import listsReducer from './slices/listsSlice';
 import wallReducer from './slices/wallSlice';
 import notificationsReducer from './slices/notificationsSlice';
 import themeReducer from './slices/themeSlice';
+import messagesReducer from './slices/messagesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     lists: listsReducer,
     wall: wallReducer,
     notifications: notificationsReducer,
-    theme: themeReducer
+    theme: themeReducer,
+    messages: messagesReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
