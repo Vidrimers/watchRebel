@@ -35,6 +35,7 @@ import adminRoutes from './routes/admin.js';
 import webhookRoutes from './routes/webhook.js';
 import feedRoutes from './routes/feed.js';
 import messagesRoutes from './routes/messages.js';
+import settingsRoutes from './routes/settings.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 
 if (envResult.error) {
@@ -108,6 +109,7 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/webhook', webhookRoutes);
 
 // Базовый route для проверки

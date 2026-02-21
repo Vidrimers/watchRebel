@@ -18,9 +18,13 @@ const AdminPanel = () => {
   const [announcement, setAnnouncement] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [newName, setNewName] = useState('');
+  const [advertisingContacts, setAdvertisingContacts] = useState('');
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     loadUsers();
+    loadAdvertisingContacts();
   }, []);
 
   const loadUsers = async () => {
@@ -34,6 +38,49 @@ const AdminPanel = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAdvertisingContacts = async () => {
+    try {
+      const response = await api.get('/settings/advertising_contacts');
+      setAdvertisingContacts(response.data.value || '');
+      setLastUpdated(response.data.updatedAt);
+    } catch (err) {
+      console.error('Ошибка загрузки контактов:', err);
+    }
+  };
+
+  const handleSaveAdvertisingContacts = async () => {
+    if (!advertisingContacts.trim()) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Введите контактную информацию',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      setContactsLoading(true);
+      const response = await api.put('/settings/advertising_contacts', { 
+        value: advertisingContacts 
+      });
+      setLastUpdated(response.data.updatedAt);
+      await showAlert({
+        title: 'Успешно',
+        message: 'Контакты для рекламы обновлены',
+        type: 'success'
+      });
+    } catch (err) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось обновить контакты',
+        type: 'error'
+      });
+      console.error(err);
+    } finally {
+      setContactsLoading(false);
     }
   };
 
@@ -246,6 +293,31 @@ const AdminPanel = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Контакты для рекламы */}
+      <div className={styles.section}>
+        <h4 className={styles.sectionTitle}>Контакты для рекламы</h4>
+        <textarea
+          value={advertisingContacts}
+          onChange={(e) => setAdvertisingContacts(e.target.value)}
+          placeholder="Введите контактную информацию для рекламодателей"
+          className={styles.textarea}
+          rows={6}
+          disabled={contactsLoading}
+        />
+        {lastUpdated && (
+          <p className={styles.lastUpdated}>
+            Последнее обновление: {new Date(lastUpdated).toLocaleString('ru-RU')}
+          </p>
+        )}
+        <button 
+          onClick={handleSaveAdvertisingContacts} 
+          className={styles.btnPrimary}
+          disabled={contactsLoading}
+        >
+          {contactsLoading ? 'Сохранение...' : 'Сохранить контакты'}
+        </button>
       </div>
 
       {/* Объявления */}

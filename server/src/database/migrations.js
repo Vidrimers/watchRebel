@@ -184,6 +184,20 @@ export async function runMigrations() {
         FOREIGN KEY (admin_id) REFERENCES users(id)
       );
 
+      -- Таблица настроек сайта
+      CREATE TABLE IF NOT EXISTS site_settings (
+        id TEXT PRIMARY KEY,
+        key TEXT UNIQUE NOT NULL,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_by TEXT,
+        FOREIGN KEY (updated_by) REFERENCES users(id)
+      );
+
+      -- Добавляем начальную запись для контактов рекламы
+      INSERT OR IGNORE INTO site_settings (id, key, value, updated_at)
+      VALUES ('advertising_contacts', 'advertising_contacts', 'Для размещения рекламы свяжитесь с нами:\n\nEmail: admin@watchrebel.com\nTelegram: @watchrebel_admin', CURRENT_TIMESTAMP);
+
       -- Таблица диалогов (conversations)
       CREATE TABLE IF NOT EXISTS conversations (
         id TEXT PRIMARY KEY,

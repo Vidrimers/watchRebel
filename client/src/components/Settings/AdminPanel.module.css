@@ -118,6 +118,13 @@
   margin-bottom: 12px;
 }
 
+.lastUpdated {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin: 0 0 12px 0;
+  font-style: italic;
+}
+
 /* Кнопки */
 .btnPrimary,
 .btnEdit,
@@ -142,6 +149,11 @@
 
 .btnPrimary:hover {
   background: var(--primary-color-hover, #4f46e5);
+}
+
+.btnPrimary:disabled {
+  background: var(--disabled-color, #9ca3af);
+  cursor: not-allowed;
 }
 
 .btnEdit {
@@ -233,4 +245,8 @@
   border-color: var(--border-color-dark, #444);
   background: var(--input-background-dark, #1a1a1a);
   color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .lastUpdated {
+  color: var(--text-secondary-dark, #aaa);
 }

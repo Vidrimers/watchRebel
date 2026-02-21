@@ -22,6 +22,7 @@ const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
+const AdvertisingContactsPage = lazy(() => import('./pages/AdvertisingContactsPage'));
 
 // Компонент загрузки для Suspense
 function LoadingFallback() {
@@ -67,6 +68,7 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/advertising-contacts" element={<AdvertisingContactsPage />} />
               
               {/* Защищенные маршруты */}
               <Route 
