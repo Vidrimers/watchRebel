@@ -10,7 +10,7 @@
 }
 
 .conversationListPanel {
-  width: 350px;
+  width: 200px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   overflow: hidden;

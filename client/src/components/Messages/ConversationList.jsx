@@ -133,7 +133,7 @@ const ConversationList = ({ onSelectConversation }) => {
             onClick={() => setShowNewMessageModal(true)}
             title="Написать новое сообщение"
           >
-            ✏️ Написать
+            Написать
           </button>
         </div>
         <div className={styles.empty}>
@@ -182,15 +182,25 @@ const ConversationList = ({ onSelectConversation }) => {
                       <div className={styles.friendAvatar}>
                         {friend.avatarUrl ? (
                           <img 
-                            src={friend.avatarUrl} 
+                            src={
+                              friend.avatarUrl.startsWith('/uploads/')
+                                ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${friend.avatarUrl}`
+                                : friend.avatarUrl
+                            }
                             alt={friend.displayName}
                             className={styles.friendAvatarImage}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
                           />
-                        ) : (
-                          <div className={styles.friendAvatarPlaceholder}>
-                            {friend.displayName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className={styles.friendAvatarPlaceholder}
+                          style={{ display: friend.avatarUrl ? 'none' : 'flex' }}
+                        >
+                          {friend.displayName.charAt(0).toUpperCase()}
+                        </div>
                       </div>
                       <span className={styles.friendName}>{friend.displayName}</span>
                     </div>
@@ -213,7 +223,7 @@ const ConversationList = ({ onSelectConversation }) => {
           onClick={() => setShowNewMessageModal(true)}
           title="Написать новое сообщение"
         >
-          ✏️ Написать
+          Написать
         </button>
       </div>
       
@@ -227,15 +237,25 @@ const ConversationList = ({ onSelectConversation }) => {
             <div className={styles.avatar}>
               {conversation.otherUser.avatarUrl ? (
                 <img 
-                  src={conversation.otherUser.avatarUrl} 
+                  src={
+                    conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                      : conversation.otherUser.avatarUrl
+                  }
                   alt={conversation.otherUser.displayName}
                   className={styles.avatarImage}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className={styles.avatarPlaceholder}>
-                  {conversation.otherUser.displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              ) : null}
+              <div 
+                className={styles.avatarPlaceholder}
+                style={{ display: conversation.otherUser.avatarUrl ? 'none' : 'flex' }}
+              >
+                {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+              </div>
             </div>
             
             <div className={styles.content}>
@@ -298,15 +318,25 @@ const ConversationList = ({ onSelectConversation }) => {
                     <div className={styles.friendAvatar}>
                       {friend.avatarUrl ? (
                         <img 
-                          src={friend.avatarUrl} 
+                          src={
+                            friend.avatarUrl.startsWith('/uploads/')
+                              ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${friend.avatarUrl}`
+                              : friend.avatarUrl
+                          }
                           alt={friend.displayName}
                           className={styles.friendAvatarImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className={styles.friendAvatarPlaceholder}>
-                          {friend.displayName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      ) : null}
+                      <div 
+                        className={styles.friendAvatarPlaceholder}
+                        style={{ display: friend.avatarUrl ? 'none' : 'flex' }}
+                      >
+                        {friend.displayName.charAt(0).toUpperCase()}
+                      </div>
                     </div>
                     <span className={styles.friendName}>{friend.displayName}</span>
                   </div>

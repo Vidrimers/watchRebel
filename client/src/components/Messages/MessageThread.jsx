@@ -19,6 +19,13 @@ const MessageThread = ({ conversation }) => {
   useEffect(() => {
     if (conversation && conversation.id) {
       dispatch(fetchMessages(conversation.id));
+      
+      // Устанавливаем polling для автоматического обновления сообщений
+      const pollInterval = setInterval(() => {
+        dispatch(fetchMessages(conversation.id));
+      }, 3000); // Проверяем каждые 3 секунды
+      
+      return () => clearInterval(pollInterval);
     }
   }, [conversation, dispatch]);
 
@@ -123,11 +130,27 @@ const MessageThread = ({ conversation }) => {
         <div className={styles.header}>
           <div className={styles.headerAvatar}>
             {conversation.otherUser.avatarUrl ? (
-              <img 
-                src={conversation.otherUser.avatarUrl} 
-                alt={conversation.otherUser.displayName}
-                className={styles.headerAvatarImage}
-              />
+              <>
+                <img 
+                  src={
+                    conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                      : conversation.otherUser.avatarUrl
+                  }
+                  alt={conversation.otherUser.displayName}
+                  className={styles.headerAvatarImage}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div 
+                  className={styles.headerAvatarPlaceholder}
+                  style={{ display: 'none' }}
+                >
+                  {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                </div>
+              </>
             ) : (
               <div className={styles.headerAvatarPlaceholder}>
                 {conversation.otherUser.displayName.charAt(0).toUpperCase()}
@@ -148,15 +171,25 @@ const MessageThread = ({ conversation }) => {
         <div className={styles.headerAvatar}>
           {conversation.otherUser.avatarUrl ? (
             <img 
-              src={conversation.otherUser.avatarUrl} 
+              src={
+                conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                  : conversation.otherUser.avatarUrl
+              }
               alt={conversation.otherUser.displayName}
               className={styles.headerAvatarImage}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
             />
-          ) : (
-            <div className={styles.headerAvatarPlaceholder}>
-              {conversation.otherUser.displayName.charAt(0).toUpperCase()}
-            </div>
-          )}
+          ) : null}
+          <div 
+            className={styles.headerAvatarPlaceholder}
+            style={{ display: conversation.otherUser.avatarUrl ? 'none' : 'flex' }}
+          >
+            {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+          </div>
         </div>
         <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
       </div>
@@ -182,24 +215,73 @@ const MessageThread = ({ conversation }) => {
                   )}
                   
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
-                    {!isOwnMessage && (
-                      <div className={styles.messageAvatar}>
-                        {conversation.otherUser.avatarUrl ? (
-                          <img 
-                            src={conversation.otherUser.avatarUrl} 
-                            alt={conversation.otherUser.displayName}
-                            className={styles.messageAvatarImage}
-                          />
+                    <div className={styles.messageAvatar}>
+                      {isOwnMessage ? (
+                        user.avatarUrl ? (
+                          <>
+                            <img 
+                              src={
+                                user.avatarUrl.startsWith('/uploads/')
+                                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`
+                                  : user.avatarUrl
+                              }
+                              alt={user.displayName}
+                              className={styles.messageAvatarImage}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div 
+                              className={styles.messageAvatarPlaceholder}
+                              style={{ display: 'none' }}
+                            >
+                              {user.displayName.charAt(0).toUpperCase()}
+                            </div>
+                          </>
+                        ) : (
+                          <div className={styles.messageAvatarPlaceholder}>
+                            {user.displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )
+                      ) : (
+                        conversation.otherUser.avatarUrl ? (
+                          <>
+                            <img 
+                              src={
+                                conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                                  : conversation.otherUser.avatarUrl
+                              }
+                              alt={conversation.otherUser.displayName}
+                              className={styles.messageAvatarImage}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div 
+                              className={styles.messageAvatarPlaceholder}
+                              style={{ display: 'none' }}
+                            >
+                              {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                            </div>
+                          </>
                         ) : (
                           <div className={styles.messageAvatarPlaceholder}>
                             {conversation.otherUser.displayName.charAt(0).toUpperCase()}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        )
+                      )}
+                    </div>
                     
                     <div className={styles.messageBubble}>
                       <p className={styles.messageText}>{message.content}</p>
+                      {message.sentViaBot && (
+                        <div className={styles.botLabel}>
+                          📱 Отвечено с помощью бота
+                        </div>
+                      )}
                       <div className={styles.messageFooter}>
                         <span className={styles.messageTime}>{formatTime(message.createdAt)}</span>
                         {isOwnMessage && (

@@ -956,9 +956,6 @@ async function handleSendMessageReply(chatId, userId, messageText, stateData) {
       return;
     }
 
-    // Добавляем префикс к сообщению
-    const prefixedMessage = `📱 Отвечено с помощью бота: ${messageText.trim()}`;
-
     console.log(`📝 Отправка сообщения от ${userId} к ${stateData.receiverId}`);
 
     // Создаем сессию для авторизации запроса
@@ -974,7 +971,8 @@ async function handleSendMessageReply(chatId, userId, messageText, stateData) {
       },
       body: JSON.stringify({
         receiverId: stateData.receiverId,
-        content: prefixedMessage
+        content: messageText.trim(),
+        sentViaBot: true
       })
     });
 

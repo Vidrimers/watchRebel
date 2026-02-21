@@ -34,3 +34,4 @@ ngrok-tutor
 *.log
 test-output.txt
 migration-*.sql
+server/src/database/migrations/*.js

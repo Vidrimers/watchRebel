@@ -15,11 +15,16 @@ router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Получаем все записи стены пользователя
+    // Получаем все записи стены пользователя с информацией об авторе
     const postsResult = await executeQuery(
-      `SELECT * FROM wall_posts 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC`,
+      `SELECT 
+        wp.*,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM wall_posts wp
+       LEFT JOIN users u ON wp.user_id = u.id
+       WHERE wp.user_id = ? 
+       ORDER BY wp.created_at DESC`,
       [userId]
     );
 
@@ -64,6 +69,10 @@ router.get('/:userId', async (req, res) => {
           rating: post.rating,
           createdAt: post.created_at,
           editedAt: post.edited_at,
+          author: {
+            displayName: post.author_display_name,
+            avatarUrl: post.author_avatar_url
+          },
           reactions
         };
       })
@@ -163,9 +172,15 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Получаем созданную запись
+    // Получаем созданную запись с информацией об авторе
     const postResult = await executeQuery(
-      'SELECT * FROM wall_posts WHERE id = ?',
+      `SELECT 
+        wp.*,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM wall_posts wp
+       LEFT JOIN users u ON wp.user_id = u.id
+       WHERE wp.id = ?`,
       [postId]
     );
 
@@ -187,6 +202,10 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       mediaType: post.media_type,
       rating: post.rating,
       createdAt: post.created_at,
+      author: {
+        displayName: post.author_display_name,
+        avatarUrl: post.author_avatar_url
+      },
       reactions: []
     });
 
@@ -273,9 +292,15 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Получаем обновленный пост
+    // Получаем обновленный пост с информацией об авторе
     const updatedPostResult = await executeQuery(
-      'SELECT * FROM wall_posts WHERE id = ?',
+      `SELECT 
+        wp.*,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM wall_posts wp
+       LEFT JOIN users u ON wp.user_id = u.id
+       WHERE wp.id = ?`,
       [postId]
     );
 
@@ -298,6 +323,10 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
       rating: updatedPost.rating,
       createdAt: updatedPost.created_at,
       editedAt: updatedPost.edited_at,
+      author: {
+        displayName: updatedPost.author_display_name,
+        avatarUrl: updatedPost.author_avatar_url
+      },
       reactions: []
     });
 

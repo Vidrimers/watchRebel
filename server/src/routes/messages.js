@@ -142,6 +142,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       receiverId: m.receiver_id,
       content: m.content,
       isRead: Boolean(m.is_read),
+      sentViaBot: Boolean(m.sent_via_bot),
       createdAt: m.created_at,
       sender: {
         displayName: m.sender_name,
@@ -168,7 +169,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
  */
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { receiverId, content } = req.body;
+    const { receiverId, content, sentViaBot } = req.body;
     const senderId = req.user.id;
 
     // Валидация
@@ -257,9 +258,9 @@ router.post('/', authenticateToken, async (req, res) => {
     // Создаем сообщение
     const messageId = uuidv4();
     const createMessageResult = await executeQuery(
-      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, datetime('now'))`,
-      [messageId, conversationId, senderId, receiverId, content.trim()]
+      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, datetime('now'))`,
+      [messageId, conversationId, senderId, receiverId, content.trim(), sentViaBot ? 1 : 0]
     );
 
     if (!createMessageResult.success) {
