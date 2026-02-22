@@ -34,6 +34,18 @@ const Sidebar = ({ user, narrow = false }) => {
       {user && (
         <a href={`/user/${user.id}`} className={styles.userInfoLink} onClick={handleUserInfoClick}>
           <div className={styles.userInfo}>
+            {/* Настройки - в левом верхнем углу */}
+            <div className={styles.settingsContainer}>
+              <a 
+                href="/settings" 
+                className={styles.settingsButton}
+                title="Настройки"
+                onClick={(e) => e.stopPropagation()}
+              >
+                ⚙️
+              </a>
+            </div>
+
             {/* Уведомления - в правом верхнем углу */}
             <div className={styles.notificationsContainer}>
               <button 
@@ -101,13 +113,6 @@ const Sidebar = ({ user, narrow = false }) => {
           </li>
         </ul>
       </nav>
-
-      {/* Настройки */}
-      <div className={styles.settingsContainer}>
-        <a href="/settings" className={styles.settingsLink} title="Настройки">
-          ⚙️ {!narrow && 'Настройки'}
-        </a>
-      </div>
     </aside>
   );
 };
