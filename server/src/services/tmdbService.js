@@ -94,6 +94,7 @@ class TMDbService {
 
       try {
         console.log(`🔑 TMDb запрос: ${endpoint}`);
+        console.log(`🔑 Base URL: ${this.baseUrl}`);
         console.log(`🔑 API Key: ${this.apiKey ? 'Есть' : 'Отсутствует'}`);
         console.log(`🔑 Access Token: ${this.accessToken ? 'Есть' : 'Отсутствует'}`);
         console.log(`🌍 Language: ${this.language}`);
@@ -102,22 +103,24 @@ class TMDbService {
           throw new Error('TMDb API Key или Access Token не настроены');
         }
         
-        // Формируем URL с параметрами
-        const url = new URL(`${this.baseUrl}${endpoint}`);
-        url.searchParams.append('language', this.language);
+        // Формируем URL и параметры
+        const fullUrl = `${this.baseUrl}${endpoint}`;
         
-        // Добавляем дополнительные параметры
-        Object.entries(params).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
-        });
+        // Формируем параметры запроса
+        const queryParams = {
+          language: this.language,
+          ...params
+        };
         
         // Если используем API Key (v3), добавляем его в параметры
         if (!this.accessToken && this.apiKey) {
-          url.searchParams.append('api_key', this.apiKey);
+          queryParams.api_key = this.apiKey;
         }
         
         // Настройки запроса
-        const config = {};
+        const config = {
+          params: queryParams
+        };
         
         // Если используем Access Token (v4), добавляем в заголовки
         if (this.accessToken) {
@@ -127,7 +130,10 @@ class TMDbService {
           };
         }
         
-        const response = await axios.get(url.toString(), config);
+        console.log(`🌐 Полный URL запроса: ${fullUrl}`);
+        console.log(`📋 Параметры:`, queryParams);
+        
+        const response = await axios.get(fullUrl, config);
         
         console.log(`✅ TMDb ответ для ${endpoint}:`, response.data);
         this.lastRequestTime = Date.now();
