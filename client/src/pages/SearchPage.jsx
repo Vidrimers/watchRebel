@@ -3,7 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { searchMedia } from '../store/slices/mediaSlice';
+import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import useAlert from '../hooks/useAlert';
+import ConfirmDialog from '../components/Common/ConfirmDialog';
 import styles from './SearchPage.module.css';
 
 /**
@@ -14,13 +17,26 @@ const SearchPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { showAlert } = useAlert();
   
   const { searchResults, loading, error } = useAppSelector((state) => state.media);
   const { user } = useAppSelector((state) => state.auth);
+  const { customLists } = useAppSelector((state) => state.lists);
   
   const query = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
   const [activeFilter, setActiveFilter] = useState('all'); // all, users, movies, tv
+  const [activeMenu, setActiveMenu] = useState(null);
+  
+  // Состояние для выбора списка
+  const [showListSelector, setShowListSelector] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedListId, setSelectedListId] = useState('');
+
+  // Загрузка списков при монтировании
+  useEffect(() => {
+    dispatch(fetchLists());
+  }, [dispatch]);
 
   // Синхронизируем локальный инпут с URL параметром
   useEffect(() => {
@@ -60,6 +76,123 @@ const SearchPage = () => {
     }
   };
 
+  /**
+   * Открытие/закрытие меню действий
+   */
+  const toggleMenu = (e, itemId) => {
+    e.stopPropagation();
+    setActiveMenu(activeMenu === itemId ? null : itemId);
+  };
+
+  /**
+   * Закрытие меню при клике вне его
+   */
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (activeMenu) {
+        setActiveMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [activeMenu]);
+
+  /**
+   * Добавление в список
+   */
+  const handleAddToList = (e, result) => {
+    e.stopPropagation();
+    setActiveMenu(null);
+    setSelectedItem(result.data);
+    setShowListSelector(true);
+  };
+
+  /**
+   * Подтверждение добавления в список
+   */
+  const handleConfirmAddToList = async () => {
+    if (!selectedListId || !selectedItem) return;
+
+    try {
+      const payload = {
+        listId: selectedListId,
+        media: {
+          tmdbId: selectedItem.tmdbId,
+          mediaType: selectedItem.mediaType
+        }
+      };
+      
+      await dispatch(addToList(payload)).unwrap();
+      await dispatch(fetchLists());
+      
+      setShowListSelector(false);
+      setSelectedListId('');
+      const itemTitle = selectedItem.title;
+      setSelectedItem(null);
+      
+      await showAlert({
+        title: 'Успешно!',
+        message: `"${itemTitle}" добавлен в список`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка добавления в список:', error);
+      
+      if (error.code === 'ALREADY_IN_LIST' || error.response?.data?.code === 'ALREADY_IN_LIST') {
+        const errorData = error.response?.data || error;
+        await showAlert({
+          title: 'Уже в списке',
+          message: `Этот контент уже находится в списке "${errorData.existingListName}". Контент может быть только в одном списке одновременно.`,
+          type: 'warning'
+        });
+      } else {
+        await showAlert({
+          title: 'Ошибка',
+          message: error.response?.data?.error || error.error || 'Не удалось добавить в список',
+          type: 'error'
+        });
+      }
+    }
+  };
+
+  /**
+   * Отмена выбора списка
+   */
+  const handleCancelListSelector = () => {
+    setShowListSelector(false);
+    setSelectedListId('');
+    setSelectedItem(null);
+  };
+
+  /**
+   * Добавление в watchlist
+   */
+  const handleAddToWatchlist = async (e, result) => {
+    e.stopPropagation();
+    setActiveMenu(null);
+    
+    try {
+      await dispatch(addToWatchlist({
+        tmdbId: result.data.tmdbId,
+        mediaType: result.data.mediaType
+      })).unwrap();
+      
+      await showAlert({
+        title: 'Успешно!',
+        message: `"${result.data.title}" добавлен в список "Хочу посмотреть"`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка добавления в watchlist:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось добавить в список',
+        type: 'error'
+      });
+    }
+  };
+
   // Подсчет результатов по типам
   const counts = {
     all: searchResults.length,
@@ -67,6 +200,11 @@ const SearchPage = () => {
     movies: searchResults.filter((r) => r.type === 'movie').length,
     tv: searchResults.filter((r) => r.type === 'tv').length
   };
+
+  // Фильтруем списки по типу контента для модального окна
+  const relevantLists = selectedItem ? customLists.filter(list => 
+    list.mediaType === selectedItem.mediaType
+  ) : [];
 
   return (
     <UserPageLayout user={user} narrowSidebar={true}>
@@ -200,6 +338,33 @@ const SearchPage = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Кнопка действий */}
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => toggleMenu(e, result.data.tmdbId)}
+                        title="Действия"
+                      >
+                        ⋮
+                      </button>
+
+                      {/* Выпадающее меню */}
+                      {activeMenu === result.data.tmdbId && (
+                        <div className={styles.actionMenu}>
+                          <button
+                            className={styles.menuItem}
+                            onClick={(e) => handleAddToList(e, result)}
+                          >
+                            📋 Добавить в список
+                          </button>
+                          <button
+                            className={styles.menuItem}
+                            onClick={(e) => handleAddToWatchlist(e, result)}
+                          >
+                            ⭐ Хочу посмотреть
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -213,6 +378,41 @@ const SearchPage = () => {
           )}
         </div>
       </div>
+
+      {/* Модальное окно выбора списка */}
+      <ConfirmDialog
+        isOpen={showListSelector}
+        onClose={handleCancelListSelector}
+        onConfirm={handleConfirmAddToList}
+        title="Добавить в список"
+        confirmText="Добавить"
+        cancelText="Отмена"
+      >
+        <div className={styles.listSelectorContent}>
+          <p className={styles.listSelectorText}>
+            Выберите список для добавления:
+          </p>
+          {relevantLists.length > 0 ? (
+            <select
+              className={styles.listSelect}
+              value={selectedListId}
+              onChange={(e) => setSelectedListId(e.target.value)}
+            >
+              <option value="">-- Выберите список --</option>
+              {relevantLists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className={styles.noListsMessage}>
+              Нет доступных списков для этого типа контента.
+              Создайте список в разделе "Мои списки".
+            </p>
+          )}
+        </div>
+      </ConfirmDialog>
     </UserPageLayout>
   );
 };
