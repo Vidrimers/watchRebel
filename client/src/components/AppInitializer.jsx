@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
@@ -12,6 +12,8 @@ function AppInitializer({ children }) {
   const dispatch = useAppDispatch();
   const { loading, user } = useAppSelector((state) => state.auth);
   const [initialized, setInitialized] = React.useState(false);
+  const wsConnectedRef = useRef(false);
+  const currentUserIdRef = useRef(null);
 
   useEffect(() => {
     // Проверяем сессию при первой загрузке
@@ -25,31 +27,24 @@ function AppInitializer({ children }) {
 
   // Подключаем WebSocket когда пользователь авторизован
   useEffect(() => {
-    const token = localStorage.getItem('authToken'); // Правильный ключ!
+    const token = localStorage.getItem('authToken');
+    const userId = user?.id;
     
-    console.log('🔍 AppInitializer WebSocket check:', { 
-      hasUser: !!user, 
-      userId: user?.id, 
-      hasToken: !!token 
-    });
-    
-    if (user && token) {
-      console.log('🔌 Инициализация WebSocket для пользователя:', user.id);
-      connectWebSocket(token);
-    } else {
-      console.log('⚠️ WebSocket не инициализирован:', { 
-        reason: !user ? 'нет пользователя' : 'нет токена' 
-      });
+    // Если пользователь изменился - отключаем старое соединение
+    if (currentUserIdRef.current && currentUserIdRef.current !== userId) {
+      console.log('🔌 Пользователь изменился, отключаем старое соединение');
+      disconnectWebSocket();
+      wsConnectedRef.current = false;
     }
     
-    // Отключаем только при выходе (когда компонент размонтируется)
-    return () => {
-      if (!user) {
-        console.log('🔌 Cleanup: отключаем WebSocket (пользователь вышел)');
-        disconnectWebSocket();
-      }
-    };
-  }, [user?.id]); // Зависимость только от ID пользователя
+    // Подключаем WebSocket только если еще не подключен
+    if (userId && token && !wsConnectedRef.current) {
+      console.log('🔌 Инициализация WebSocket для пользователя:', userId);
+      connectWebSocket(token);
+      wsConnectedRef.current = true;
+      currentUserIdRef.current = userId;
+    }
+  }, [user?.id]);
 
   // Показываем загрузку пока идет инициализация
   if (!initialized || loading) {

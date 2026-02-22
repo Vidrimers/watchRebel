@@ -25,6 +25,7 @@ const MessageThread = ({ conversation }) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modalImages, setModalImages] = useState([]);
+  const [imageDimensions, setImageDimensions] = useState({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
 
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
@@ -207,6 +208,18 @@ const MessageThread = ({ conversation }) => {
     setModalImages(images);
     setCurrentImageIndex(index);
     setShowImageModal(true);
+    setImageDimensions({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
+  };
+
+  // Обновление размеров изображения
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    if (img && img.naturalWidth && img.naturalHeight) {
+      setImageDimensions({
+        natural: { width: img.naturalWidth, height: img.naturalHeight },
+        displayed: { width: Math.round(img.width), height: Math.round(img.height) }
+      });
+    }
   };
 
   // Обработчик нажатия Enter
@@ -619,13 +632,22 @@ const MessageThread = ({ conversation }) => {
               src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${modalImages[currentImageIndex]?.path}`}
               alt={modalImages[currentImageIndex]?.originalName}
               className={styles.imageModalImage}
+              onLoad={handleImageLoad}
             />
             
-            {modalImages.length > 1 && (
-              <div className={styles.imageModalCounter}>
-                {currentImageIndex + 1} / {modalImages.length}
-              </div>
-            )}
+            <div className={styles.imageModalInfo}>
+              {imageDimensions.natural.width > 0 && (
+                <div className={styles.imageModalDimensions}>
+                  Реальный размер: {imageDimensions.natural.width}×{imageDimensions.natural.height} | 
+                  Текущий размер: {imageDimensions.displayed.width}×{imageDimensions.displayed.height}
+                </div>
+              )}
+              {modalImages.length > 1 && (
+                <div className={styles.imageModalCounter}>
+                  {currentImageIndex + 1} / {modalImages.length}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

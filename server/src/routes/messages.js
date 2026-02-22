@@ -202,14 +202,15 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     const files = req.files || [];
 
     // Валидация
-    if (!receiverId || !content) {
+    if (!receiverId) {
       return res.status(400).json({ 
-        error: 'Не указан получатель или содержимое сообщения',
-        code: 'MISSING_FIELDS' 
+        error: 'Не указан получатель',
+        code: 'MISSING_RECEIVER' 
       });
     }
 
-    if (content.trim().length === 0) {
+    // Проверяем что есть либо текст, либо файлы
+    if ((!content || content.trim().length === 0) && files.length === 0) {
       return res.status(400).json({ 
         error: 'Сообщение не может быть пустым',
         code: 'EMPTY_MESSAGE' 

@@ -465,18 +465,16 @@
 
 .imageModalContent {
   position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .imageModalImage {
-  width: auto;
-  height: auto;
   max-width: 90vw;
   max-height: 85vh;
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 8px;
 }
@@ -536,13 +534,30 @@
 }
 
 .imageModalCounter {
-  position: absolute;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
   color: white;
   font-size: 0.875rem;
   background: rgba(0, 0, 0, 0.5);
   padding: 0.5rem 1rem;
   border-radius: 20px;
+  margin-left: 1rem;
+}
+
+.imageModalInfo {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.imageModalDimensions {
+  color: white;
+  font-size: 0.875rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  white-space: nowrap;
 }
