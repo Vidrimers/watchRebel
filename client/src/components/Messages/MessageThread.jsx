@@ -3,6 +3,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
+import useConfirm from '../../hooks/useConfirm';
 import styles from './MessageThread.module.css';
 
 /**
@@ -13,6 +14,7 @@ const MessageThread = ({ conversation }) => {
   const dispatch = useAppDispatch();
   const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
+  const { confirmDialog, showConfirm } = useConfirm();
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -88,8 +90,11 @@ const MessageThread = ({ conversation }) => {
       }
     }
     
-    setLastMessageId(currentLastMessageId);
-  }, [messages, lastMessageId, user?.id]);
+    // Обновляем lastMessageId только если он действительно изменился
+    if (currentLastMessageId !== lastMessageId) {
+      setLastMessageId(currentLastMessageId);
+    }
+  }, [messages.length, user?.id]); // Убрал messages и lastMessageId из зависимостей
 
   // Обработчик скролла для определения когда загружать старые сообщения
   const handleScroll = (e) => {
@@ -129,8 +134,18 @@ const MessageThread = ({ conversation }) => {
   // Обработчик отправки сообщения
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     
-    if ((!messageText.trim() && selectedFiles.length === 0) || sendingMessage) return;
+    console.log('📤 Отправка сообщения:', { 
+      hasText: !!messageText.trim(), 
+      filesCount: selectedFiles.length,
+      sendingMessage 
+    });
+    
+    if ((!messageText.trim() && selectedFiles.length === 0) || sendingMessage) {
+      console.log('⚠️ Отправка отменена: нет контента или уже отправляется');
+      return;
+    }
 
     const content = messageText.trim();
     const files = selectedFiles;
@@ -138,16 +153,25 @@ const MessageThread = ({ conversation }) => {
     setMessageText('');
     setSelectedFiles([]);
 
-    const result = await dispatch(sendMessage({
-      receiverId: conversation.otherUser.id,
-      content,
-      files
-    }));
+    try {
+      const result = await dispatch(sendMessage({
+        receiverId: conversation.otherUser.id,
+        content,
+        files
+      }));
 
-    // Если это новый диалог (id === null), обновляем список диалогов
-    if (conversation.id === null && result.meta.requestStatus === 'fulfilled') {
-      // Диалог будет автоматически добавлен в список через fetchConversations
-      // который вызывается в ConversationList при монтировании
+      console.log('✅ Сообщение отправлено:', result);
+
+      // Если это новый диалог (id === null), обновляем список диалогов
+      if (conversation.id === null && result.meta.requestStatus === 'fulfilled') {
+        // Диалог будет автоматически добавлен в список через fetchConversations
+        // который вызывается в ConversationList при монтировании
+      }
+    } catch (error) {
+      console.error('❌ Ошибка отправки сообщения:', error);
+      // Возвращаем файлы обратно при ошибке
+      setSelectedFiles(files);
+      setMessageText(content);
     }
   };
 
@@ -194,8 +218,15 @@ const MessageThread = ({ conversation }) => {
   };
 
   // Обработчик удаления сообщения
-  const handleDeleteMessage = (messageId) => {
-    if (window.confirm('Удалить это сообщение?')) {
+  const handleDeleteMessage = async (messageId) => {
+    const confirmed = await showConfirm({
+      title: 'Удалить сообщение',
+      message: 'Вы уверены, что хотите удалить это сообщение?',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена'
+    });
+    
+    if (confirmed) {
       dispatch(deleteMessage(messageId));
     }
   };
@@ -241,18 +272,23 @@ const MessageThread = ({ conversation }) => {
 
   if (!conversation) {
     return (
-      <div className={styles.container}>
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>💬</span>
-          <p>Выберите диалог для начала переписки</p>
+      <>
+        {confirmDialog}
+        <div className={styles.container}>
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>💬</span>
+            <p>Выберите диалог для начала переписки</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (loading && messages.length === 0) {
     return (
-      <div className={styles.container}>
+      <>
+        {confirmDialog}
+        <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.headerAvatar}>
             {conversation.otherUser.avatarUrl ? (
@@ -287,11 +323,14 @@ const MessageThread = ({ conversation }) => {
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
+      </>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <>
+      {confirmDialog}
+      <div className={styles.container}>
       {/* Шапка с информацией о собеседнике */}
       <div className={styles.header}>
         <div className={styles.headerAvatar}>
@@ -590,7 +629,8 @@ const MessageThread = ({ conversation }) => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
