@@ -12,18 +12,45 @@ export const searchMedia = createAsyncThunk(
         fullParams: { query, ...filters }
       });
 
-      const response = await api.get('/media/search', { params: { query, ...filters } });
-      
+      // Параллельно запрашиваем медиа и пользователей
+      const [mediaResponse, usersResponse] = await Promise.allSettled([
+        api.get('/media/search', { params: { query, ...filters } }),
+        api.get('/users/search', { params: { q: query } })
+      ]);
+
+      // Обрабатываем результаты медиа
+      let mediaData = { movies: [], tv: [] };
+      if (mediaResponse.status === 'fulfilled') {
+        mediaData = mediaResponse.value.data;
+        console.log('[mediaSlice] Медиа найдено:', {
+          movies: mediaData.movies?.length || 0,
+          tv: mediaData.tv?.length || 0
+        });
+      } else {
+        console.error('[mediaSlice] Ошибка поиска медиа:', mediaResponse.reason);
+      }
+
+      // Обрабатываем результаты пользователей
+      let users = [];
+      if (usersResponse.status === 'fulfilled') {
+        users = usersResponse.value.data || [];
+        console.log('[mediaSlice] Пользователей найдено:', users.length);
+      } else {
+        console.error('[mediaSlice] Ошибка поиска пользователей:', usersResponse.reason);
+      }
+
       // Логирование успешного ответа
       console.log('[mediaSlice] searchMedia успешный ответ:', {
-        status: response.status,
-        dataType: typeof response.data,
-        isArray: Array.isArray(response.data),
-        resultsCount: Array.isArray(response.data) ? response.data.length : 'не массив',
-        data: response.data
+        moviesCount: mediaData.movies?.length || 0,
+        tvCount: mediaData.tv?.length || 0,
+        usersCount: users.length
       });
 
-      return response.data;
+      return {
+        movies: mediaData.movies || [],
+        tv: mediaData.tv || [],
+        users: users
+      };
     } catch (error) {
       // Логирование ошибки
       console.error('[mediaSlice] searchMedia ошибка:', {
@@ -95,14 +122,30 @@ const mediaSlice = createSlice({
         state.error = null;
       })
       .addCase(searchMedia.fulfilled, (state, action) => {
-        // Backend возвращает объект с полями movies и tv
+        // Backend возвращает объект с полями movies, tv и users
         // Преобразуем в массив результатов для frontend
         let results = [];
         
         if (action.payload && typeof action.payload === 'object') {
-          // Если это объект с movies и tv
-          if (action.payload.movies || action.payload.tv) {
-            const movies = (action.payload.movies || []).map(movie => ({
+          // Добавляем пользователей
+          if (action.payload.users && Array.isArray(action.payload.users)) {
+            const users = action.payload.users.map(user => ({
+              type: 'user',
+              data: {
+                id: user.id,
+                displayName: user.displayName,
+                telegramUsername: user.telegramUsername,
+                avatarUrl: user.avatarUrl,
+                isAdmin: user.isAdmin,
+                createdAt: user.createdAt
+              }
+            }));
+            results = [...results, ...users];
+          }
+          
+          // Добавляем фильмы
+          if (action.payload.movies && Array.isArray(action.payload.movies)) {
+            const movies = action.payload.movies.map(movie => ({
               type: 'movie',
               data: {
                 tmdbId: movie.id,
@@ -117,8 +160,12 @@ const mediaSlice = createSlice({
                 genreIds: movie.genre_ids || []
               }
             }));
-            
-            const tv = (action.payload.tv || []).map(show => ({
+            results = [...results, ...movies];
+          }
+          
+          // Добавляем сериалы
+          if (action.payload.tv && Array.isArray(action.payload.tv)) {
+            const tv = action.payload.tv.map(show => ({
               type: 'tv',
               data: {
                 tmdbId: show.id,
@@ -133,22 +180,19 @@ const mediaSlice = createSlice({
                 genreIds: show.genre_ids || []
               }
             }));
-            
-            results = [...movies, ...tv];
-          } else if (Array.isArray(action.payload)) {
-            // Если это уже массив (старый формат)
-            results = action.payload;
+            results = [...results, ...tv];
           }
         }
         
         console.log('[mediaSlice] searchMedia.fulfilled - поиск завершен:', {
           payloadType: typeof action.payload,
+          hasUsers: !!action.payload?.users,
           hasMovies: !!action.payload?.movies,
           hasTv: !!action.payload?.tv,
+          usersCount: action.payload?.users?.length || 0,
           moviesCount: action.payload?.movies?.length || 0,
           tvCount: action.payload?.tv?.length || 0,
-          totalResults: results.length,
-          results
+          totalResults: results.length
         });
 
         state.searchResults = results;

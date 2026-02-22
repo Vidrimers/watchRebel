@@ -58,13 +58,13 @@ class TMDbService {
   }
 
   /**
-   * Выполнение запроса с rate limiting
+   * Выполнение запроса с rate limiting и retry
    */
-  async makeRequest(endpoint, params = {}) {
+  async makeRequest(endpoint, params = {}, retryCount = 0) {
     this._ensureInitialized();
     
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ endpoint, params, resolve, reject });
+      this.requestQueue.push({ endpoint, params, resolve, reject, retryCount });
       this.processQueue();
     });
   }
@@ -90,7 +90,7 @@ class TMDbService {
         );
       }
 
-      const { endpoint, params, resolve, reject } = this.requestQueue.shift();
+      const { endpoint, params, resolve, reject, retryCount } = this.requestQueue.shift();
 
       try {
         console.log(`🔑 TMDb запрос: ${endpoint}`);
@@ -119,7 +119,9 @@ class TMDbService {
         
         // Настройки запроса
         const config = {
-          params: queryParams
+          params: queryParams,
+          timeout: 10000, // 10 секунд таймаут
+          validateStatus: (status) => status < 500 // Не бросать ошибку на 4xx
         };
         
         // Если используем Access Token (v4), добавляем в заголовки
@@ -135,13 +137,44 @@ class TMDbService {
         
         const response = await axios.get(fullUrl, config);
         
-        console.log(`✅ TMDb ответ для ${endpoint}:`, response.data);
+        console.log(`✅ TMDb ответ для ${endpoint}: статус ${response.status}`);
         this.lastRequestTime = Date.now();
         resolve(response.data);
       } catch (error) {
-        console.error(`❌ TMDb ошибка для ${endpoint}:`, error.response?.data || error.message);
-        this.lastRequestTime = Date.now();
-        reject(this.handleError(error));
+        console.error(`❌ TMDb ошибка для ${endpoint}:`);
+        console.error('  Код ошибки:', error.code);
+        console.error('  Сообщение:', error.message);
+        if (error.response) {
+          console.error('  HTTP статус:', error.response.status);
+          console.error('  Данные ответа:', error.response.data);
+        }
+        if (error.request) {
+          console.error('  Запрос был отправлен, но ответа не получено');
+          console.error('  URL:', error.config?.url);
+        }
+        
+        // Retry логика для сетевых ошибок
+        const maxRetries = 3;
+        const isNetworkError = error.code === 'ECONNREFUSED' || 
+                              error.code === 'ENOTFOUND' || 
+                              error.code === 'ETIMEDOUT' ||
+                              error.code === 'EAI_AGAIN';
+        
+        if (isNetworkError && retryCount < maxRetries) {
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Экспоненциальная задержка, макс 5 сек
+          console.log(`🔄 Повторная попытка ${retryCount + 1}/${maxRetries} через ${retryDelay}ms...`);
+          
+          this.lastRequestTime = Date.now();
+          
+          // Добавляем запрос обратно в очередь с увеличенным счетчиком
+          setTimeout(() => {
+            this.requestQueue.push({ endpoint, params, resolve, reject, retryCount: retryCount + 1 });
+            this.processQueue();
+          }, retryDelay);
+        } else {
+          this.lastRequestTime = Date.now();
+          reject(this.handleError(error));
+        }
       }
     }
 
