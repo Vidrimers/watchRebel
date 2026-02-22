@@ -12,38 +12,65 @@ export const searchMedia = createAsyncThunk(
         fullParams: { query, ...filters }
       });
 
-      // Параллельно запрашиваем медиа и пользователей
-      const [mediaResponse, usersResponse] = await Promise.allSettled([
-        api.get('/media/search', { params: { query, ...filters } }),
-        api.get('/users/search', { params: { q: query } })
-      ]);
+      const searchType = filters?.searchType || 'all';
+      
+      // Определяем, что нужно искать
+      const shouldSearchMedia = searchType === 'all' || searchType === 'movies' || searchType === 'tv';
+      const shouldSearchUsers = searchType === 'all' || searchType === 'users';
 
-      // Обрабатываем результаты медиа
+      // Создаем массив промисов только для нужных запросов
+      const promises = [];
+      
+      if (shouldSearchMedia) {
+        promises.push(
+          api.get('/media/search', { params: { query, ...filters } })
+            .then(response => ({ type: 'media', data: response.data }))
+            .catch(error => ({ type: 'media', error }))
+        );
+      }
+      
+      if (shouldSearchUsers) {
+        promises.push(
+          api.get('/users/search', { params: { q: query } })
+            .then(response => ({ type: 'users', data: response.data }))
+            .catch(error => ({ type: 'users', error }))
+        );
+      }
+
+      // Выполняем только нужные запросы
+      const results = await Promise.all(promises);
+
+      // Обрабатываем результаты
       let mediaData = { movies: [], tv: [] };
-      if (mediaResponse.status === 'fulfilled') {
-        mediaData = mediaResponse.value.data;
-        console.log('[mediaSlice] Медиа найдено:', {
-          movies: mediaData.movies?.length || 0,
-          tv: mediaData.tv?.length || 0
-        });
-      } else {
-        console.error('[mediaSlice] Ошибка поиска медиа:', mediaResponse.reason);
-      }
-
-      // Обрабатываем результаты пользователей
       let users = [];
-      if (usersResponse.status === 'fulfilled') {
-        users = usersResponse.value.data || [];
-        console.log('[mediaSlice] Пользователей найдено:', users.length);
-      } else {
-        console.error('[mediaSlice] Ошибка поиска пользователей:', usersResponse.reason);
-      }
+
+      results.forEach(result => {
+        if (result.type === 'media') {
+          if (result.data) {
+            mediaData = result.data;
+            console.log('[mediaSlice] Медиа найдено:', {
+              movies: mediaData.movies?.length || 0,
+              tv: mediaData.tv?.length || 0
+            });
+          } else {
+            console.error('[mediaSlice] Ошибка поиска медиа:', result.error);
+          }
+        } else if (result.type === 'users') {
+          if (result.data) {
+            users = result.data || [];
+            console.log('[mediaSlice] Пользователей найдено:', users.length);
+          } else {
+            console.error('[mediaSlice] Ошибка поиска пользователей:', result.error);
+          }
+        }
+      });
 
       // Логирование успешного ответа
       console.log('[mediaSlice] searchMedia успешный ответ:', {
         moviesCount: mediaData.movies?.length || 0,
         tvCount: mediaData.tv?.length || 0,
-        usersCount: users.length
+        usersCount: users.length,
+        searchType
       });
 
       return {

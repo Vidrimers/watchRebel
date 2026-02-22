@@ -105,7 +105,7 @@
 }
 
 /* Неоновые кнопки */
-[data-theme="dark-neon-obsidian"] button:not(:disabled) {
+[data-theme="dark-neon-obsidian"] button:not(:disabled):not(.notificationsButton):not(.settingsButton) {
   background: rgba(60, 255, 196, 0.1);
   color: #3cffc4;
   border: 2px solid rgba(60, 255, 196, 0.5);
@@ -116,7 +116,7 @@
   transition: all 0.3s ease;
 }
 
-[data-theme="dark-neon-obsidian"] button:not(:disabled):hover {
+[data-theme="dark-neon-obsidian"] button:not(:disabled):not(.notificationsButton):not(.settingsButton):hover {
   background: rgba(60, 255, 196, 0.2);
   border-color: #3cffc4;
   box-shadow: 

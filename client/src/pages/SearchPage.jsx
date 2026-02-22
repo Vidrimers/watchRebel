@@ -4,9 +4,11 @@ import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { searchMedia } from '../store/slices/mediaSlice';
 import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
+import { clearSearch } from '../store/slices/mediaSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import useAlert from '../hooks/useAlert';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
+import api from '../services/api';
 import styles from './SearchPage.module.css';
 
 /**
@@ -23,32 +25,66 @@ const SearchPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { customLists } = useAppSelector((state) => state.lists);
   
+  // Состояние для друзей
+  const [friends, setFriends] = useState([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  
   const query = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
   const [activeFilter, setActiveFilter] = useState('all'); // all, users, movies, tv
   const [activeMenu, setActiveMenu] = useState(null);
+
+  // Очистка поиска при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      // При уходе со страницы очищаем результаты поиска
+      dispatch(clearSearch());
+    };
+  }, [dispatch]);
   
   // Состояние для выбора списка
   const [showListSelector, setShowListSelector] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedListId, setSelectedListId] = useState('');
+  
+  // Состояние для добавления в друзья
+  const [addingFriend, setAddingFriend] = useState(null); // ID пользователя, которого добавляем
 
   // Загрузка списков при монтировании
   useEffect(() => {
     dispatch(fetchLists());
   }, [dispatch]);
 
+  // Загрузка списка друзей при монтировании
+  useEffect(() => {
+    const loadFriends = async () => {
+      if (!user?.id) return;
+      
+      setFriendsLoading(true);
+      try {
+        const response = await api.get(`/users/${user.id}/friends`);
+        setFriends(response.data || []);
+      } catch (error) {
+        console.error('Ошибка загрузки друзей:', error);
+      } finally {
+        setFriendsLoading(false);
+      }
+    };
+    
+    loadFriends();
+  }, [user?.id]);
+
   // Синхронизируем локальный инпут с URL параметром
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
 
-  // Выполняем поиск при загрузке страницы или изменении query
+  // Выполняем поиск при загрузке страницы или изменении query или фильтра
   useEffect(() => {
     if (query.trim()) {
-      dispatch(searchMedia({ query, filters: {} }));
+      dispatch(searchMedia({ query, filters: { searchType: activeFilter } }));
     }
-  }, [query, dispatch]);
+  }, [query, activeFilter, dispatch]);
 
   // Обработка отправки формы поиска
   const handleSearchSubmit = (e) => {
@@ -56,6 +92,13 @@ const SearchPage = () => {
     if (searchInput.trim()) {
       setSearchParams({ q: searchInput.trim() });
     }
+  };
+
+  // Очистка поля поиска
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchParams({});
+    dispatch(clearSearch());
   };
 
   // Фильтруем результаты по активному фильтру
@@ -193,6 +236,64 @@ const SearchPage = () => {
     }
   };
 
+  /**
+   * Проверка, является ли пользователь другом
+   */
+  const isFriend = (userId) => {
+    return friends.some(friend => friend.id === userId);
+  };
+
+  /**
+   * Добавление в друзья
+   */
+  const handleAddFriend = async (e, userId, userName) => {
+    e.stopPropagation();
+    
+    // Нельзя добавить самого себя
+    if (user?.id === userId) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Нельзя добавить самого себя в друзья',
+        type: 'error'
+      });
+      return;
+    }
+    
+    setAddingFriend(userId);
+    
+    try {
+      await api.post(`/users/${userId}/friends`);
+      
+      // Обновляем список друзей
+      const response = await api.get(`/users/${user.id}/friends`);
+      setFriends(response.data || []);
+      
+      await showAlert({
+        title: 'Успешно!',
+        message: `${userName} добавлен в друзья`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка добавления в друзья:', error);
+      
+      if (error.response?.data?.code === 'ALREADY_FRIENDS') {
+        await showAlert({
+          title: 'Уже в друзьях',
+          message: `${userName} уже в вашем списке друзей`,
+          type: 'info'
+        });
+      } else {
+        await showAlert({
+          title: 'Ошибка',
+          message: error.response?.data?.error || 'Не удалось добавить в друзья',
+          type: 'error'
+        });
+      }
+    } finally {
+      setAddingFriend(null);
+    }
+  };
+
   // Подсчет результатов по типам
   const counts = {
     all: searchResults.length,
@@ -214,14 +315,26 @@ const SearchPage = () => {
           <h1 className={styles.title}>Поиск</h1>
           
           <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Поиск фильмов, сериалов и пользователей..."
-              className={styles.searchInput}
-              autoFocus
-            />
+            <div className={styles.searchInputWrapper}>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Поиск фильмов, сериалов и пользователей..."
+                className={styles.searchInput}
+                autoFocus
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className={styles.clearButton}
+                  title="Очистить"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button type="submit" className={styles.searchButton}>
               🔍 Найти
             </button>
@@ -302,6 +415,28 @@ const SearchPage = () => {
                           <p className={styles.userCardUsername}>@{result.data.telegramUsername}</p>
                         )}
                       </div>
+                      
+                      {/* Кнопка добавить в друзья (не показываем для самого себя) */}
+                      {user?.id !== result.data.id && (
+                        isFriend(result.data.id) ? (
+                          <button
+                            className={`${styles.addFriendButton} ${styles.alreadyFriend}`}
+                            disabled
+                            title="Уже в друзьях"
+                          >
+                            ✓
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.addFriendButton}
+                            onClick={(e) => handleAddFriend(e, result.data.id, result.data.displayName)}
+                            disabled={addingFriend === result.data.id}
+                            title="Добавить в друзья"
+                          >
+                            {addingFriend === result.data.id ? '...' : '+'}
+                          </button>
+                        )
+                      )}
                     </div>
                   ) : (
                     // Карточка медиа

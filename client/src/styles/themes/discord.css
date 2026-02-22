@@ -82,7 +82,7 @@
 }
 
 /* Стиль кнопок в духе Discord */
-[data-theme="discord"] button:not(:disabled) {
+[data-theme="discord"] button:not(:disabled):not(.notificationsButton):not(.settingsButton) {
   background-color: #5865f2;
   color: #ffffff;
   border: none;
@@ -90,11 +90,11 @@
   transition: background-color 0.17s ease;
 }
 
-[data-theme="discord"] button:not(:disabled):hover {
+[data-theme="discord"] button:not(:disabled):not(.notificationsButton):not(.settingsButton):hover {
   background-color: #4752c4;
 }
 
-[data-theme="discord"] button:not(:disabled):active {
+[data-theme="discord"] button:not(:disabled):not(.notificationsButton):not(.settingsButton):active {
   background-color: #3c45a5;
 }
 

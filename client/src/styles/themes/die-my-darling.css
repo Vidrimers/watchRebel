@@ -82,7 +82,7 @@
 }
 
 /* Эффект свечения для интерактивных элементов */
-[data-theme="die-my-darling"] button:hover,
+[data-theme="die-my-darling"] button:hover:not(.notificationsButton):not(.settingsButton),
 [data-theme="die-my-darling"] a:hover {
   text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
 }

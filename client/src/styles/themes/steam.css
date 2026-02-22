@@ -82,12 +82,12 @@
 }
 
 /* Эффект градиента для кнопок в стиле Steam */
-[data-theme="steam"] button:not(:disabled) {
+[data-theme="steam"] button:not(:disabled):not(.notificationsButton):not(.settingsButton) {
   background: linear-gradient(to bottom, #66c0f4 0%, #417a9b 100%);
   border: 1px solid #2a475e;
 }
 
-[data-theme="steam"] button:not(:disabled):hover {
+[data-theme="steam"] button:not(:disabled):not(.notificationsButton):not(.settingsButton):hover {
   background: linear-gradient(to bottom, #8ed4f8 0%, #5c9fc4 100%);
   box-shadow: 0 0 12px rgba(102, 192, 244, 0.4);
 }
