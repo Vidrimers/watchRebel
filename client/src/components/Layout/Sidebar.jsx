@@ -19,10 +19,13 @@ const Sidebar = ({ user, narrow = false }) => {
   };
 
   const handleUserInfoClick = (e) => {
-    // Если клик был по кнопке уведомлений или dropdown, не переходим на профиль
-    if (e.target.closest(`.${styles.notificationsContainer}`)) {
-      e.preventDefault();
+    // Если клик был по кнопке настроек, уведомлений или dropdown, не переходим на профиль
+    if (e.target.closest(`.${styles.notificationsContainer}`) || 
+        e.target.closest(`.${styles.settingsContainer}`)) {
+      return;
     }
+    // Переход на профиль
+    window.location.href = `/user/${user.id}`;
   };
 
   return (
@@ -32,7 +35,7 @@ const Sidebar = ({ user, narrow = false }) => {
 
       {/* Информация о пользователе */}
       {user && (
-        <a href={`/user/${user.id}`} className={styles.userInfoLink} onClick={handleUserInfoClick}>
+        <div className={styles.userInfoLink} onClick={handleUserInfoClick}>
           <div className={styles.userInfo}>
             {/* Настройки - в левом верхнем углу */}
             <div className={styles.settingsContainer}>
@@ -40,7 +43,6 @@ const Sidebar = ({ user, narrow = false }) => {
                 href="/settings" 
                 className={styles.settingsButton}
                 title="Настройки"
-                onClick={(e) => e.stopPropagation()}
               >
                 ⚙️
               </a>
@@ -70,7 +72,7 @@ const Sidebar = ({ user, narrow = false }) => {
             {/* Имя пользователя - скрыто в узком режиме */}
             {!narrow && <h2 className={styles.userName}>{user.displayName}</h2>}
           </div>
-        </a>
+        </div>
       )}
 
       {/* Навигация */}
