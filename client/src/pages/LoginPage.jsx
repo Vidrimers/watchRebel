@@ -158,6 +158,50 @@ function LoginPage() {
               <div id="telegram-login-container"></div>
             </div>
 
+            {/* Разделитель */}
+            <div className="login-divider">
+              <span>или</span>
+            </div>
+
+            {/* Все способы входа */}
+            <div className="login-oauth-buttons">
+              <button 
+                className="oauth-button email-button"
+                onClick={() => navigate('/login-email')}
+              >
+                <span className="oauth-icon">✉️</span>
+                <span>Войти через Email</span>
+              </button>
+
+              <button 
+                className="oauth-button google-button"
+                onClick={() => window.location.href = '/api/auth/google'}
+              >
+                <span className="oauth-icon">🔍</span>
+                <span>Войти через Google</span>
+              </button>
+
+              <button 
+                className="oauth-button discord-button"
+                onClick={() => window.location.href = '/api/auth/discord'}
+              >
+                <span className="oauth-icon">💬</span>
+                <span>Войти через Discord</span>
+              </button>
+            </div>
+
+            {/* Ссылка на регистрацию */}
+            <div className="login-footer-links">
+              <p>
+                Нет аккаунта? <button 
+                  className="link-button"
+                  onClick={() => navigate('/register')}
+                >
+                  Зарегистрироваться
+                </button>
+              </p>
+            </div>
+
             {authError && (
               <div className="login-error-message">
                 <span className="error-icon">⚠️</span>

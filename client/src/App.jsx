@@ -7,6 +7,13 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy loading для всех страниц
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const RegisterEmailPage = lazy(() => import('./pages/RegisterEmailPage'));
+const LoginEmailPage = lazy(() => import('./pages/LoginEmailPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PublicCatalogPage = lazy(() => import('./pages/PublicCatalogPage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const MediaDetailPage = lazy(() => import('./pages/MediaDetailPage'));
@@ -42,7 +49,7 @@ function LoadingFallback() {
   );
 }
 
-// Временный компонент главной страницы - редирект на профиль пользователя
+// Временный компонент главной страницы - редирект на профиль пользователя или публичный каталог
 function HomePage() {
   const { user } = useAppSelector((state) => state.auth);
 
@@ -50,7 +57,8 @@ function HomePage() {
     return <Navigate to={`/user/${user.id}`} replace />;
   }
 
-  return <Navigate to="/login" replace />;
+  // Для неавторизованных пользователей - редирект на публичный каталог
+  return <Navigate to="/catalog" replace />;
 }
 
 function App() {
@@ -63,6 +71,27 @@ function App() {
               {/* Публичный маршрут - страница логина */}
               <Route path="/login" element={<LoginPage />} />
               
+              {/* Публичный маршрут - страница входа через Email */}
+              <Route path="/login-email" element={<LoginEmailPage />} />
+              
+              {/* Публичный маршрут - страница регистрации */}
+              <Route path="/register" element={<RegisterPage />} />
+              
+              {/* Публичный маршрут - страница регистрации через Email */}
+              <Route path="/register-email" element={<RegisterEmailPage />} />
+              
+              {/* Публичный маршрут - подтверждение email */}
+              <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+              
+              {/* Публичный маршрут - забыли пароль */}
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              
+              {/* Публичный маршрут - сброс пароля */}
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              
+              {/* Публичный маршрут - каталог для незарегистрированных */}
+              <Route path="/catalog" element={<PublicCatalogPage />} />
+              
               {/* Публичный маршрут - тестирование интеграции */}
               <Route path="/integration-test" element={<IntegrationTestPage />} />
               
@@ -72,15 +101,8 @@ function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/advertising-contacts" element={<AdvertisingContactsPage />} />
               
-              {/* Защищенные маршруты */}
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Главная страница - редирект на профиль или каталог */}
+              <Route path="/" element={<HomePage />} />
 
               {/* Страница профиля пользователя */}
               <Route 
@@ -102,9 +124,9 @@ function App() {
                 } 
               />
 
-              {/* Страница каталога */}
+              {/* Страница каталога (защищенная версия с возможностью добавления в списки) */}
               <Route 
-                path="/catalog" 
+                path="/my-catalog" 
                 element={
                   <ProtectedRoute>
                     <CatalogPage />

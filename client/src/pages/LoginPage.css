@@ -215,6 +215,130 @@
   min-height: 50px;
 }
 
+/* Разделитель "или" */
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.login-divider span {
+  padding: 0 16px;
+}
+
+/* OAuth кнопки */
+.login-oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.oauth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.oauth-button:hover {
+  background: var(--bg-primary);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.oauth-button:active {
+  transform: translateY(0);
+}
+
+.oauth-icon {
+  font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Специфичные стили для Email */
+.email-button {
+  border-color: #ea4335;
+}
+
+.email-button:hover {
+  border-color: #ea4335;
+  background: rgba(234, 67, 53, 0.05);
+}
+
+/* Специфичные стили для Google */
+.google-button {
+  border-color: #4285f4;
+}
+
+.google-button:hover {
+  border-color: #4285f4;
+  background: rgba(66, 133, 244, 0.05);
+}
+
+/* Специфичные стили для Discord */
+.discord-button {
+  border-color: #5865f2;
+}
+
+.discord-button:hover {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.05);
+}
+
+/* Ссылки в футере формы входа */
+.login-footer-links {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.login-footer-links p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.link-button:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* Сообщение об ошибке */
 .login-error-message {
   margin-top: 24px;

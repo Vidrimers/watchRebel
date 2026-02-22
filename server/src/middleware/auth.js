@@ -3,6 +3,7 @@ import { executeQuery } from '../database/db.js';
 /**
  * Middleware для проверки аутентификации пользователя
  * Проверяет наличие токена в заголовке Authorization и валидность сессии
+ * Поддерживает разные способы аутентификации: telegram, email, google, discord
  */
 export async function authenticateToken(req, res, next) {
   try {
@@ -50,6 +51,14 @@ export async function authenticateToken(req, res, next) {
       });
     }
 
+    // Для email аккаунтов проверяем подтверждение email
+    if (session.auth_method === 'email' && !session.email_verified) {
+      return res.status(403).json({ 
+        error: 'Email не подтвержден. Проверьте свою почту.',
+        code: 'EMAIL_NOT_VERIFIED' 
+      });
+    }
+
     // Добавляем информацию о пользователе в request
     req.user = {
       id: session.user_id,
@@ -57,7 +66,12 @@ export async function authenticateToken(req, res, next) {
       displayName: session.display_name,
       avatarUrl: session.avatar_url,
       isAdmin: Boolean(session.is_admin),
-      theme: session.theme
+      theme: session.theme,
+      authMethod: session.auth_method || 'telegram', // По умолчанию telegram для старых пользователей
+      email: session.email,
+      emailVerified: Boolean(session.email_verified),
+      googleId: session.google_id,
+      discordId: session.discord_id
     };
 
     req.sessionId = session.id;

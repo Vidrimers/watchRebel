@@ -8,6 +8,8 @@ import ThemeDropdown from '../components/Settings/ThemeDropdown';
 import AdminPanel from '../components/Settings/AdminPanel';
 import AvatarUpload from '../components/Settings/AvatarUpload';
 import TelegramConnectionBlock from '../components/Settings/TelegramConnectionBlock';
+import GoogleConnectionBlock from '../components/Settings/GoogleConnectionBlock';
+import DiscordConnectionBlock from '../components/Settings/DiscordConnectionBlock';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
@@ -237,6 +239,12 @@ const SettingsPage = () => {
 
         {/* Блок управления Telegram */}
         <TelegramConnectionBlock />
+
+        {/* Блок управления Google */}
+        <GoogleConnectionBlock />
+
+        {/* Блок управления Discord */}
+        <DiscordConnectionBlock />
 
         {/* Карточка с удалением аккаунта */}
         <div className={styles.settingsCard}>

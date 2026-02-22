@@ -94,7 +94,7 @@ const Sidebar = ({ user, narrow = false }) => {
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/catalog" className={styles.navLink} title="Каталог">
+            <a href="/my-catalog" className={styles.navLink} title="Каталог">
               📚 {!narrow && 'Каталог'}
             </a>
           </li>

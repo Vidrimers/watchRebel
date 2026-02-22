@@ -38,7 +38,7 @@ export const routes = [
     title: 'Поиск'
   },
   {
-    path: '/catalog',
+    path: '/my-catalog',
     element: <CatalogPage />,
     protected: true,
     title: 'Каталог'

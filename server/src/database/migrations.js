@@ -25,6 +25,12 @@ export async function runMigrations() {
         referrals_count INTEGER DEFAULT 0,
         ban_reason TEXT,
         post_ban_until DATETIME,
+        auth_method TEXT DEFAULT 'telegram',
+        email TEXT UNIQUE,
+        password_hash TEXT,
+        email_verified BOOLEAN DEFAULT 0,
+        google_id TEXT UNIQUE,
+        discord_id TEXT UNIQUE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
@@ -193,6 +199,16 @@ export async function runMigrations() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_by TEXT,
         FOREIGN KEY (updated_by) REFERENCES users(id)
+      );
+
+      -- Таблица токенов подтверждения email
+      CREATE TABLE IF NOT EXISTS email_verification_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
       -- Добавляем начальную запись для контактов рекламы

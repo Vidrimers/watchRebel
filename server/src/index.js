@@ -23,6 +23,8 @@ if (envResult.error) {
 // Теперь импортируем остальные модули, которые используют process.env
 import express from 'express';
 import cors from 'cors';
+import passport from 'passport';
+import { configurePassport } from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import listsRoutes from './routes/lists.js';
@@ -91,6 +93,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Инициализация Passport
+configurePassport();
+app.use(passport.initialize());
 
 // HTTP логирование
 app.use(httpLogger);

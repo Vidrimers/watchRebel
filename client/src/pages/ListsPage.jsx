@@ -253,7 +253,7 @@ const ListsPage = () => {
                     <p>Список пуст</p>
                     <p className={styles.emptyHint}>
                       Добавьте {mediaType === 'movie' ? 'фильмы' : 'сериалы'} через{' '}
-                      <a href="/catalog" className={styles.searchLink}>каталог</a>
+                      <a href="/my-catalog" className={styles.searchLink}>каталог</a>
                       {' '}или{' '}
                       <a href="/search" className={styles.searchLink}>поиск</a>
                     </p>
