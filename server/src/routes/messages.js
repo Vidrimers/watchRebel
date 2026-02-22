@@ -38,6 +38,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
           ELSE u1.avatar_url
         END as other_user_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
+        (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
@@ -55,18 +56,55 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       });
     }
 
-    const conversations = conversationsResult.data.map(c => ({
-      id: c.id,
-      otherUser: {
-        id: c.other_user_id,
-        displayName: c.other_user_name,
-        avatarUrl: c.other_user_avatar
-      },
-      lastMessage: c.last_message_content,
-      unreadCount: c.unread_count || 0,
-      lastMessageAt: c.last_message_at ? c.last_message_at + 'Z' : null, // Добавляем Z для UTC
-      createdAt: c.created_at ? c.created_at + 'Z' : null // Добавляем Z для UTC
-    }));
+    const conversations = conversationsResult.data.map(c => {
+      // Формируем текст последнего сообщения
+      let lastMessage = c.last_message_content;
+      
+      // Если есть вложения, показываем информацию о них
+      if (c.last_message_attachments) {
+        try {
+          const attachments = JSON.parse(c.last_message_attachments);
+          if (attachments && attachments.length > 0) {
+            // Определяем тип первого вложения
+            const firstAttachment = attachments[0];
+            const mimeType = firstAttachment.mimeType || '';
+            
+            let attachmentType = 'файл';
+            if (mimeType.startsWith('image/')) attachmentType = 'изображение';
+            else if (mimeType.startsWith('video/')) attachmentType = 'видео';
+            else if (mimeType.startsWith('audio/')) attachmentType = 'аудио';
+            else attachmentType = 'документ';
+            
+            if (attachments.length === 1) {
+              lastMessage = `📎 ${attachmentType}`;
+            } else {
+              lastMessage = `📎 ${attachments.length} файл(ов)`;
+            }
+            
+            // Если есть текст вместе с вложениями, добавляем его
+            if (c.last_message_content && c.last_message_content.trim().length > 0) {
+              lastMessage += `: ${c.last_message_content}`;
+            }
+          }
+        } catch (e) {
+          // Если ошибка парсинга, используем обычный текст
+          console.error('Ошибка парсинга attachments:', e);
+        }
+      }
+      
+      return {
+        id: c.id,
+        otherUser: {
+          id: c.other_user_id,
+          displayName: c.other_user_name,
+          avatarUrl: c.other_user_avatar
+        },
+        lastMessage: lastMessage,
+        unreadCount: c.unread_count || 0,
+        lastMessageAt: c.last_message_at ? c.last_message_at + 'Z' : null,
+        createdAt: c.created_at ? c.created_at + 'Z' : null
+      };
+    });
 
     res.json(conversations);
 
@@ -373,8 +411,39 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       const senderName = senderResult.data[0].display_name;
       const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
       
+      // Формируем текст уведомления в зависимости от типа контента
+      let messagePreview = '';
+      
+      if (attachments && files.length > 0) {
+        // Если есть вложения, определяем их тип
+        const attachmentTypes = files.map(file => {
+          const mimeType = file.mimetype;
+          if (mimeType.startsWith('image/')) return 'изображение';
+          if (mimeType.startsWith('video/')) return 'видео';
+          if (mimeType.startsWith('audio/')) return 'аудио';
+          return 'документ';
+        });
+        
+        // Формируем текст в зависимости от количества и типа вложений
+        if (files.length === 1) {
+          messagePreview = `📎 Отправлено ${attachmentTypes[0]}`;
+        } else {
+          messagePreview = `📎 Отправлено ${files.length} файл(ов)`;
+        }
+        
+        // Если есть текст вместе с вложениями
+        if (content && content.trim().length > 0) {
+          messagePreview += `\n\n${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`;
+        }
+        
+        messagePreview += '\n\n<i>Посмотреть можно только на сайте</i>';
+      } else {
+        // Если только текст
+        messagePreview = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+      }
+      
       const telegramMessage = `💬 <b>Новое сообщение от ${senderName}</b>\n\n` +
-                             `${content.substring(0, 100)}${content.length > 100 ? '...' : ''}\n\n` +
+                             `${messagePreview}\n\n` +
                              `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
       
       // Отправляем уведомление с кнопкой "Ответить"
