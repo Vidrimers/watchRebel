@@ -600,4 +600,144 @@ router.post('/telegram-widget', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/auth/link-telegram
+ * Привязать Telegram аккаунт к существующему пользователю
+ * Требует аутентификации
+ * 
+ * Body:
+ * - telegramId: string (обязательно)
+ * - telegramUsername: string (опционально)
+ */
+router.post('/link-telegram', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { telegramId, telegramUsername } = req.body;
+
+    if (!telegramId) {
+      return res.status(400).json({ 
+        error: 'telegramId обязателен',
+        code: 'MISSING_FIELDS' 
+      });
+    }
+
+    // Проверяем, не привязан ли этот Telegram к другому пользователю
+    const telegramCheck = await executeQuery(
+      'SELECT id FROM users WHERE id = ? AND id != ?',
+      [telegramId, userId]
+    );
+
+    if (!telegramCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки Telegram аккаунта',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (telegramCheck.data.length > 0) {
+      return res.status(400).json({ 
+        error: 'Этот Telegram аккаунт уже привязан к другому пользователю',
+        code: 'TELEGRAM_ALREADY_LINKED' 
+      });
+    }
+
+    // Обновляем пользователя
+    const updateResult = await executeQuery(
+      `UPDATE users 
+       SET telegram_username = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [telegramUsername || null, userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка привязки Telegram',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Telegram успешно привязан',
+      telegramUsername
+    });
+
+  } catch (error) {
+    console.error('Ошибка привязки Telegram:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/auth/unlink-telegram
+ * Отвязать Telegram аккаунт от пользователя
+ * Требует аутентификации
+ * Нельзя отвязать, если это единственный способ входа
+ */
+router.delete('/unlink-telegram', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Получаем информацию о пользователе
+    const userResult = await executeQuery(
+      'SELECT auth_method, email, google_id, discord_id FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!userResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения данных пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const user = userResult.data[0];
+
+    // Проверяем, есть ли другие способы входа
+    const hasOtherMethods = user.email || user.google_id || user.discord_id;
+
+    if (!hasOtherMethods) {
+      return res.status(400).json({ 
+        error: 'Нельзя отвязать Telegram, так как это единственный способ входа. Сначала привяжите другой способ входа.',
+        code: 'LAST_AUTH_METHOD' 
+      });
+    }
+
+    // Отвязываем Telegram
+    const updateResult = await executeQuery(
+      `UPDATE users 
+       SET telegram_username = NULL, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка отвязки Telegram',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Telegram успешно отвязан'
+    });
+
+  } catch (error) {
+    console.error('Ошибка отвязки Telegram:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;

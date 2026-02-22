@@ -1,0 +1,142 @@
+.settingsCard {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary, #333);
+}
+
+.linkedContainer,
+.notLinkedContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.statusLabel {
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.statusLinked {
+  color: var(--success-color, #10b981);
+  font-weight: 600;
+}
+
+.statusNotLinked {
+  color: var(--error-color, #ef4444);
+  font-weight: 600;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.infoValue {
+  color: var(--text-primary, #333);
+}
+
+.description {
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.linkButton {
+  padding: 12px 24px;
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.linkButton:hover:not(:disabled) {
+  background: var(--primary-color-hover, #4f46e5);
+}
+
+.linkButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.unlinkButton {
+  padding: 12px 24px;
+  background: var(--error-color, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.unlinkButton:hover:not(:disabled) {
+  background: var(--error-color-hover, #dc2626);
+}
+
+.unlinkButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Темная тема */
+:global(.dark) .settingsCard {
+  background: var(--card-background-dark, #2a2a2a);
+}
+
+:global(.dark) .cardTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .infoRow {
+  border-bottom-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .infoLabel {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .infoValue {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .description {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .linkButton {
+  background: var(--primary-color-dark, #818cf8);
+}
+
+:global(.dark) .linkButton:hover:not(:disabled) {
+  background: var(--primary-color-hover-dark, #a5b4fc);
+}

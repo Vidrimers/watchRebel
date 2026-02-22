@@ -7,6 +7,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import ThemeDropdown from '../components/Settings/ThemeDropdown';
 import AdminPanel from '../components/Settings/AdminPanel';
 import AvatarUpload from '../components/Settings/AvatarUpload';
+import TelegramConnectionBlock from '../components/Settings/TelegramConnectionBlock';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
@@ -42,6 +43,55 @@ const SettingsPage = () => {
     if (confirmed) {
       await dispatch(logout());
       navigate('/login');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Первое подтверждение
+    const firstConfirm = await showConfirm({
+      title: 'Удаление аккаунта',
+      message: 'Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо!',
+      confirmText: 'Продолжить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!firstConfirm) return;
+
+    // Второе подтверждение с вводом текста
+    const confirmation = prompt('Для подтверждения удаления введите слово "УДАЛИТЬ" (заглавными буквами):');
+    
+    if (confirmation !== 'УДАЛИТЬ') {
+      await showAlert({
+        title: 'Отмена',
+        message: 'Удаление аккаунта отменено. Введено неверное подтверждение.',
+        type: 'info'
+      });
+      return;
+    }
+
+    try {
+      // Отправляем запрос на удаление
+      await api.delete('/users/me', {
+        data: { confirmation: 'УДАЛИТЬ' }
+      });
+
+      await showAlert({
+        title: 'Аккаунт удален',
+        message: 'Ваш аккаунт и все данные успешно удалены.',
+        type: 'success'
+      });
+
+      // Выходим и перенаправляем на страницу входа
+      await dispatch(logout());
+      navigate('/login');
+    } catch (error) {
+      console.error('Ошибка удаления аккаунта:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Не удалось удалить аккаунт. Попробуйте позже.',
+        type: 'error'
+      });
     }
   };
   
@@ -157,6 +207,23 @@ const SettingsPage = () => {
               <span className={styles.infoLabel}>ID:</span>
               <span className={styles.infoValue}>{user.id}</span>
             </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Способ входа:</span>
+              <div className={styles.authMethodsContainer}>
+                {user.telegramUsername && (
+                  <span className={styles.authMethod}>📱 Telegram</span>
+                )}
+                {user.email && (
+                  <span className={styles.authMethod}>✉️ Email</span>
+                )}
+                {user.hasGoogleLinked && (
+                  <span className={styles.authMethod}>🔐 Google</span>
+                )}
+                {user.hasDiscordLinked && (
+                  <span className={styles.authMethod}>💬 Discord</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -165,6 +232,20 @@ const SettingsPage = () => {
           <h3 className={styles.cardTitle}>Сессия</h3>
           <button onClick={handleLogout} className={styles.logoutButton}>
             Выйти из аккаунта
+          </button>
+        </div>
+
+        {/* Блок управления Telegram */}
+        <TelegramConnectionBlock />
+
+        {/* Карточка с удалением аккаунта */}
+        <div className={styles.settingsCard}>
+          <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
+          <p className={styles.dangerWarning}>
+            ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
+          </p>
+          <button onClick={handleDeleteAccount} className={styles.deleteButton}>
+            🗑️ Удалить аккаунт
           </button>
         </div>
 

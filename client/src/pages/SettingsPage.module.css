@@ -138,6 +138,23 @@
   color: var(--text-primary, #333);
 }
 
+.authMethodsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.authMethod {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* Кнопка выхода */
 .logoutButton {
   width: 100%;
@@ -154,6 +171,41 @@
 
 .logoutButton:hover {
   background: var(--error-color-hover, #dc2626);
+}
+
+/* Кнопка удаления аккаунта */
+.deleteButton {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--error-color, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.deleteButton:hover {
+  background: var(--error-color-hover, #dc2626);
+}
+
+.dangerWarning {
+  color: var(--error-color, #ef4444);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border-left: 4px solid var(--error-color, #ef4444);
+}
+
+/* Темная тема для предупреждения */
+:global(.dark) .dangerWarning {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
 }
 
 /* Контактная информация */
@@ -246,6 +298,10 @@
 
 :global(.dark) .infoValue {
   color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .authMethod {
+  background: var(--accent-primary-dark, #818cf8);
 }
 
 :global(.dark) .contactItem {

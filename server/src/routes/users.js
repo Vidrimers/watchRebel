@@ -76,7 +76,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, ban_reason, post_ban_until, theme, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, ban_reason, post_ban_until, theme, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -106,6 +106,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
       banReason: user.ban_reason,
       postBanUntil: user.post_ban_until,
       theme: user.theme,
+      authMethod: user.auth_method || 'telegram',
+      email: user.email,
+      hasGoogleLinked: Boolean(user.google_id),
+      hasDiscordLinked: Boolean(user.discord_id),
+      emailVerified: Boolean(user.email_verified),
       createdAt: user.created_at
     });
 
@@ -583,6 +588,92 @@ router.get('/:id/referrals', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка получения списка рефералов:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/users/me
+ * Удалить свой аккаунт
+ * Требует подтверждения через body.confirmation = "УДАЛИТЬ"
+ * Каскадно удаляет все данные пользователя
+ */
+router.delete('/me', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { confirmation } = req.body;
+
+    // Проверяем подтверждение
+    if (confirmation !== 'УДАЛИТЬ') {
+      return res.status(400).json({ 
+        error: 'Для удаления аккаунта введите "УДАЛИТЬ" в поле подтверждения',
+        code: 'INVALID_CONFIRMATION' 
+      });
+    }
+
+    // Получаем информацию о пользователе для удаления аватарки
+    const userResult = await executeQuery(
+      'SELECT avatar_url FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!userResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения данных пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const avatarUrl = userResult.data[0].avatar_url;
+
+    // Удаляем пользователя (каскадное удаление настроено в БД)
+    const deleteResult = await executeQuery(
+      'DELETE FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка удаления аккаунта',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Удаляем аватарку, если она была загружена пользователем
+    if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
+      const avatarPath = path.join(__dirname, '../../', avatarUrl);
+      if (fs.existsSync(avatarPath)) {
+        try {
+          fs.unlinkSync(avatarPath);
+        } catch (err) {
+          console.error('Ошибка удаления аватарки:', err);
+        }
+      }
+    }
+
+    // Удаляем все сессии пользователя
+    await executeQuery(
+      'DELETE FROM sessions WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({
+      message: 'Аккаунт успешно удален',
+      userId
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления аккаунта:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
