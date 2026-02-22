@@ -29,23 +29,50 @@ const apiClient = axios.create({
 // Request interceptor - добавляем токен к каждому запросу
 apiClient.interceptors.request.use(
   (config) => {
+    // Логирование исходящего запроса
+    console.log('[API] Исходящий запрос:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      params: config.params,
+      data: config.data,
+      headers: config.headers
+    });
+
     // Получаем токен из localStorage
     const token = localStorage.getItem('authToken');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('[API] Токен добавлен к запросу');
+    } else {
+      console.log('[API] Токен отсутствует');
     }
     
     return config;
   },
   (error) => {
+    console.error('[API] Ошибка при подготовке запроса:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor - обрабатываем ошибки
+// Response interceptor - обрабатываем ответы и ошибки
 apiClient.interceptors.response.use(
   (response) => {
+    // Логирование успешного ответа
+    console.log('[API] Успешный ответ:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase(),
+      dataType: typeof response.data,
+      isArray: Array.isArray(response.data),
+      dataLength: Array.isArray(response.data) ? response.data.length : 'не массив',
+      data: response.data
+    });
+
     // Успешный ответ - возвращаем данные
     return response;
   },
@@ -56,8 +83,18 @@ apiClient.interceptors.response.use(
       const { status, data } = error.response;
       const message = data?.message || data?.error || 'Произошла ошибка на сервере';
       
+      console.error('[API] Ошибка от сервера:', {
+        status,
+        statusText: error.response.statusText,
+        url: error.config?.url,
+        method: error.config?.method?.toUpperCase(),
+        message,
+        data
+      });
+      
       // Если 401 - токен невалиден, очищаем localStorage
       if (status === 401) {
+        console.warn('[API] 401 Unauthorized - очищаем токен и редиректим на логин');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         // Можно добавить редирект на страницу логина
@@ -67,9 +104,14 @@ apiClient.interceptors.response.use(
       throw new APIError(message, status, data);
     } else if (error.request) {
       // Запрос был отправлен, но ответа не получено (проблемы с сетью)
+      console.error('[API] Ошибка сети - ответ не получен:', {
+        request: error.request,
+        message: error.message
+      });
       throw new NetworkError('Не удалось подключиться к серверу. Проверьте интернет-соединение.');
     } else {
       // Ошибка при настройке запроса
+      console.error('[API] Ошибка настройки запроса:', error);
       throw new NetworkError(error.message || 'Произошла неизвестная ошибка');
     }
   }
