@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/Layout/PublicHeader';
 import styles from './RegisterPage.module.css';
@@ -9,6 +9,19 @@ import styles from './RegisterPage.module.css';
  */
 const RegisterPage = () => {
   const navigate = useNavigate();
+
+  // Принудительно устанавливаем светлую тему для страниц аутентификации
+  useEffect(() => {
+    const savedTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light-cream');
+    
+    return () => {
+      // Восстанавливаем предыдущую тему при размонтировании
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    };
+  }, []);
 
   const registrationMethods = [
     {

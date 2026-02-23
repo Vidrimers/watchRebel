@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import styles from './RegisterEmailPage.module.css';
@@ -17,6 +17,19 @@ function RegisterEmailPage() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Принудительно устанавливаем светлую тему для страниц аутентификации
+  useEffect(() => {
+    const savedTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light-cream');
+    
+    return () => {
+      // Восстанавливаем предыдущую тему при размонтировании
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    };
+  }, []);
 
   // Валидация формы
   const validateForm = () => {

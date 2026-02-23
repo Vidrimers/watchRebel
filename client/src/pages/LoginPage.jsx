@@ -19,6 +19,19 @@ function LoginPage() {
   const [authError, setAuthError] = useState(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  // Принудительно устанавливаем светлую тему для страниц аутентификации
+  useEffect(() => {
+    const savedTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light-cream');
+    
+    return () => {
+      // Восстанавливаем предыдущую тему при размонтировании
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     // Если уже авторизован, перенаправляем на главную
     if (isAuthenticated) {

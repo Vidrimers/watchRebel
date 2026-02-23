@@ -336,7 +336,7 @@
 }
 
 .editButton:hover {
-  background: var(--accent-hover, #4f46e5);
+  background: var(--accent-primary-active, #4338ca);
 }
 
 .editNameContainer {

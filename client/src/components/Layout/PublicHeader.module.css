@@ -27,11 +27,10 @@
   opacity: 0.8;
 }
 
-.logoText {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--accent-primary);
-  margin: 0;
+.logoImage {
+  height: 25px;
+  width: auto;
+  object-fit: contain;
 }
 
 .headerActions {
@@ -66,7 +65,7 @@
 }
 
 .registerButton:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -77,8 +76,8 @@
     padding: 1rem;
   }
 
-  .logoText {
-    font-size: 1.25rem;
+  .logoImage {
+    height: 20px;
   }
 
   .headerActions {

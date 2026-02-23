@@ -119,7 +119,7 @@
 }
 
 .button:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
 }
 
 .buttonSecondary {

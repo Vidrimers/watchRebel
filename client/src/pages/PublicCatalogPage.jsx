@@ -29,6 +29,19 @@ const PublicCatalogPage = () => {
   // Пагинация
   const [totalPages, setTotalPages] = useState(1);
 
+  // Принудительно устанавливаем светлую тему для публичных страниц
+  useEffect(() => {
+    const savedTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light-cream');
+    
+    return () => {
+      // Восстанавливаем предыдущую тему при размонтировании
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    };
+  }, []);
+
   // Загрузка жанров при монтировании
   useEffect(() => {
     loadGenres();

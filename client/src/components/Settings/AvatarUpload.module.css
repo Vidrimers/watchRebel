@@ -86,7 +86,7 @@
 }
 
 .uploadButton:hover:not(:disabled) {
-  background-color: var(--accent-hover);
+  background-color: var(--accent-primary-active);
   transform: translateY(-2px);
 }
 

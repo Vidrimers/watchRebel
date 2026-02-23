@@ -13,7 +13,7 @@ const PublicHeader = () => {
     <header className={styles.header}>
       <div className={styles.headerContent}>
         <div className={styles.logo} onClick={() => navigate('/catalog')}>
-          <h1 className={styles.logoText}>watchRebel</h1>
+          <img src="/images/logo5.png" alt="watchRebel" className={styles.logoImage} />
         </div>
         <div className={styles.headerActions}>
           <button 

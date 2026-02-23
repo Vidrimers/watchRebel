@@ -164,7 +164,7 @@
 }
 
 .btnProfile:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
   transform: translateY(-1px);
 }
 
@@ -199,7 +199,7 @@
 }
 
 .btnLoadMore:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
   transform: translateY(-2px);
 }
 

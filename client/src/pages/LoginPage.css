@@ -110,7 +110,7 @@
 }
 
 .telegram-button:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
@@ -189,7 +189,7 @@
 }
 
 .retry-button:hover {
-  background: var(--accent-hover);
+  background: var(--accent-primary-active);
   transform: translateY(-1px);
 }
 
@@ -335,7 +335,7 @@
 }
 
 .link-button:hover {
-  color: var(--accent-hover);
+  color: var(--accent-primary-active);
   text-decoration: underline;
 }
 

@@ -177,12 +177,14 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
-  transition: opacity 0.2s ease;
+  padding: 0;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
 .loginButton:hover {
-  opacity: 0.8;
+  text-decoration: underline;
+  color: var(--accent-primary-active);
 }
 
 /* Footer */
@@ -225,7 +227,7 @@
 }
 
 .link:hover {
-  color: var(--accent-color, #6366f1);
+  color: var(--accent-primary, #6366f1);
 }
 
 .separator {
