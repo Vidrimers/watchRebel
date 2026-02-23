@@ -41,6 +41,14 @@ import messagesRoutes from './routes/messages.js';
 import settingsRoutes from './routes/settings.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 import { initWebSocket } from './services/websocketService.js';
+import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
+import { startTokenCleanupScheduler } from './middleware/tokenCleanup.js';
+import { 
+  configureHelmet, 
+  configureCORS, 
+  secureSessionMiddleware, 
+  securityLogger 
+} from './middleware/security.js';
 
 if (envResult.error) {
   console.error('❌ Ошибка загрузки .env:', envResult.error);
@@ -59,40 +67,22 @@ if (process.env.NODE_ENV === 'production') {
 const app = express();
 const PORT = process.env.PORT || 1313;
 
-// CORS настройки для development и production
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Разрешаем запросы без origin (например, мобильные приложения, Postman)
-    if (!origin) return callback(null, true);
-    
-    // Список разрешенных origins
-    const allowedOrigins = [
-      'http://localhost:3000',           // Vite dev server
-      'http://localhost:1313',           // Backend server
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:1313',
-      'http://192.168.1.162:3000',       // Local network IP
-      'http://172.19.0.1:3000',          // Docker network IP
-      'https://prosurrender-rickety-brenda.ngrok-free.dev', // ngrok URL
-      process.env.PUBLIC_URL,            // Production URL
-    ].filter(Boolean); // Убираем undefined значения
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS: Запрос от неразрешенного origin: ${origin}`);
-      callback(null, true); // В development разрешаем все
-    }
-  },
-  credentials: true, // Разрешаем отправку cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
+// Helmet для улучшения безопасности
+app.use(configureHelmet());
+
+// Логирование подозрительных запросов
+app.use(securityLogger);
+
+// CORS настройки
+const corsOptions = configureCORS();
+app.use(cors(corsOptions));
+
+// Secure session middleware
+app.use(secureSessionMiddleware);
 
 // Middleware
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Ограничение размера JSON
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Инициализация Passport
 configurePassport();
@@ -102,6 +92,12 @@ app.use(passport.initialize());
 app.use(httpLogger);
 
 // Раздача статических файлов (аватарки)
+// Добавляем заголовки CORS для статических файлов
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
@@ -139,6 +135,16 @@ app.use((err, req, res, next) => {
 // Запуск сервера только если это не тестовая среда
 if (process.env.NODE_ENV !== 'test') {
   const server = http.createServer(app);
+  
+  // Инициализация таблицы для отслеживания попыток входа
+  createLoginAttemptsTable().then(() => {
+    logger.info('Таблица login_attempts инициализирована');
+  }).catch(err => {
+    logger.error('Ошибка инициализации таблицы login_attempts:', err);
+  });
+  
+  // Запуск планировщика очистки истекших токенов
+  startTokenCleanupScheduler(1); // Очистка каждый час
   
   // Инициализация WebSocket
   initWebSocket(server);

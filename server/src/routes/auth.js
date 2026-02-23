@@ -7,6 +7,23 @@ import bcrypt from 'bcrypt';
 import { verifyTelegramAuth, extractUserData } from '../utils/telegramAuth.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import passport from '../config/passport.js';
+import { 
+  loginRateLimiter, 
+  registerRateLimiter, 
+  passwordResetRateLimiter 
+} from '../middleware/rateLimiter.js';
+import { 
+  checkLoginAttempts, 
+  recordLoginAttempt, 
+  resetLoginAttempts 
+} from '../middleware/loginAttempts.js';
+import {
+  validateEmail,
+  validateEmailDomain,
+  validatePassword,
+  validateDisplayName,
+  sanitizeString
+} from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -902,7 +919,7 @@ router.get('/verify-email/:token', async (req, res) => {
  * - password: string (обязательно)
  * - displayName: string (обязательно)
  */
-router.post('/register-email', async (req, res) => {
+router.post('/register-email', registerRateLimiter, async (req, res) => {
   try {
     const { email, password, displayName } = req.body;
 
@@ -914,46 +931,52 @@ router.post('/register-email', async (req, res) => {
       });
     }
 
-    // Валидация формата email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Валидация email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
       return res.status(400).json({ 
-        error: 'Неверный формат email',
-        code: 'INVALID_EMAIL_FORMAT' 
+        error: emailValidation.error,
+        code: 'INVALID_EMAIL' 
       });
     }
 
-    // Валидация пароля (минимум 8 символов)
-    if (password.length < 8) {
+    const normalizedEmail = emailValidation.normalizedEmail || email.toLowerCase();
+
+    // Проверка существования домена email (DNS lookup)
+    const domainValidation = await validateEmailDomain(normalizedEmail);
+    if (!domainValidation.valid) {
       return res.status(400).json({ 
-        error: 'Пароль должен содержать минимум 8 символов',
-        code: 'PASSWORD_TOO_SHORT' 
+        error: domainValidation.error,
+        code: 'INVALID_EMAIL_DOMAIN' 
       });
     }
 
-    // Проверка сложности пароля (хотя бы одна буква и одна цифра)
-    const hasLetter = /[a-zA-Zа-яА-Я]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    
-    if (!hasLetter || !hasNumber) {
+    // Валидация имени
+    const nameValidation = validateDisplayName(displayName);
+    if (!nameValidation.valid) {
       return res.status(400).json({ 
-        error: 'Пароль должен содержать хотя бы одну букву и одну цифру',
-        code: 'PASSWORD_TOO_WEAK' 
-      });
-    }
-
-    // Валидация имени (минимум 2 символа, максимум 50)
-    if (displayName.length < 2 || displayName.length > 50) {
-      return res.status(400).json({ 
-        error: 'Имя должно содержать от 2 до 50 символов',
+        error: nameValidation.error,
         code: 'INVALID_DISPLAY_NAME' 
+      });
+    }
+
+    const sanitizedName = nameValidation.sanitizedName;
+
+    // Валидация пароля с проверкой сложности
+    const passwordValidation = validatePassword(password, [normalizedEmail, sanitizedName]);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ 
+        error: passwordValidation.error,
+        code: 'WEAK_PASSWORD',
+        score: passwordValidation.score,
+        feedback: passwordValidation.feedback
       });
     }
 
     // Проверяем, не занят ли email
     const emailCheck = await executeQuery(
       'SELECT id FROM users WHERE email = ?',
-      [email.toLowerCase()]
+      [normalizedEmail]
     );
 
     if (!emailCheck.success) {
@@ -1006,9 +1029,9 @@ router.post('/register-email', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId, 
-        email.toLowerCase(), 
+        normalizedEmail, 
         passwordHash, 
-        displayName, 
+        sanitizedName, 
         'email', 
         0, 
         'light-cream', 
@@ -1081,15 +1104,28 @@ router.post('/register-email', async (req, res) => {
  * - email: string (обязательно)
  * - password: string (обязательно)
  */
-router.post('/login-email', async (req, res) => {
+router.post('/login-email', loginRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+    const ipAddress = req.ip || req.connection.remoteAddress;
 
     // Валидация входных данных
     if (!email || !password) {
       return res.status(400).json({ 
         error: 'Email и пароль обязательны',
         code: 'MISSING_FIELDS' 
+      });
+    }
+
+    // Проверяем, не заблокирован ли пользователь из-за множественных неудачных попыток
+    const attemptCheck = await checkLoginAttempts(email, ipAddress);
+
+    if (attemptCheck.blocked) {
+      console.warn(`⚠️ Попытка входа заблокирована для email: ${email}, IP: ${ipAddress}`);
+      return res.status(429).json({
+        error: `Слишком много неудачных попыток входа. Попробуйте снова через ${attemptCheck.blockDuration} минут.`,
+        code: 'ACCOUNT_TEMPORARILY_LOCKED',
+        blockDuration: attemptCheck.blockDuration
       });
     }
 
@@ -1107,9 +1143,13 @@ router.post('/login-email', async (req, res) => {
     }
 
     if (userResult.data.length === 0) {
+      // Записываем неудачную попытку
+      await recordLoginAttempt(email, ipAddress, false);
+      
       return res.status(401).json({ 
         error: 'Неверный email или пароль',
-        code: 'INVALID_CREDENTIALS' 
+        code: 'INVALID_CREDENTIALS',
+        remainingAttempts: attemptCheck.remainingAttempts - 1
       });
     }
 
@@ -1117,6 +1157,9 @@ router.post('/login-email', async (req, res) => {
 
     // Проверяем, не заблокирован ли пользователь
     if (user.is_blocked) {
+      // Записываем неудачную попытку
+      await recordLoginAttempt(email, ipAddress, false);
+      
       return res.status(403).json({ 
         error: 'Пользователь заблокирован',
         code: 'USER_BLOCKED' 
@@ -1125,6 +1168,9 @@ router.post('/login-email', async (req, res) => {
 
     // Проверяем, подтвержден ли email
     if (!user.email_verified) {
+      // Записываем неудачную попытку
+      await recordLoginAttempt(email, ipAddress, false);
+      
       return res.status(403).json({ 
         error: 'Email не подтвержден. Пожалуйста, проверьте свою почту и перейдите по ссылке подтверждения.',
         code: 'EMAIL_NOT_VERIFIED' 
@@ -1133,20 +1179,34 @@ router.post('/login-email', async (req, res) => {
 
     // Проверяем пароль
     if (!user.password_hash) {
+      // Записываем неудачную попытку
+      await recordLoginAttempt(email, ipAddress, false);
+      
       return res.status(401).json({ 
         error: 'Неверный email или пароль',
-        code: 'INVALID_CREDENTIALS' 
+        code: 'INVALID_CREDENTIALS',
+        remainingAttempts: attemptCheck.remainingAttempts - 1
       });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
+      // Записываем неудачную попытку
+      await recordLoginAttempt(email, ipAddress, false);
+      
       return res.status(401).json({ 
         error: 'Неверный email или пароль',
-        code: 'INVALID_CREDENTIALS' 
+        code: 'INVALID_CREDENTIALS',
+        remainingAttempts: attemptCheck.remainingAttempts - 1
       });
     }
+
+    // Успешный вход - сбрасываем счетчик неудачных попыток
+    await resetLoginAttempts(email);
+    
+    // Записываем успешную попытку
+    await recordLoginAttempt(email, ipAddress, true);
 
     // Создаем новую сессию
     const sessionId = uuidv4();
@@ -1199,7 +1259,7 @@ router.post('/login-email', async (req, res) => {
  * Body:
  * - email: string (обязательно)
  */
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', passwordResetRateLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
