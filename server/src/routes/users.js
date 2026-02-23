@@ -29,24 +29,33 @@ router.get('/search', authenticateToken, async (req, res) => {
       });
     }
 
-    // Ищем пользователей по имени (case-insensitive)
-    const searchResult = await executeQuery(
+    // Ищем пользователей по имени (case-insensitive для кириллицы)
+    // SQLite LOWER() не работает с кириллицей, поэтому делаем сравнение на уровне приложения
+    const searchQuery = q.toLowerCase();
+    
+    // Получаем всех незаблокированных пользователей
+    const allUsersResult = await executeQuery(
       `SELECT id, telegram_username, display_name, avatar_url, is_admin, created_at 
        FROM users 
-       WHERE (display_name LIKE ? OR telegram_username LIKE ?) 
-       AND is_blocked = 0
-       LIMIT 50`,
-      [`%${q}%`, `%${q}%`]
+       WHERE is_blocked = 0`
     );
 
-    if (!searchResult.success) {
+    if (!allUsersResult.success) {
       return res.status(500).json({ 
         error: 'Ошибка поиска пользователей',
         code: 'DATABASE_ERROR' 
       });
     }
 
-    const users = searchResult.data.map(user => ({
+    // Фильтруем на уровне приложения для корректной работы с кириллицей
+    const filteredUsers = allUsersResult.data.filter(user => {
+      const displayName = (user.display_name || '').toLowerCase();
+      const telegramUsername = (user.telegram_username || '').toLowerCase();
+      return displayName.includes(searchQuery) || telegramUsername.includes(searchQuery);
+    });
+
+    // Ограничиваем результат 50 пользователями
+    const users = filteredUsers.slice(0, 50).map(user => ({
       id: user.id,
       telegramUsername: user.telegram_username,
       displayName: user.display_name,
