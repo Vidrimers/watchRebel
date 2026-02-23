@@ -22,6 +22,7 @@ function UserModerationModal({ user, onClose, onUpdate }) {
   // Состояние для переименования
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(user.displayName);
+  const [renameReason, setRenameReason] = useState(''); // Причина переименования (опционально)
 
   /**
    * Обработчик блокировки постов
@@ -174,9 +175,17 @@ function UserModerationModal({ user, onClose, onUpdate }) {
     setLoading(true);
 
     try {
-      await api.put(`/admin/users/${user.id}`, { displayName: newName.trim() });
+      const payload = { displayName: newName.trim() };
+      
+      // Добавляем причину, если она указана
+      if (renameReason.trim()) {
+        payload.reason = renameReason.trim();
+      }
+
+      await api.put(`/admin/users/${user.id}`, payload);
 
       setIsRenaming(false);
+      setRenameReason(''); // Очищаем причину
 
       if (onUpdate) {
         onUpdate();
@@ -346,6 +355,14 @@ function UserModerationModal({ user, onClose, onUpdate }) {
                   className={styles.input}
                   disabled={loading}
                 />
+                <textarea
+                  value={renameReason}
+                  onChange={(e) => setRenameReason(e.target.value)}
+                  placeholder="Причина переименования (опционально)"
+                  className={styles.textarea}
+                  rows={3}
+                  disabled={loading}
+                />
                 <div className={styles.renameActions}>
                   <button
                     className={`${styles.actionButton} ${styles.saveButton}`}
@@ -359,6 +376,7 @@ function UserModerationModal({ user, onClose, onUpdate }) {
                     onClick={() => {
                       setIsRenaming(false);
                       setNewName(user.displayName);
+                      setRenameReason(''); // Очищаем причину при отмене
                     }}
                     disabled={loading}
                   >

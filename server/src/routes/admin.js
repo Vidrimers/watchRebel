@@ -127,15 +127,21 @@ router.delete('/users/:id', async (req, res) => {
  * PUT /api/admin/users/:id
  * Обновить данные пользователя (переименование и другие изменения)
  * Только для администратора
+ * 
+ * Body:
+ * - displayName: string (новое имя пользователя)
+ * - theme: string (тема оформления)
+ * - isBlocked: boolean (статус блокировки)
+ * - reason: string (опционально, причина переименования)
  */
 router.put('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { displayName, theme, isBlocked } = req.body;
+    const { displayName, theme, isBlocked, reason } = req.body;
 
-    // Проверяем, существует ли пользователь
+    // Проверяем, существует ли пользователь и получаем старое имя
     const userCheck = await executeQuery(
-      'SELECT id FROM users WHERE id = ?',
+      'SELECT id, display_name FROM users WHERE id = ?',
       [id]
     );
 
@@ -152,6 +158,8 @@ router.put('/users/:id', async (req, res) => {
         code: 'USER_NOT_FOUND' 
       });
     }
+
+    const oldDisplayName = userCheck.data[0].display_name;
 
     // Формируем запрос на обновление
     const updates = [];
@@ -213,6 +221,14 @@ router.put('/users/:id', async (req, res) => {
       createdAt: updatedUser.created_at,
       updatedAt: updatedUser.updated_at
     });
+
+    // Если имя было изменено, отправляем уведомление в Telegram (не блокируем ответ)
+    if (displayName !== undefined && displayName !== oldDisplayName) {
+      const { sendRenameNotification } = await import('../services/notificationService.js');
+      sendRenameNotification(id, oldDisplayName, displayName, reason).catch(err => {
+        console.error('Ошибка отправки уведомления о переименовании:', err);
+      });
+    }
 
   } catch (error) {
     console.error('Ошибка обновления пользователя:', error);

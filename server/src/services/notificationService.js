@@ -315,10 +315,46 @@ export async function notifyModeration(userId, actionType, actionData = {}) {
   }
 }
 
+/**
+ * Отправить уведомление о переименовании пользователя администратором
+ * @param {string} userId - ID пользователя, которого переименовали
+ * @param {string} oldName - Старое имя пользователя
+ * @param {string} newName - Новое имя пользователя
+ * @param {string} reason - Причина переименования (опционально)
+ * @returns {Promise<Object>} - Результат отправки уведомления
+ */
+export async function sendRenameNotification(userId, oldName, newName, reason = null) {
+  try {
+    let message = `⚠️ <b>Ваше имя было изменено администратором</b>\n\n` +
+                 `<b>Старое имя:</b> ${oldName}\n` +
+                 `<b>Новое имя:</b> ${newName}`;
+
+    // Добавляем причину, если она указана
+    if (reason && reason.trim().length > 0) {
+      message += `\n\n<b>Причина:</b>\n${reason.trim()}`;
+    }
+
+    // Отправляем уведомление в Telegram
+    const result = await sendTelegramNotification(userId, message);
+
+    if (result.success) {
+      console.log(`✅ Уведомление о переименовании отправлено пользователю ${userId}`);
+    } else {
+      console.error(`❌ Ошибка отправки уведомления о переименовании пользователю ${userId}:`, result.error);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о переименовании:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   createNotification,
   sendTelegramNotification,
   notifyReaction,
   notifyFriendActivity,
-  notifyModeration
+  notifyModeration,
+  sendRenameNotification
 };
