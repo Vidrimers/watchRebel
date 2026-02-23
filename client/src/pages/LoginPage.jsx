@@ -152,15 +152,14 @@ function LoginPage() {
       <div className="login-container">
         <div className="login-card">
           <div className="login-logo">
-            <h1>watchRebel</h1>
+            <div className="login-icon">
+              <img src="/images/logo-animation.png" alt="watchRebel" />
+            </div>
             <p className="login-subtitle">Социальная сеть для любителей кино и сериалов</p>
           </div>
           
           <div className="login-content">
-            <div className="login-icon">
-              <img src="/images/logo-animation.png" alt="watchRebel" />
-            </div>
-            <h2>Добро пожаловать!</h2>
+            
             <p className="login-description">
               Ведите учет просмотренных фильмов и сериалов, делитесь отзывами 
               и находите друзей с похожими вкусами
