@@ -1,5 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import ExcelJS from 'exceljs';
+import PDFDocument from 'pdfkit';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { notifyFriendActivity } from '../services/notificationService.js';
@@ -627,6 +629,520 @@ router.delete('/:id/items/:itemId', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка удаления элемента из списка:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/lists/export
+ * Экспортировать все списки пользователя в различных форматах
+ * 
+ * Query params:
+ * - format: 'json' | 'xlsx' | 'csv' | 'pdf' (обязательно)
+ */
+router.get('/export', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { format } = req.query;
+
+    // Валидация формата
+    const validFormats = ['json', 'xlsx', 'csv', 'pdf'];
+    if (!format || !validFormats.includes(format)) {
+      return res.status(400).json({ 
+        error: 'Формат должен быть одним из: json, xlsx, csv, pdf',
+        code: 'INVALID_FORMAT' 
+      });
+    }
+
+    // Увеличиваем timeout для больших списков
+    req.setTimeout(60000); // 60 секунд
+
+    // Получаем все списки пользователя
+    const listsResult = await executeQuery(
+      'SELECT * FROM custom_lists WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+
+    if (!listsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения списков',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем watchlist
+    const watchlistResult = await executeQuery(
+      'SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC',
+      [userId]
+    );
+
+    if (!watchlistResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения watchlist',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем рейтинги пользователя
+    const ratingsResult = await executeQuery(
+      'SELECT tmdb_id, media_type, rating FROM ratings WHERE user_id = ?',
+      [userId]
+    );
+
+    const ratingsMap = {};
+    if (ratingsResult.success) {
+      ratingsResult.data.forEach(r => {
+        ratingsMap[`${r.media_type}_${r.tmdb_id}`] = r.rating;
+      });
+    }
+
+    // Получаем информацию о пользователе
+    const userResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [userId]
+    );
+
+    const userName = userResult.success && userResult.data.length > 0 
+      ? userResult.data[0].display_name 
+      : 'Пользователь';
+
+    const tmdbService = (await import('../services/tmdbService.js')).default;
+
+    // Собираем данные для экспорта
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      userName,
+      lists: [],
+      watchlist: []
+    };
+
+    // Кэш для TMDb запросов (чтобы не запрашивать один и тот же фильм дважды)
+    const tmdbCache = new Map();
+
+    // Функция для получения деталей с кэшированием
+    const getMediaDetails = async (tmdbId, mediaType) => {
+      const cacheKey = `${mediaType}_${tmdbId}`;
+      
+      if (tmdbCache.has(cacheKey)) {
+        return tmdbCache.get(cacheKey);
+      }
+
+      try {
+        let mediaDetails;
+        if (mediaType === 'movie') {
+          mediaDetails = await tmdbService.getMovieDetails(tmdbId);
+        } else {
+          mediaDetails = await tmdbService.getTVDetails(tmdbId);
+        }
+        
+        tmdbCache.set(cacheKey, mediaDetails);
+        return mediaDetails;
+      } catch (error) {
+        console.error(`Ошибка получения деталей для ${mediaType} ${tmdbId}:`, error);
+        return null;
+      }
+    };
+
+    // Подсчитываем общее количество элементов для прогресса
+    let totalItems = watchlistResult.data.length;
+    listsResult.data.forEach(list => {
+      // Получаем количество элементов в каждом списке
+      totalItems += list.items?.length || 0;
+    });
+
+    let processedItems = 0;
+
+    // Обрабатываем каждый список
+    for (const list of listsResult.data) {
+      const itemsResult = await executeQuery(
+        'SELECT * FROM list_items WHERE list_id = ? ORDER BY added_at DESC',
+        [list.id]
+      );
+
+      const items = [];
+      if (itemsResult.success) {
+        for (const item of itemsResult.data) {
+          const mediaDetails = await getMediaDetails(item.tmdb_id, item.media_type);
+          
+          if (mediaDetails) {
+            const genres = mediaDetails.genres 
+              ? mediaDetails.genres.map(g => g.name).join(', ') 
+              : '';
+
+            const year = mediaDetails.release_date 
+              ? new Date(mediaDetails.release_date).getFullYear()
+              : (mediaDetails.first_air_date 
+                  ? new Date(mediaDetails.first_air_date).getFullYear() 
+                  : '');
+
+            const myRating = ratingsMap[`${item.media_type}_${item.tmdb_id}`] || '';
+
+            items.push({
+              title: mediaDetails.title || mediaDetails.name,
+              year,
+              genres,
+              tmdbRating: mediaDetails.vote_average || 0,
+              myRating,
+              addedAt: item.added_at,
+              overview: mediaDetails.overview || ''
+            });
+          } else {
+            items.push({
+              title: 'Неизвестно',
+              year: '',
+              genres: '',
+              tmdbRating: 0,
+              myRating: ratingsMap[`${item.media_type}_${item.tmdb_id}`] || '',
+              addedAt: item.added_at,
+              overview: ''
+            });
+          }
+
+          processedItems++;
+          // Логируем прогресс каждые 10 элементов
+          if (processedItems % 10 === 0) {
+            console.log(`Экспорт: обработано ${processedItems} из ${totalItems} элементов`);
+          }
+        }
+      }
+
+      exportData.lists.push({
+        name: list.name,
+        mediaType: list.media_type === 'movie' ? 'Фильмы' : 'Сериалы',
+        createdAt: list.created_at,
+        items
+      });
+    }
+
+    // Обрабатываем watchlist
+    if (watchlistResult.success) {
+      for (const item of watchlistResult.data) {
+        const mediaDetails = await getMediaDetails(item.tmdb_id, item.media_type);
+        
+        if (mediaDetails) {
+          const genres = mediaDetails.genres 
+            ? mediaDetails.genres.map(g => g.name).join(', ') 
+            : '';
+
+          const year = mediaDetails.release_date 
+            ? new Date(mediaDetails.release_date).getFullYear()
+            : (mediaDetails.first_air_date 
+                ? new Date(mediaDetails.first_air_date).getFullYear() 
+                : '');
+
+          const myRating = ratingsMap[`${item.media_type}_${item.tmdb_id}`] || '';
+
+          exportData.watchlist.push({
+            title: mediaDetails.title || mediaDetails.name,
+            mediaType: item.media_type === 'movie' ? 'Фильм' : 'Сериал',
+            year,
+            genres,
+            tmdbRating: mediaDetails.vote_average || 0,
+            myRating,
+            addedAt: item.added_at,
+            overview: mediaDetails.overview || ''
+          });
+        } else {
+          exportData.watchlist.push({
+            title: 'Неизвестно',
+            mediaType: item.media_type === 'movie' ? 'Фильм' : 'Сериал',
+            year: '',
+            genres: '',
+            tmdbRating: 0,
+            myRating: ratingsMap[`${item.media_type}_${item.tmdb_id}`] || '',
+            addedAt: item.added_at,
+            overview: ''
+          });
+        }
+
+        processedItems++;
+        if (processedItems % 10 === 0) {
+          console.log(`Экспорт: обработано ${processedItems} из ${totalItems} элементов`);
+        }
+      }
+    }
+
+    console.log(`Экспорт завершен: обработано ${processedItems} элементов`);
+
+    // Передаем данные в соответствующий обработчик формата
+    const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    if (format === 'json') {
+      // JSON экспорт
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="watchrebel_lists_${dateStr}.json"`);
+      
+      return res.json({
+        metadata: {
+          exportDate: exportData.exportDate,
+          userName: exportData.userName,
+          totalLists: exportData.lists.length,
+          totalWatchlistItems: exportData.watchlist.length
+        },
+        lists: exportData.lists,
+        watchlist: exportData.watchlist
+      });
+    }
+
+    if (format === 'xlsx') {
+      // Excel экспорт
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'watchRebel';
+      workbook.created = new Date();
+
+      // Первый лист - Сводка
+      const summarySheet = workbook.addWorksheet('Сводка');
+      summarySheet.columns = [
+        { header: 'Параметр', key: 'param', width: 30 },
+        { header: 'Значение', key: 'value', width: 30 }
+      ];
+
+      summarySheet.addRow({ param: 'Пользователь', value: exportData.userName });
+      summarySheet.addRow({ param: 'Дата экспорта', value: new Date(exportData.exportDate).toLocaleString('ru-RU') });
+      summarySheet.addRow({ param: 'Всего списков', value: exportData.lists.length });
+      summarySheet.addRow({ param: 'Элементов в Watchlist', value: exportData.watchlist.length });
+      
+      let totalItems = 0;
+      exportData.lists.forEach(list => {
+        totalItems += list.items.length;
+      });
+      summarySheet.addRow({ param: 'Всего элементов в списках', value: totalItems });
+
+      // Форматирование заголовков
+      summarySheet.getRow(1).font = { bold: true };
+      summarySheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // Создаем лист для каждого списка
+      exportData.lists.forEach(list => {
+        const sheet = workbook.addWorksheet(list.name.substring(0, 31)); // Excel ограничение на длину имени листа
+        
+        sheet.columns = [
+          { header: 'Название', key: 'title', width: 40 },
+          { header: 'Год', key: 'year', width: 10 },
+          { header: 'Жанры', key: 'genres', width: 30 },
+          { header: 'Рейтинг TMDb', key: 'tmdbRating', width: 15 },
+          { header: 'Мой рейтинг', key: 'myRating', width: 15 },
+          { header: 'Дата добавления', key: 'addedAt', width: 20 }
+        ];
+
+        list.items.forEach(item => {
+          sheet.addRow({
+            title: item.title,
+            year: item.year,
+            genres: item.genres,
+            tmdbRating: item.tmdbRating,
+            myRating: item.myRating,
+            addedAt: new Date(item.addedAt).toLocaleString('ru-RU')
+          });
+        });
+
+        // Форматирование заголовков
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+      });
+
+      // Создаем лист для Watchlist
+      if (exportData.watchlist.length > 0) {
+        const watchlistSheet = workbook.addWorksheet('Хочу посмотреть');
+        
+        watchlistSheet.columns = [
+          { header: 'Название', key: 'title', width: 40 },
+          { header: 'Тип', key: 'mediaType', width: 15 },
+          { header: 'Год', key: 'year', width: 10 },
+          { header: 'Жанры', key: 'genres', width: 30 },
+          { header: 'Рейтинг TMDb', key: 'tmdbRating', width: 15 },
+          { header: 'Дата добавления', key: 'addedAt', width: 20 }
+        ];
+
+        exportData.watchlist.forEach(item => {
+          watchlistSheet.addRow({
+            title: item.title,
+            mediaType: item.mediaType,
+            year: item.year,
+            genres: item.genres,
+            tmdbRating: item.tmdbRating,
+            addedAt: new Date(item.addedAt).toLocaleString('ru-RU')
+          });
+        });
+
+        // Форматирование заголовков
+        watchlistSheet.getRow(1).font = { bold: true };
+        watchlistSheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+      }
+
+      // Отправляем файл
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="watchrebel_lists_${dateStr}.xlsx"`);
+      
+      await workbook.xlsx.write(res);
+      return;
+    }
+
+    if (format === 'csv') {
+      // CSV экспорт - все списки в одном файле
+      const rows = [];
+      
+      // Заголовок
+      rows.push(['Список', 'Тип', 'Название', 'Год', 'Жанры', 'Рейтинг TMDb', 'Мой рейтинг', 'Дата добавления']);
+
+      // Добавляем элементы из всех списков
+      exportData.lists.forEach(list => {
+        list.items.forEach(item => {
+          rows.push([
+            list.name,
+            list.mediaType,
+            item.title,
+            item.year,
+            item.genres,
+            item.tmdbRating,
+            item.myRating,
+            new Date(item.addedAt).toLocaleString('ru-RU')
+          ]);
+        });
+      });
+
+      // Добавляем элементы из watchlist
+      exportData.watchlist.forEach(item => {
+        rows.push([
+          'Хочу посмотреть',
+          item.mediaType,
+          item.title,
+          item.year,
+          item.genres,
+          item.tmdbRating,
+          item.myRating || '',
+          new Date(item.addedAt).toLocaleString('ru-RU')
+        ]);
+      });
+
+      // Формируем CSV с правильной обработкой кавычек и запятых
+      const csvContent = rows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Экранируем кавычки и оборачиваем в кавычки если есть запятые или кавычки
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      // UTF-8 BOM для корректного открытия в Excel
+      const bom = '\uFEFF';
+      
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="watchrebel_lists_${dateStr}.csv"`);
+      
+      return res.send(bom + csvContent);
+    }
+
+    if (format === 'pdf') {
+      // PDF экспорт
+      const doc = new PDFDocument({ 
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="watchrebel_lists_${dateStr}.pdf"`);
+      
+      doc.pipe(res);
+
+      // Заголовок документа
+      doc.fontSize(24).text('watchRebel', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(12).text(`Экспорт списков`, { align: 'center' });
+      doc.fontSize(10).text(`Пользователь: ${exportData.userName}`, { align: 'center' });
+      doc.text(`Дата: ${new Date(exportData.exportDate).toLocaleString('ru-RU')}`, { align: 'center' });
+      doc.moveDown(2);
+
+      // Функция для добавления таблицы
+      const addTable = (title, items, includeMediaType = false) => {
+        // Проверяем, нужна ли новая страница
+        if (doc.y > 650) {
+          doc.addPage();
+        }
+
+        doc.fontSize(16).text(title, { underline: true });
+        doc.moveDown(0.5);
+
+        if (items.length === 0) {
+          doc.fontSize(10).text('Нет элементов', { italic: true });
+          doc.moveDown(1);
+          return;
+        }
+
+        items.forEach((item, index) => {
+          // Проверяем, нужна ли новая страница
+          if (doc.y > 700) {
+            doc.addPage();
+          }
+
+          doc.fontSize(12).text(`${index + 1}. ${item.title}`, { continued: false });
+          
+          let details = `   Год: ${item.year || 'Н/Д'}`;
+          if (includeMediaType) {
+            details += ` | Тип: ${item.mediaType}`;
+          }
+          details += ` | Жанры: ${item.genres || 'Н/Д'}`;
+          details += ` | TMDb: ${item.tmdbRating || 'Н/Д'}`;
+          if (item.myRating) {
+            details += ` | Мой рейтинг: ${item.myRating}`;
+          }
+          
+          doc.fontSize(9).text(details, { color: '#666666' });
+          doc.moveDown(0.5);
+        });
+
+        doc.moveDown(1);
+      };
+
+      // Добавляем каждый список
+      exportData.lists.forEach(list => {
+        addTable(`${list.name} (${list.mediaType})`, list.items);
+      });
+
+      // Добавляем watchlist
+      if (exportData.watchlist.length > 0) {
+        addTable('Хочу посмотреть', exportData.watchlist, true);
+      }
+
+      // Футер на последней странице
+      const pages = doc.bufferedPageRange();
+      for (let i = 0; i < pages.count; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8).text(
+          `Страница ${i + 1} из ${pages.count} | Экспортировано из watchRebel`,
+          50,
+          doc.page.height - 50,
+          { align: 'center' }
+        );
+      }
+
+      doc.end();
+      return;
+    }
+
+    // Вызываем следующий middleware в зависимости от формата
+    return res.json({ message: 'Export endpoint created, format handlers to be implemented', exportData });
+
+  } catch (error) {
+    console.error('Ошибка экспорта списков:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

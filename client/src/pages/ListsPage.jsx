@@ -147,6 +147,84 @@ const ListsPage = () => {
       )
     : [];
 
+  // Состояние для dropdown экспорта
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Функция экспорта
+  const handleExport = async (format) => {
+    setShowExportDropdown(false);
+    setIsExporting(true);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/lists/export?format=${format}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка экспорта');
+      }
+
+      // Получаем blob из ответа
+      const blob = await response.blob();
+      
+      // Создаем ссылку для скачивания
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Получаем имя файла из заголовка Content-Disposition или генерируем
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `watchrebel_lists_${new Date().toISOString().split('T')[0]}.${format}`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Очистка
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      await showAlert({
+        title: 'Успешно!',
+        message: `Списки экспортированы в формате ${format.toUpperCase()}`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка экспорта:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось экспортировать списки. Попробуйте позже.',
+        type: 'error'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Закрытие dropdown при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest(`.${styles.exportContainer}`)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+
   if (!isAuthenticated) {
     return (
       <div className={styles.errorContainer}>
@@ -162,19 +240,61 @@ const ListsPage = () => {
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Мои списки</h1>
           
-          <div className={styles.mediaTypeToggle}>
-            <button
-              className={`${styles.toggleButton} ${mediaType === 'movie' ? styles.active : ''}`}
-              onClick={() => handleMediaTypeChange('movie')}
-            >
-              🎬 Фильмы
-            </button>
-            <button
-              className={`${styles.toggleButton} ${mediaType === 'tv' ? styles.active : ''}`}
-              onClick={() => handleMediaTypeChange('tv')}
-            >
-              📺 Сериалы
-            </button>
+          <div className={styles.headerActions}>
+            <div className={styles.mediaTypeToggle}>
+              <button
+                className={`${styles.toggleButton} ${mediaType === 'movie' ? styles.active : ''}`}
+                onClick={() => handleMediaTypeChange('movie')}
+              >
+                🎬 Фильмы
+              </button>
+              <button
+                className={`${styles.toggleButton} ${mediaType === 'tv' ? styles.active : ''}`}
+                onClick={() => handleMediaTypeChange('tv')}
+              >
+                📺 Сериалы
+              </button>
+            </div>
+
+            {/* Кнопка экспорта */}
+            <div className={styles.exportContainer}>
+              <button
+                className={styles.exportButton}
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                disabled={isExporting}
+              >
+                {isExporting ? '⏳ Подготовка...' : '📥 Экспортировать'}
+              </button>
+              
+              {showExportDropdown && (
+                <div className={styles.exportDropdown}>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('json')}
+                  >
+                    📄 JSON
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('xlsx')}
+                  >
+                    📊 Excel (XLSX)
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('csv')}
+                  >
+                    📋 CSV
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('pdf')}
+                  >
+                    📕 PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

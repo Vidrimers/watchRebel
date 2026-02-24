@@ -33,6 +33,79 @@ const WatchlistPage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // Состояние для dropdown экспорта
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Функция экспорта
+  const handleExport = async (format) => {
+    setShowExportDropdown(false);
+    setIsExporting(true);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/watchlist/export?format=${format}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка экспорта');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `watchrebel_watchlist_${new Date().toISOString().split('T')[0]}.${format}`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      await showAlert({
+        title: 'Успешно!',
+        message: `Watchlist экспортирован в формате ${format.toUpperCase()}`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Ошибка экспорта:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось экспортировать. Попробуйте позже.',
+        type: 'error'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Закрытие dropdown при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest(`.${styles.exportContainer}`)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchWatchlist());
@@ -138,25 +211,67 @@ const WatchlistPage = () => {
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Хочу посмотреть</h1>
           
-          <div className={styles.filterButtons}>
-            <button
-              className={`${styles.filterButton} ${filterType === 'all' ? styles.active : ''}`}
-              onClick={() => handleFilterChange('all')}
-            >
-              Все
-            </button>
-            <button
-              className={`${styles.filterButton} ${filterType === 'movie' ? styles.active : ''}`}
-              onClick={() => handleFilterChange('movie')}
-            >
-              🎬 Фильмы
-            </button>
-            <button
-              className={`${styles.filterButton} ${filterType === 'tv' ? styles.active : ''}`}
-              onClick={() => handleFilterChange('tv')}
-            >
-              📺 Сериалы
-            </button>
+          <div className={styles.headerActions}>
+            <div className={styles.filterButtons}>
+              <button
+                className={`${styles.filterButton} ${filterType === 'all' ? styles.active : ''}`}
+                onClick={() => handleFilterChange('all')}
+              >
+                Все
+              </button>
+              <button
+                className={`${styles.filterButton} ${filterType === 'movie' ? styles.active : ''}`}
+                onClick={() => handleFilterChange('movie')}
+              >
+                🎬 Фильмы
+              </button>
+              <button
+                className={`${styles.filterButton} ${filterType === 'tv' ? styles.active : ''}`}
+                onClick={() => handleFilterChange('tv')}
+              >
+                📺 Сериалы
+              </button>
+            </div>
+
+            {/* Кнопка экспорта */}
+            <div className={styles.exportContainer}>
+              <button
+                className={styles.exportButton}
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                disabled={isExporting || filteredWatchlist.length === 0}
+              >
+                {isExporting ? '⏳ Подготовка...' : '📥 Экспортировать'}
+              </button>
+              
+              {showExportDropdown && (
+                <div className={styles.exportDropdown}>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('json')}
+                  >
+                    📄 JSON
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('xlsx')}
+                  >
+                    📊 Excel (XLSX)
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('csv')}
+                  >
+                    📋 CSV
+                  </button>
+                  <button
+                    className={styles.exportOption}
+                    onClick={() => handleExport('pdf')}
+                  >
+                    📕 PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
