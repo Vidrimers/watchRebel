@@ -121,6 +121,38 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'watchRebel API работает' });
 });
 
+// Отдача статических файлов фронтенда (production build)
+if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
+  const frontendPath = path.join(__dirname, '../../client/dist');
+  
+  // Статические файлы (JS, CSS, изображения) с правильными MIME типами
+  app.use(express.static(frontendPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      }
+    }
+  }));
+  
+  // SPA fallback - все остальные запросы (не /api/*) отдаем index.html
+  app.get('*', (req, res, next) => {
+    // Пропускаем API, uploads, webhook
+    if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/webhook')) {
+      return next();
+    }
+    
+    // Пропускаем запросы к файлам с расширениями (статика)
+    if (req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+      return next();
+    }
+    
+    // Отдаем index.html для всех остальных маршрутов (React Router)
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
+
 // Обработка ошибок
 app.use((err, req, res, next) => {
   logger.error('Необработанная ошибка', { 

@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * GET /api/watchlist
- * Получить список желаемого текущего пользователя
+ * Получить список "Хочу посмотреть" текущего пользователя
  * 
  * Query params:
  * - mediaType: 'movie' | 'tv' (опционально, для фильтрации по типу)
@@ -95,7 +95,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
 /**
  * POST /api/watchlist
- * Добавить контент в список желаемого
+ * Добавить контент в список "Хочу посмотреть"
  * 
  * Body:
  * - tmdbId: number (обязательно)
@@ -153,13 +153,13 @@ router.post('/', authenticateToken, async (req, res) => {
       // Проверяем, не нарушено ли ограничение уникальности
       if (insertResult.code === 'SQLITE_CONSTRAINT') {
         return res.status(400).json({ 
-          error: 'Этот контент уже находится в списке желаемого',
+          error: 'Этот контент уже находится в списке',
           code: 'DUPLICATE_ITEM' 
         });
       }
 
       return res.status(500).json({ 
-        error: 'Ошибка добавления контента в список желаемого',
+        error: 'Ошибка добавления контента',
         code: 'DATABASE_ERROR' 
       });
     }
@@ -188,7 +188,7 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Ошибка добавления контента в список желаемого:', error);
+    console.error('Ошибка добавления контента:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

@@ -109,8 +109,8 @@ const Sidebar = ({ user, narrow = false }) => {
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/watchlist" className={styles.navLink} title="Список желаемого">
-              ⭐ {!narrow && 'Список желаемого'}
+            <a href="/watchlist" className={styles.navLink} title="Хочу посмотреть">
+              ⭐ {!narrow && 'Хочу посмотреть'}
             </a>
           </li>
         </ul>

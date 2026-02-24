@@ -59,7 +59,7 @@ export const routes = [
     path: '/watchlist',
     element: <WatchlistPage />,
     protected: true,
-    title: 'Список желаемого'
+    title: 'Хочу посмотреть'
   },
   {
     path: '/notifications',

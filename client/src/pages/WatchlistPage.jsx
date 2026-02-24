@@ -105,7 +105,7 @@ const WatchlistPage = () => {
 
       await showAlert({
         title: 'Успешно!',
-        message: `"${itemToDelete.title}" удален из списка желаемого`,
+        message: `"${itemToDelete.title}" удален`,
         type: 'success'
       });
     } catch (error) {
@@ -136,7 +136,7 @@ const WatchlistPage = () => {
       <div className={styles.watchlistPage}>
         {/* Заголовок и фильтры */}
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Список желаемого</h1>
+          <h1 className={styles.pageTitle}>Хочу посмотреть</h1>
           
           <div className={styles.filterButtons}>
             <button
@@ -175,7 +175,7 @@ const WatchlistPage = () => {
         {/* Состояния загрузки и ошибок */}
         {loading && (
           <div className={styles.loadingContainer}>
-            <p>Загрузка списка желаемого...</p>
+            <p>Загрузка...</p>
           </div>
         )}
 
@@ -191,7 +191,7 @@ const WatchlistPage = () => {
             {filteredWatchlist.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>📋</div>
-                <p className={styles.emptyTitle}>Список желаемого пуст</p>
+                <p className={styles.emptyTitle}>Список пуст</p>
                 <p className={styles.emptyHint}>
                   Добавьте фильмы и сериалы, которые хотите посмотреть
                 </p>
@@ -216,7 +216,7 @@ const WatchlistPage = () => {
                       <button
                         className={styles.deleteButton}
                         onClick={() => handleOpenDeleteDialog(item)}
-                        title="Удалить из списка желаемого"
+                        title="Удалить"
                       >
                         🗑️
                       </button>
@@ -278,8 +278,8 @@ const WatchlistPage = () => {
         {/* Модалка удаления */}
         <ConfirmDialog
           isOpen={showDeleteDialog}
-          title="Удалить из списка желаемого"
-          message={`Вы уверены, что хотите удалить "${itemToDelete?.title}" из списка желаемого?`}
+          title="Удалить"
+          message={`Вы уверены, что хотите удалить "${itemToDelete?.title}"?`}
           onConfirm={handleDeleteItem}
           onCancel={() => {
             setShowDeleteDialog(false);

@@ -1,0 +1,8 @@
+tunnel: 7fe62a8e-7271-4aea-ad8b-d6217438a66c
+credentials-file: C:\Users\vidri\.cloudflared\7fe62a8e-7271-4aea-ad8b-d6217438a66c.json
+protocol: h2mux
+
+ingress:
+  - hostname: dev.watchrebel.ru
+    service: http://localhost:1313
+  - service: http_status:404

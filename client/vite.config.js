@@ -10,10 +10,14 @@ export default defineConfig({
     allowedHosts: [
       'prosurrender-rickety-brenda.ngrok-free.dev',
       '.ngrok-free.dev', // Разрешаем все ngrok домены
+      'dev.watchrebel.ru', // Cloudflare Tunnel
+      '.watchrebel.ru', // Все поддомены watchrebel.ru
+      '.trycloudflare.com', // Cloudflare quick tunnels
       'localhost'
     ],
     hmr: {
-      clientPort: 443, // Используем HTTPS порт для ngrok
+      host: 'dev.watchrebel.ru', // Cloudflare Tunnel домен
+      clientPort: 443, // HTTPS порт
       protocol: 'wss', // WebSocket Secure для HTTPS
     },
     proxy: {

@@ -1,6 +1,7 @@
 {
   "name": "watchrebel-server",
   "version": "1.0.0",
+  "description": "Социальная сеть для любителей кино и сериалов - Backend API",
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",

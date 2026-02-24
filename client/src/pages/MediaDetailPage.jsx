@@ -103,7 +103,7 @@ const MediaDetailPage = () => {
         
         await showAlert({
           title: 'Успешно!',
-          message: 'Добавлено в список желаемого',
+          message: 'Добавлено',
           type: 'success'
         });
       }
@@ -111,8 +111,8 @@ const MediaDetailPage = () => {
       await showAlert({
         title: 'Ошибка',
         message: isInWatchlist 
-          ? 'Не удалось удалить из списка желаемого'
-          : 'Не удалось добавить в список желаемого',
+          ? 'Не удалось удалить'
+          : 'Не удалось добавить',
         type: 'error'
       });
     }
@@ -256,7 +256,7 @@ const MediaDetailPage = () => {
                 className={`${styles.actionButton} ${isInWatchlist ? styles.inWatchlist : ''}`}
                 onClick={handleToggleWatchlist}
               >
-                {isInWatchlist ? '✓ В списке желаемого' : '+ В список желаемого'}
+                {isInWatchlist ? '✓ Хочу посмотреть' : '+ Хочу посмотреть'}
               </button>
             </div>
 

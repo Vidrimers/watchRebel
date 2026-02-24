@@ -95,6 +95,7 @@ export function configureCORS() {
   const allowedOrigins = [
     process.env.PUBLIC_URL || 'http://localhost:3000',
     'http://localhost:3000',
+    'http://localhost:1313', // Когда фронтенд отдается с бэкенда
     'http://localhost:5173', // Vite dev server
     'https://watchrebel.ru',
     'https://dev.watchrebel.ru'

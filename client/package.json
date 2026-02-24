@@ -1,6 +1,7 @@
 {
   "name": "watchrebel-client",
   "version": "1.0.0",
+  "description": "Социальная сеть для любителей кино и сериалов - Frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",

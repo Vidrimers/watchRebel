@@ -1,6 +1,7 @@
 {
   "name": "watchrebel-telegram-bot",
   "version": "1.0.0",
+  "description": "Социальная сеть для любителей кино и сериалов - Telegram Bot",
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",

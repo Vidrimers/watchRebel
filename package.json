@@ -17,7 +17,9 @@
     "tg": "npm run start --workspace=telegram-bot",
     "migrate": "npm run migrate --workspace=server",
     "backup": "npm run backup --workspace=server",
-    "install:all": "npm install && npm install --workspaces"
+    "install:all": "npm install && npm install --workspaces",
+    "tunnel": "bash scripts/cloudflared-tunnel.sh",
+    "tunnel:win": "scripts\\cloudflared-tunnel.bat"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
