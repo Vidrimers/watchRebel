@@ -125,7 +125,12 @@ const FriendsPage = () => {
                 />
                 
                 <div className={styles.friendInfo}>
-                  <h3 className={styles.friendName}>{friend.displayName}</h3>
+                  <h3 className={styles.friendName}>
+                    {friend.displayName}
+                    {friend.userStatus && (
+                      <span className={styles.friendStatus}> | {friend.userStatus}</span>
+                    )}
+                  </h3>
                   {friend.telegramUsername && (
                     <p className={styles.friendUsername}>@{friend.telegramUsername}</p>
                   )}

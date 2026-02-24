@@ -119,7 +119,12 @@ const UserProfilePage = () => {
             </div>
             
             <div className={styles.profileInfo}>
-              <h1 className={styles.profileName}>{profileUser.displayName}</h1>
+              <h1 className={styles.profileName}>
+                {profileUser.displayName}
+                {profileUser.userStatus && (
+                  <span className={styles.userStatus}> | {profileUser.userStatus}</span>
+                )}
+              </h1>
               {/* Telegram username скрыт у других пользователей */}
             </div>
           </div>

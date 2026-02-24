@@ -122,7 +122,6 @@ function LoginPage() {
       if (container && script.parentNode === container) {
         container.removeChild(script);
       }
-      delete window.onTelegramAuth;
     };
   }, [dispatch, navigate]);
 

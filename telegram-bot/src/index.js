@@ -306,6 +306,10 @@ bot.on('message', async (msg) => {
   if (userState && userState.state === 'awaiting_name_change') {
     await handleNameChange(chatId, userId, msg.text, userState.data.userFrom);
   }
+  // Если пользователь в состоянии ожидания нового статуса
+  else if (userState && userState.state === 'awaiting_status_change') {
+    await handleStatusChange(chatId, userId, msg.text, userState.data.userFrom);
+  }
   // Если пользователь в состоянии ожидания ответа на сообщение
   else if (userState && userState.state === 'awaiting_message_reply') {
     await handleSendMessageReply(chatId, userId, msg.text, userState.data);
@@ -513,6 +517,7 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       text: '⚙️ <b>Настройки</b>\n\nВыберите действие:',
       buttons: [
         [{ text: '✏️ Сменить имя', callback_data: 'settings_change_name' }],
+        [{ text: '💬 Изменить статус', callback_data: 'settings_change_status' }],
         [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings?session=${session.token}` }]
       ]
     }
@@ -841,6 +846,18 @@ async function handleSettingsAction(chatId, userId, action, userFrom) {
       'Для отмены отправьте /cancel',
       { parse_mode: 'HTML' }
     );
+  } else if (action === 'settings_change_status') {
+    // Устанавливаем состояние ожидания нового статуса
+    setUserState(userId, 'awaiting_status_change', { chatId, userFrom });
+    
+    await bot.sendMessage(
+      chatId,
+      '💬 <b>Изменение статуса</b>\n\n' +
+      'Отправьте новый статус (до 100 символов).\n' +
+      'Чтобы удалить статус, отправьте пустое сообщение или точку.\n\n' +
+      'Для отмены отправьте /cancel',
+      { parse_mode: 'HTML' }
+    );
   }
 }
 
@@ -923,6 +940,91 @@ async function handleNameChange(chatId, userId, newName, userFrom) {
     await bot.sendMessage(
       chatId,
       '⚠️ Произошла ошибка при обновлении имени. Попробуйте позже или обратитесь к администратору.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка смены статуса пользователя
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} newStatus - Новый статус
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ */
+async function handleStatusChange(chatId, userId, newStatus, userFrom) {
+  try {
+    // Валидация статуса
+    if (newStatus && newStatus.trim().length > 100) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Статус слишком длинный. Максимум 100 символов.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    // Очищаем статус от лишних пробелов
+    // Если статус пустой или точка - удаляем статус (null)
+    const trimmedStatus = newStatus.trim();
+    const finalStatus = (trimmedStatus === '' || trimmedStatus === '.') ? '' : trimmedStatus;
+
+    // Отправляем запрос на обновление статуса через API
+    console.log(`💬 Обновление статуса для пользователя ${userId}: "${finalStatus}"`);
+
+    // Создаем сессию для авторизации запроса
+    const session = await createSession(userId, userFrom);
+    
+    // Отправляем PUT запрос к API
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        userStatus: finalStatus
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+    
+    const responseData = await response.json();
+    console.log('✅ API ответ:', responseData);
+
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+
+    // Отправляем подтверждение
+    if (finalStatus === '') {
+      await bot.sendMessage(
+        chatId,
+        `✅ <b>Статус удален!</b>`,
+        { parse_mode: 'HTML' }
+      );
+    } else {
+      await bot.sendMessage(
+        chatId,
+        `✅ <b>Статус успешно изменен!</b>\n\nВаш новый статус: <i>${finalStatus}</i>`,
+        { parse_mode: 'HTML' }
+      );
+    }
+
+    console.log(`✅ Статус пользователя ${userId} обновлен на "${finalStatus}"`);
+  } catch (error) {
+    console.error('❌ Ошибка обновления статуса:', error.message);
+    
+    // Очищаем состояние пользователя
+    clearUserState(userId);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при обновлении статуса. Попробуйте позже или обратитесь к администратору.',
       { parse_mode: 'HTML' }
     );
   }

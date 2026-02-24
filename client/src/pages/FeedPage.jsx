@@ -124,6 +124,9 @@ const FeedPage = () => {
                         </div>
                         <span className={styles.authorName}>
                           {post.author?.displayName || 'Пользователь'}
+                          {post.author?.userStatus && (
+                            <span className={styles.authorStatus}> | {post.author.userStatus}</span>
+                          )}
                         </span>
                       </a>
                     </div>

@@ -13,13 +13,16 @@
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "npm run dev --workspace=server",
     "dev:tg": "npm run dev --workspace=telegram-bot",
+    "dev:tuna": "concurrently \"tuna http 3000 --domain=dev.watchrebel.ru\" \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
+    "devtun": "concurrently \"tuna http 3000 --domain=dev.watchrebel.ru\" \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
     "start": "npm run start --workspace=server",
     "tg": "npm run start --workspace=telegram-bot",
     "migrate": "npm run migrate --workspace=server",
     "backup": "npm run backup --workspace=server",
     "install:all": "npm install && npm install --workspaces",
     "tunnel": "bash scripts/cloudflared-tunnel.sh",
-    "tunnel:win": "scripts\\cloudflared-tunnel.bat"
+    "tunnel:win": "scripts\\cloudflared-tunnel.bat",
+    "tunnel:tuna": "tuna http 1313 --domain=dev.watchrebel.ru"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

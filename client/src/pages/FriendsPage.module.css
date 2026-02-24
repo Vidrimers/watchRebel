@@ -88,6 +88,12 @@
   text-overflow: ellipsis;
 }
 
+.friendStatus {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
 .friendUsername {
   margin: 0;
   font-size: 0.875rem;

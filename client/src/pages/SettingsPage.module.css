@@ -441,3 +441,70 @@
 :global(.dark) .cancelButton:hover:not(:disabled) {
   background: var(--bg-tertiary-dark, #2a2a2a);
 }
+
+/* Редактирование статуса */
+.statusDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusText {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.statusEditContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statusInput {
+  padding: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  resize: vertical;
+}
+
+.statusInput:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.statusCounter {
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Темная тема для статуса */
+:global(.dark) .statusText {
+  background: var(--bg-primary-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .statusInput {
+  background: var(--input-background-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .statusInput:focus {
+  border-color: var(--accent-primary-dark, #818cf8);
+}
+
+:global(.dark) .statusCounter {
+  color: var(--text-secondary-dark, #aaa);
+}

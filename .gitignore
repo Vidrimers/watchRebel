@@ -31,6 +31,8 @@ rebel.db
 план.txt
 mytasks
 ngrok-tutor
+tuna-tutor
+tuna-config.yml
 *.log
 test-output.txt
 migration-*.sql

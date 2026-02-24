@@ -35,7 +35,7 @@ router.get('/search', authenticateToken, async (req, res) => {
     
     // Получаем всех незаблокированных пользователей
     const allUsersResult = await executeQuery(
-      `SELECT id, telegram_username, display_name, avatar_url, is_admin, created_at 
+      `SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, created_at 
        FROM users 
        WHERE is_blocked = 0`
     );
@@ -60,6 +60,7 @@ router.get('/search', authenticateToken, async (req, res) => {
       telegramUsername: user.telegram_username,
       displayName: user.display_name,
       avatarUrl: user.avatar_url,
+      userStatus: user.user_status,
       isAdmin: Boolean(user.is_admin),
       createdAt: user.created_at
     }));
@@ -85,7 +86,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, ban_reason, post_ban_until, theme, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -110,6 +111,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       telegramUsername: user.telegram_username,
       displayName: user.display_name,
       avatarUrl: user.avatar_url,
+      userStatus: user.user_status,
       isAdmin: Boolean(user.is_admin),
       isBlocked: Boolean(user.is_blocked),
       banReason: user.ban_reason,
@@ -139,13 +141,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
  * 
  * Body (multipart/form-data):
  * - displayName: string (опционально)
+ * - userStatus: string (опционально, максимум 100 символов)
  * - theme: string (опционально)
  * - avatar: file (опционально) - изображение для аватарки
  */
 router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { displayName, theme } = req.body;
+    const { displayName, userStatus, theme } = req.body;
     const avatarFile = req.file;
 
     // Проверяем права: пользователь может редактировать только свой профиль или админ может редактировать любой
@@ -157,6 +160,18 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
       return res.status(403).json({ 
         error: 'Нет прав на редактирование этого профиля',
         code: 'FORBIDDEN' 
+      });
+    }
+
+    // Валидация userStatus
+    if (userStatus !== undefined && userStatus !== null && userStatus.length > 100) {
+      // Удаляем загруженный файл при ошибке валидации
+      if (avatarFile) {
+        fs.unlinkSync(avatarFile.path);
+      }
+      return res.status(400).json({ 
+        error: 'Статус не может быть длиннее 100 символов',
+        code: 'STATUS_TOO_LONG' 
       });
     }
 
@@ -197,6 +212,11 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
     if (displayName !== undefined) {
       updates.push('display_name = ?');
       params.push(displayName);
+    }
+
+    if (userStatus !== undefined) {
+      updates.push('user_status = ?');
+      params.push(userStatus || null); // Если пустая строка, сохраняем как NULL
     }
 
     if (theme !== undefined) {
@@ -252,7 +272,7 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
 
     // Получаем обновленные данные пользователя
     const updatedUserResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, is_admin, theme, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, theme, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -263,6 +283,7 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
       telegramUsername: updatedUser.telegram_username,
       displayName: updatedUser.display_name,
       avatarUrl: updatedUser.avatar_url,
+      userStatus: updatedUser.user_status,
       isAdmin: Boolean(updatedUser.is_admin),
       theme: updatedUser.theme,
       createdAt: updatedUser.created_at
@@ -401,7 +422,7 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
 
     // Получаем список друзей
     const friendsResult = await executeQuery(
-      `SELECT u.id, u.telegram_username, u.display_name, u.avatar_url, u.is_admin, u.created_at, f.created_at as friendship_created_at
+      `SELECT u.id, u.telegram_username, u.display_name, u.avatar_url, u.user_status, u.is_admin, u.created_at, f.created_at as friendship_created_at
        FROM friends f
        JOIN users u ON f.friend_id = u.id
        WHERE f.user_id = ? AND u.is_blocked = 0
@@ -421,6 +442,7 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
       telegramUsername: friend.telegram_username,
       displayName: friend.display_name,
       avatarUrl: friend.avatar_url,
+      userStatus: friend.user_status,
       isAdmin: Boolean(friend.is_admin),
       createdAt: friend.created_at,
       friendshipCreatedAt: friend.friendship_created_at

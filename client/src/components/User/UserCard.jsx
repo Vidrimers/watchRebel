@@ -31,7 +31,12 @@ const UserCard = ({
 
       {/* Информация о пользователе */}
       <div className={styles.userInfo}>
-        <h3 className={styles.userName}>{user.displayName}</h3>
+        <h3 className={styles.userName}>
+          {user.displayName}
+          {user.userStatus && (
+            <span className={styles.userStatus}> | {user.userStatus}</span>
+          )}
+        </h3>
         
         {/* Telegram username показываем только для своей карточки */}
         {isOwnCard && user.telegramUsername && (

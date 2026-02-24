@@ -36,6 +36,52 @@
   right: 8px;
 }
 
+/* Компактный режим для страницы поиска (70px) */
+.sidebar.compactSearch {
+  max-width: 70px;
+  gap: 10px;
+}
+
+.sidebar.compactSearch .userInfo {
+  padding: 10px;
+}
+
+.sidebar.compactSearch .navLink {
+  justify-content: center;
+  padding: 10px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.sidebar.compactSearch .settingsButton,
+.sidebar.compactSearch .notificationsButton {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+}
+
+.sidebar.compactSearch .settingsContainer {
+  top: 5px;
+  left: 5px;
+}
+
+.sidebar.compactSearch .notificationsContainer {
+  top: 5px;
+  right: 5px;
+}
+
+.sidebar.compactSearch .navigation {
+  padding: 10px 5px;
+}
+
+.sidebar.compactSearch .navList {
+  gap: 5px;
+}
+
+.sidebar.compactSearch .navItem {
+  border-bottom: none;
+}
+
 /* Информация о пользователе */
 .userInfoLink {
   text-decoration: none;
@@ -209,6 +255,16 @@
   .userName {
     text-align: left;
   }
+  
+  /* Компактный режим на планшетах */
+  .sidebar.compactSearch {
+    max-width: 70px;
+  }
+  
+  .sidebar.compactSearch .userInfo {
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
 /* Адаптивность для мобильных */
@@ -226,5 +282,22 @@
   .settingsLink {
     font-size: 14px;
     padding: 10px 14px;
+  }
+  
+  /* Компактный режим на мобильных */
+  .sidebar.compactSearch {
+    max-width: 60px;
+  }
+  
+  .sidebar.compactSearch .navLink {
+    font-size: 20px;
+    padding: 8px;
+  }
+  
+  .sidebar.compactSearch .settingsButton,
+  .sidebar.compactSearch .notificationsButton {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
   }
 }

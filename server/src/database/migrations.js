@@ -211,6 +211,16 @@ export async function runMigrations() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
+      -- Таблица токенов сброса пароля
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
       -- Добавляем начальную запись для контактов рекламы
       INSERT OR IGNORE INTO site_settings (id, key, value, updated_at)
       VALUES ('advertising_contacts', 'advertising_contacts', 'Для размещения рекламы свяжитесь с нами:\n\nEmail: admin@watchrebel.com\nTelegram: @watchrebel_admin', CURRENT_TIMESTAMP);

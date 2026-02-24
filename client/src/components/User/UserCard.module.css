@@ -33,6 +33,12 @@
   text-align: center;
 }
 
+.userStatus {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
 .username {
   font-size: 14px;
   color: var(--text-secondary);

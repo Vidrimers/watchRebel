@@ -13,6 +13,7 @@ export function configureHelmet() {
         scriptSrc: [
           "'self'",
           "'unsafe-inline'", // Для React и Vite
+          "'unsafe-eval'", // Для Telegram Login Widget (использует eval)
           "https://telegram.org", // Telegram Login Widget
           "https://oauth.telegram.org" // Telegram OAuth
         ],
