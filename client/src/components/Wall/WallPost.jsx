@@ -7,6 +7,7 @@ import ReactionPicker from './ReactionPicker';
 import ReactionTooltip from './ReactionTooltip';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
+import Icon from '../Common/Icon';
 import api from '../../services/api';
 import styles from './WallPost.module.css';
 
@@ -410,7 +411,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                   onClick={handleEditPost}
                   title="Редактировать"
                 >
-                  ✏️
+                  <Icon name="edit" size="small" />
                 </button>
               )}
               <button
@@ -419,7 +420,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                 disabled={isDeleting}
                 title="Удалить запись"
               >
-                {isDeleting ? '⏳' : '🗑️'}
+                {isDeleting ? '⏳' : <Icon name="delete" size="small" />}
               </button>
             </div>
           )}

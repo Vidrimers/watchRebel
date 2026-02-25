@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead } from '../../store/slices/notificationsSlice';
+import Icon from '../Common/Icon';
 import styles from './NotificationDropdown.module.css';
 
 /**
@@ -98,13 +99,13 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'reaction':
-        return '❤️';
+        return 'heart';
       case 'friend_activity':
-        return '👤';
+        return 'user';
       case 'message':
-        return '💬';
+        return 'message';
       default:
-        return '🔔';
+        return 'bell';
     }
   };
 
@@ -133,7 +134,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
           <div className={styles.loading}>Загрузка...</div>
         ) : displayedNotifications.length === 0 ? (
           <div className={styles.empty}>
-            <span className={styles.emptyIcon}>🔔</span>
+            <Icon name="bell" size="large" className={styles.emptyIcon} />
             <p>Пока нет уведомлений</p>
           </div>
         ) : (
@@ -146,7 +147,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
                 onMouseEnter={() => handleNotificationHover(notification)}
               >
                 <div className={styles.icon}>
-                  {getNotificationIcon(notification.type)}
+                  <Icon name={getNotificationIcon(notification.type)} size="medium" />
                 </div>
                 
                 <div className={styles.itemContent}>

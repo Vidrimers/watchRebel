@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import './LoginPage.css';
 
@@ -188,7 +189,7 @@ function LoginPage() {
                 className="oauth-button email-button"
                 onClick={() => navigate('/login-email')}
               >
-                <span className="oauth-icon">✉️</span>
+                <span className="oauth-icon"><Icon name="email" size="medium" /></span>
                 <span>Войти через Email</span>
               </button>
 
@@ -196,7 +197,7 @@ function LoginPage() {
                 className="oauth-button google-button"
                 onClick={() => window.location.href = '/api/auth/google'}
               >
-                <span className="oauth-icon">🔍</span>
+                <span className="oauth-icon"><Icon name="google" size="medium" /></span>
                 <span>Войти через Google</span>
               </button>
 
@@ -204,7 +205,7 @@ function LoginPage() {
                 className="oauth-button discord-button"
                 onClick={() => window.location.href = '/api/auth/discord'}
               >
-                <span className="oauth-icon">💬</span>
+                <span className="oauth-icon"><Icon name="discord" size="medium" /></span>
                 <span>Войти через Discord</span>
               </button>
             </div>

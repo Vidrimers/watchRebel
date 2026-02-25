@@ -1,0 +1,123 @@
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+  color: var(--text-primary);
+}
+
+/* Размеры */
+.icon.small {
+  width: 16px;
+  height: 16px;
+}
+
+.icon.medium {
+  width: 24px;
+  height: 24px;
+}
+
+.icon.large {
+  width: 32px;
+  height: 32px;
+}
+
+/* Hover эффект для интерактивных иконок */
+button:hover .icon,
+a:hover .icon,
+.icon.interactive:hover {
+  color: var(--accent-primary);
+  transform: scale(1.05);
+}
+
+/* Активное состояние */
+button:active .icon,
+a:active .icon,
+.icon.interactive:active {
+  color: var(--accent-primary-active);
+  transform: scale(0.95);
+}
+
+/* Отключенное состояние */
+button:disabled .icon,
+.icon.disabled {
+  color: var(--text-disabled);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Fallback эмодзи (скрыт по умолчанию, показывается только если SVG не загрузился) */
+.fallback {
+  display: none;
+}
+
+/* Для кнопок и ссылок */
+button .icon,
+a .icon {
+  pointer-events: none;
+}
+
+/* Анимация для иконок уведомлений */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.icon.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Вращение для иконок загрузки */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Цветовые варианты для специальных случаев */
+.icon.success {
+  color: var(--color-success);
+}
+
+.icon.warning {
+  color: var(--color-warning);
+}
+
+.icon.error {
+  color: var(--color-error);
+}
+
+.icon.info {
+  color: var(--color-info);
+}
+
+/* Иконки в навигации */
+nav .icon {
+  color: var(--text-secondary);
+  transition: color var(--transition-base);
+}
+
+nav a:hover .icon,
+nav a.active .icon {
+  color: var(--accent-primary);
+}
+
+/* Иконки в уведомлениях */
+.icon.notification {
+  color: var(--accent-primary);
+}
+
+.icon.notification-badge {
+  color: var(--notification-badge);
+}

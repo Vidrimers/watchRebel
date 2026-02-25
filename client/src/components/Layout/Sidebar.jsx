@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import UserAvatar from '../User/UserAvatar';
 import SearchBar from '../Search/SearchBar';
 import { NotificationBadge, NotificationDropdown } from '../Notifications';
+import Icon from '../Common/Icon';
 import styles from './Sidebar.module.css';
 
 /**
@@ -49,7 +50,7 @@ const Sidebar = ({ user, narrow = false }) => {
                 className={styles.settingsButton}
                 title="Настройки"
               >
-                ⚙️
+                <Icon name="settings" size="medium" />
               </a>
             </div>
 
@@ -61,7 +62,7 @@ const Sidebar = ({ user, narrow = false }) => {
                 title="Уведомления"
                 onClick={toggleDropdown}
               >
-                🔔
+                <Icon name="notifications" size="medium" />
                 <NotificationBadge />
               </button>
               <NotificationDropdown 
@@ -85,37 +86,37 @@ const Sidebar = ({ user, narrow = false }) => {
         <ul className={styles.navList}>
           <li className={styles.navItem}>
             <a href="/feed" className={styles.navLink} title="Лента">
-              📰 {!narrow && !isSearchPage && 'Лента'}
+              <Icon name="feed" size="medium" /> {!narrow && !isSearchPage && 'Лента'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/friends" className={styles.navLink} title="Друзья">
-              👥 {!narrow && !isSearchPage && 'Друзья'}
+              <Icon name="friends" size="medium" /> {!narrow && !isSearchPage && 'Друзья'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/messages" className={styles.navLink} title="Сообщения">
-              💬 {!narrow && !isSearchPage && 'Сообщения'}
+              <Icon name="messages" size="medium" /> {!narrow && !isSearchPage && 'Сообщения'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/my-catalog" className={styles.navLink} title="Каталог">
-              📚 {!narrow && !isSearchPage && 'Каталог'}
+              <Icon name="catalog" size="medium" /> {!narrow && !isSearchPage && 'Каталог'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы">
-              🎬 {!narrow && !isSearchPage && 'Мои фильмы'}
+              <Icon name="movies" size="medium" /> {!narrow && !isSearchPage && 'Мои фильмы'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/lists?type=tv" className={styles.navLink} title="Мои сериалы">
-              📺 {!narrow && !isSearchPage && 'Мои сериалы'}
+              <Icon name="tv" size="medium" /> {!narrow && !isSearchPage && 'Мои сериалы'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/watchlist" className={styles.navLink} title="Хочу посмотреть">
-              ⭐ {!narrow && !isSearchPage && 'Хочу посмотреть'}
+              <Icon name="watchlist" size="medium" /> {!narrow && !isSearchPage && 'Хочу посмотреть'}
             </a>
           </li>
         </ul>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './AnnouncementsPage.module.css';
 
@@ -202,7 +203,7 @@ const AnnouncementsPage = () => {
             
             {/* Кнопка загрузки изображения внутри textarea */}
             <label htmlFor="imageInput" className={styles.attachButton} title="Прикрепить изображение">
-              📎
+              <Icon name="paperclip" size="medium" />
             </label>
             <input
               id="imageInput"
@@ -225,7 +226,7 @@ const AnnouncementsPage = () => {
                 disabled={creating}
                 title="Удалить изображение"
               >
-                ✕
+                <Icon name="close" size="small" />
               </button>
             </div>
           )}
@@ -279,7 +280,7 @@ const AnnouncementsPage = () => {
                     onClick={() => setDeleteConfirm(announcement.id)}
                     title="Удалить объявление"
                   >
-                    🗑️
+                    <Icon name="delete" size="small" />
                   </button>
                 </div>
                 <div className={styles.announcementContent}>

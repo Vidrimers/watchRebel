@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/Layout/PublicHeader';
+import Icon from '../components/Common/Icon';
 import styles from './RegisterPage.module.css';
 
 /**
@@ -27,7 +28,7 @@ const RegisterPage = () => {
     {
       id: 'telegram',
       name: 'Telegram',
-      icon: '✈️',
+      icon: 'telegram',
       description: 'Быстрая регистрация через Telegram бот',
       color: '#0088cc',
       available: true,
@@ -36,7 +37,7 @@ const RegisterPage = () => {
     {
       id: 'email',
       name: 'Email',
-      icon: '📧',
+      icon: 'email',
       description: 'Регистрация с помощью электронной почты',
       color: '#ea4335',
       available: true,
@@ -45,7 +46,7 @@ const RegisterPage = () => {
     {
       id: 'google',
       name: 'Google',
-      icon: '🔍',
+      icon: 'google',
       description: 'Войти с помощью аккаунта Google',
       color: '#4285f4',
       available: true,
@@ -57,7 +58,7 @@ const RegisterPage = () => {
     {
       id: 'discord',
       name: 'Discord',
-      icon: '💬',
+      icon: 'discord',
       description: 'Войти с помощью аккаунта Discord',
       color: '#5865f2',
       available: true,
@@ -94,7 +95,9 @@ const RegisterPage = () => {
                   '--method-color': method.color
                 }}
               >
-                <div className={styles.methodIcon}>{method.icon}</div>
+                <div className={styles.methodIcon}>
+                  <Icon name={method.icon} size="large" />
+                </div>
                 <h3 className={styles.methodName}>{method.name}</h3>
                 <p className={styles.methodDescription}>{method.description}</p>
                 {!method.available && (

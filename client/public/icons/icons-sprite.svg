@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+
+  <!-- ==================== NAVIGATION ICONS ==================== -->
+
+  <!-- Feed / Лента -->
+  <symbol id="icon-feed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="4" rx="1"/>
+    <rect x="3" y="10" width="11" height="4" rx="1"/>
+    <rect x="3" y="17" width="14" height="4" rx="1"/>
+  </symbol>
+
+  <!-- Friends / Друзья -->
+  <symbol id="icon-friends" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="7" r="3"/>
+    <path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6"/>
+    <circle cx="18" cy="8" r="2.5"/>
+    <path d="M14.5 20c0-2.485 1.567-4.612 3.5-4.612"/>
+  </symbol>
+
+  <!-- Messages / Сообщения -->
+  <symbol id="icon-messages" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    <line x1="8" y1="10" x2="16" y2="10"/>
+    <line x1="8" y1="14" x2="12" y2="14"/>
+  </symbol>
+
+  <!-- Catalog / Каталог -->
+  <symbol id="icon-catalog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </symbol>
+
+  <!-- My Movies / Мои фильмы -->
+  <symbol id="icon-movies" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="8" width="20" height="13" rx="2"/>
+    <rect x="2" y="4" width="20" height="4" rx="1"/>
+    <line x1="7" y1="4" x2="5" y2="8"/>
+    <line x1="12" y1="4" x2="10" y2="8"/>
+    <line x1="17" y1="4" x2="15" y2="8"/>
+  </symbol>
+
+  <!-- My Series / Мои сериалы -->
+  <symbol id="icon-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="7" width="20" height="14" rx="2"/>
+    <path d="M8 21h8"/>
+    <path d="M12 21v-2"/>
+    <polyline points="17 2 12 7 7 2"/>
+  </symbol>
+
+  <!-- Watchlist / Список желаемого -->
+  <symbol id="icon-watchlist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    <polyline points="9 11 11 13 15 9"/>
+  </symbol>
+
+  <!-- Settings / Настройки -->
+  <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </symbol>
+
+  <!-- Notifications / Уведомления -->
+  <symbol id="icon-notifications" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </symbol>
+
+
+  <!-- ==================== NOTIFICATION TYPE ICONS ==================== -->
+
+  <!-- Heart / Реакция -->
+  <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </symbol>
+
+  <!-- User activity / Активность друга -->
+  <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </symbol>
+
+  <!-- Message / Сообщение (single) -->
+  <symbol id="icon-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </symbol>
+
+  <!-- Bell / Общее уведомление -->
+  <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    <circle cx="18" cy="5" r="3" fill="currentColor" stroke="none"/>
+  </symbol>
+
+
+  <!-- ==================== ACTION ICONS ==================== -->
+
+  <!-- Add / Добавить -->
+  <symbol id="icon-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="12" y1="8" x2="12" y2="16"/>
+    <line x1="8" y1="12" x2="16" y2="12"/>
+  </symbol>
+
+  <!-- Remove / Удалить -->
+  <symbol id="icon-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="8" y1="12" x2="16" y2="12"/>
+  </symbol>
+
+  <!-- Edit / Редактировать -->
+  <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </symbol>
+
+  <!-- Delete / Удалить (корзина) -->
+  <symbol id="icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/>
+    <path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </symbol>
+
+  <!-- Close / Закрыть -->
+  <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </symbol>
+
+  <!-- Open / Открыть (expand) -->
+  <symbol id="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 3 21 3 21 9"/>
+    <polyline points="9 21 3 21 3 15"/>
+    <line x1="21" y1="3" x2="14" y2="10"/>
+    <line x1="3" y1="21" x2="10" y2="14"/>
+  </symbol>
+
+  <!-- Arrow Left / Стрелка влево -->
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"/>
+    <polyline points="12 19 5 12 12 5"/>
+  </symbol>
+
+  <!-- Arrow Right / Стрелка вправо -->
+  <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+    <polyline points="12 5 19 12 12 19"/>
+  </symbol>
+
+  <!-- Arrow Up / Стрелка вверх -->
+  <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"/>
+    <polyline points="5 12 12 5 19 12"/>
+  </symbol>
+
+  <!-- Arrow Down / Стрелка вниз -->
+  <symbol id="icon-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <polyline points="19 12 12 19 5 12"/>
+  </symbol>
+
+  <!-- Chevron Left -->
+  <symbol id="icon-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </symbol>
+
+  <!-- Chevron Right -->
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </symbol>
+
+
+  <!-- ==================== AUTH ICONS ==================== -->
+
+  <!-- Telegram -->
+  <symbol id="icon-telegram" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.016 9.503c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.393c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.332-.373-.12L7.09 14.697l-2.95-.924c-.642-.2-.655-.642.134-.952l11.52-4.44c.535-.194 1.003.13.768.867z"/>
+  </symbol>
+
+  <!-- Email -->
+  <symbol id="icon-email" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22 6 12 13 2 6"/>
+  </symbol>
+
+  <!-- Google -->
+  <symbol id="icon-google" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+  </symbol>
+
+  <!-- Discord -->
+  <symbol id="icon-discord" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+  </symbol>
+
+  <!-- Search / Поиск -->
+  <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+
+  <!-- Star / Звезда -->
+  <symbol id="icon-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </symbol>
+
+  <!-- Paperclip / Скрепка -->
+  <symbol id="icon-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+  </symbol>
+
+  <!-- Announcement / Объявление -->
+  <symbol id="icon-announcement" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 8.5C22 8.5 19 10 14 10H6a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h1l1.5 4h2L9 15h5c5 0 8 1.5 8 1.5V8.5z"/>
+    <path d="M6 15v2"/>
+  </symbol>
+
+  <!-- Status / Статус -->
+  <symbol id="icon-status" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M6 20v-1a6 6 0 0 1 12 0v1"/>
+    <circle cx="18" cy="18" r="4" fill="none"/>
+    <path d="M16.5 18l1 1 2-2"/>
+  </symbol>
+
+</svg>
+
+<!--
+=============================================================
+  ИКОНКИ — СПРАВОЧНИК
+=============================================================
+
+  НАВИГАЦИЯ
+  ---------
+  icon-feed          Лента
+  icon-friends       Друзья
+  icon-messages      Сообщения
+  icon-catalog       Каталог
+  icon-movies        Мои фильмы
+  icon-tv            Мои сериалы
+  icon-watchlist     Список желаемого
+  icon-settings      Настройки
+  icon-notifications Уведомления
+
+  УВЕДОМЛЕНИЯ
+  -----------
+  icon-heart         Реакция ❤️
+  icon-user          Активность друга 👤
+  icon-message       Сообщение 💬
+  icon-bell          Общее уведомление 🔔
+
+  ДЕЙСТВИЯ
+  --------
+  icon-add           Добавить
+  icon-remove        Убрать (минус)
+  icon-edit          Редактировать
+  icon-delete        Удалить (корзина)
+  icon-close         Закрыть ✕
+  icon-open          Открыть/Развернуть
+  icon-arrow-left    Стрелка влево
+  icon-arrow-right   Стрелка вправо
+  icon-arrow-up      Стрелка вверх
+  icon-arrow-down    Стрелка вниз
+  icon-chevron-left  Шеврон влево
+  icon-chevron-right Шеврон вправо
+
+  АВТОРИЗАЦИЯ
+  -----------
+  icon-telegram      Telegram
+  icon-email         Email
+  icon-google        Google
+  icon-discord       Discord
+
+  ПРОЧЕЕ
+  ------
+  icon-search        Поиск
+  icon-star          Звезда / Рейтинг
+
+=============================================================
+  КАК ИСПОЛЬЗОВАТЬ:
+  
+  1. Подключи этот файл в HTML:
+     <div style="display:none">
+       <!-- вставь содержимое icons.svg или подключи через fetch -->
+     </div>
+  
+  2. Используй иконку через <use>:
+     <svg width="24" height="24">
+       <use href="#icon-feed" />
+     </svg>
+  
+  3. Управляй цветом через CSS color:
+     <svg width="24" height="24" style="color: #e53e3e;">
+       <use href="#icon-heart" />
+     </svg>
+
+  4. Для React-проектов можно импортировать как ReactComponent:
+     import { ReactComponent as FeedIcon } from './icons.svg';
+     <FeedIcon width={24} height={24} />
+=============================================================
+-->

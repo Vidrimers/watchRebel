@@ -4,6 +4,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import useConfirm from '../../hooks/useConfirm';
+import Icon from '../Common/Icon';
 import styles from './MessageThread.module.css';
 
 /**
@@ -578,7 +579,7 @@ const MessageThread = ({ conversation }) => {
               onClick={() => fileInputRef.current?.click()}
               title="Прикрепить файл"
             >
-              📎
+              <Icon name="paperclip" size="medium" />
             </button>
             <textarea
               className={styles.input}
