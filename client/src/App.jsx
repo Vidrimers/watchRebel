@@ -49,12 +49,12 @@ function LoadingFallback() {
   );
 }
 
-// Временный компонент главной страницы - редирект на профиль пользователя или публичный каталог
+// Временный компонент главной страницы - редирект на ленту или публичный каталог
 function HomePage() {
   const { user } = useAppSelector((state) => state.auth);
 
   if (user) {
-    return <Navigate to={`/user/${user.id}`} replace />;
+    return <Navigate to="/feed" replace />;
   }
 
   // Для неавторизованных пользователей - редирект на публичный каталог
