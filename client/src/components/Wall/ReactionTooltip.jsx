@@ -11,7 +11,7 @@ const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave }) => {
 
   const handleUserClick = (userId, e) => {
     e.stopPropagation();
-    navigate(`/profile/${userId}`);
+    navigate(`/user/${userId}`);
   };
 
   return (
