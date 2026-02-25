@@ -32,9 +32,10 @@
 }
 
 .userStatus {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-secondary);
+  margin: 8px 0 0 0;
 }
 
 .profileUsername {

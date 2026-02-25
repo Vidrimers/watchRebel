@@ -1,7 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
+import { updateProfile } from '../../store/slices/authSlice';
+import { fetchWall } from '../../store/slices/wallSlice';
 import UserAvatar from '../User/UserAvatar';
 import SearchBar from '../Search/SearchBar';
+import StatusEditModal from '../User/StatusEditModal';
 import { NotificationBadge, NotificationDropdown } from '../Notifications';
 import Icon from '../Common/Icon';
 import styles from './Sidebar.module.css';
@@ -10,10 +15,16 @@ import styles from './Sidebar.module.css';
  * Правый блок управления
  * Содержит: поиск, аватар, навигацию, настройки, уведомления
  */
-const Sidebar = ({ user, narrow = false }) => {
+const Sidebar = ({ narrow = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isHoveringUserInfo, setIsHoveringUserInfo] = useState(false);
   const notificationButtonRef = useRef(null);
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  
+  // Читаем user напрямую из Redux store
+  const user = useAppSelector((state) => state.auth.user);
   
   // Проверяем, находимся ли мы на странице поиска
   const isSearchPage = location.pathname === '/search';
@@ -27,11 +38,33 @@ const Sidebar = ({ user, narrow = false }) => {
   const handleUserInfoClick = (e) => {
     // Если клик был по кнопке настроек, уведомлений или dropdown, не переходим на профиль
     if (e.target.closest(`.${styles.notificationsContainer}`) || 
-        e.target.closest(`.${styles.settingsContainer}`)) {
+        e.target.closest(`.${styles.settingsContainer}`) ||
+        e.target.closest(`.${styles.statusSection}`)) {
       return;
     }
     // Переход на профиль
     window.location.href = `/user/${user.id}`;
+  };
+
+  const handleStatusClick = (e) => {
+    e.stopPropagation();
+    setIsStatusModalOpen(true);
+  };
+
+  const handleSaveStatus = async (newStatus) => {
+    await dispatch(updateProfile({ 
+      userId: user.id, 
+      userStatus: newStatus 
+    })).unwrap();
+    // Перезагружаем ленту, чтобы показать новый пост со статусом
+    dispatch(fetchWall(user.id));
+  };
+
+  const handleDeleteStatus = async () => {
+    await dispatch(updateProfile({ 
+      userId: user.id, 
+      userStatus: '' 
+    })).unwrap();
   };
 
   return (
@@ -41,44 +74,78 @@ const Sidebar = ({ user, narrow = false }) => {
 
       {/* Информация о пользователе */}
       {user && (
-        <div className={styles.userInfoLink} onClick={handleUserInfoClick}>
-          <div className={styles.userInfo}>
-            {/* Настройки - в левом верхнем углу */}
-            <div className={styles.settingsContainer}>
-              <a 
-                href="/settings" 
-                className={styles.settingsButton}
-                title="Настройки"
-              >
-                <Icon name="settings" size="medium" />
-              </a>
+        <>
+          <div 
+            className={styles.userInfoLink} 
+            onClick={handleUserInfoClick}
+            onMouseEnter={() => setIsHoveringUserInfo(true)}
+            onMouseLeave={() => setIsHoveringUserInfo(false)}
+          >
+            <div className={styles.userInfo}>
+              {/* Настройки - в левом верхнем углу */}
+              <div className={styles.settingsContainer}>
+                <a 
+                  href="/settings" 
+                  className={styles.settingsButton}
+                  title="Настройки"
+                >
+                  <Icon name="settings" size="medium" />
+                </a>
+              </div>
+
+              {/* Уведомления - в правом верхнем углу */}
+              <div className={styles.notificationsContainer}>
+                <button 
+                  ref={notificationButtonRef}
+                  className={`${styles.notificationsButton} notificationsButton`}
+                  title="Уведомления"
+                  onClick={toggleDropdown}
+                >
+                  <Icon name="notifications" size="medium" />
+                  <NotificationBadge />
+                </button>
+                <NotificationDropdown 
+                  isOpen={isDropdownOpen} 
+                  onClose={() => setIsDropdownOpen(false)}
+                  buttonRef={notificationButtonRef}
+                />
+              </div>
+
+              {/* Аватар */}
+              <UserAvatar user={user} size={isSearchPage ? "tiny" : (narrow ? "small" : "medium")} />
+
+              {/* Имя пользователя - скрыто в узком режиме и на странице поиска */}
+              {!narrow && !isSearchPage && (
+                <>
+                  <h2 className={styles.userName}>{user.displayName}</h2>
+                  
+                  {/* Статус пользователя */}
+                  <div 
+                    className={`${styles.statusSection} ${!user.userStatus && !isHoveringUserInfo ? styles.hidden : ''}`}
+                    onClick={handleStatusClick}
+                  >
+                    {user.userStatus ? (
+                      <p className={styles.userStatus}>{user.userStatus}</p>
+                    ) : (
+                      <p className={`${styles.setStatusHint} ${isHoveringUserInfo ? styles.visible : ''}`}>
+                        Задать статус ✏️
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-
-            {/* Уведомления - в правом верхнем углу */}
-            <div className={styles.notificationsContainer}>
-              <button 
-                ref={notificationButtonRef}
-                className={`${styles.notificationsButton} notificationsButton`}
-                title="Уведомления"
-                onClick={toggleDropdown}
-              >
-                <Icon name="notifications" size="medium" />
-                <NotificationBadge />
-              </button>
-              <NotificationDropdown 
-                isOpen={isDropdownOpen} 
-                onClose={() => setIsDropdownOpen(false)}
-                buttonRef={notificationButtonRef}
-              />
-            </div>
-
-            {/* Аватар */}
-            <UserAvatar user={user} size={isSearchPage ? "tiny" : (narrow ? "small" : "medium")} />
-
-            {/* Имя пользователя - скрыто в узком режиме и на странице поиска */}
-            {!narrow && !isSearchPage && <h2 className={styles.userName}>{user.displayName}</h2>}
           </div>
-        </div>
+
+          {/* Модалка редактирования статуса */}
+          <StatusEditModal
+            isOpen={isStatusModalOpen}
+            onClose={() => setIsStatusModalOpen(false)}
+            currentStatus={user.userStatus}
+            onSave={handleSaveStatus}
+            onDelete={handleDeleteStatus}
+          />
+        </>
       )}
 
       {/* Навигация */}

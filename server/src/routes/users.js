@@ -1,4 +1,5 @@
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
@@ -215,8 +216,31 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
     }
 
     if (userStatus !== undefined) {
+      // Проверяем текущий статус перед обновлением
+      const currentUserResult = await executeQuery(
+        'SELECT user_status FROM users WHERE id = ?',
+        [id]
+      );
+      
+      const currentStatus = currentUserResult.success && currentUserResult.data.length > 0 
+        ? currentUserResult.data[0].user_status 
+        : null;
+      
+      const newStatus = userStatus && userStatus.trim() !== '' ? userStatus.trim() : null;
+      
       updates.push('user_status = ?');
-      params.push(userStatus || null); // Если пустая строка, сохраняем как NULL
+      params.push(newStatus);
+      
+      // Создаем wall post при изменении статуса
+      // Только если статус действительно изменился И новый статус не пустой
+      if (currentStatus !== newStatus && newStatus !== null) {
+        const postId = uuidv4();
+        await executeQuery(
+          `INSERT INTO wall_posts (id, user_id, post_type, content)
+           VALUES (?, ?, ?, ?)`,
+          [postId, id, 'status_update', newStatus]
+        );
+      }
     }
 
     if (theme !== undefined) {

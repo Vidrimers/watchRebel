@@ -31,10 +31,6 @@ const SettingsPage = () => {
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [saveError, setSaveError] = useState(null);
 
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [newUserStatus, setNewUserStatus] = useState(user?.userStatus || '');
-  const [statusSaveError, setStatusSaveError] = useState(null);
-
   // Проверяем, является ли пользователь админом
   const isAdmin = user?.isAdmin || user?.id === '137981675';
 
@@ -131,30 +127,6 @@ const SettingsPage = () => {
     setSaveError(null);
   };
 
-  const handleSaveStatus = async () => {
-    if (newUserStatus.trim().length > 100) {
-      setStatusSaveError('Статус не может быть длиннее 100 символов');
-      return;
-    }
-    
-    try {
-      setStatusSaveError(null);
-      await dispatch(updateProfile({ 
-        userId: user.id, 
-        userStatus: newUserStatus.trim() 
-      })).unwrap();
-      setIsEditingStatus(false);
-    } catch (error) {
-      setStatusSaveError(error.message || 'Ошибка сохранения статуса');
-    }
-  };
-  
-  const handleCancelStatusEdit = () => {
-    setNewUserStatus(user?.userStatus || '');
-    setIsEditingStatus(false);
-    setStatusSaveError(null);
-  };
-
   if (!isAuthenticated) {
     return (
       <div className={styles.errorContainer}>
@@ -178,57 +150,6 @@ const SettingsPage = () => {
         <div className={styles.settingsCard}>
           <h3 className={styles.cardTitle}>Аватарка</h3>
           <AvatarUpload user={user} />
-        </div>
-
-        {/* Карточка со статусом */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Статус</h3>
-          {isEditingStatus ? (
-            <div className={styles.statusEditContainer}>
-              <textarea
-                value={newUserStatus}
-                onChange={(e) => setNewUserStatus(e.target.value)}
-                className={styles.statusInput}
-                placeholder="Расскажите о себе..."
-                maxLength={100}
-                rows={3}
-              />
-              <div className={styles.statusCounter}>
-                {newUserStatus.length}/100
-              </div>
-              <div className={styles.editButtons}>
-                <button 
-                  onClick={handleSaveStatus} 
-                  className={styles.saveButton}
-                  disabled={loading}
-                >
-                  {loading ? 'Сохранение...' : 'Сохранить'}
-                </button>
-                <button 
-                  onClick={handleCancelStatusEdit} 
-                  className={styles.cancelButton}
-                  disabled={loading}
-                >
-                  Отмена
-                </button>
-              </div>
-              {statusSaveError && (
-                <div className={styles.errorMessage}>{statusSaveError}</div>
-              )}
-            </div>
-          ) : (
-            <div className={styles.statusDisplay}>
-              <p className={styles.statusText}>
-                {user.userStatus || 'Статус не установлен'}
-              </p>
-              <button 
-                onClick={() => setIsEditingStatus(true)} 
-                className={styles.editButton}
-              >
-                <Icon name="edit" size="small" /> Изменить статус
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Карточка с информацией о профиле */}

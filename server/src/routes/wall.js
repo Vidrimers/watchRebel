@@ -106,10 +106,10 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     const { postType, content, tmdbId, mediaType, rating } = req.body;
 
     // Валидация postType
-    const validPostTypes = ['text', 'media_added', 'rating', 'review'];
+    const validPostTypes = ['text', 'media_added', 'rating', 'review', 'status_update'];
     if (!postType || !validPostTypes.includes(postType)) {
       return res.status(400).json({ 
-        error: 'postType должен быть одним из: text, media_added, rating, review',
+        error: 'postType должен быть одним из: text, media_added, rating, review, status_update',
         code: 'INVALID_POST_TYPE' 
       });
     }
@@ -118,6 +118,14 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     if (postType === 'text' && (!content || content.trim() === '')) {
       return res.status(400).json({ 
         error: 'content обязателен для текстовых постов',
+        code: 'MISSING_CONTENT' 
+      });
+    }
+
+    // Валидация для статусных постов
+    if (postType === 'status_update' && (!content || content.trim() === '')) {
+      return res.status(400).json({ 
+        error: 'content обязателен для статусных постов',
         code: 'MISSING_CONTENT' 
       });
     }

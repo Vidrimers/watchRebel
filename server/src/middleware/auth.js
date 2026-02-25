@@ -65,6 +65,7 @@ export async function authenticateToken(req, res, next) {
       telegramUsername: session.telegram_username,
       displayName: session.display_name,
       avatarUrl: session.avatar_url,
+      userStatus: session.user_status,
       isAdmin: Boolean(session.is_admin),
       theme: session.theme,
       authMethod: session.auth_method || 'telegram', // По умолчанию telegram для старых пользователей

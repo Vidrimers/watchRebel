@@ -402,3 +402,53 @@
   color: var(--text-primary, #e0e0e0);
   border-color: var(--primary-color, #6366f1);
 }
+
+/* Статусный пост */
+.statusUpdateContent {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color, #6366f1);
+}
+
+.statusUpdateContent .actionText {
+  display: flex;
+  align-items: center;
+  margin: 0 0 12px 0;
+  color: var(--primary-color, #6366f1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.statusText {
+  padding: 12px;
+  background: var(--bg-primary, #fff);
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.statusText p {
+  margin: 0;
+  color: var(--text-primary, #1f2937);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-style: italic;
+}
+
+/* Темная тема для статусного поста */
+[data-theme="dark"] .statusUpdateContent,
+[data-theme="die-my-darling"] .statusUpdateContent,
+[data-theme="cyberpunk"] .statusUpdateContent,
+[data-theme="dark-neon-obsidian"] .statusUpdateContent {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+}
+
+[data-theme="dark"] .statusText,
+[data-theme="die-my-darling"] .statusText,
+[data-theme="cyberpunk"] .statusText,
+[data-theme="dark-neon-obsidian"] .statusText {
+  background: var(--bg-secondary, #2c2c2c);
+  border-color: var(--border-color, #444);
+}

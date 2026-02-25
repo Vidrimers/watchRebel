@@ -46,7 +46,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     // Создаем плейсхолдеры для SQL запроса
     const placeholders = allUserIds.map(() => '?').join(',');
 
-    // Получаем последние 10 текстовых постов от друзей и самого пользователя
+    // Получаем последние 10 текстовых постов и статусов от друзей и самого пользователя
     const postsResult = await executeQuery(
       `SELECT 
         wp.id,
@@ -56,11 +56,12 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         wp.created_at,
         wp.edited_at,
         u.display_name,
-        u.avatar_url
+        u.avatar_url,
+        u.user_status
        FROM wall_posts wp
        LEFT JOIN users u ON wp.user_id = u.id
        WHERE wp.user_id IN (${placeholders})
-         AND wp.post_type = 'text'
+         AND wp.post_type IN ('text', 'status_update')
          AND wp.content NOT LIKE '📢 Объявление администратора:%'
        ORDER BY wp.created_at DESC
        LIMIT 10`,
@@ -137,7 +138,8 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           editedAt: post.edited_at,
           author: {
             displayName: post.display_name,
-            avatarUrl: post.avatar_url
+            avatarUrl: post.avatar_url,
+            userStatus: post.user_status
           },
           reactions
         };

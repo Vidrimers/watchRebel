@@ -251,6 +251,21 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
   // Рендер контента в зависимости от типа поста
   const renderPostContent = () => {
     switch (post.postType) {
+      case 'status_update':
+        return (
+          <div className={styles.statusUpdateContent}>
+            <p className={styles.actionText}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
+                <Icon name="announcement" size="medium" color="var(--accent-color)" />
+              </span>
+              Статус обновлен:
+            </p>
+            <div className={styles.statusText}>
+              <p>{cleanContent(post.content)}</p>
+            </div>
+          </div>
+        );
+
       case 'text':
         return (
           <div className={styles.textContent}>
