@@ -209,10 +209,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
   const cleanContent = (content) => {
     if (!content) return content;
     // Убираем маркер announcement_id и лишние переносы строк
-    return content
+    let cleaned = content
       .replace(/\[announcement_id:[^\]]+\]/g, '')
       .replace(/\n{3,}/g, '\n\n') // Заменяем 3+ переноса на 2
       .trim();
+    
+    // Убираем эмодзи объявления из текста (будем показывать иконкой)
+    cleaned = cleaned.replace('📢 Объявление администратора:', 'Объявление администратора:');
+    
+    return cleaned;
   };
 
   // Форматирование даты
@@ -276,7 +281,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                 </div>
               </div>
             ) : (
-              <p>{cleanContent(post.content)}</p>
+              <p>
+                {isAnnouncement && (
+                  <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
+                    <Icon name="announcement" size="medium" color="#ff4444" />
+                  </span>
+                )}
+                {cleanContent(post.content)}
+              </p>
             )}
           </div>
         );
@@ -297,7 +309,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                     {post.mediaType === 'movie' ? 'Фильм' : 'Сериал'} (ID: {post.tmdbId})
                   </h4>
                   <span className={styles.mediaType}>
-                    {post.mediaType === 'movie' ? '🎬 Фильм' : '📺 Сериал'}
+                    {post.mediaType === 'movie' ? (
+                      <>
+                        <Icon name="movies" size="small" /> Фильм
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="tv" size="small" /> Сериал
+                      </>
+                    )}
                   </span>
                 </div>
               </div>

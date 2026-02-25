@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import WallPost from '../components/Wall/WallPost';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './FeedPage.module.css';
 
@@ -54,7 +55,9 @@ const FeedPage = () => {
     <UserPageLayout user={user}>
       <div className={styles.feedPage}>
         <div className={styles.header}>
-          <h1 className={styles.title}>📰 Лента друзей</h1>
+          <h1 className={styles.title}>
+            <Icon name="feed" size="medium" /> Лента друзей
+          </h1>
         </div>
 
         {loading && posts.length === 0 ? (
@@ -63,7 +66,9 @@ const FeedPage = () => {
           </div>
         ) : error ? (
           <div className={styles.error}>
-            <p>❌ {error}</p>
+            <p>
+              <Icon name="close" size="small" /> {error}
+            </p>
             <button 
               className={styles.retryButton}
               onClick={fetchFeed}

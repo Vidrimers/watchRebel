@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../Common/Icon';
 import styles from './BanIndicator.module.css';
 
 /**
@@ -58,7 +59,15 @@ function BanIndicator({ user }) {
   return (
     <div className={styles.banIndicator}>
       <div className={`${styles.badge} ${isPermanentBan ? styles.permanentBan : styles.postBan}`}>
-        {isPermanentBan ? '⛔ ЗАБАНЕН' : '🚫 ПОСТЫ ЗАПРЕЩЕНЫ'}
+        {isPermanentBan ? (
+          <>
+            <Icon name="ban" size="small" /> ЗАБАНЕН
+          </>
+        ) : (
+          <>
+            <Icon name="block" size="small" /> ПОСТЫ ЗАПРЕЩЕНЫ
+          </>
+        )}
       </div>
       
       {user.banReason && (

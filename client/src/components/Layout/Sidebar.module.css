@@ -36,9 +36,9 @@
   right: 8px;
 }
 
-/* Компактный режим для страницы поиска (70px) */
+/* Компактный режим для страницы поиска (110px) */
 .sidebar.compactSearch {
-  max-width: 70px;
+  max-width: 110px;
   gap: 10px;
 }
 
@@ -258,7 +258,7 @@
   
   /* Компактный режим на планшетах */
   .sidebar.compactSearch {
-    max-width: 70px;
+    max-width: 110px;
   }
   
   .sidebar.compactSearch .userInfo {
@@ -286,7 +286,7 @@
   
   /* Компактный режим на мобильных */
   .sidebar.compactSearch {
-    max-width: 60px;
+    max-width: 110px;
   }
   
   .sidebar.compactSearch .navLink {

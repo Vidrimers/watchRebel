@@ -48,6 +48,11 @@
   transform: scale(1.05);
 }
 
+/* Иконка в кнопке поиска должна быть белой при ховере */
+.searchButton:hover svg {
+  color: #ffffff !important;
+}
+
 .searchButton:active {
   transform: scale(0.95);
 }

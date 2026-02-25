@@ -412,7 +412,15 @@ function UserModerationModal({ user, onClose, onUpdate }) {
         <div className={styles.modalOverlay} onClick={closeBanModal}>
           <div className={styles.banModal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>
-              {banType === 'posts' ? '🚫 Запретить посты' : '⛔ Постоянная блокировка'}
+              {banType === 'posts' ? (
+                <>
+                  <Icon name="block" size="small" /> Запретить посты
+                </>
+              ) : (
+                <>
+                  <Icon name="ban" size="small" /> Постоянная блокировка
+                </>
+              )}
             </h3>
 
             {error && (

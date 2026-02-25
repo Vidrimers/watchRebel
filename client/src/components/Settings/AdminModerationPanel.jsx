@@ -241,7 +241,15 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
         <div className={styles.modalOverlay} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>
-              {banType === 'posts' ? '🚫 Запретить посты' : '⛔ Постоянная блокировка'}
+              {banType === 'posts' ? (
+                <>
+                  <Icon name="block" size="small" /> Запретить посты
+                </>
+              ) : (
+                <>
+                  <Icon name="ban" size="small" /> Постоянная блокировка
+                </>
+              )}
             </h3>
 
             {error && (

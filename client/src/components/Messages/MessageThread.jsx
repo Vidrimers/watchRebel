@@ -290,7 +290,9 @@ const MessageThread = ({ conversation }) => {
         {confirmDialog}
         <div className={styles.container}>
           <div className={styles.empty}>
-            <span className={styles.emptyIcon}>💬</span>
+            <span className={styles.emptyIcon}>
+              <Icon name="messages" size="large" />
+            </span>
             <p>Выберите диалог для начала переписки</p>
           </div>
         </div>

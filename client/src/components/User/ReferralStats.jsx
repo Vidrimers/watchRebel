@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import Icon from '../Common/Icon';
 import api from '../../services/api';
 import styles from './ReferralStats.module.css';
 
@@ -119,7 +120,7 @@ const ReferralStats = ({ userId }) => {
     <div className={styles.referralStats}>
       <div className={styles.statsHeader}>
         <h3 className={styles.statsTitle}>
-          👥 Приглашенные друзья ({referralsCount})
+          <Icon name="friends" size="small" /> Приглашенные друзья ({referralsCount})
         </h3>
       </div>
 

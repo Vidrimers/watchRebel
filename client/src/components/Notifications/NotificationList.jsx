@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead, markAllAsRead } from '../../store/slices/notificationsSlice';
+import Icon from '../Common/Icon';
 import styles from './NotificationList.module.css';
 
 /**
@@ -66,11 +67,11 @@ const NotificationList = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'reaction':
-        return '❤️';
+        return <Icon name="heart" size="small" />;
       case 'friend_activity':
-        return '👤';
+        return <Icon name="user" size="small" />;
       default:
-        return '🔔';
+        return <Icon name="bell" size="small" />;
     }
   };
 

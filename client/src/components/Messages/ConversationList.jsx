@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchConversations, setCurrentConversation } from '../../store/slices/messagesSlice';
+import Icon from '../Common/Icon';
 import api from '../../services/api';
 import styles from './ConversationList.module.css';
 
@@ -137,7 +138,9 @@ const ConversationList = ({ onSelectConversation }) => {
           </button>
         </div>
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>💬</span>
+          <span className={styles.emptyIcon}>
+            <Icon name="messages" size="large" />
+          </span>
           <p>Пока нет диалогов</p>
           <p className={styles.emptyHint}>Нажмите "Написать", чтобы начать переписку</p>
         </div>

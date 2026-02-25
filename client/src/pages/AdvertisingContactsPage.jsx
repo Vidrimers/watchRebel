@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './AdvertisingContactsPage.module.css';
 
@@ -38,7 +39,9 @@ const AdvertisingContactsPage = () => {
       const email = emailMatch[1].trim();
       return (
         <p key={index}>
-          <span className={styles.contactIcon}>📧</span>
+          <span className={styles.contactIcon}>
+            <Icon name="email" size="small" />
+          </span>
           Email: <a href={`mailto:${email}`} className={styles.contactLink}>{email}</a>
         </p>
       );
@@ -53,7 +56,9 @@ const AdvertisingContactsPage = () => {
         : `https://t.me/${telegram}`;
       return (
         <p key={index}>
-          <span className={styles.contactIcon}>💬</span>
+          <span className={styles.contactIcon}>
+            <Icon name="telegram" size="small" />
+          </span>
           Telegram: <a href={telegramUrl} className={styles.contactLink} target="_blank" rel="noopener noreferrer">{telegram}</a>
         </p>
       );

@@ -7,6 +7,7 @@ import { MediaGrid } from '../components/Media';
 import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
 import useAlert from '../hooks/useAlert';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './CatalogPage.module.css';
 
@@ -319,7 +320,9 @@ const CatalogPage = () => {
       <div className={styles.catalogPage}>
         {/* Заголовок */}
         <div className={styles.header}>
-          <h1 className={styles.title}>📚 Каталог</h1>
+          <h1 className={styles.title}>
+            <Icon name="catalog" size="medium" /> Каталог
+          </h1>
           <p className={styles.subtitle}>
             Популярные фильмы и сериалы
           </p>
@@ -331,13 +334,13 @@ const CatalogPage = () => {
             className={`${styles.tab} ${activeTab === 'movies' ? styles.active : ''}`}
             onClick={() => handleTabChange('movies')}
           >
-            🎬 Фильмы
+            <Icon name="movies" size="small" /> Фильмы
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'tv' ? styles.active : ''}`}
             onClick={() => handleTabChange('tv')}
           >
-            📺 Сериалы
+            <Icon name="tv" size="small" /> Сериалы
           </button>
         </div>
 

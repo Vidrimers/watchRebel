@@ -217,8 +217,12 @@
 
   <!-- Announcement / Объявление -->
   <symbol id="icon-announcement" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M22 8.5C22 8.5 19 10 14 10H6a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h1l1.5 4h2L9 15h5c5 0 8 1.5 8 1.5V8.5z"/>
-    <path d="M6 15v2"/>
+    <path d="M19 9.5v5"/>
+    <path d="M19 7c1.5.8 2.5 2.2 2.5 3.5s-1 2.7-2.5 3.5"/>
+    <path d="M19 4.5c2.5 1.5 4 3.5 4 5.5s-1.5 4-4 5.5"/>
+    <rect x="2" y="8" width="8" height="8" rx="1"/>
+    <path d="M10 9l9-4v10l-9-4"/>
+    <path d="M6 16v4"/>
   </symbol>
 
   <!-- Status / Статус -->
@@ -229,12 +233,43 @@
     <path d="M16.5 18l1 1 2-2"/>
   </symbol>
 
+  <!-- Lists / Списки -->
+  <symbol id="icon-lists" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <line x1="9" y1="8" x2="17" y2="8"/>
+    <line x1="9" y1="12" x2="17" y2="12"/>
+    <line x1="9" y1="16" x2="17" y2="16"/>
+    <circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="6" cy="16" r="1" fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!-- Block / Запретить -->
+  <symbol id="icon-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </symbol>
+
+  <!-- Ban / Забанить -->
+  <symbol id="icon-ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="10" cy="7" r="3"/>
+    <path d="M4 19v-1a6 6 0 0 1 9.28-5"/>
+    <circle cx="18" cy="16" r="4"/>
+    <line x1="15.5" y1="13.5" x2="20.5" y2="18.5"/>
+    <line x1="20.5" y1="13.5" x2="15.5" y2="18.5"/>
+  </symbol>
+
+  <!-- Checkmark / Галочка -->
+  <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="7.5 12 10.5 15 16.5 9"/>
+  </symbol>
+
 </svg>
 
 <!--
 =============================================================
-  ИКОНКИ — СПРАВОЧНИК
-=============================================================
+  ИКОНКИ — СПРАВОЧНИК =============================================================
 
   НАВИГАЦИЯ
   ---------
@@ -280,28 +315,26 @@
   ПРОЧЕЕ
   ------
   icon-search        Поиск
-  icon-star          Звезда / Рейтинг
-
-=============================================================
+  icon-star          Звезда / Рейтинг =============================================================
   КАК ИСПОЛЬЗОВАТЬ:
   
   1. Подключи этот файл в HTML:
      <div style="display:none">
        <!-- вставь содержимое icons.svg или подключи через fetch -->
-     </div>
+</div>
   
   2. Используй иконку через <use>:
-     <svg width="24" height="24">
-       <use href="#icon-feed" />
-     </svg>
+<svg width="24" height="24">
+<use href="#icon-feed" />
+</svg>
   
   3. Управляй цветом через CSS color:
-     <svg width="24" height="24" style="color: #e53e3e;">
-       <use href="#icon-heart" />
-     </svg>
+<svg width="24" height="24" style="color: #e53e3e;">
+<use href="#icon-heart" />
+</svg>
 
   4. Для React-проектов можно импортировать как ReactComponent:
      import { ReactComponent as FeedIcon } from './icons.svg';
-     <FeedIcon width={24} height={24} />
+<FeedIcon width={24} height={24} />
 =============================================================
 -->

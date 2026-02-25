@@ -178,7 +178,7 @@ const AnnouncementsPage = () => {
   return (
     <div className={styles.announcementsPage}>
       <div className={styles.header}>
-        <h1>📢 Управление объявлениями</h1>
+        <h1><Icon name="announcement" size="medium" /> Управление объявлениями</h1>
         <button 
           className={styles.backButton}
           onClick={() => navigate('/settings')}
@@ -244,7 +244,7 @@ const AnnouncementsPage = () => {
               className={styles.telegramButton}
               onClick={() => setShowTelegramModal(true)}
             >
-              📱 Объявление в ТГ
+              <Icon name="telegram" size="small" /> Объявление в ТГ
             </button>
           </div>
         </form>
@@ -329,7 +329,7 @@ const AnnouncementsPage = () => {
       {showTelegramModal && (
         <div className={styles.telegramModal}>
           <div className={styles.telegramModalContent}>
-            <h3>📱 Отправить объявление в Telegram</h3>
+            <h3><Icon name="telegram" size="medium" /> Отправить объявление в Telegram</h3>
             <p className={styles.telegramModalDescription}>
               Объявление будет отправлено всем пользователям через Telegram бота
             </p>
