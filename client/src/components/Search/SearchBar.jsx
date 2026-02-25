@@ -4,6 +4,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { searchMedia, setSearchQuery, clearError } from '../../store/slices/mediaSlice';
 import { ErrorMessageInline } from '../ErrorMessage';
+import Icon from '../Common/Icon';
 import styles from './SearchBar.module.css';
 
 /**
@@ -126,7 +127,7 @@ const SearchBar = () => {
           title="Открыть полный поиск"
           aria-label="Открыть полный поиск"
         >
-          🔍
+          <Icon name="search" size="medium" />
         </button>
       </div>
 

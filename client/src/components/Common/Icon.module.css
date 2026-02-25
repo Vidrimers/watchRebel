@@ -123,3 +123,16 @@ nav a.active .icon {
 .icon.notification-badge {
   color: var(--notification-badge);
 }
+
+/* Брендовые цвета для соцсетей */
+.icon.telegram {
+  color: #0088cc;
+}
+
+.icon.discord {
+  color: #5865F2;
+}
+
+.icon.google {
+  /* Google использует многоцветный логотип, оставляем как есть */
+}

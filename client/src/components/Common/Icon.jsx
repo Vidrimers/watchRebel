@@ -53,6 +53,15 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
 
   const iconId = `icon-${name}`;
 
+  // Автоматически добавляем брендовые классы для соцсетей
+  const brandClasses = {
+    telegram: styles.telegram,
+    discord: styles.discord,
+    google: styles.google
+  };
+
+  const brandClass = brandClasses[name] || '';
+
   const svgStyle = {
     ...(color && { color }),
     width: iconSize,
@@ -61,7 +70,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
 
   return (
     <svg
-      className={`${styles.icon} ${styles[size]} ${className}`}
+      className={`${styles.icon} ${styles[size]} ${brandClass} ${className}`}
       style={svgStyle}
       aria-hidden="true"
       focusable="false"
