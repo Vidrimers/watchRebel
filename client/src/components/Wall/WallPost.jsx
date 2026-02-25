@@ -387,7 +387,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
     <>
       {confirmDialog}
       {alertDialog}
-      <div className={styles.wallPost}>
+      <div className={`${styles.wallPost} ${isAnnouncement ? styles.announcementPost : ''}`}>
       {/* Контент поста */}
       <div className={styles.postContent}>
         {renderPostContent()}

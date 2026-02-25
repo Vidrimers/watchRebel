@@ -8,6 +8,29 @@
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
+/* Объявление администратора */
+.announcementPost {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  position: relative;
+}
+
+.announcementPost::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color, #6366f1) 0%, rgba(139, 92, 246, 1) 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.announcementPost:hover {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
 .wallPost:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -344,6 +367,23 @@
   background: var(--bg-secondary, #2c2c2c);
   border-color: var(--border-color, #444);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Объявление администратора в темной теме */
+[data-theme="dark"] .announcementPost,
+[data-theme="die-my-darling"] .announcementPost,
+[data-theme="cyberpunk"] .announcementPost,
+[data-theme="dark-neon-obsidian"] .announcementPost {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .announcementPost:hover,
+[data-theme="die-my-darling"] .announcementPost:hover,
+[data-theme="cyberpunk"] .announcementPost:hover,
+[data-theme="dark-neon-obsidian"] .announcementPost:hover {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
 }
 
 [data-theme="dark"] .wallPost:hover,
