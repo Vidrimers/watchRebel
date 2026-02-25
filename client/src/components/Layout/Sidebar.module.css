@@ -250,6 +250,20 @@
   top: 10px;
   left: 10px;
   z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Показываем кнопку настроек при наведении на userInfoLink */
+.userInfoLink:hover .settingsContainer {
+  opacity: 1;
+}
+
+/* На мобильных устройствах кнопка настроек всегда видна */
+@media (max-width: 768px) {
+  .settingsContainer {
+    opacity: 1;
+  }
 }
 
 .settingsButton {
