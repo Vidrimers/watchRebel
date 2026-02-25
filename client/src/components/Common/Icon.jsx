@@ -52,7 +52,6 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
   };
 
   const iconId = `icon-${name}`;
-  const iconHref = `/icons/icons-sprite.svg#${iconId}`;
 
   const svgStyle = {
     ...(color && { color }),
@@ -68,20 +67,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
       focusable="false"
       {...props}
     >
-      <use href={iconHref} />
-      {/* Fallback для старых браузеров или если иконка не загрузилась */}
-      {emojiMap[name] && (
-        <text
-          x="50%"
-          y="50%"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={iconSize * 0.8}
-          className={styles.fallback}
-        >
-          {emojiMap[name]}
-        </text>
-      )}
+      <use href={`#${iconId}`} xlinkHref={`#${iconId}`} />
     </svg>
   );
 };
