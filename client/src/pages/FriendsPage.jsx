@@ -3,6 +3,7 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import ReferralStats from '../components/User/ReferralStats';
+import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm';
 import useAlert from '../hooks/useAlert';
 import api from '../services/api';
@@ -108,7 +109,7 @@ const FriendsPage = () => {
         
         {friends.length === 0 ? (
           <div className={styles.empty}>
-            <span className={styles.emptyIcon}>👥</span>
+            <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
             <p>У вас пока нет друзей</p>
             <p className={styles.emptyHint}>
               Найдите пользователей через поиск и добавьте их в друзья

@@ -6,6 +6,7 @@ import { searchMedia } from '../store/slices/mediaSlice';
 import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
 import { clearSearch } from '../store/slices/mediaSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
 import api from '../services/api';
@@ -331,12 +332,12 @@ const SearchPage = () => {
                   className={styles.clearButton}
                   title="Очистить"
                 >
-                  ✕
+                  <Icon name="close" size="small" />
                 </button>
               )}
             </div>
             <button type="submit" className={styles.searchButton}>
-              🔍 Найти
+              <Icon name="search" size="small" /> Найти
             </button>
           </form>
 
@@ -453,7 +454,11 @@ const SearchPage = () => {
                       <div className={styles.mediaCardInfo}>
                         <h3 className={styles.mediaCardTitle}>{result.data.title}</h3>
                         <p className={styles.mediaCardType}>
-                          {result.data.mediaType === 'movie' ? '🎬 Фильм' : '📺 Сериал'}
+                          {result.data.mediaType === 'movie' ? (
+                            <><Icon name="movies" size="small" /> Фильм</>
+                          ) : (
+                            <><Icon name="tv" size="small" /> Сериал</>
+                          )}
                         </p>
                         {result.data.releaseDate && (
                           <p className={styles.mediaCardYear}>
@@ -469,7 +474,7 @@ const SearchPage = () => {
                         )}
                         {result.data.voteAverage > 0 && (
                           <div className={styles.mediaCardRating}>
-                            ⭐ {result.data.voteAverage.toFixed(1)}
+                            <Icon name="star" size="small" /> {result.data.voteAverage.toFixed(1)}
                           </div>
                         )}
                       </div>
@@ -496,7 +501,7 @@ const SearchPage = () => {
                             className={styles.menuItem}
                             onClick={(e) => handleAddToWatchlist(e, result)}
                           >
-                            ⭐ Хочу посмотреть
+                            <Icon name="watchlist" size="small" /> Хочу посмотреть
                           </button>
                         </div>
                       )}

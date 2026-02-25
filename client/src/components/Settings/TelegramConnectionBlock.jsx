@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import Icon from '../Common/Icon';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import api from '../../services/api';
@@ -65,7 +66,7 @@ const TelegramConnectionBlock = () => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.settingsCard}>
-        <h3 className={styles.cardTitle}>📱 Telegram</h3>
+        <h3 className={styles.cardTitle}><Icon name="telegram" size="medium" /> Telegram</h3>
         
         {isTelegramLinked ? (
           <div className={styles.linkedContainer}>

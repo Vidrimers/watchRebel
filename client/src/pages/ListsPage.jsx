@@ -7,6 +7,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import CustomListManager from '../components/Lists/CustomListManager';
 import MediaCard from '../components/Media/MediaCard';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
+import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert';
 import styles from './ListsPage.module.css';
 
@@ -246,13 +247,13 @@ const ListsPage = () => {
                 className={`${styles.toggleButton} ${mediaType === 'movie' ? styles.active : ''}`}
                 onClick={() => handleMediaTypeChange('movie')}
               >
-                🎬 Фильмы
+                <Icon name="movies" size="small" /> Фильмы
               </button>
               <button
                 className={`${styles.toggleButton} ${mediaType === 'tv' ? styles.active : ''}`}
                 onClick={() => handleMediaTypeChange('tv')}
               >
-                📺 Сериалы
+                <Icon name="tv" size="small" /> Сериалы
               </button>
             </div>
 
@@ -362,7 +363,7 @@ const ListsPage = () => {
                             onClick={() => handleOpenDeleteDialog(item)}
                             title="Удалить из списка"
                           >
-                            🗑️
+                            <Icon name="delete" size="small" />
                           </button>
                         </div>
                       </div>

@@ -4,6 +4,7 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import BanIndicator from '../components/User/BanIndicator';
 import UserModerationModal from '../components/Settings/UserModerationModal';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './UsersManagementPage.module.css';
 
@@ -154,7 +155,7 @@ const UsersManagementPage = () => {
   return (
     <UserPageLayout user={currentUser}>
       <div className={styles.container}>
-        <h1 className={styles.pageTitle}>👥 Управление пользователями</h1>
+        <h1 className={styles.pageTitle}><Icon name="friends" size="medium" /> Управление пользователями</h1>
 
         {/* Поиск */}
         <div className={styles.searchSection}>
@@ -230,7 +231,7 @@ const UsersManagementPage = () => {
                     onClick={() => handleOpenProfile(user.id)}
                     className={styles.btnProfile}
                   >
-                    👤 Профиль
+                    <Icon name="user" size="small" /> Профиль
                   </button>
                   {/* Не показываем кнопку модерации для самого админа */}
                   {user.id !== currentUser?.id && (

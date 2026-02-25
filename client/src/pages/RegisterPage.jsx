@@ -116,19 +116,19 @@ const RegisterPage = () => {
                 <span>Создавайте свои списки фильмов и сериалов</span>
               </li>
               <li className={styles.featureItem}>
-                <span className={styles.featureIcon}>⭐</span>
+                <span className={styles.featureIcon}><Icon name="star" size="small" /></span>
                 <span>Оценивайте просмотренное и делитесь отзывами</span>
               </li>
               <li className={styles.featureItem}>
-                <span className={styles.featureIcon}>👥</span>
+                <span className={styles.featureIcon}><Icon name="friends" size="small" /></span>
                 <span>Находите друзей с похожими вкусами</span>
               </li>
               <li className={styles.featureItem}>
-                <span className={styles.featureIcon}>🔔</span>
+                <span className={styles.featureIcon}><Icon name="notifications" size="small" /></span>
                 <span>Получайте уведомления о новинках</span>
               </li>
               <li className={styles.featureItem}>
-                <span className={styles.featureIcon}>📺</span>
+                <span className={styles.featureIcon}><Icon name="tv" size="small" /></span>
                 <span>Отслеживайте прогресс просмотра сериалов</span>
               </li>
             </ul>

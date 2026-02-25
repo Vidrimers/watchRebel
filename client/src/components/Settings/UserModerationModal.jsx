@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../Common/Icon';
 import styles from './UserModerationModal.module.css';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert.jsx';
@@ -391,14 +392,14 @@ function UserModerationModal({ user, onClose, onUpdate }) {
                   onClick={() => setIsRenaming(true)}
                   disabled={loading}
                 >
-                  ✏️ Переименовать
+                  <Icon name="edit" size="small" /> Переименовать
                 </button>
                 <button
                   className={`${styles.actionButton} ${styles.deleteButton}`}
                   onClick={handleDelete}
                   disabled={loading}
                 >
-                  🗑️ Удалить
+                  <Icon name="delete" size="small" /> Удалить
                 </button>
               </div>
             )}

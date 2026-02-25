@@ -10,6 +10,7 @@ import AvatarUpload from '../components/Settings/AvatarUpload';
 import TelegramConnectionBlock from '../components/Settings/TelegramConnectionBlock';
 import GoogleConnectionBlock from '../components/Settings/GoogleConnectionBlock';
 import DiscordConnectionBlock from '../components/Settings/DiscordConnectionBlock';
+import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
@@ -168,7 +169,7 @@ const SettingsPage = () => {
       {alertDialog}
       <UserPageLayout user={user}>
       <div className={styles.settingsContainer}>
-        <h1 className={styles.pageTitle}>⚙️ Настройки</h1>
+        <h1 className={styles.pageTitle}><Icon name="settings" size="medium" /> Настройки</h1>
 
         {/* Карточка с темой */}
         <ThemeDropdown />
@@ -224,7 +225,7 @@ const SettingsPage = () => {
                 onClick={() => setIsEditingStatus(true)} 
                 className={styles.editButton}
               >
-                ✏️ Изменить статус
+                <Icon name="edit" size="small" /> Изменить статус
               </button>
             </div>
           )}
@@ -273,7 +274,7 @@ const SettingsPage = () => {
                     onClick={() => setIsEditingName(true)} 
                     className={styles.editButton}
                   >
-                    ✏️ Изменить
+                    <Icon name="edit" size="small" /> Изменить
                   </button>
                 </div>
               )}
@@ -292,16 +293,16 @@ const SettingsPage = () => {
               <span className={styles.infoLabel}>Способ входа:</span>
               <div className={styles.authMethodsContainer}>
                 {user.telegramUsername && (
-                  <span className={styles.authMethod}>📱 Telegram</span>
+                  <span className={styles.authMethod}><Icon name="telegram" size="small" /> Telegram</span>
                 )}
                 {user.email && (
-                  <span className={styles.authMethod}>✉️ Email</span>
+                  <span className={styles.authMethod}><Icon name="email" size="small" /> Email</span>
                 )}
                 {user.hasGoogleLinked && (
-                  <span className={styles.authMethod}>🔐 Google</span>
+                  <span className={styles.authMethod}><Icon name="google" size="small" /> Google</span>
                 )}
                 {user.hasDiscordLinked && (
-                  <span className={styles.authMethod}>💬 Discord</span>
+                  <span className={styles.authMethod}><Icon name="discord" size="small" /> Discord</span>
                 )}
               </div>
             </div>
@@ -332,7 +333,7 @@ const SettingsPage = () => {
             ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
           </p>
           <button onClick={handleDeleteAccount} className={styles.deleteButton}>
-            🗑️ Удалить аккаунт
+            <Icon name="delete" size="small" /> Удалить аккаунт
           </button>
         </div>
 

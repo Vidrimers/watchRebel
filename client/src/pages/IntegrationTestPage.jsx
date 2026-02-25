@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './IntegrationTestPage.module.css';
 
@@ -164,7 +165,7 @@ const IntegrationTestPage = () => {
           onClick={clearResults}
           className={styles.btnSecondary}
         >
-          🗑️ Очистить результаты
+          <Icon name="delete" size="small" /> Очистить результаты
         </button>
       </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import Icon from '../Common/Icon';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import api from '../../services/api';
@@ -66,7 +67,7 @@ const DiscordConnectionBlock = () => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.settingsCard}>
-        <h3 className={styles.cardTitle}>💬 Discord</h3>
+        <h3 className={styles.cardTitle}><Icon name="discord" size="medium" /> Discord</h3>
         
         {isDiscordLinked ? (
           <div className={styles.linkedContainer}>

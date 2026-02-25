@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icon from '../Common/Icon';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert.jsx';
 import useConfirm from '../../hooks/useConfirm.jsx';
@@ -129,13 +130,13 @@ const AdminPanel = () => {
             onClick={() => navigate('/admin/users')}
             className={styles.btnNavigation}
           >
-            👥 Пользователи
+            <Icon name="friends" size="small" /> Пользователи
           </button>
           <button
             onClick={() => navigate('/admin/announcements')}
             className={styles.btnNavigation}
           >
-            📢 Объявления
+            <Icon name="announcement" size="small" /> Объявления
           </button>
         </div>
       </div>
@@ -211,11 +212,11 @@ const AdminPanel = () => {
           <div className={styles.contactsDisplay}>
             {contactText && <p className={styles.contactText}>{contactText}</p>}
             <p className={styles.contactItem}>
-              <span className={styles.contactIcon}>📧</span>
+              <span className={styles.contactIcon}><Icon name="email" size="small" /></span>
               Email: {contactEmail}
             </p>
             <p className={styles.contactItem}>
-              <span className={styles.contactIcon}>💬</span>
+              <span className={styles.contactIcon}><Icon name="telegram" size="small" /></span>
               Telegram: {contactTelegram}
             </p>
           </div>

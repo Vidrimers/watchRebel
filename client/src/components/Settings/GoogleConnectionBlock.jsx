@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import Icon from '../Common/Icon';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import api from '../../services/api';
@@ -66,7 +67,7 @@ const GoogleConnectionBlock = () => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.settingsCard}>
-        <h3 className={styles.cardTitle}>🔍 Google</h3>
+        <h3 className={styles.cardTitle}><Icon name="google" size="medium" /> Google</h3>
         
         {isGoogleLinked ? (
           <div className={styles.linkedContainer}>

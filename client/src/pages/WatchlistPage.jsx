@@ -6,6 +6,7 @@ import { fetchWatchlist, fetchLists, addToList, removeFromWatchlist } from '../s
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import MediaCard from '../components/Media/MediaCard';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
+import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert';
 import styles from './WatchlistPage.module.css';
 
@@ -223,13 +224,13 @@ const WatchlistPage = () => {
                 className={`${styles.filterButton} ${filterType === 'movie' ? styles.active : ''}`}
                 onClick={() => handleFilterChange('movie')}
               >
-                🎬 Фильмы
+                <Icon name="movies" size="small" /> Фильмы
               </button>
               <button
                 className={`${styles.filterButton} ${filterType === 'tv' ? styles.active : ''}`}
                 onClick={() => handleFilterChange('tv')}
               >
-                📺 Сериалы
+                <Icon name="tv" size="small" /> Сериалы
               </button>
             </div>
 
@@ -333,7 +334,7 @@ const WatchlistPage = () => {
                         onClick={() => handleOpenDeleteDialog(item)}
                         title="Удалить"
                       >
-                        🗑️
+                        <Icon name="delete" size="small" />
                       </button>
                     </div>
                   </div>

@@ -12,6 +12,7 @@ import {
   markEpisodeWatched
 } from '../store/slices/listsSlice';
 import { EpisodeTracker, RatingSelector } from '../components/Media';
+import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert.jsx';
 import styles from './MediaDetailPage.module.css';
 
@@ -322,7 +323,7 @@ const MediaDetailPage = () => {
                             className={styles.castImage}
                           />
                         ) : (
-                          <div className={styles.noPhoto}>👤</div>
+                          <div className={styles.noPhoto}><Icon name="user" size="large" /></div>
                         )}
                       </div>
                       <div className={styles.castInfo}>

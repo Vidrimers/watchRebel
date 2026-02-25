@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/Layout/PublicHeader';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './PublicCatalogPage.module.css';
 
@@ -194,7 +195,7 @@ const PublicCatalogPage = () => {
       <main className={styles.mainContent}>
         {/* Заголовок */}
         <div className={styles.pageHeader}>
-          <h2 className={styles.title}>📚 Каталог фильмов и сериалов</h2>
+          <h2 className={styles.title}><Icon name="catalog" size="medium" /> Каталог фильмов и сериалов</h2>
           <p className={styles.subtitle}>
             Популярные фильмы и сериалы. Зарегистрируйтесь, чтобы добавлять в свои списки!
           </p>
@@ -206,13 +207,13 @@ const PublicCatalogPage = () => {
             className={`${styles.tab} ${activeTab === 'movies' ? styles.active : ''}`}
             onClick={() => handleTabChange('movies')}
           >
-            🎬 Фильмы
+            <Icon name="movies" size="small" /> Фильмы
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'tv' ? styles.active : ''}`}
             onClick={() => handleTabChange('tv')}
           >
-            📺 Сериалы
+            <Icon name="tv" size="small" /> Сериалы
           </button>
         </div>
 
@@ -330,7 +331,7 @@ const PublicCatalogPage = () => {
                             )}
                             {item.vote_average > 0 && (
                               <div className={styles.overlayRating}>
-                                ⭐ {item.vote_average.toFixed(1)}
+                                <Icon name="star" size="small" /> {item.vote_average.toFixed(1)}
                               </div>
                             )}
                             {item.overview && (
@@ -354,7 +355,7 @@ const PublicCatalogPage = () => {
                         )}
                         {item.vote_average > 0 && (
                           <div className={styles.cardRating}>
-                            ⭐ {item.vote_average.toFixed(1)}
+                            <Icon name="star" size="small" /> {item.vote_average.toFixed(1)}
                           </div>
                         )}
                       </div>
