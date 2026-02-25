@@ -218,7 +218,7 @@ bot.onText(/\/menu/, async (msg) => {
     if (!publicUrl.includes('localhost')) {
       // Создаем сессию для автоматической авторизации
       const session = await createSession(userId, msg.from);
-      const webAppUrl = `${publicUrl}?session=${session.token}`;
+      const webAppUrl = `${publicUrl}/login?session=${session.token}`;
       
       menuButtons.push([
         { text: '🌐 Открыть сайт', url: webAppUrl }

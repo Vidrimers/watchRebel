@@ -74,6 +74,7 @@ function LoginPage() {
 
   // Глобальная функция для обработки ответа от Telegram Widget
   useEffect(() => {
+    // ВАЖНО: Создаём функцию ДО загрузки скрипта виджета
     window.onTelegramAuth = async (user) => {
       console.log('📥 Получены данные от Telegram:', user);
       setIsAuthenticating(true);
@@ -102,7 +103,10 @@ function LoginPage() {
       }
     };
 
-    // Загружаем скрипт Telegram Widget
+    // Проверяем что функция действительно создана
+    console.log('✅ window.onTelegramAuth создана:', typeof window.onTelegramAuth);
+
+    // Загружаем скрипт Telegram Widget ПОСЛЕ создания функции
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.setAttribute('data-telegram-login', import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'watchRebel_bot');
@@ -115,6 +119,9 @@ function LoginPage() {
     const container = document.getElementById('telegram-login-container');
     if (container) {
       container.appendChild(script);
+      console.log('✅ Telegram Widget скрипт загружен');
+    } else {
+      console.error('❌ Контейнер telegram-login-container не найден!');
     }
 
     return () => {
@@ -122,6 +129,7 @@ function LoginPage() {
       if (container && script.parentNode === container) {
         container.removeChild(script);
       }
+      delete window.onTelegramAuth;
     };
   }, [dispatch, navigate]);
 
