@@ -15,7 +15,7 @@ import styles from './Sidebar.module.css';
  * Правый блок управления
  * Содержит: поиск, аватар, навигацию, настройки, уведомления
  */
-const Sidebar = ({ narrow = false }) => {
+const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isHoveringUserInfo, setIsHoveringUserInfo] = useState(false);
@@ -28,6 +28,13 @@ const Sidebar = ({ narrow = false }) => {
   
   // Проверяем, находимся ли мы на странице поиска
   const isSearchPage = location.pathname === '/search';
+
+  // Закрытие сайдбара при клике на ссылку (для мобильных)
+  const handleLinkClick = () => {
+    if (onClose && window.innerWidth < 768) {
+      onClose();
+    }
+  };
 
   const toggleDropdown = (e) => {
     e.preventDefault();
@@ -44,6 +51,8 @@ const Sidebar = ({ narrow = false }) => {
     }
     // Переход на профиль
     window.location.href = `/user/${user.id}`;
+    // Закрываем сайдбар на мобильных
+    handleLinkClick();
   };
 
   const handleStatusClick = (e) => {
@@ -68,9 +77,19 @@ const Sidebar = ({ narrow = false }) => {
   };
 
   return (
-    <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''} ${isSearchPage ? styles.compactSearch : ''}`}>
-      {/* Поисковая строка - скрыта в узком режиме и на странице поиска */}
-      {!narrow && !isSearchPage && <SearchBar />}
+    <>
+      {/* Overlay для мобильных устройств */}
+      {isOpen && (
+        <div 
+          className={styles.overlay} 
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''} ${isSearchPage ? styles.compactSearch : ''} ${isOpen ? styles.open : ''}`}>
+        {/* Поисковая строка - скрыта в узком режиме и на странице поиска */}
+        {!narrow && !isSearchPage && <SearchBar />}
 
       {/* Информация о пользователе */}
       {user && (
@@ -88,6 +107,7 @@ const Sidebar = ({ narrow = false }) => {
                   href="/settings" 
                   className={styles.settingsButton}
                   title="Настройки"
+                  onClick={handleLinkClick}
                 >
                   <Icon name="settings" size="medium" />
                 </a>
@@ -152,43 +172,44 @@ const Sidebar = ({ narrow = false }) => {
       <nav className={styles.navigation}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <a href="/feed" className={styles.navLink} title="Лента">
+            <a href="/feed" className={styles.navLink} title="Лента" onClick={handleLinkClick}>
               <Icon name="feed" size="medium" /> {!narrow && !isSearchPage && 'Лента'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/friends" className={styles.navLink} title="Друзья">
+            <a href="/friends" className={styles.navLink} title="Друзья" onClick={handleLinkClick}>
               <Icon name="friends" size="medium" /> {!narrow && !isSearchPage && 'Друзья'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/messages" className={styles.navLink} title="Сообщения">
+            <a href="/messages" className={styles.navLink} title="Сообщения" onClick={handleLinkClick}>
               <Icon name="messages" size="medium" /> {!narrow && !isSearchPage && 'Сообщения'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/my-catalog" className={styles.navLink} title="Каталог">
+            <a href="/my-catalog" className={styles.navLink} title="Каталог" onClick={handleLinkClick}>
               <Icon name="catalog" size="medium" /> {!narrow && !isSearchPage && 'Каталог'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы">
+            <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы" onClick={handleLinkClick}>
               <Icon name="movies" size="medium" /> {!narrow && !isSearchPage && 'Мои фильмы'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/lists?type=tv" className={styles.navLink} title="Мои сериалы">
+            <a href="/lists?type=tv" className={styles.navLink} title="Мои сериалы" onClick={handleLinkClick}>
               <Icon name="tv" size="medium" /> {!narrow && !isSearchPage && 'Мои сериалы'}
             </a>
           </li>
           <li className={styles.navItem}>
-            <a href="/watchlist" className={styles.navLink} title="Хочу посмотреть">
+            <a href="/watchlist" className={styles.navLink} title="Хочу посмотреть" onClick={handleLinkClick}>
               <Icon name="watchlist" size="medium" /> {!narrow && !isSearchPage && 'Хочу посмотреть'}
             </a>
           </li>
         </ul>
       </nav>
     </aside>
+    </>
   );
 };
 
