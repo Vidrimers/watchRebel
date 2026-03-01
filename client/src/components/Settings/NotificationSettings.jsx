@@ -41,30 +41,37 @@ function NotificationSettings({ userId }) {
     }
   };
 
-  const handleToggle = (key) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleToggle = async (key) => {
+    // Сохраняем предыдущее состояние для отката при ошибке
+    const previousSettings = { ...settings };
+    
+    const newSettings = {
+      ...settings,
+      [key]: !settings[key]
+    };
+    
+    // Обновляем состояние сразу для мгновенного отклика UI
+    setSettings(newSettings);
+    
+    // Сохраняем на сервер
     try {
       setSaving(true);
       setError(null);
       setSuccessMessage('');
 
-      const response = await api.put(`/users/${userId}/notification-settings`, settings);
+      const response = await api.put(`/users/${userId}/notification-settings`, newSettings);
       setSettings(response.data);
-      setSuccessMessage('Настройки успешно сохранены!');
+      setSuccessMessage('Сохранено');
 
-      // Скрываем сообщение об успехе через 3 секунды
+      // Скрываем сообщение об успехе через 2 секунды
       setTimeout(() => {
         setSuccessMessage('');
-      }, 3000);
+      }, 2000);
     } catch (err) {
       console.error('Ошибка сохранения настроек:', err);
       setError('Не удалось сохранить настройки');
+      // Откатываем изменение при ошибке
+      setSettings(previousSettings);
     } finally {
       setSaving(false);
     }
@@ -174,6 +181,7 @@ function NotificationSettings({ userId }) {
                       checked={settings[notification.key]}
                       onChange={() => handleToggle(notification.key)}
                       className={styles.toggleInput}
+                      disabled={saving}
                     />
                     <span className={styles.toggleSlider}></span>
                   </label>
@@ -182,16 +190,6 @@ function NotificationSettings({ userId }) {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className={styles.actions}>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={styles.saveButton}
-        >
-          {saving ? 'Сохранение...' : 'Сохранить изменения'}
-        </button>
       </div>
     </div>
   );
