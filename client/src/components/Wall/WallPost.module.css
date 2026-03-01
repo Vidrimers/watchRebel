@@ -8,6 +8,39 @@
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
+/* Заголовок поста с именем автора */
+.postHeader {
+  margin-bottom: 12px;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.authorName,
+.wallOwnerName {
+  font-weight: 600;
+  color: var(--accent-color, #6366f1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.authorName:hover,
+.wallOwnerName:hover {
+  text-decoration: underline;
+  color: var(--primary-dark, #4f46e5);
+}
+
+.arrow {
+  color: var(--text-tertiary, #9ca3af);
+  font-weight: 400;
+  margin: 0 2px;
+}
+
 /* Объявление администратора */
 .announcementPost {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);

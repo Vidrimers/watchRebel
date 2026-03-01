@@ -15,14 +15,31 @@ router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Получаем информацию о владельце стены
+    const wallOwnerResult = await executeQuery(
+      'SELECT id, display_name, avatar_url, telegram_username FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!wallOwnerResult.success || wallOwnerResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const wallOwner = wallOwnerResult.data[0];
+
     // Получаем все записи стены пользователя с информацией об авторе
     const postsResult = await executeQuery(
       `SELECT 
         wp.*,
-        u.display_name as author_display_name,
-        u.avatar_url as author_avatar_url
+        author.id as author_id,
+        author.display_name as author_display_name,
+        author.avatar_url as author_avatar_url,
+        author.telegram_username as author_telegram_username
        FROM wall_posts wp
-       LEFT JOIN users u ON wp.user_id = u.id
+       LEFT JOIN users author ON wp.user_id = author.id
        WHERE wp.user_id = ? 
        ORDER BY wp.created_at DESC`,
       [userId]
@@ -70,8 +87,15 @@ router.get('/:userId', async (req, res) => {
           createdAt: post.created_at,
           editedAt: post.edited_at,
           author: {
+            id: post.author_id,
             displayName: post.author_display_name,
-            avatarUrl: post.author_avatar_url
+            avatarUrl: post.author_avatar_url,
+            telegramUsername: post.author_telegram_username
+          },
+          wallOwner: {
+            id: wallOwner.id,
+            displayName: wallOwner.display_name,
+            avatarUrl: wallOwner.avatar_url
           },
           reactions
         };
@@ -234,14 +258,20 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Получаем созданную запись с информацией об авторе
+    // Получаем созданную запись с информацией об авторе и владельце стены
     const postResult = await executeQuery(
       `SELECT 
         wp.*,
-        u.display_name as author_display_name,
-        u.avatar_url as author_avatar_url
+        author.id as author_id,
+        author.display_name as author_display_name,
+        author.avatar_url as author_avatar_url,
+        author.telegram_username as author_telegram_username,
+        owner.id as owner_id,
+        owner.display_name as owner_display_name,
+        owner.avatar_url as owner_avatar_url
        FROM wall_posts wp
-       LEFT JOIN users u ON wp.user_id = u.id
+       LEFT JOIN users author ON wp.user_id = author.id
+       LEFT JOIN users owner ON wp.user_id = owner.id
        WHERE wp.id = ?`,
       [postId]
     );
@@ -275,8 +305,15 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       rating: post.rating,
       createdAt: post.created_at,
       author: {
+        id: post.author_id,
         displayName: post.author_display_name,
-        avatarUrl: post.author_avatar_url
+        avatarUrl: post.author_avatar_url,
+        telegramUsername: post.author_telegram_username
+      },
+      wallOwner: {
+        id: post.owner_id,
+        displayName: post.owner_display_name,
+        avatarUrl: post.owner_avatar_url
       },
       reactions: []
     });
@@ -364,14 +401,20 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Получаем обновленный пост с информацией об авторе
+    // Получаем обновленный пост с информацией об авторе и владельце стены
     const updatedPostResult = await executeQuery(
       `SELECT 
         wp.*,
-        u.display_name as author_display_name,
-        u.avatar_url as author_avatar_url
+        author.id as author_id,
+        author.display_name as author_display_name,
+        author.avatar_url as author_avatar_url,
+        author.telegram_username as author_telegram_username,
+        owner.id as owner_id,
+        owner.display_name as owner_display_name,
+        owner.avatar_url as owner_avatar_url
        FROM wall_posts wp
-       LEFT JOIN users u ON wp.user_id = u.id
+       LEFT JOIN users author ON wp.user_id = author.id
+       LEFT JOIN users owner ON wp.user_id = owner.id
        WHERE wp.id = ?`,
       [postId]
     );
@@ -396,8 +439,15 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
       createdAt: updatedPost.created_at,
       editedAt: updatedPost.edited_at,
       author: {
+        id: updatedPost.author_id,
         displayName: updatedPost.author_display_name,
-        avatarUrl: updatedPost.author_avatar_url
+        avatarUrl: updatedPost.author_avatar_url,
+        telegramUsername: updatedPost.author_telegram_username
+      },
+      wallOwner: {
+        id: updatedPost.owner_id,
+        displayName: updatedPost.owner_display_name,
+        avatarUrl: updatedPost.owner_avatar_url
       },
       reactions: []
     });

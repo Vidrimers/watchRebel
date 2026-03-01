@@ -424,6 +424,56 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
       {confirmDialog}
       {alertDialog}
       <div className={`${styles.wallPost} ${isAnnouncement ? styles.announcementPost : ''}`}>
+      {/* Заголовок поста с именем автора */}
+      {!isAnnouncement && (
+        <div className={styles.postHeader}>
+          {/* Логика отображения имени автора */}
+          {(() => {
+            // На своей стене свои посты: БЕЗ имени автора (только дата будет в футере)
+            if (isOwnProfile && currentUser && post.author?.id === currentUser.id) {
+              return null;
+            }
+
+            // Если пост на чужой стене (автор !== владелец стены)
+            if (post.author?.id && post.wallOwner?.id && post.author.id !== post.wallOwner.id) {
+              return (
+                <div className={styles.authorInfo}>
+                  <span 
+                    className={styles.authorName}
+                    onClick={() => navigate(`/user/${post.author.id}`)}
+                  >
+                    {post.author.displayName}
+                  </span>
+                  <span className={styles.arrow}> → </span>
+                  <span 
+                    className={styles.wallOwnerName}
+                    onClick={() => navigate(`/user/${post.wallOwner.id}`)}
+                  >
+                    {post.wallOwner.displayName}
+                  </span>
+                </div>
+              );
+            }
+
+            // Обычный случай: показываем имя автора
+            if (post.author?.id) {
+              return (
+                <div className={styles.authorInfo}>
+                  <span 
+                    className={styles.authorName}
+                    onClick={() => navigate(`/user/${post.author.id}`)}
+                  >
+                    {post.author.displayName}
+                  </span>
+                </div>
+              );
+            }
+
+            return null;
+          })()}
+        </div>
+      )}
+
       {/* Контент поста */}
       <div className={styles.postContent}>
         {renderPostContent()}
