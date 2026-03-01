@@ -5,6 +5,21 @@ import helmet from 'helmet';
  * @returns {Function} - Middleware функция
  */
 export function configureHelmet() {
+  // В dev-режиме без SERVE_FRONTEND отключаем CSP (Vite сам управляет безопасностью)
+  if (process.env.NODE_ENV === 'development' && process.env.SERVE_FRONTEND !== 'true') {
+    return helmet({
+      contentSecurityPolicy: false, // Отключаем CSP для Vite dev server
+      dnsPrefetchControl: { allow: false },
+      frameguard: { action: 'deny' },
+      hidePoweredBy: true,
+      hsts: false, // Отключаем HSTS в dev
+      noSniff: true,
+      permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      xssFilter: true
+    });
+  }
+
   return helmet({
     // Content Security Policy
     contentSecurityPolicy: {

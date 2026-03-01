@@ -14,10 +14,6 @@ export const loginRateLimiter = rateLimit({
   },
   standardHeaders: true, // Возвращать информацию о лимите в заголовках `RateLimit-*`
   legacyHeaders: false, // Отключить заголовки `X-RateLimit-*`
-  // Использовать IP адрес для идентификации клиента
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
-  },
   // Пропускать успешные запросы (не считать их в лимите)
   skipSuccessfulRequests: true,
   // Обработчик при превышении лимита
@@ -45,9 +41,6 @@ export const registerRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
-  },
   handler: (req, res) => {
     console.warn(`⚠️ Registration rate limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
@@ -72,9 +65,6 @@ export const passwordResetRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
-  },
   handler: (req, res) => {
     console.warn(`⚠️ Password reset rate limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
@@ -97,8 +87,5 @@ export const generalRateLimiter = rateLimit({
     code: 'TOO_MANY_REQUESTS'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
-  }
+  legacyHeaders: false
 });

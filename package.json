@@ -9,12 +9,13 @@
     "telegram-bot"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
+    "dev": "concurrently -n \"client,server,tg\" -c \"cyan,green,yellow\" \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
+    "dev:all": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "npm run dev --workspace=server",
     "dev:tg": "npm run dev --workspace=telegram-bot",
     "dev:tuna": "concurrently \"tuna http 3000 --domain=dev.watchrebel.ru\" \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\"",
-    "devtun": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tg\" \"sleep 5 && tuna http 3000 --domain=dev.watchrebel.ru\"",
+    "devtun": "tuna http 3000 --domain=dev.watchrebel.ru",
     "start": "npm run start --workspace=server",
     "tg": "npm run start --workspace=telegram-bot",
     "migrate": "npm run migrate --workspace=server",

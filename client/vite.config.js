@@ -24,6 +24,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:1313',
         changeOrigin: true
+      },
+      '/uploads': {
+        target: 'http://localhost:1313',
+        changeOrigin: true
+      },
+      '/webhook': {
+        target: 'http://localhost:1313',
+        changeOrigin: true
       }
     }
   },
