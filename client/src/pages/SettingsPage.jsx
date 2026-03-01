@@ -148,6 +148,90 @@ const SettingsPage = () => {
           <>
             <h1 className={styles.pageTitle}><Icon name="settings" size="medium" /> Настройки</h1>
 
+            {/* Карточка с информацией о профиле */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Профиль</h3>
+              <div className={styles.profileInfo}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Имя:</span>
+                  {isEditingName ? (
+                    <div className={styles.editNameContainer}>
+                      <input
+                        type="text"
+                        value={newDisplayName}
+                        onChange={(e) => setNewDisplayName(e.target.value)}
+                        className={styles.nameInput}
+                        placeholder="Введите новое имя"
+                        maxLength={50}
+                      />
+                      <div className={styles.editButtons}>
+                        <button 
+                          onClick={handleSaveName} 
+                          className={styles.saveButton}
+                          disabled={loading}
+                        >
+                          {loading ? 'Сохранение...' : 'Сохранить'}
+                        </button>
+                        <button 
+                          onClick={handleCancelEdit} 
+                          className={styles.cancelButton}
+                          disabled={loading}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                      {saveError && (
+                        <div className={styles.errorMessage}>{saveError}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.nameDisplay}>
+                      <span className={styles.infoValue}>{user.displayName}</span>
+                      <button 
+                        onClick={() => setIsEditingName(true)} 
+                        className={styles.editButton}
+                      >
+                        <Icon name="edit" size="small" /> Изменить
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {user.telegramUsername && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Telegram:</span>
+                    <span className={styles.infoValue}>@{user.telegramUsername}</span>
+                  </div>
+                )}
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>ID:</span>
+                  <span className={styles.infoValue}>{user.id}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Способ входа:</span>
+                  <div className={styles.authMethodsContainer}>
+                    {user.telegramUsername && (
+                      <span className={styles.authMethod}><Icon name="telegram" size="small" /> Telegram</span>
+                    )}
+                    {user.email && (
+                      <span className={styles.authMethod}><Icon name="email" size="small" /> Email</span>
+                    )}
+                    {user.hasGoogleLinked && (
+                      <span className={styles.authMethod}><Icon name="google" size="small" /> Google</span>
+                    )}
+                    {user.hasDiscordLinked && (
+                      <span className={styles.authMethod}><Icon name="discord" size="small" /> Discord</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Карточка с аватаркой */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Аватарка</h3>
+              <AvatarUpload user={user} />
+            </div>
+
             {/* Карточка с темой */}
             <ThemeDropdown />
 
@@ -177,111 +261,27 @@ const SettingsPage = () => {
               </button>
             </div>
 
-            {/* Карточка с аватаркой */}
+            {/* Карточка с выходом */}
             <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Аватарка</h3>
-              <AvatarUpload user={user} />
+              <h3 className={styles.cardTitle}>Сессия</h3>
+              <button onClick={handleLogout} className={styles.logoutButton}>
+                Выйти из аккаунта
+              </button>
             </div>
 
-        {/* Карточка с информацией о профиле */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Профиль</h3>
-          <div className={styles.profileInfo}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Имя:</span>
-              {isEditingName ? (
-                <div className={styles.editNameContainer}>
-                  <input
-                    type="text"
-                    value={newDisplayName}
-                    onChange={(e) => setNewDisplayName(e.target.value)}
-                    className={styles.nameInput}
-                    placeholder="Введите новое имя"
-                    maxLength={50}
-                  />
-                  <div className={styles.editButtons}>
-                    <button 
-                      onClick={handleSaveName} 
-                      className={styles.saveButton}
-                      disabled={loading}
-                    >
-                      {loading ? 'Сохранение...' : 'Сохранить'}
-                    </button>
-                    <button 
-                      onClick={handleCancelEdit} 
-                      className={styles.cancelButton}
-                      disabled={loading}
-                    >
-                      Отмена
-                    </button>
-                  </div>
-                  {saveError && (
-                    <div className={styles.errorMessage}>{saveError}</div>
-                  )}
-                </div>
-              ) : (
-                <div className={styles.nameDisplay}>
-                  <span className={styles.infoValue}>{user.displayName}</span>
-                  <button 
-                    onClick={() => setIsEditingName(true)} 
-                    className={styles.editButton}
-                  >
-                    <Icon name="edit" size="small" /> Изменить
-                  </button>
-                </div>
-              )}
+            {/* Карточка с удалением аккаунта */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
+              <p className={styles.dangerWarning}>
+                ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
+              </p>
+              <button onClick={handleDeleteAccount} className={styles.deleteButton}>
+                <Icon name="delete" size="small" /> Удалить аккаунт
+              </button>
             </div>
-            {user.telegramUsername && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Telegram:</span>
-                <span className={styles.infoValue}>@{user.telegramUsername}</span>
-              </div>
-            )}
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>ID:</span>
-              <span className={styles.infoValue}>{user.id}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Способ входа:</span>
-              <div className={styles.authMethodsContainer}>
-                {user.telegramUsername && (
-                  <span className={styles.authMethod}><Icon name="telegram" size="small" /> Telegram</span>
-                )}
-                {user.email && (
-                  <span className={styles.authMethod}><Icon name="email" size="small" /> Email</span>
-                )}
-                {user.hasGoogleLinked && (
-                  <span className={styles.authMethod}><Icon name="google" size="small" /> Google</span>
-                )}
-                {user.hasDiscordLinked && (
-                  <span className={styles.authMethod}><Icon name="discord" size="small" /> Discord</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Карточка с выходом */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Сессия</h3>
-          <button onClick={handleLogout} className={styles.logoutButton}>
-            Выйти из аккаунта
-          </button>
-        </div>
-
-        {/* Карточка с удалением аккаунта */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
-          <p className={styles.dangerWarning}>
-            ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
-          </p>
-          <button onClick={handleDeleteAccount} className={styles.deleteButton}>
-            <Icon name="delete" size="small" /> Удалить аккаунт
-          </button>
-        </div>
-
-        {/* Админ-панель (только для админа) */}
-        {isAdmin && <AdminPanel />}
+            {/* Админ-панель (только для админа) */}
+            {isAdmin && <AdminPanel />}
           </>
         ) : showNotificationSettings ? (
           <>
