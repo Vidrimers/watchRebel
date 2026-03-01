@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import api from '../../services/api';
 import styles from './NotificationSettings.module.css';
 
 /**
@@ -30,16 +31,8 @@ function NotificationSettings({ userId }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/users/${userId}/notification-settings`, {
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка загрузки настроек уведомлений');
-      }
-
-      const data = await response.json();
-      setSettings(data);
+      const response = await api.get(`/users/${userId}/notification-settings`);
+      setSettings(response.data);
     } catch (err) {
       console.error('Ошибка загрузки настроек:', err);
       setError('Не удалось загрузить настройки уведомлений');
@@ -61,21 +54,8 @@ function NotificationSettings({ userId }) {
       setError(null);
       setSuccessMessage('');
 
-      const response = await fetch(`/api/users/${userId}/notification-settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(settings)
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка сохранения настроек');
-      }
-
-      const data = await response.json();
-      setSettings(data);
+      const response = await api.put(`/users/${userId}/notification-settings`, settings);
+      setSettings(response.data);
       setSuccessMessage('Настройки успешно сохранены!');
 
       // Скрываем сообщение об успехе через 3 секунды

@@ -31,6 +31,8 @@ const SettingsPage = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [saveError, setSaveError] = useState(null);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showAccountsSettings, setShowAccountsSettings] = useState(false);
 
   // Проверяем, является ли пользователь админом
   const isAdmin = user?.isAdmin || user?.id === '137981675';
@@ -142,21 +144,44 @@ const SettingsPage = () => {
       {alertDialog}
       <UserPageLayout user={user}>
       <div className={styles.settingsContainer}>
-        <h1 className={styles.pageTitle}><Icon name="settings" size="medium" /> Настройки</h1>
+        {!showNotificationSettings && !showAccountsSettings ? (
+          <>
+            <h1 className={styles.pageTitle}><Icon name="settings" size="medium" /> Настройки</h1>
 
-        {/* Карточка с темой */}
-        <ThemeDropdown />
+            {/* Карточка с темой */}
+            <ThemeDropdown />
 
-        {/* Карточка с настройками уведомлений */}
-        <div className={styles.settingsCard}>
-          <NotificationSettings userId={user.id} />
-        </div>
+            {/* Кнопка для открытия настроек уведомлений */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Уведомления</h3>
+              <button 
+                onClick={() => setShowNotificationSettings(true)}
+                className={styles.notificationSettingsButton}
+              >
+                <Icon name="bell" size="medium" />
+                <span>Уведомления в Telegram</span>
+                <Icon name="chevron-right" size="small" />
+              </button>
+            </div>
 
-        {/* Карточка с аватаркой */}
-        <div className={styles.settingsCard}>
-          <h3 className={styles.cardTitle}>Аватарка</h3>
-          <AvatarUpload user={user} />
-        </div>
+            {/* Кнопка для открытия настроек связанных аккаунтов */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Связанные аккаунты</h3>
+              <button 
+                onClick={() => setShowAccountsSettings(true)}
+                className={styles.settingsNavigationButton}
+              >
+                <Icon name="link" size="medium" />
+                <span>Управление аккаунтами</span>
+                <Icon name="chevron-right" size="small" />
+              </button>
+            </div>
+
+            {/* Карточка с аватаркой */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Аватарка</h3>
+              <AvatarUpload user={user} />
+            </div>
 
         {/* Карточка с информацией о профиле */}
         <div className={styles.settingsCard}>
@@ -244,15 +269,6 @@ const SettingsPage = () => {
           </button>
         </div>
 
-        {/* Блок управления Telegram */}
-        <TelegramConnectionBlock />
-
-        {/* Блок управления Google */}
-        <GoogleConnectionBlock />
-
-        {/* Блок управления Discord */}
-        <DiscordConnectionBlock />
-
         {/* Карточка с удалением аккаунта */}
         <div className={styles.settingsCard}>
           <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
@@ -266,6 +282,49 @@ const SettingsPage = () => {
 
         {/* Админ-панель (только для админа) */}
         {isAdmin && <AdminPanel />}
+          </>
+        ) : showNotificationSettings ? (
+          <>
+            {/* Экран настроек уведомлений */}
+            <div className={styles.notificationSettingsScreen}>
+              <button 
+                onClick={() => setShowNotificationSettings(false)}
+                className={styles.backButton}
+              >
+                <Icon name="arrow-left" size="medium" />
+                <span>Назад</span>
+              </button>
+              
+              <div className={styles.settingsCard}>
+                <NotificationSettings userId={user.id} />
+              </div>
+            </div>
+          </>
+        ) : showAccountsSettings ? (
+          <>
+            {/* Экран настроек связанных аккаунтов */}
+            <div className={styles.accountsSettingsScreen}>
+              <button 
+                onClick={() => setShowAccountsSettings(false)}
+                className={styles.backButton}
+              >
+                <Icon name="arrow-left" size="medium" />
+                <span>Назад</span>
+              </button>
+              
+              <h2 className={styles.screenTitle}>Связанные аккаунты</h2>
+              
+              {/* Блок управления Telegram */}
+              <TelegramConnectionBlock />
+
+              {/* Блок управления Google */}
+              <GoogleConnectionBlock />
+
+              {/* Блок управления Discord */}
+              <DiscordConnectionBlock />
+            </div>
+          </>
+        ) : null}
       </div>
     </UserPageLayout>
     </>

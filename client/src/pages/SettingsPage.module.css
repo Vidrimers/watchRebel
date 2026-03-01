@@ -508,3 +508,115 @@
 :global(.dark) .statusCounter {
   color: var(--text-secondary-dark, #aaa);
 }
+
+/* Кнопка настроек уведомлений */
+.notificationSettingsButton,
+.settingsNavigationButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notificationSettingsButton:hover,
+.settingsNavigationButton:hover {
+  background: var(--bg-tertiary, #f9fafb);
+  border-color: var(--accent-primary, #6366f1);
+  transform: translateX(4px);
+}
+
+.notificationSettingsButton span,
+.settingsNavigationButton span {
+  flex: 1;
+  text-align: left;
+  margin-left: 12px;
+}
+
+/* Экран настроек уведомлений */
+.notificationSettingsScreen {
+  animation: slideIn 0.3s ease;
+}
+
+/* Экран настроек связанных аккаунтов */
+.accountsSettingsScreen {
+  animation: slideIn 0.3s ease;
+}
+
+.screenTitle {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+  color: var(--text-primary, #333);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Кнопка "Назад" */
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  background: var(--bg-tertiary, #f9fafb);
+  border-color: var(--accent-primary, #6366f1);
+  transform: translateX(-4px);
+}
+
+/* Темная тема */
+:global(.dark) .notificationSettingsButton,
+:global(.dark) .settingsNavigationButton {
+  background: var(--bg-primary-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .notificationSettingsButton:hover,
+:global(.dark) .settingsNavigationButton:hover {
+  background: var(--bg-tertiary-dark, #2a2a2a);
+  border-color: var(--accent-primary-dark, #818cf8);
+}
+
+:global(.dark) .backButton {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .backButton:hover {
+  background: var(--bg-tertiary-dark, #3a3a3a);
+  border-color: var(--accent-primary-dark, #818cf8);
+}
+
+:global(.dark) .screenTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}

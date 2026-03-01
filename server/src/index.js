@@ -43,6 +43,7 @@ import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 import { initWebSocket } from './services/websocketService.js';
 import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
 import { startTokenCleanupScheduler } from './middleware/tokenCleanup.js';
+import { runMigrations } from './database/migrations.js';
 import { 
   configureHelmet, 
   configureCORS, 
@@ -167,6 +168,17 @@ app.use((err, req, res, next) => {
 // Запуск сервера только если это не тестовая среда
 if (process.env.NODE_ENV !== 'test') {
   const server = http.createServer(app);
+  
+  // Запуск миграций базы данных
+  runMigrations().then((result) => {
+    if (result.success) {
+      logger.info('Миграции базы данных выполнены успешно');
+    } else {
+      logger.error('Ошибка выполнения миграций:', result.error);
+    }
+  }).catch(err => {
+    logger.error('Критическая ошибка при выполнении миграций:', err);
+  });
   
   // Инициализация таблицы для отслеживания попыток входа
   createLoginAttemptsTable().then(() => {
