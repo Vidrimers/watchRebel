@@ -345,12 +345,14 @@ router.post('/telegram-referral', async (req, res) => {
         const notificationId1 = uuidv4();
         const notificationId2 = uuidv4();
 
+        // Уведомление для реферера - сохраняем шаблон без имени
         await executeQuery(
           `INSERT INTO notifications (id, user_id, type, content, related_user_id)
            VALUES (?, ?, ?, ?, ?)`,
-          [notificationId1, referrerId, 'friend_activity', `${displayName} зарегистрировался по вашей реферальной ссылке!`, telegramId]
+          [notificationId1, referrerId, 'friend_activity', 'зарегистрировался по вашей реферальной ссылке!', telegramId]
         );
 
+        // Уведомление для нового пользователя - здесь имя не нужно
         await executeQuery(
           `INSERT INTO notifications (id, user_id, type, content, related_user_id)
            VALUES (?, ?, ?, ?, ?)`,

@@ -75,6 +75,16 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
     onClose();
   };
 
+  // Формирование текста уведомления с актуальным именем пользователя
+  const formatNotificationText = (notification) => {
+    // Если есть связанный пользователь, подставляем его актуальное имя
+    if (notification.relatedUser && notification.relatedUser.displayName) {
+      return `${notification.relatedUser.displayName} ${notification.content}`;
+    }
+    // Иначе возвращаем content как есть (для самолайков и системных уведомлений)
+    return notification.content;
+  };
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -151,7 +161,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
                 </div>
                 
                 <div className={styles.itemContent}>
-                  <p className={styles.text}>{notification.content}</p>
+                  <p className={styles.text}>{formatNotificationText(notification)}</p>
                   <span className={styles.time}>{formatDate(notification.createdAt)}</span>
                 </div>
 

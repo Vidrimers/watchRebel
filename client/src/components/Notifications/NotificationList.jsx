@@ -37,6 +37,16 @@ const NotificationList = () => {
     }
   };
 
+  // Формирование текста уведомления с актуальным именем пользователя
+  const formatNotificationText = (notification) => {
+    // Если есть связанный пользователь, подставляем его актуальное имя
+    if (notification.relatedUser && notification.relatedUser.displayName) {
+      return `${notification.relatedUser.displayName} ${notification.content}`;
+    }
+    // Иначе возвращаем content как есть (для самолайков и системных уведомлений)
+    return notification.content;
+  };
+
   // Обработчик пометки всех как прочитанные
   const handleMarkAllAsRead = () => {
     dispatch(markAllAsRead());
@@ -122,7 +132,7 @@ const NotificationList = () => {
             </div>
             
             <div className={styles.content}>
-              <p className={styles.text}>{notification.content}</p>
+              <p className={styles.text}>{formatNotificationText(notification)}</p>
               <span className={styles.time}>{formatDate(notification.createdAt)}</span>
             </div>
 

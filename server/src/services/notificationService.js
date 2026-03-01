@@ -184,11 +184,11 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
     let telegramMessage;
 
     if (isSelfReaction) {
-      // Уведомление о самолайке
+      // Уведомление о самолайке - здесь имя не нужно
       content = `Самолайк активирован ${emoji}`;
       telegramMessage = `😎 <b>Самолайк активирован!</b>\n\n${content}`;
     } else {
-      // Получаем информацию о пользователе, который поставил реакцию
+      // Получаем информацию о пользователе для Telegram (актуальное имя на момент отправки)
       const userResult = await executeQuery(
         'SELECT display_name FROM users WHERE id = ?',
         [reactorId]
@@ -199,8 +199,12 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
       }
 
       const reactorName = userResult.data[0].display_name;
-      content = `${reactorName} отреагировал на вашу запись: ${emoji}`;
-      telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${content}`;
+      
+      // В БД сохраняем шаблон с эмодзи, имя будет подставляться динамически
+      content = `отреагировал на вашу запись: ${emoji}`;
+      
+      // Для Telegram используем актуальное имя
+      telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${reactorName} ${content}`;
     }
 
     // Создаем уведомление в базе данных
@@ -235,7 +239,7 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
  */
 export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
   try {
-    // Получаем информацию о друге
+    // Получаем информацию о друге для Telegram (актуальное имя на момент отправки)
     const friendResult = await executeQuery(
       'SELECT display_name FROM users WHERE id = ?',
       [friendId]
@@ -273,20 +277,25 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
         notificationType = 'friend_added_to_list'; // Дефолт
     }
 
-    // Формируем текст уведомления в зависимости от типа действия
-    let content = '';
+    // Формируем шаблон уведомления без имени (имя будет подставляться динамически)
+    let contentTemplate = '';
+    let telegramContent = '';
     switch (actionType) {
       case 'added_to_list':
-        content = `${friendName} добавил "${mediaInfo.title}" в свой список`;
+        contentTemplate = `добавил "${mediaInfo.title}" в свой список`;
+        telegramContent = `${friendName} ${contentTemplate}`;
         break;
       case 'rated':
-        content = `${friendName} оценил "${mediaInfo.title}" на ${mediaInfo.rating}/10`;
+        contentTemplate = `оценил "${mediaInfo.title}" на ${mediaInfo.rating}/10`;
+        telegramContent = `${friendName} ${contentTemplate}`;
         break;
       case 'reviewed':
-        content = `${friendName} написал отзыв на "${mediaInfo.title}"`;
+        contentTemplate = `написал отзыв на "${mediaInfo.title}"`;
+        telegramContent = `${friendName} ${contentTemplate}`;
         break;
       default:
-        content = `${friendName} совершил действие с "${mediaInfo.title}"`;
+        contentTemplate = `совершил действие с "${mediaInfo.title}"`;
+        telegramContent = `${friendName} ${contentTemplate}`;
     }
 
     // Создаем уведомления для всех друзей
@@ -303,18 +312,18 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
         continue;
       }
 
-      // Создаем уведомление в базе данных
+      // Создаем уведомление в базе данных с шаблоном
       const notificationResult = await createNotification(
         userId,
         'friend_activity',
-        content,
+        contentTemplate,
         friendId,
         null
       );
 
       if (notificationResult.success) {
-        // Отправляем уведомление в Telegram
-        const telegramMessage = `🔔 <b>Активность друга!</b>\n\n${content}`;
+        // Отправляем уведомление в Telegram с актуальным именем
+        const telegramMessage = `🔔 <b>Активность друга!</b>\n\n${telegramContent}`;
         await sendTelegramNotification(userId, telegramMessage);
         
         results.push({ userId, success: true });
@@ -456,7 +465,7 @@ export async function sendRenameNotification(userId, oldName, newName, reason = 
  */
 export async function notifyWallPost(wallOwnerId, authorId, postId) {
   try {
-    // Получаем информацию об авторе поста
+    // Получаем информацию об авторе для Telegram (актуальное имя на момент отправки)
     const authorResult = await executeQuery(
       'SELECT display_name FROM users WHERE id = ?',
       [authorId]
@@ -467,14 +476,18 @@ export async function notifyWallPost(wallOwnerId, authorId, postId) {
     }
 
     const authorName = authorResult.data[0].display_name;
-    const content = `${authorName} написал на вашей стене`;
-    const telegramMessage = `📝 <b>Новый пост на вашей стене!</b>\n\n${content}`;
+    
+    // В БД сохраняем шаблон без имени, имя будет подставляться динамически
+    const contentTemplate = 'написал на вашей стене';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `📝 <b>Новый пост на вашей стене!</b>\n\n${authorName} ${contentTemplate}`;
 
     // Создаем уведомление в базе данных
     const notificationResult = await createNotification(
       wallOwnerId,
       'wall_post',
-      content,
+      contentTemplate,
       authorId,
       postId
     );

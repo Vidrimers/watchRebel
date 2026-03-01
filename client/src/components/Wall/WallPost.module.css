@@ -3,7 +3,6 @@
   background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s;
   border: 1px solid var(--border-color, #e5e7eb);
 }
@@ -86,7 +85,7 @@
 }
 
 .wallPost:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* box-shadow убран */
 }
 
 .wallPost:hover .postActions {
@@ -420,7 +419,6 @@
 [data-theme="dark-neon-obsidian"] .wallPost {
   background: var(--bg-secondary, #2c2c2c);
   border-color: var(--border-color, #444);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Объявление администратора в темной теме */
@@ -444,7 +442,6 @@
 [data-theme="die-my-darling"] .wallPost:hover,
 [data-theme="cyberpunk"] .wallPost:hover,
 [data-theme="dark-neon-obsidian"] .wallPost:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   border-color: var(--primary-color, #6366f1);
 }
 

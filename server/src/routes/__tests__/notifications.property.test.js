@@ -129,10 +129,12 @@ describe('Notifications API - Property-Based Tests', () => {
             expect(result.success).toBe(true);
             expect(result.notificationsSent).toBeGreaterThan(0);
 
-            // Проверяем что уведомление есть в базе данных
+            // Проверяем что уведомление есть в базе данных с актуальным именем
             const notificationsResult = await executeQuery(
-              `SELECT * FROM notifications 
-               WHERE user_id = ? AND type = 'friend_activity' AND related_user_id = ?`,
+              `SELECT n.*, u.display_name as related_user_name
+               FROM notifications n
+               LEFT JOIN users u ON n.related_user_id = u.id
+               WHERE n.user_id = ? AND n.type = 'friend_activity' AND n.related_user_id = ?`,
               [testUser.id, friendUser.id]
             );
 
@@ -142,8 +144,11 @@ describe('Notifications API - Property-Based Tests', () => {
             const notification = notificationsResult.data[0];
             expect(notification.type).toBe('friend_activity');
             expect(notification.related_user_id).toBe(friendUser.id);
-            expect(notification.content).toContain(friendUser.display_name);
+            // Проверяем что content содержит шаблон без имени
             expect(notification.content).toContain(title);
+            expect(notification.content).toContain('добавил');
+            // Проверяем что актуальное имя получено через JOIN
+            expect(notification.related_user_name).toBe(friendUser.display_name);
             expect(notification.is_read).toBe(0);
           }
         ),
@@ -223,7 +228,7 @@ describe('Notifications API - Property-Based Tests', () => {
           }),
           async ({ tmdbId, mediaType, title, rating }) => {
             // Очищаем уведомления
-            await executeQuery('DELETE FROM notifications WHERE user_id = ?', [testUser.id]);
+            await executeQuery('DELETE FROM notifications');
 
             // Друг оценивает контент
             const result = await notifyFriendActivity(friendUser.id, 'rated', {
@@ -235,17 +240,23 @@ describe('Notifications API - Property-Based Tests', () => {
 
             expect(result.success).toBe(true);
 
-            // Проверяем содержимое уведомления
+            // Проверяем содержимое уведомления с актуальным именем
             const notificationsResult = await executeQuery(
-              `SELECT * FROM notifications WHERE user_id = ? AND related_user_id = ?`,
+              `SELECT n.*, u.display_name as related_user_name
+               FROM notifications n
+               LEFT JOIN users u ON n.related_user_id = u.id
+               WHERE n.user_id = ? AND n.related_user_id = ?`,
               [testUser.id, friendUser.id]
             );
 
             expect(notificationsResult.data.length).toBe(1);
             const notification = notificationsResult.data[0];
+            // Проверяем шаблон без имени
             expect(notification.content).toContain('оценил');
             expect(notification.content).toContain(title);
             expect(notification.content).toContain(rating.toString());
+            // Проверяем актуальное имя через JOIN
+            expect(notification.related_user_name).toBe(friendUser.display_name);
           }
         ),
         { numRuns: 100 }
@@ -262,7 +273,7 @@ describe('Notifications API - Property-Based Tests', () => {
           }),
           async ({ tmdbId, mediaType, title }) => {
             // Очищаем уведомления
-            await executeQuery('DELETE FROM notifications WHERE user_id = ?', [testUser.id]);
+            await executeQuery('DELETE FROM notifications');
 
             // Друг пишет отзыв
             const result = await notifyFriendActivity(friendUser.id, 'reviewed', {
@@ -273,16 +284,22 @@ describe('Notifications API - Property-Based Tests', () => {
 
             expect(result.success).toBe(true);
 
-            // Проверяем содержимое уведомления
+            // Проверяем содержимое уведомления с актуальным именем
             const notificationsResult = await executeQuery(
-              `SELECT * FROM notifications WHERE user_id = ? AND related_user_id = ?`,
+              `SELECT n.*, u.display_name as related_user_name
+               FROM notifications n
+               LEFT JOIN users u ON n.related_user_id = u.id
+               WHERE n.user_id = ? AND n.related_user_id = ?`,
               [testUser.id, friendUser.id]
             );
 
             expect(notificationsResult.data.length).toBe(1);
             const notification = notificationsResult.data[0];
+            // Проверяем шаблон без имени
             expect(notification.content).toContain('написал отзыв');
             expect(notification.content).toContain(title);
+            // Проверяем актуальное имя через JOIN
+            expect(notification.related_user_name).toBe(friendUser.display_name);
           }
         ),
         { numRuns: 100 }
@@ -306,7 +323,7 @@ describe('Notifications API - Property-Based Tests', () => {
           ),
           async (notificationData) => {
             // Очищаем уведомления
-            await executeQuery('DELETE FROM notifications WHERE user_id = ?', [testUser.id]);
+            await executeQuery('DELETE FROM notifications');
 
             // Создаем несколько уведомлений
             for (const data of notificationData) {
@@ -327,10 +344,13 @@ describe('Notifications API - Property-Based Tests', () => {
             expect(Array.isArray(response.body)).toBe(true);
             expect(response.body.length).toBe(notificationData.length);
 
-            // Проверяем что все уведомления присутствуют
+            // Проверяем что все уведомления присутствуют с правильной структурой
             for (const data of notificationData) {
               const found = response.body.find(n => n.content === data.content);
               expect(found).toBeDefined();
+              // Проверяем что есть информация о связанном пользователе
+              expect(found.relatedUser).toBeDefined();
+              expect(found.relatedUser.displayName).toBe(friendUser.display_name);
               expect(found.type).toBe(data.type);
               expect(found.isRead).toBe(false);
             }
