@@ -367,6 +367,9 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
       'SELECT id FROM users WHERE is_blocked = 0'
     );
 
+    let notificationsSent = 0;
+    let notificationsSkipped = 0;
+
     if (usersResult.success && usersResult.data.length > 0) {
       // Создаем пост на стене каждого пользователя
       const announcementContent = `📢 Объявление администратора:\n\n${content}\n\n[announcement_id:${announcementId}]`;
@@ -378,6 +381,16 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
            VALUES (?, ?, 'text', ?)`,
           [postId, user.id, announcementContent]
         );
+
+        // Отправляем уведомление в Telegram
+        const notificationResult = await notifyModeration(user.id, 'announcement', { content });
+        if (notificationResult.success) {
+          if (notificationResult.skipped) {
+            notificationsSkipped++;
+          } else {
+            notificationsSent++;
+          }
+        }
       }
     }
 
@@ -387,6 +400,8 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
       imageUrl,
       createdBy: req.user.id,
       postsCreated: usersResult.success ? usersResult.data.length : 0,
+      notificationsSent,
+      notificationsSkipped,
       message: 'Объявление создано и опубликовано на стенах всех пользователей'
     });
 
