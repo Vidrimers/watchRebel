@@ -1,19 +1,20 @@
 .avatarUploadContainer {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 1.5rem;
+  padding: 0.5rem;
 }
 
 .avatarPreview {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid var(--border-color);
   background-color: var(--card-bg);
+  flex-shrink: 0;
 }
 
 .avatarImage {
@@ -32,7 +33,7 @@
 }
 
 .placeholderIcon {
-  font-size: 4rem;
+  font-size: 2.5rem;
   opacity: 0.5;
 }
 
@@ -66,8 +67,9 @@
 .uploadControls {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
+  flex: 1;
 }
 
 .fileInput {
@@ -98,7 +100,7 @@
 .uploadHint {
   font-size: 0.85rem;
   color: var(--text-secondary);
-  text-align: center;
+  text-align: left;
   margin: 0;
 }
 
@@ -115,13 +117,26 @@
 
 /* Адаптивность */
 @media (max-width: 768px) {
+  .avatarUploadContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+
   .avatarPreview {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
   }
 
   .placeholderIcon {
-    font-size: 3rem;
+    font-size: 2.5rem;
+  }
+
+  .uploadControls {
+    align-items: center;
+  }
+
+  .uploadHint {
+    text-align: center;
   }
 
   .uploadButton {
