@@ -1,0 +1,209 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.error {
+  background-color: var(--error-bg, rgba(220, 38, 38, 0.1));
+  color: var(--error-text, #dc2626);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid var(--error-border, rgba(220, 38, 38, 0.2));
+}
+
+.success {
+  background-color: var(--success-bg, rgba(34, 197, 94, 0.1));
+  color: var(--success-text, #22c55e);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid var(--success-border, rgba(34, 197, 94, 0.2));
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.group {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.groupTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notificationItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.notificationInfo {
+  flex: 1;
+}
+
+.notificationLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.notificationDescription {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggleInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-bg-off, #ccc);
+  transition: 0.3s;
+  border-radius: 26px;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggleInput:checked + .toggleSlider {
+  background-color: var(--primary-color, #3b82f6);
+}
+
+.toggleInput:checked + .toggleSlider:before {
+  transform: translateX(22px);
+}
+
+.toggleInput:focus + .toggleSlider {
+  box-shadow: 0 0 0 2px var(--focus-ring, rgba(59, 130, 246, 0.3));
+}
+
+/* Actions */
+.actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.saveButton {
+  background-color: var(--primary-color, #3b82f6);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: var(--primary-hover, #2563eb);
+  transform: translateY(-1px);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .notificationItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .toggle {
+    align-self: flex-end;
+  }
+
+  .group {
+    padding: 16px;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .saveButton {
+    width: 100%;
+  }
+}

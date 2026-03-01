@@ -260,6 +260,25 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
       CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+
+      -- Таблица настроек уведомлений
+      CREATE TABLE IF NOT EXISTS notification_settings (
+        id TEXT PRIMARY KEY,
+        user_id TEXT UNIQUE NOT NULL,
+        friend_added_to_list BOOLEAN DEFAULT 1,
+        friend_rated_media BOOLEAN DEFAULT 1,
+        friend_posted_review BOOLEAN DEFAULT 1,
+        friend_reacted_to_post BOOLEAN DEFAULT 1,
+        new_message BOOLEAN DEFAULT 1,
+        new_friend_request BOOLEAN DEFAULT 1,
+        admin_announcement BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      -- Индекс для быстрого поиска настроек по user_id
+      CREATE INDEX IF NOT EXISTS idx_notification_settings_user ON notification_settings(user_id);
     `;
 
     db.exec(migrations, (err) => {

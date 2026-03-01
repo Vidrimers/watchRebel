@@ -2,6 +2,60 @@ import { executeQuery } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Проверить, включено ли уведомление для пользователя
+ * @param {string} userId - ID пользователя
+ * @param {string} notificationType - Тип уведомления
+ * @returns {Promise<boolean>} - true если уведомление включено, false если выключено
+ */
+export async function checkNotificationEnabled(userId, notificationType) {
+  try {
+    // Получаем настройки уведомлений пользователя
+    const settingsResult = await executeQuery(
+      'SELECT * FROM notification_settings WHERE user_id = ?',
+      [userId]
+    );
+
+    // Если настроек нет, считаем что все уведомления включены (дефолт)
+    if (!settingsResult.success || settingsResult.data.length === 0) {
+      console.log(`ℹ️ Настройки уведомлений не найдены для пользователя ${userId}, используем дефолтные (все включены)`);
+      return true;
+    }
+
+    const settings = settingsResult.data[0];
+
+    // Маппинг типов уведомлений на поля в БД
+    const typeMapping = {
+      'friend_added_to_list': 'friend_added_to_list',
+      'friend_rated_media': 'friend_rated_media',
+      'friend_posted_review': 'friend_posted_review',
+      'friend_reacted_to_post': 'friend_reacted_to_post',
+      'new_message': 'new_message',
+      'new_friend_request': 'new_friend_request',
+      'admin_announcement': 'admin_announcement'
+    };
+
+    const fieldName = typeMapping[notificationType];
+
+    if (!fieldName) {
+      console.warn(`⚠️ Неизвестный тип уведомления: ${notificationType}`);
+      return true; // По умолчанию разрешаем неизвестные типы
+    }
+
+    const isEnabled = Boolean(settings[fieldName]);
+
+    if (!isEnabled) {
+      console.log(`🔕 Уведомление типа "${notificationType}" отключено для пользователя ${userId}`);
+    }
+
+    return isEnabled;
+  } catch (error) {
+    console.error('Ошибка проверки настроек уведомлений:', error);
+    // В случае ошибки разрешаем отправку уведомления
+    return true;
+  }
+}
+
+/**
  * Создать уведомление в базе данных
  * @param {string} userId - ID пользователя, который получит уведомление
  * @param {string} type - Тип уведомления ('reaction' | 'friend_activity')
@@ -118,6 +172,14 @@ export async function sendTelegramNotification(userId, message, options = {}) {
  */
 export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSelfReaction = false) {
   try {
+    // Проверяем настройки уведомлений пользователя
+    const isEnabled = await checkNotificationEnabled(postOwnerId, 'friend_reacted_to_post');
+    
+    if (!isEnabled) {
+      console.log(`🔕 Уведомление о реакции не отправлено пользователю ${postOwnerId} (отключено в настройках)`);
+      return { success: true, skipped: true, reason: 'disabled_in_settings' };
+    }
+
     let content;
     let telegramMessage;
 
@@ -195,6 +257,22 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
       return { success: false, error: 'Ошибка получения списка друзей' };
     }
 
+    // Определяем тип уведомления для проверки настроек
+    let notificationType = '';
+    switch (actionType) {
+      case 'added_to_list':
+        notificationType = 'friend_added_to_list';
+        break;
+      case 'rated':
+        notificationType = 'friend_rated_media';
+        break;
+      case 'reviewed':
+        notificationType = 'friend_posted_review';
+        break;
+      default:
+        notificationType = 'friend_added_to_list'; // Дефолт
+    }
+
     // Формируем текст уведомления в зависимости от типа действия
     let content = '';
     switch (actionType) {
@@ -215,6 +293,15 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
     const results = [];
     for (const friend of friendsResult.data) {
       const userId = friend.user_id;
+
+      // Проверяем настройки уведомлений пользователя
+      const isEnabled = await checkNotificationEnabled(userId, notificationType);
+      
+      if (!isEnabled) {
+        console.log(`🔕 Уведомление об активности друга не отправлено пользователю ${userId} (отключено в настройках)`);
+        results.push({ userId, success: true, skipped: true, reason: 'disabled_in_settings' });
+        continue;
+      }
 
       // Создаем уведомление в базе данных
       const notificationResult = await createNotification(
@@ -258,6 +345,16 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
  */
 export async function notifyModeration(userId, actionType, actionData = {}) {
   try {
+    // Проверяем настройки для объявлений
+    if (actionType === 'announcement') {
+      const isEnabled = await checkNotificationEnabled(userId, 'admin_announcement');
+      
+      if (!isEnabled) {
+        console.log(`🔕 Уведомление-объявление не отправлено пользователю ${userId} (отключено в настройках)`);
+        return { success: true, skipped: true, reason: 'disabled_in_settings' };
+      }
+    }
+
     let message = '';
 
     switch (actionType) {
@@ -351,6 +448,7 @@ export async function sendRenameNotification(userId, oldName, newName, reason = 
 }
 
 export default {
+  checkNotificationEnabled,
   createNotification,
   sendTelegramNotification,
   notifyReaction,

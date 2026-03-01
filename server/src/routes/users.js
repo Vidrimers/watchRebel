@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
+import { sendTelegramNotification, checkNotificationEnabled } from '../services/notificationService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -420,6 +421,29 @@ router.post('/:id/friends', authenticateToken, async (req, res) => {
       });
     }
 
+    // Получаем имя пользователя, который добавил в друзья
+    const userResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (userResult.success && userResult.data.length > 0) {
+      const userName = userResult.data[0].display_name;
+      
+      // Проверяем настройки уведомлений получателя
+      const isNotificationEnabled = await checkNotificationEnabled(friendId, 'new_friend_request');
+      
+      if (isNotificationEnabled) {
+        // Отправляем уведомление в Telegram
+        const telegramMessage = `👥 <b>Новый друг!</b>\n\n${userName} добавил вас в друзья!`;
+        sendTelegramNotification(friendId, telegramMessage).catch(err => {
+          console.error('Ошибка отправки уведомления о добавлении в друзья:', err);
+        });
+      } else {
+        console.log(`🔕 Уведомление о добавлении в друзья не отправлено пользователю ${friendId} (отключено в настройках)`);
+      }
+    }
+
     res.status(201).json({
       id: friendshipId,
       userId,
@@ -643,6 +667,277 @@ router.get('/:id/referrals', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка получения списка рефералов:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/users/:id/notification-settings
+ * Получить настройки уведомлений пользователя
+ */
+router.get('/:id/notification-settings', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем права: пользователь может получить только свои настройки (или админ любые)
+    if (req.user.id !== id && !req.user.isAdmin) {
+      return res.status(403).json({ 
+        error: 'Нет прав на просмотр настроек уведомлений',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Получаем настройки уведомлений
+    const settingsResult = await executeQuery(
+      'SELECT * FROM notification_settings WHERE user_id = ?',
+      [id]
+    );
+
+    if (!settingsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения настроек уведомлений',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Если настроек нет, создаем их с дефолтными значениями
+    if (settingsResult.data.length === 0) {
+      const settingsId = uuidv4();
+      const createResult = await executeQuery(
+        `INSERT INTO notification_settings (id, user_id) VALUES (?, ?)`,
+        [settingsId, id]
+      );
+
+      if (!createResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка создания настроек уведомлений',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      // Возвращаем дефолтные настройки
+      return res.json({
+        userId: id,
+        friendAddedToList: true,
+        friendRatedMedia: true,
+        friendPostedReview: true,
+        friendReactedToPost: true,
+        newMessage: true,
+        newFriendRequest: true,
+        adminAnnouncement: true
+      });
+    }
+
+    const settings = settingsResult.data[0];
+
+    res.json({
+      userId: settings.user_id,
+      friendAddedToList: Boolean(settings.friend_added_to_list),
+      friendRatedMedia: Boolean(settings.friend_rated_media),
+      friendPostedReview: Boolean(settings.friend_posted_review),
+      friendReactedToPost: Boolean(settings.friend_reacted_to_post),
+      newMessage: Boolean(settings.new_message),
+      newFriendRequest: Boolean(settings.new_friend_request),
+      adminAnnouncement: Boolean(settings.admin_announcement)
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения настроек уведомлений:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * PUT /api/users/:id/notification-settings
+ * Обновить настройки уведомлений пользователя
+ * 
+ * Body:
+ * - friendAddedToList: boolean (опционально)
+ * - friendRatedMedia: boolean (опционально)
+ * - friendPostedReview: boolean (опционально)
+ * - friendReactedToPost: boolean (опционально)
+ * - newMessage: boolean (опционально)
+ * - newFriendRequest: boolean (опционально)
+ * - adminAnnouncement: boolean (опционально)
+ */
+router.put('/:id/notification-settings', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      friendAddedToList,
+      friendRatedMedia,
+      friendPostedReview,
+      friendReactedToPost,
+      newMessage,
+      newFriendRequest,
+      adminAnnouncement
+    } = req.body;
+
+    // Проверяем права: пользователь может обновить только свои настройки (или админ любые)
+    if (req.user.id !== id && !req.user.isAdmin) {
+      return res.status(403).json({ 
+        error: 'Нет прав на изменение настроек уведомлений',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Проверяем, существуют ли настройки
+    const settingsCheck = await executeQuery(
+      'SELECT id FROM notification_settings WHERE user_id = ?',
+      [id]
+    );
+
+    if (!settingsCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки настроек',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Если настроек нет, создаем их
+    if (settingsCheck.data.length === 0) {
+      const settingsId = uuidv4();
+      const createResult = await executeQuery(
+        `INSERT INTO notification_settings (id, user_id) VALUES (?, ?)`,
+        [settingsId, id]
+      );
+
+      if (!createResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка создания настроек уведомлений',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+    }
+
+    // Формируем запрос на обновление
+    const updates = [];
+    const params = [];
+
+    if (friendAddedToList !== undefined) {
+      updates.push('friend_added_to_list = ?');
+      params.push(friendAddedToList ? 1 : 0);
+    }
+
+    if (friendRatedMedia !== undefined) {
+      updates.push('friend_rated_media = ?');
+      params.push(friendRatedMedia ? 1 : 0);
+    }
+
+    if (friendPostedReview !== undefined) {
+      updates.push('friend_posted_review = ?');
+      params.push(friendPostedReview ? 1 : 0);
+    }
+
+    if (friendReactedToPost !== undefined) {
+      updates.push('friend_reacted_to_post = ?');
+      params.push(friendReactedToPost ? 1 : 0);
+    }
+
+    if (newMessage !== undefined) {
+      updates.push('new_message = ?');
+      params.push(newMessage ? 1 : 0);
+    }
+
+    if (newFriendRequest !== undefined) {
+      updates.push('new_friend_request = ?');
+      params.push(newFriendRequest ? 1 : 0);
+    }
+
+    if (adminAnnouncement !== undefined) {
+      updates.push('admin_announcement = ?');
+      params.push(adminAnnouncement ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ 
+        error: 'Нет данных для обновления',
+        code: 'NO_UPDATE_DATA' 
+      });
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(id);
+
+    const updateResult = await executeQuery(
+      `UPDATE notification_settings SET ${updates.join(', ')} WHERE user_id = ?`,
+      params
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления настроек уведомлений',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем обновленные настройки
+    const updatedSettingsResult = await executeQuery(
+      'SELECT * FROM notification_settings WHERE user_id = ?',
+      [id]
+    );
+
+    const settings = updatedSettingsResult.data[0];
+
+    res.json({
+      userId: settings.user_id,
+      friendAddedToList: Boolean(settings.friend_added_to_list),
+      friendRatedMedia: Boolean(settings.friend_rated_media),
+      friendPostedReview: Boolean(settings.friend_posted_review),
+      friendReactedToPost: Boolean(settings.friend_reacted_to_post),
+      newMessage: Boolean(settings.new_message),
+      newFriendRequest: Boolean(settings.new_friend_request),
+      adminAnnouncement: Boolean(settings.admin_announcement)
+    });
+
+  } catch (error) {
+    console.error('Ошибка обновления настроек уведомлений:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

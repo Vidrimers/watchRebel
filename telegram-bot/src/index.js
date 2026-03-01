@@ -211,6 +211,9 @@ bot.onText(/\/menu/, async (msg) => {
       ],
       [
         { text: '⚙️ Настройки', callback_data: 'menu_settings' }
+      ],
+      [
+        { text: '🔔 Настройки уведомлений', callback_data: 'settings_notifications' }
       ]
     ];
 
@@ -334,7 +337,9 @@ bot.on('callback_query', async (query) => {
     if (data.startsWith('menu_')) {
       await handleMenuAction(chatId, userId, data, query.from);
     } else if (data.startsWith('settings_')) {
-      await handleSettingsAction(chatId, userId, data, query.from);
+      await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
+    } else if (data.startsWith('toggle_notif_')) {
+      await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
     } else if (data.startsWith('reply_message_')) {
       // Обработка кнопки "Ответить" на сообщение
       const receiverId = data.replace('reply_message_', '');
@@ -833,8 +838,9 @@ async function handleReplyMessageAction(chatId, userId, receiverId, userFrom) {
  * @param {string} userId - ID пользователя
  * @param {string} action - Действие (settings_change_name и т.д.)
  * @param {Object} userFrom - Объект пользователя из Telegram
+ * @param {number} messageId - ID сообщения для редактирования (опционально)
  */
-async function handleSettingsAction(chatId, userId, action, userFrom) {
+async function handleSettingsAction(chatId, userId, action, userFrom, messageId = null) {
   if (action === 'settings_change_name') {
     // Устанавливаем состояние ожидания нового имени
     setUserState(userId, 'awaiting_name_change', { chatId, userFrom });
@@ -856,6 +862,200 @@ async function handleSettingsAction(chatId, userId, action, userFrom) {
       'Отправьте новый статус (до 100 символов).\n' +
       'Чтобы удалить статус, отправьте пустое сообщение или точку.\n\n' +
       'Для отмены отправьте /cancel',
+      { parse_mode: 'HTML' }
+    );
+  } else if (action === 'settings_notifications') {
+    // Показываем настройки уведомлений
+    await handleNotificationSettingsMenu(chatId, userId, userFrom, messageId);
+  }
+}
+
+/**
+ * Отображение меню настроек уведомлений
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ * @param {number} messageId - ID сообщения для редактирования (опционально)
+ */
+async function handleNotificationSettingsMenu(chatId, userId, userFrom, messageId = null) {
+  try {
+    console.log(`🔔 Запрос настроек уведомлений для пользователя ${userId}`);
+    
+    // Создаем сессию для авторизации
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    
+    // Получаем текущие настройки уведомлений
+    const response = await fetch(`${apiUrl}/api/users/${userId}/notification-settings`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    const settings = await response.json();
+    console.log('✅ Получены настройки:', settings);
+
+    // Формируем текст сообщения
+    let messageText = '🔔 <b>Настройки уведомлений</b>\n\n';
+    messageText += 'Выберите, какие уведомления вы хотите получать в Telegram:\n\n';
+
+    // Группа: Активность друзей
+    messageText += '<b>Активность друзей:</b>\n';
+    messageText += `${settings.friendAddedToList ? '✅' : '❌'} Друг добавил фильм/сериал\n`;
+    messageText += `${settings.friendRatedMedia ? '✅' : '❌'} Друг поставил оценку\n`;
+    messageText += `${settings.friendPostedReview ? '✅' : '❌'} Друг написал отзыв\n\n`;
+
+    // Группа: Личные
+    messageText += '<b>Личные:</b>\n';
+    messageText += `${settings.friendReactedToPost ? '✅' : '❌'} Реакция на ваш пост\n`;
+    messageText += `${settings.newMessage ? '✅' : '❌'} Новое личное сообщение\n`;
+    messageText += `${settings.newFriendRequest ? '✅' : '❌'} Новый запрос в друзья\n\n`;
+
+    // Группа: Системные
+    messageText += '<b>Системные:</b>\n';
+    messageText += `${settings.adminAnnouncement ? '✅' : '❌'} Объявления от администрации\n\n`;
+
+    messageText += 'Нажмите на кнопку, чтобы включить/выключить уведомление:';
+
+    // Формируем инлайн-кнопки
+    const inlineButtons = [
+      // Активность друзей
+      [{ 
+        text: `${settings.friendAddedToList ? '✅' : '❌'} Друг добавил контент`, 
+        callback_data: 'toggle_notif_friendAddedToList' 
+      }],
+      [{ 
+        text: `${settings.friendRatedMedia ? '✅' : '❌'} Друг поставил оценку`, 
+        callback_data: 'toggle_notif_friendRatedMedia' 
+      }],
+      [{ 
+        text: `${settings.friendPostedReview ? '✅' : '❌'} Друг написал отзыв`, 
+        callback_data: 'toggle_notif_friendPostedReview' 
+      }],
+      // Личные
+      [{ 
+        text: `${settings.friendReactedToPost ? '✅' : '❌'} Реакция на пост`, 
+        callback_data: 'toggle_notif_friendReactedToPost' 
+      }],
+      [{ 
+        text: `${settings.newMessage ? '✅' : '❌'} Новое сообщение`, 
+        callback_data: 'toggle_notif_newMessage' 
+      }],
+      [{ 
+        text: `${settings.newFriendRequest ? '✅' : '❌'} Запрос в друзья`, 
+        callback_data: 'toggle_notif_newFriendRequest' 
+      }],
+      // Системные
+      [{ 
+        text: `${settings.adminAnnouncement ? '✅' : '❌'} Объявления админа`, 
+        callback_data: 'toggle_notif_adminAnnouncement' 
+      }],
+      // Кнопка "Назад"
+      [{ text: '◀️ Назад', callback_data: 'menu_settings' }]
+    ];
+
+    // Если есть messageId, редактируем сообщение, иначе отправляем новое
+    if (messageId) {
+      await bot.editMessageText(messageText, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: inlineButtons
+        }
+      });
+    } else {
+      await bot.sendMessage(
+        chatId,
+        messageText,
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: inlineButtons
+          }
+        }
+      );
+    }
+
+    console.log(`✅ Меню настроек уведомлений отправлено пользователю ${userId}`);
+  } catch (error) {
+    console.error('❌ Ошибка получения настроек уведомлений:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при загрузке настроек. Попробуйте позже.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Переключение настройки уведомления
+ * @param {number} chatId - ID чата
+ * @param {string} userId - ID пользователя
+ * @param {string} callbackData - Данные callback (toggle_notif_{type})
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ * @param {number} messageId - ID сообщения для редактирования
+ */
+async function handleToggleNotification(chatId, userId, callbackData, userFrom, messageId) {
+  try {
+    // Извлекаем тип уведомления из callback_data
+    const notificationType = callbackData.replace('toggle_notif_', '');
+    console.log(`🔄 Переключение настройки "${notificationType}" для пользователя ${userId}`);
+    
+    // Создаем сессию для авторизации
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    
+    // Получаем текущие настройки
+    const getResponse = await fetch(`${apiUrl}/api/users/${userId}/notification-settings`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.token}`
+      }
+    });
+
+    if (!getResponse.ok) {
+      throw new Error(`API вернул ошибку: ${getResponse.status}`);
+    }
+
+    const currentSettings = await getResponse.json();
+    
+    // Переключаем значение
+    const newValue = !currentSettings[notificationType];
+    console.log(`📝 Изменение ${notificationType}: ${currentSettings[notificationType]} → ${newValue}`);
+
+    // Отправляем обновление
+    const updateResponse = await fetch(`${apiUrl}/api/users/${userId}/notification-settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        [notificationType]: newValue
+      })
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error(`API вернул ошибку: ${updateResponse.status}`);
+    }
+
+    console.log(`✅ Настройка "${notificationType}" обновлена на ${newValue}`);
+
+    // Обновляем меню с новыми настройками
+    await handleNotificationSettingsMenu(chatId, userId, userFrom, messageId);
+  } catch (error) {
+    console.error('❌ Ошибка переключения настройки уведомления:', error.message);
+    
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при обновлении настройки. Попробуйте позже.',
       { parse_mode: 'HTML' }
     );
   }

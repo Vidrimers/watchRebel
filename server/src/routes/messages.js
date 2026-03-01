@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { sendTelegramNotification } from '../services/notificationService.js';
+import { sendTelegramNotification, checkNotificationEnabled } from '../services/notificationService.js';
 import { sendMessageToUser } from '../services/websocketService.js';
 import { uploadMessageFiles } from '../middleware/upload.js';
 
@@ -446,16 +446,23 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
                              `${messagePreview}\n\n` +
                              `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
       
-      // Отправляем уведомление с кнопкой "Ответить"
-      sendTelegramNotification(receiverId, telegramMessage, {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
-          ]]
-        }
-      }).catch(err => {
-        console.error('Ошибка отправки Telegram уведомления:', err);
-      });
+      // Проверяем настройки уведомлений получателя
+      const isNotificationEnabled = await checkNotificationEnabled(receiverId, 'new_message');
+      
+      if (isNotificationEnabled) {
+        // Отправляем уведомление с кнопкой "Ответить"
+        sendTelegramNotification(receiverId, telegramMessage, {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
+            ]]
+          }
+        }).catch(err => {
+          console.error('Ошибка отправки Telegram уведомления:', err);
+        });
+      } else {
+        console.log(`🔕 Уведомление о новом сообщении не отправлено пользователю ${receiverId} (отключено в настройках)`);
+      }
     }
 
     res.status(201).json(messageResponse);
