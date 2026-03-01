@@ -15,24 +15,9 @@
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-}
-
-.toggleButton {
-  width: 100%;
-  padding: 10px;
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 10px;
-}
-
-.toggleButton:hover {
-  background: var(--bg-active);
-  transform: translateY(-1px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .referralsList {

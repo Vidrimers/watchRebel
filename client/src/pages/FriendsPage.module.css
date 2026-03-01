@@ -178,3 +178,92 @@
     width: 100%;
   }
 }
+
+/* Карточка-кнопка для рефералов */
+.referralCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.referralCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
+}
+
+.referralCardContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Экран рефералов */
+.referralsScreen {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Кнопка "Назад" */
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1.5rem;
+}
+
+.backButton:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+  transform: translateX(-4px);
+}
+
+.backButton:active {
+  transform: translateX(-2px);
+}
+
+/* Адаптивность для новых элементов */
+@media (max-width: 768px) {
+  .referralCard {
+    padding: 1rem;
+  }
+
+  .referralCardContent {
+    font-size: 1rem;
+  }
+
+  .backButton {
+    padding: 0.625rem 1rem;
+    font-size: 0.9375rem;
+  }
+}

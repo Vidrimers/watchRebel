@@ -18,6 +18,7 @@ const FriendsPage = () => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReferrals, setShowReferrals] = useState(false);
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
 
@@ -102,59 +103,84 @@ const FriendsPage = () => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.container}>
-        <h1 className={styles.title}>Мои друзья</h1>
-        
-        {/* Статистика рефералов */}
-        <ReferralStats userId={user.id} />
-        
-        {friends.length === 0 ? (
-          <div className={styles.empty}>
-            <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
-            <p>У вас пока нет друзей</p>
-            <p className={styles.emptyHint}>
-              Найдите пользователей через поиск и добавьте их в друзья
-            </p>
-          </div>
-        ) : (
-          <div className={styles.friendsList}>
-            {friends.map((friend) => (
-              <div key={friend.id} className={styles.friendCard}>
-                <UserAvatar 
-                  user={friend} 
-                  size="medium" 
-                  className={styles.friendAvatar}
-                />
-                
-                <div className={styles.friendInfo}>
-                  <h3 className={styles.friendName}>
-                    {friend.displayName}
-                    {friend.userStatus && (
-                      <span className={styles.friendStatus}> | {friend.userStatus}</span>
-                    )}
-                  </h3>
-                  {friend.telegramUsername && (
-                    <p className={styles.friendUsername}>@{friend.telegramUsername}</p>
-                  )}
-                </div>
-                
-                <div className={styles.friendActions}>
-                  <button
-                    className={styles.visitButton}
-                    onClick={() => handleVisitProfile(friend.id)}
-                  >
-                    Перейти в профиль
-                  </button>
-                  
-                  <button
-                    className={styles.removeFriendButton}
-                    onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
-                  >
-                    Удалить из друзей
-                  </button>
-                </div>
+        {!showReferrals ? (
+          <>
+            <h1 className={styles.title}>Мои друзья</h1>
+            
+            {/* Кнопка для открытия списка рефералов */}
+            <div className={styles.referralCard} onClick={() => setShowReferrals(true)}>
+              <div className={styles.referralCardContent}>
+                <Icon name="friends" size="medium" />
+                <span>Приглашенные друзья</span>
               </div>
-            ))}
-          </div>
+              <Icon name="chevron-right" size="small" />
+            </div>
+            
+            {friends.length === 0 ? (
+              <div className={styles.empty}>
+                <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
+                <p>У вас пока нет друзей</p>
+                <p className={styles.emptyHint}>
+                  Найдите пользователей через поиск и добавьте их в друзья
+                </p>
+              </div>
+            ) : (
+              <div className={styles.friendsList}>
+                {friends.map((friend) => (
+                  <div key={friend.id} className={styles.friendCard}>
+                    <UserAvatar 
+                      user={friend} 
+                      size="medium" 
+                      className={styles.friendAvatar}
+                    />
+                    
+                    <div className={styles.friendInfo}>
+                      <h3 className={styles.friendName}>
+                        {friend.displayName}
+                        {friend.userStatus && (
+                          <span className={styles.friendStatus}> | {friend.userStatus}</span>
+                        )}
+                      </h3>
+                      {friend.telegramUsername && (
+                        <p className={styles.friendUsername}>@{friend.telegramUsername}</p>
+                      )}
+                    </div>
+                    
+                    <div className={styles.friendActions}>
+                      <button
+                        className={styles.visitButton}
+                        onClick={() => handleVisitProfile(friend.id)}
+                      >
+                        Перейти в профиль
+                      </button>
+                      
+                      <button
+                        className={styles.removeFriendButton}
+                        onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
+                      >
+                        Удалить из друзей
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Экран списка рефералов */}
+            <div className={styles.referralsScreen}>
+              <button 
+                onClick={() => setShowReferrals(false)}
+                className={styles.backButton}
+              >
+                <Icon name="arrow-left" size="medium" />
+                <span>Назад</span>
+              </button>
+              
+              <ReferralStats userId={user.id} />
+            </div>
+          </>
         )}
       </div>
     </UserPageLayout>

@@ -16,7 +16,6 @@ const ReferralStats = ({ userId }) => {
   const [referralsCount, setReferralsCount] = useState(0);
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showReferrals, setShowReferrals] = useState(false);
   const [error, setError] = useState(null);
 
   // Проверяем, это свой профиль или чужой
@@ -26,6 +25,7 @@ const ReferralStats = ({ userId }) => {
     // Загружаем статистику только для своего профиля
     if (isOwnProfile) {
       loadReferralStats();
+      loadReferrals(); // Загружаем список сразу
     }
   }, [userId, isOwnProfile]);
 
@@ -79,16 +79,6 @@ const ReferralStats = ({ userId }) => {
   };
 
   /**
-   * Переключение отображения списка рефералов
-   */
-  const toggleReferrals = async () => {
-    if (!showReferrals && referrals.length === 0) {
-      await loadReferrals();
-    }
-    setShowReferrals(!showReferrals);
-  };
-
-  /**
    * Обработчик клика по рефералу для перехода в профиль
    */
   const handleReferralClick = (referralId) => {
@@ -124,16 +114,7 @@ const ReferralStats = ({ userId }) => {
         </h3>
       </div>
 
-      {referralsCount > 0 && (
-        <button 
-          className={styles.toggleButton}
-          onClick={toggleReferrals}
-        >
-          {showReferrals ? '▼ Скрыть список' : '▶ Показать список'}
-        </button>
-      )}
-
-      {showReferrals && (
+      {referralsCount > 0 ? (
         <div className={styles.referralsList}>
           {referrals.length === 0 ? (
             <p className={styles.emptyMessage}>Загрузка...</p>
@@ -175,9 +156,7 @@ const ReferralStats = ({ userId }) => {
             </ul>
           )}
         </div>
-      )}
-
-      {referralsCount === 0 && (
+      ) : (
         <p className={styles.emptyMessage}>
           Вы еще не пригласили друзей. Используйте Telegram бот для получения реферальной ссылки!
         </p>
