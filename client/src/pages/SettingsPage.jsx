@@ -235,6 +235,37 @@ const SettingsPage = () => {
             {/* Карточка с темой */}
             <ThemeDropdown />
 
+            {/* Карточка с приватностью стены */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Приватность стены</h3>
+              <p className={styles.cardDescription}>
+                Выберите, кто может писать на вашей стене
+              </p>
+              <select 
+                className={styles.privacySelect}
+                value={user.wallPrivacy || 'all'}
+                onChange={async (e) => {
+                  try {
+                    await dispatch(updateProfile({ 
+                      userId: user.id, 
+                      wallPrivacy: e.target.value 
+                    })).unwrap();
+                  } catch (error) {
+                    console.error('Ошибка обновления приватности:', error);
+                    await showAlert({
+                      title: 'Ошибка',
+                      message: 'Не удалось обновить настройки приватности',
+                      type: 'error'
+                    });
+                  }
+                }}
+              >
+                <option value="all">Все</option>
+                <option value="friends">Только друзья</option>
+                <option value="none">Никто</option>
+              </select>
+            </div>
+
             {/* Кнопка для открытия настроек уведомлений */}
             <div className={styles.settingsCard}>
               <h3 className={styles.cardTitle}>Уведомления</h3>

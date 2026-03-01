@@ -44,6 +44,7 @@ import { initWebSocket } from './services/websocketService.js';
 import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
 import { startTokenCleanupScheduler } from './middleware/tokenCleanup.js';
 import { runMigrations } from './database/migrations.js';
+import { addWallPrivacyMigration } from './database/migrations/add_wall_privacy.js';
 import { 
   configureHelmet, 
   configureCORS, 
@@ -170,9 +171,19 @@ if (process.env.NODE_ENV !== 'test') {
   const server = http.createServer(app);
   
   // Запуск миграций базы данных
-  runMigrations().then((result) => {
+  runMigrations().then(async (result) => {
     if (result.success) {
       logger.info('Миграции базы данных выполнены успешно');
+      
+      // Запуск дополнительных миграций
+      try {
+        const wallPrivacyResult = await addWallPrivacyMigration();
+        if (wallPrivacyResult.success) {
+          logger.info('Миграция wall_privacy выполнена успешно');
+        }
+      } catch (err) {
+        logger.error('Ошибка выполнения дополнительных миграций:', err);
+      }
     } else {
       logger.error('Ошибка выполнения миграций:', result.error);
     }

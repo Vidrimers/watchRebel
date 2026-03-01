@@ -447,6 +447,54 @@ export async function sendRenameNotification(userId, oldName, newName, reason = 
   }
 }
 
+/**
+ * Создать и отправить уведомление о посте на стене
+ * @param {string} wallOwnerId - ID владельца стены
+ * @param {string} authorId - ID автора поста
+ * @param {string} postId - ID поста
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyWallPost(wallOwnerId, authorId, postId) {
+  try {
+    // Получаем информацию об авторе поста
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [authorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    const content = `${authorName} написал на вашей стене`;
+    const telegramMessage = `📝 <b>Новый пост на вашей стене!</b>\n\n${content}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      wallOwnerId,
+      'wall_post',
+      content,
+      authorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(wallOwnerId, telegramMessage);
+
+    console.log(`✅ Уведомление о посте на стене отправлено пользователю ${wallOwnerId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о посте на стене:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   checkNotificationEnabled,
   createNotification,
@@ -454,5 +502,6 @@ export default {
   notifyReaction,
   notifyFriendActivity,
   notifyModeration,
-  sendRenameNotification
+  sendRenameNotification,
+  notifyWallPost
 };

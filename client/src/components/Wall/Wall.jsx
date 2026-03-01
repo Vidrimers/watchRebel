@@ -9,9 +9,10 @@ import styles from './Wall.module.css';
  * Компонент стены активности пользователя
  * Отображает ленту постов в хронологическом порядке (новые сверху)
  */
-const Wall = ({ userId, isOwnProfile = false }) => {
+const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = false }) => {
   const dispatch = useAppDispatch();
   const { posts, loading, error } = useAppSelector((state) => state.wall);
+  const { user: currentUser } = useAppSelector((state) => state.auth);
   const [newPostContent, setNewPostContent] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -21,6 +22,14 @@ const Wall = ({ userId, isOwnProfile = false }) => {
       dispatch(fetchWall(userId));
     }
   }, [dispatch, userId]);
+
+  // Определяем, можно ли писать на этой стене
+  const canPostOnWall = () => {
+    if (isOwnProfile) return true; // Всегда можно писать на своей стене
+    if (wallPrivacy === 'all') return true; // Все могут писать
+    if (wallPrivacy === 'friends' && isFriend) return true; // Только друзья
+    return false; // Никто не может писать
+  };
 
   // Обработка создания нового текстового поста
   const handleCreatePost = async (e) => {
@@ -34,12 +43,17 @@ const Wall = ({ userId, isOwnProfile = false }) => {
     try {
       await dispatch(createPost({
         postType: 'text',
-        content: newPostContent.trim()
+        content: newPostContent.trim(),
+        targetUserId: isOwnProfile ? undefined : userId // Добавляем targetUserId для чужой стены
       })).unwrap();
       
       setNewPostContent('');
+      
+      // Перезагружаем стену после создания поста
+      dispatch(fetchWall(userId));
     } catch (err) {
       console.error('Ошибка создания поста:', err);
+      alert(err.message || 'Ошибка создания поста');
     } finally {
       setIsCreating(false);
     }
@@ -75,13 +89,14 @@ const Wall = ({ userId, isOwnProfile = false }) => {
 
   return (
     <div className={styles.wall}>
-      {/* Форма создания нового поста (только для своего профиля) */}
-      {isOwnProfile && (
+      {/* Форма создания нового поста */}
+      {/* Показываем для своего профиля или если можно писать на чужой стене */}
+      {(isOwnProfile || canPostOnWall()) && (
         <div className={styles.createPostContainer}>
           <form onSubmit={handleCreatePost} className={styles.createPostForm}>
             <textarea
               className={styles.postInput}
-              placeholder="Что у вас нового?"
+              placeholder={isOwnProfile ? "Что у вас нового?" : "Написать на стене..."}
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -96,6 +111,18 @@ const Wall = ({ userId, isOwnProfile = false }) => {
               {isCreating ? 'Публикация...' : 'Опубликовать'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Сообщение если нельзя писать на стене */}
+      {!isOwnProfile && !canPostOnWall() && (
+        <div className={styles.wallPrivacyMessage}>
+          {wallPrivacy === 'none' && (
+            <p>Пользователь запретил публикации на своей стене</p>
+          )}
+          {wallPrivacy === 'friends' && !isFriend && (
+            <p>Только друзья могут писать на стене этого пользователя</p>
+          )}
         </div>
       )}
 

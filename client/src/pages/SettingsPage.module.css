@@ -620,3 +620,44 @@
 :global(.dark) .screenTitle {
   color: var(--text-primary-dark, #e0e0e0);
 }
+
+
+/* Приватность стены */
+.cardDescription {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+  margin: 0 0 12px 0;
+}
+
+.privacySelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.privacySelect:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+}
+
+.privacySelect:hover {
+  border-color: var(--primary-color, #6366f1);
+}
+
+/* Темная тема для select */
+:global(.dark) .privacySelect {
+  background: var(--bg-input-dark, #2a2a2a);
+  color: var(--text-primary-dark, #e0e0e0);
+  border-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .cardDescription {
+  color: var(--text-secondary-dark, #aaa);
+}

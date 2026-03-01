@@ -125,3 +125,19 @@
     gap: 12px;
   }
 }
+
+/* Сообщение о приватности стены */
+.wallPrivacyMessage {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wallPrivacyMessage p {
+  margin: 0;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+}

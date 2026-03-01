@@ -88,7 +88,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, wall_privacy, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -119,6 +119,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       banReason: user.ban_reason,
       postBanUntil: user.post_ban_until,
       theme: user.theme,
+      wallPrivacy: user.wall_privacy || 'all',
       authMethod: user.auth_method || 'telegram',
       email: user.email,
       hasGoogleLinked: Boolean(user.google_id),
@@ -150,7 +151,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { displayName, userStatus, theme } = req.body;
+    const { displayName, userStatus, theme, wallPrivacy } = req.body;
     const avatarFile = req.file;
 
     // Проверяем права: пользователь может редактировать только свой профиль или админ может редактировать любой
@@ -249,6 +250,22 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
       params.push(theme);
     }
 
+    if (wallPrivacy !== undefined) {
+      // Валидация wallPrivacy
+      const validPrivacyValues = ['all', 'friends', 'none'];
+      if (!validPrivacyValues.includes(wallPrivacy)) {
+        if (avatarFile) {
+          fs.unlinkSync(avatarFile.path);
+        }
+        return res.status(400).json({ 
+          error: 'wallPrivacy должен быть одним из: all, friends, none',
+          code: 'INVALID_WALL_PRIVACY' 
+        });
+      }
+      updates.push('wall_privacy = ?');
+      params.push(wallPrivacy);
+    }
+
     // Если загружена новая аватарка
     if (avatarFile) {
       // Формируем URL для аватарки
@@ -297,7 +314,7 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
 
     // Получаем обновленные данные пользователя
     const updatedUserResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, theme, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, theme, wall_privacy, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -311,6 +328,7 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
       userStatus: updatedUser.user_status,
       isAdmin: Boolean(updatedUser.is_admin),
       theme: updatedUser.theme,
+      wallPrivacy: updatedUser.wall_privacy || 'all',
       createdAt: updatedUser.created_at
     });
 

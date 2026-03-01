@@ -18,6 +18,7 @@ const UserProfilePage = () => {
   const { user: currentUser, isAuthenticated } = useAppSelector((state) => state.auth);
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFriend, setIsFriend] = useState(false);
 
   // Определяем, это свой профиль или чужой
   const isOwnProfile = currentUser?.id === userId;
@@ -43,6 +44,18 @@ const UserProfilePage = () => {
         // Загружаем профиль другого пользователя
         const response = await api.get(`/users/${userId}`);
         setProfileUser(response.data);
+        
+        // Проверяем, являемся ли мы друзьями
+        if (currentUser?.id) {
+          try {
+            const friendsResponse = await api.get(`/users/${currentUser.id}/friends`);
+            const friends = friendsResponse.data || [];
+            setIsFriend(friends.some(friend => friend.id === userId));
+          } catch (err) {
+            console.error('Ошибка проверки дружбы:', err);
+            setIsFriend(false);
+          }
+        }
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
       } finally {
@@ -133,7 +146,12 @@ const UserProfilePage = () => {
         {/* Wall - лента активности */}
         <div className={styles.wallSection}>
           <h2 className={styles.sectionTitle}>Лента активности</h2>
-          <Wall userId={userId} isOwnProfile={isOwnProfile} />
+          <Wall 
+            userId={userId} 
+            isOwnProfile={isOwnProfile}
+            wallPrivacy={profileUser.wallPrivacy || 'all'}
+            isFriend={isFriend}
+          />
         </div>
       </div>
     </UserPageLayout>

@@ -99,11 +99,65 @@ router.get('/:userId', async (req, res) => {
  * - tmdbId: number (опционально, обязательно для media_added, rating, review)
  * - mediaType: 'movie' | 'tv' (опционально, обязательно для media_added, rating, review)
  * - rating: number 1-10 (опционально, обязательно для rating)
+ * - targetUserId: string (опционально, ID пользователя на чьей стене публикуем)
  */
 router.post('/', authenticateToken, checkPostBan, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { postType, content, tmdbId, mediaType, rating } = req.body;
+    const { postType, content, tmdbId, mediaType, rating, targetUserId } = req.body;
+
+    // Определяем на чьей стене публикуем
+    const wallOwnerId = targetUserId || userId;
+
+    // Если публикуем на чужой стене, проверяем права
+    if (targetUserId && targetUserId !== userId) {
+      // Получаем настройки приватности целевого пользователя
+      const targetUserResult = await executeQuery(
+        'SELECT wall_privacy FROM users WHERE id = ?',
+        [targetUserId]
+      );
+
+      if (!targetUserResult.success || targetUserResult.data.length === 0) {
+        return res.status(404).json({ 
+          error: 'Пользователь не найден',
+          code: 'USER_NOT_FOUND' 
+        });
+      }
+
+      const wallPrivacy = targetUserResult.data[0].wall_privacy || 'all';
+
+      // Проверяем права в зависимости от настройки приватности
+      if (wallPrivacy === 'none') {
+        return res.status(403).json({ 
+          error: 'Пользователь запретил публикации на своей стене',
+          code: 'WALL_PRIVACY_NONE' 
+        });
+      }
+
+      if (wallPrivacy === 'friends') {
+        // Проверяем, являются ли пользователи друзьями
+        const friendshipCheck = await executeQuery(
+          `SELECT * FROM friends 
+           WHERE (user_id = ? AND friend_id = ?) 
+           OR (user_id = ? AND friend_id = ?)`,
+          [userId, targetUserId, targetUserId, userId]
+        );
+
+        if (!friendshipCheck.success) {
+          return res.status(500).json({ 
+            error: 'Ошибка проверки дружбы',
+            code: 'DATABASE_ERROR' 
+          });
+        }
+
+        if (friendshipCheck.data.length === 0) {
+          return res.status(403).json({ 
+            error: 'Только друзья могут писать на стене этого пользователя',
+            code: 'WALL_PRIVACY_FRIENDS_ONLY' 
+          });
+        }
+      }
+    }
 
     // Валидация postType
     const validPostTypes = ['text', 'media_added', 'rating', 'review', 'status_update'];
@@ -165,12 +219,12 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Создаем запись на стене
+    // Создаем запись на стене (используем wallOwnerId вместо userId)
     const postId = uuidv4();
     const insertResult = await executeQuery(
       `INSERT INTO wall_posts (id, user_id, post_type, content, tmdb_id, media_type, rating)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [postId, userId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
+      [postId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
     );
 
     if (!insertResult.success) {
@@ -200,6 +254,16 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     }
 
     const post = postResult.data[0];
+
+    // Если пост создан на чужой стене, отправляем уведомление владельцу
+    if (targetUserId && targetUserId !== userId) {
+      // Импортируем функцию уведомлений
+      const { notifyWallPost } = await import('../services/notificationService.js');
+      
+      notifyWallPost(targetUserId, userId, postId).catch(err => {
+        console.error('Ошибка отправки уведомления о посте на стене:', err);
+      });
+    }
 
     res.status(201).json({
       id: post.id,
