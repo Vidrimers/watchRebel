@@ -270,8 +270,8 @@
 
 /* Кнопки навигации */
 .navigationButtons {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -286,12 +286,22 @@
   background: var(--accent-primary, #6366f1);
   color: white;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btnNavigation:hover {
   background: var(--accent-primary-hover, #4f46e5);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Адаптивность для кнопок навигации */
+@media (max-width: 768px) {
+  .navigationButtons {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Темная тема */

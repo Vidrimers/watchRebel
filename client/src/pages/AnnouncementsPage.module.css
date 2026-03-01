@@ -18,19 +18,25 @@
 }
 
 .backButton {
-  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
 }
 
 .backButton:hover {
-  background: var(--bg-hover);
-  transform: translateY(-1px);
+  background: var(--bg-tertiary, #f9fafb);
+  border-color: var(--accent-primary, #6366f1);
+  transform: translateX(-4px);
 }
 
 /* Секция создания объявления */
@@ -526,4 +532,16 @@
   width: 100%;
   height: auto;
   display: block;
+}
+
+/* Темная тема */
+:global(.dark) .backButton {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .backButton:hover {
+  background: var(--bg-tertiary-dark, #3a3a3a);
+  border-color: var(--accent-primary-dark, #818cf8);
 }

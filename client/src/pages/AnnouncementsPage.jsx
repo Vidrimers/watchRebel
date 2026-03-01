@@ -177,14 +177,16 @@ const AnnouncementsPage = () => {
 
   return (
     <div className={styles.announcementsPage}>
+      <button 
+        className={styles.backButton}
+        onClick={() => navigate('/settings')}
+      >
+        <Icon name="arrow-left" size="medium" />
+        <span>Назад</span>
+      </button>
+      
       <div className={styles.header}>
         <h1><Icon name="announcement" size="medium" /> Управление объявлениями</h1>
-        <button 
-          className={styles.backButton}
-          onClick={() => navigate('/settings')}
-        >
-          ← Назад к настройкам
-        </button>
       </div>
 
       {/* Форма создания объявления */}

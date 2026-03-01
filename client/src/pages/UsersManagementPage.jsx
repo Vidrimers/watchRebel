@@ -155,6 +155,15 @@ const UsersManagementPage = () => {
   return (
     <UserPageLayout user={currentUser}>
       <div className={styles.container}>
+        {/* Кнопка "Назад" */}
+        <button 
+          onClick={() => navigate('/settings')}
+          className={styles.backButton}
+        >
+          <Icon name="arrow-left" size="medium" />
+          <span>Назад</span>
+        </button>
+
         <h1 className={styles.pageTitle}><Icon name="friends" size="medium" /> Управление пользователями</h1>
 
         {/* Поиск */}

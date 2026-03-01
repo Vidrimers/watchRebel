@@ -4,6 +4,29 @@
   padding: 20px;
 }
 
+/* Кнопка "Назад" */
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  background: var(--bg-tertiary, #f9fafb);
+  border-color: var(--accent-primary, #6366f1);
+  transform: translateX(-4px);
+}
+
 .pageTitle {
   font-size: 32px;
   font-weight: bold;
@@ -242,4 +265,16 @@
   .btnModeration {
     flex: 1;
   }
+}
+
+/* Темная тема */
+:global(.dark) .backButton {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .backButton:hover {
+  background: var(--bg-tertiary-dark, #3a3a3a);
+  border-color: var(--accent-primary-dark, #818cf8);
 }
