@@ -40,7 +40,7 @@ router.get('/:userId', async (req, res) => {
         author.telegram_username as author_telegram_username
        FROM wall_posts wp
        LEFT JOIN users author ON wp.user_id = author.id
-       WHERE wp.user_id = ? 
+       WHERE wp.wall_owner_id = ? 
        ORDER BY wp.created_at DESC`,
       [userId]
     );
@@ -243,12 +243,14 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    // Создаем запись на стене (используем wallOwnerId вместо userId)
+    // Создаем запись на стене
+    // ВАЖНО: user_id - это АВТОР поста (кто написал)
+    //        wall_owner_id - это владелец стены (на чьей стене)
     const postId = uuidv4();
     const insertResult = await executeQuery(
-      `INSERT INTO wall_posts (id, user_id, post_type, content, tmdb_id, media_type, rating)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [postId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
+      `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, rating)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [postId, userId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
     );
 
     if (!insertResult.success) {
@@ -271,7 +273,7 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
         owner.avatar_url as owner_avatar_url
        FROM wall_posts wp
        LEFT JOIN users author ON wp.user_id = author.id
-       LEFT JOIN users owner ON wp.user_id = owner.id
+       LEFT JOIN users owner ON wp.wall_owner_id = owner.id
        WHERE wp.id = ?`,
       [postId]
     );
@@ -414,7 +416,7 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
         owner.avatar_url as owner_avatar_url
        FROM wall_posts wp
        LEFT JOIN users author ON wp.user_id = author.id
-       LEFT JOIN users owner ON wp.user_id = owner.id
+       LEFT JOIN users owner ON wp.wall_owner_id = owner.id
        WHERE wp.id = ?`,
       [postId]
     );
@@ -493,7 +495,9 @@ router.delete('/:postId', authenticateToken, async (req, res) => {
 
     const post = postCheck.data[0];
 
-    if (post.user_id !== userId) {
+    // Автор поста может удалить свой пост на любой стене
+    // Владелец стены может удалить любой пост на своей стене
+    if (post.user_id !== userId && post.wall_owner_id !== userId) {
       return res.status(403).json({ 
         error: 'Нет прав на удаление этой записи',
         code: 'FORBIDDEN' 

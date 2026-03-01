@@ -51,16 +51,23 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       `SELECT 
         wp.id,
         wp.user_id,
+        wp.wall_owner_id,
         wp.post_type,
         wp.content,
         wp.created_at,
         wp.edited_at,
-        u.display_name,
-        u.avatar_url,
-        u.user_status
+        author.id as author_id,
+        author.display_name as author_display_name,
+        author.avatar_url as author_avatar_url,
+        author.telegram_username as author_telegram_username,
+        author.user_status as author_user_status,
+        owner.id as owner_id,
+        owner.display_name as owner_display_name,
+        owner.avatar_url as owner_avatar_url
        FROM wall_posts wp
-       LEFT JOIN users u ON wp.user_id = u.id
-       WHERE wp.user_id IN (${placeholders})
+       LEFT JOIN users author ON wp.user_id = author.id
+       LEFT JOIN users owner ON wp.wall_owner_id = owner.id
+       WHERE wp.wall_owner_id IN (${placeholders})
          AND wp.post_type IN ('text', 'status_update')
          AND wp.content NOT LIKE '📢 Объявление администратора:%'
        ORDER BY wp.created_at DESC
@@ -137,9 +144,16 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           createdAt: post.created_at,
           editedAt: post.edited_at,
           author: {
-            displayName: post.display_name,
-            avatarUrl: post.avatar_url,
-            userStatus: post.user_status
+            id: post.author_id,
+            displayName: post.author_display_name,
+            avatarUrl: post.author_avatar_url,
+            telegramUsername: post.author_telegram_username,
+            userStatus: post.author_user_status
+          },
+          wallOwner: {
+            id: post.owner_id,
+            displayName: post.owner_display_name,
+            avatarUrl: post.owner_avatar_url
           },
           reactions
         };

@@ -98,10 +98,8 @@ const FeedPage = () => {
                   {/* Информация об авторе поста (не показываем для объявлений) */}
                   {!isAnnouncement && (
                     <div className={styles.postAuthor}>
-                      <a 
-                        href={`/user/${post.userId}`}
-                        className={styles.authorLink}
-                      >
+                      <div className={styles.authorLink}>
+                        {/* Аватар автора */}
                         <div className={styles.avatarContainer}>
                           {post.author?.avatarUrl ? (
                             <img 
@@ -111,9 +109,9 @@ const FeedPage = () => {
                               }
                               alt={post.author.displayName}
                               className={styles.authorAvatar}
+                              title={post.author?.userStatus || post.author?.displayName}
+                              onClick={() => window.location.href = `/user/${post.author.id}`}
                               onError={(e) => {
-                                console.error('Ошибка загрузки аватара:', e.target.src);
-                                // Заменяем на placeholder
                                 e.target.style.display = 'none';
                                 const placeholder = document.createElement('div');
                                 placeholder.className = styles.avatarPlaceholder;
@@ -122,18 +120,77 @@ const FeedPage = () => {
                               }}
                             />
                           ) : (
-                            <div className={styles.avatarPlaceholder}>
+                            <div 
+                              className={styles.avatarPlaceholder}
+                              title={post.author?.userStatus || post.author?.displayName}
+                            >
                               {(post.author?.displayName || 'U').charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
+                        
                         <span className={styles.authorName}>
-                          {post.author?.displayName || 'Пользователь'}
-                          {post.author?.userStatus && (
-                            <span className={styles.authorStatus}> | {post.author.userStatus}</span>
+                          {/* Если автор !== владелец стены, показываем "автор → владелец" */}
+                          {post.author?.id !== post.wallOwner?.id ? (
+                            <>
+                              <a 
+                                href={`/user/${post.author.id}`} 
+                                style={{ color: 'inherit', textDecoration: 'none' }}
+                                title={post.author?.userStatus || ''}
+                              >
+                                {post.author?.displayName || 'Пользователь'}
+                              </a>
+                              <span style={{ color: 'var(--text-tertiary)', margin: '0 8px' }}>→</span>
+                              
+                              {/* Аватар владельца стены */}
+                              <div className={styles.avatarContainer} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }}>
+                                {post.wallOwner?.avatarUrl ? (
+                                  <img 
+                                    src={post.wallOwner.avatarUrl.startsWith('http') 
+                                      ? post.wallOwner.avatarUrl 
+                                      : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.wallOwner.avatarUrl}`
+                                    }
+                                    alt={post.wallOwner.displayName}
+                                    className={styles.authorAvatar}
+                                    title={post.wallOwner?.displayName || ''}
+                                    onClick={() => window.location.href = `/user/${post.wallOwner.id}`}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      const placeholder = document.createElement('div');
+                                      placeholder.className = styles.avatarPlaceholder;
+                                      placeholder.textContent = (post.wallOwner?.displayName || 'U').charAt(0).toUpperCase();
+                                      e.target.parentElement.appendChild(placeholder);
+                                    }}
+                                  />
+                                ) : (
+                                  <div 
+                                    className={styles.avatarPlaceholder}
+                                    title={post.wallOwner?.displayName || ''}
+                                  >
+                                    {(post.wallOwner?.displayName || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <a 
+                                href={`/user/${post.wallOwner.id}`} 
+                                style={{ color: 'inherit', textDecoration: 'none' }}
+                                title={post.wallOwner?.displayName || ''}
+                              >
+                                {post.wallOwner?.displayName || 'Пользователь'}
+                              </a>
+                            </>
+                          ) : (
+                            <a 
+                              href={`/user/${post.author.id}`} 
+                              style={{ color: 'inherit', textDecoration: 'none' }}
+                              title={post.author?.userStatus || ''}
+                            >
+                              {post.author?.displayName || 'Пользователь'}
+                            </a>
                           )}
                         </span>
-                      </a>
+                      </div>
                     </div>
                   )}
 
@@ -142,6 +199,7 @@ const FeedPage = () => {
                     post={post}
                     isOwnProfile={false}
                     onReactionChange={handleReactionAdded}
+                    isFeedView={true}
                   />
                 </div>
               );

@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications } from '../../store/slices/notificationsSlice';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './NotificationBadge.module.css';
 
 /**
  * Значок уведомлений с количеством непрочитанных
  * Отображается в правом блоке (Sidebar)
- * Автоматически обновляется каждые 30 секунд
+ * Автоматически обновляется через WebSocket и каждые 30 секунд
  */
 const NotificationBadge = () => {
   const dispatch = useAppDispatch();
@@ -17,13 +18,28 @@ const NotificationBadge = () => {
   useEffect(() => {
     dispatch(fetchNotifications());
 
-    // Устанавливаем интервал для периодического обновления
+    // Обработчик WebSocket сообщений
+    const handleWebSocketMessage = (data) => {
+      // Если пришло новое уведомление - обновляем список
+      if (data.type === 'notification' || data.type === 'new_notification') {
+        console.log('📬 Получено новое уведомление через WebSocket');
+        dispatch(fetchNotifications());
+      }
+    };
+
+    // Подписываемся на WebSocket сообщения
+    addMessageHandler(handleWebSocketMessage);
+
+    // Устанавливаем интервал для периодического обновления (fallback)
     const interval = setInterval(() => {
       dispatch(fetchNotifications());
     }, 30000); // 30 секунд
 
-    // Очищаем интервал при размонтировании
-    return () => clearInterval(interval);
+    // Очищаем при размонтировании
+    return () => {
+      clearInterval(interval);
+      removeMessageHandler(handleWebSocketMessage);
+    };
   }, [dispatch]);
 
   // Если нет непрочитанных уведомлений, не показываем значок

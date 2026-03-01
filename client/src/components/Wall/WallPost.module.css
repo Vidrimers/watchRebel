@@ -16,9 +16,30 @@
 .authorInfo {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   font-size: 14px;
   line-height: 1.4;
+}
+
+.authorAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.authorAvatar:hover {
+  transform: scale(1.1);
+}
+
+.authorNames {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .authorName,

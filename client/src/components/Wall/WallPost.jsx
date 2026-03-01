@@ -14,8 +14,13 @@ import styles from './WallPost.module.css';
 /**
  * Компонент отдельной записи на стене
  * Поддерживает разные типы постов: text, media_added, rating, review
+ * 
+ * @param {Object} post - Данные поста
+ * @param {boolean} isOwnProfile - Просмотр своего профиля
+ * @param {Function} onReactionChange - Callback при изменении реакций
+ * @param {boolean} isFeedView - Отображение в общей ленте (для показа "Автор → Владелец")
  */
-const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
+const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -425,7 +430,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
       {alertDialog}
       <div className={`${styles.wallPost} ${isAnnouncement ? styles.announcementPost : ''}`}>
       {/* Заголовок поста с именем автора */}
-      {!isAnnouncement && (
+      {!isAnnouncement && !isFeedView && (
         <div className={styles.postHeader}>
           {/* Логика отображения имени автора */}
           {(() => {
@@ -434,31 +439,22 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
               return null;
             }
 
-            // Если пост на чужой стене (автор !== владелец стены)
-            if (post.author?.id && post.wallOwner?.id && post.author.id !== post.wallOwner.id) {
-              return (
-                <div className={styles.authorInfo}>
-                  <span 
-                    className={styles.authorName}
-                    onClick={() => navigate(`/user/${post.author.id}`)}
-                  >
-                    {post.author.displayName}
-                  </span>
-                  <span className={styles.arrow}> → </span>
-                  <span 
-                    className={styles.wallOwnerName}
-                    onClick={() => navigate(`/user/${post.wallOwner.id}`)}
-                  >
-                    {post.wallOwner.displayName}
-                  </span>
-                </div>
-              );
-            }
-
-            // Обычный случай: показываем имя автора
+            // На стене пользователя: показываем аватарку и имя автора (без стрелки)
             if (post.author?.id) {
               return (
                 <div className={styles.authorInfo}>
+                  {/* Аватарка автора */}
+                  {post.author.avatarUrl && (
+                    <img 
+                      src={post.author.avatarUrl.startsWith('http') 
+                        ? post.author.avatarUrl 
+                        : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.author.avatarUrl}`
+                      }
+                      alt={post.author.displayName}
+                      className={styles.authorAvatar}
+                      onClick={() => navigate(`/user/${post.author.id}`)}
+                    />
+                  )}
                   <span 
                     className={styles.authorName}
                     onClick={() => navigate(`/user/${post.author.id}`)}
@@ -487,10 +483,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
             {post.editedAt && <span className={styles.editedLabel}> (изменено)</span>}
           </span>
 
-          {/* Кнопки управления (только для своих постов, но не для объявлений) */}
-          {!isAnnouncement && isOwnProfile && currentUser && post.userId === currentUser.id && (
+          {/* Кнопки управления (для автора поста или владельца стены, но не для объявлений) */}
+          {!isAnnouncement && currentUser && (
+            post.author?.id === currentUser.id || 
+            post.wallOwner?.id === currentUser.id
+          ) && (
             <div className={styles.postActions}>
-              {canEdit() && (post.postType === 'text' || post.postType === 'review') && !isEditing && (
+              {/* Редактировать может только автор */}
+              {post.author?.id === currentUser.id && canEdit() && (post.postType === 'text' || post.postType === 'review') && !isEditing && (
                 <button
                   className={styles.editButton}
                   onClick={handleEditPost}
@@ -499,6 +499,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                   <Icon name="edit" size="small" />
                 </button>
               )}
+              {/* Удалить может автор или владелец стены */}
               <button
                 className={styles.deleteButton}
                 onClick={handleDeletePost}
@@ -544,7 +545,18 @@ const WallPost = ({ post, isOwnProfile, onReactionChange }) => {
                   onClick={() => setShowReactionPicker(!showReactionPicker)}
                   title={userReaction ? 'Изменить реакцию' : 'Добавить реакцию'}
                 >
-                  {userReaction ? userReaction.emoji : '😊'}
+                  <svg 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+                    <circle cx="16" cy="10" r="1.5" fill="currentColor"/>
+                    <path d="M8 14.5C8.5 15.5 10 17 12 17C14 17 15.5 15.5 16 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
                 </button>
 
                 {/* Picker реакций */}
