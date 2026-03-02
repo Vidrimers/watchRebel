@@ -85,6 +85,7 @@ router.get('/search', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const currentUserId = req.user.id;
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
@@ -108,6 +109,16 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const user = userResult.data[0];
 
+    // Проверяем, заблокирован ли этот пользователь текущим пользователем
+    let isBlockedByMe = false;
+    if (currentUserId !== id) {
+      const blockCheck = await executeQuery(
+        'SELECT id FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
+        [currentUserId, id]
+      );
+      isBlockedByMe = blockCheck.success && blockCheck.data.length > 0;
+    }
+
     res.json({
       id: user.id,
       telegramUsername: user.telegram_username,
@@ -125,7 +136,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
       hasGoogleLinked: Boolean(user.google_id),
       hasDiscordLinked: Boolean(user.discord_id),
       emailVerified: Boolean(user.email_verified),
-      createdAt: user.created_at
+      createdAt: user.created_at,
+      isBlockedByMe: isBlockedByMe
     });
 
   } catch (error) {
@@ -1057,6 +1069,275 @@ router.delete('/me', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка удаления аккаунта:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/users/:id/friends/:friendId
+ * Удалить пользователя из друзей
+ */
+router.delete('/:id/friends/:friendId', authenticateToken, async (req, res) => {
+  try {
+    const { id, friendId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем права: пользователь может удалять только из своего списка друзей
+    if (userId !== id) {
+      return res.status(403).json({ 
+        error: 'Нет прав на удаление из друзей',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Нельзя удалить самого себя
+    if (userId === friendId) {
+      return res.status(400).json({ 
+        error: 'Нельзя удалить самого себя из друзей',
+        code: 'SELF_FRIEND' 
+      });
+    }
+
+    // Проверяем, есть ли дружба
+    const existingFriendship = await executeQuery(
+      'SELECT id FROM friends WHERE user_id = ? AND friend_id = ?',
+      [userId, friendId]
+    );
+
+    if (!existingFriendship.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки дружбы',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (existingFriendship.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не в друзьях',
+        code: 'NOT_FRIENDS' 
+      });
+    }
+
+    // Удаляем дружбу
+    const deleteResult = await executeQuery(
+      'DELETE FROM friends WHERE user_id = ? AND friend_id = ?',
+      [userId, friendId]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка удаления из друзей',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Пользователь удален из друзей',
+      userId,
+      friendId
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления из друзей:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/users/:id/block
+ * Заблокировать пользователя
+ */
+router.post('/:id/block', authenticateToken, async (req, res) => {
+  try {
+    const blockedUserId = req.params.id;
+    const userId = req.user.id;
+
+    // Нельзя заблокировать самого себя
+    if (userId === blockedUserId) {
+      return res.status(400).json({ 
+        error: 'Нельзя заблокировать самого себя',
+        code: 'SELF_BLOCK' 
+      });
+    }
+
+    // Проверяем, существует ли пользователь
+    const userCheck = await executeQuery(
+      'SELECT id FROM users WHERE id = ?',
+      [blockedUserId]
+    );
+
+    if (!userCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    // Проверяем, не заблокирован ли уже
+    const existingBlock = await executeQuery(
+      'SELECT id FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
+      [userId, blockedUserId]
+    );
+
+    if (!existingBlock.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки блокировки',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (existingBlock.data.length > 0) {
+      return res.status(400).json({ 
+        error: 'Пользователь уже заблокирован',
+        code: 'ALREADY_BLOCKED' 
+      });
+    }
+
+    // Блокируем пользователя
+    const { v4: uuidv4 } = await import('uuid');
+    const blockId = uuidv4();
+
+    const insertResult = await executeQuery(
+      'INSERT INTO user_blocks (id, user_id, blocked_user_id) VALUES (?, ?, ?)',
+      [blockId, userId, blockedUserId]
+    );
+
+    if (!insertResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка блокировки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Удаляем из друзей, если были друзьями
+    await executeQuery(
+      'DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
+      [userId, blockedUserId, blockedUserId, userId]
+    );
+
+    res.status(201).json({
+      id: blockId,
+      userId,
+      blockedUserId,
+      message: 'Пользователь заблокирован'
+    });
+
+  } catch (error) {
+    console.error('Ошибка блокировки пользователя:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/users/:id/unblock
+ * Разблокировать пользователя
+ */
+router.delete('/:id/unblock', authenticateToken, async (req, res) => {
+  try {
+    const blockedUserId = req.params.id;
+    const userId = req.user.id;
+
+    // Проверяем, заблокирован ли пользователь
+    const existingBlock = await executeQuery(
+      'SELECT id FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
+      [userId, blockedUserId]
+    );
+
+    if (!existingBlock.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки блокировки',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (existingBlock.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не заблокирован',
+        code: 'NOT_BLOCKED' 
+      });
+    }
+
+    // Разблокируем пользователя
+    const deleteResult = await executeQuery(
+      'DELETE FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
+      [userId, blockedUserId]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка разблокировки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Пользователь разблокирован',
+      userId,
+      blockedUserId
+    });
+
+  } catch (error) {
+    console.error('Ошибка разблокировки пользователя:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/users/blocked
+ * Получить список заблокированных пользователей
+ */
+router.get('/blocked', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Получаем список заблокированных пользователей
+    const blockedResult = await executeQuery(
+      `SELECT u.id, u.telegram_username, u.display_name, u.avatar_url, ub.created_at as blocked_at
+       FROM user_blocks ub
+       JOIN users u ON ub.blocked_user_id = u.id
+       WHERE ub.user_id = ?
+       ORDER BY ub.created_at DESC`,
+      [userId]
+    );
+
+    if (!blockedResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения списка заблокированных',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const blocked = blockedResult.data.map(user => ({
+      id: user.id,
+      telegramUsername: user.telegram_username,
+      displayName: user.display_name,
+      avatarUrl: user.avatar_url,
+      blockedAt: user.blocked_at
+    }));
+
+    res.json(blocked);
+
+  } catch (error) {
+    console.error('Ошибка получения списка заблокированных:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

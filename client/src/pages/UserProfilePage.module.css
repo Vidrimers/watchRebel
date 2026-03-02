@@ -11,6 +11,7 @@
   align-items: flex-start;
   gap: 24px;
   margin-bottom: 24px;
+  position: relative;
 }
 
 .avatarSection {
@@ -36,6 +37,181 @@
   font-weight: 400;
   color: var(--text-secondary);
   margin: 8px 0 0 0;
+}
+
+.profileActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.addFriendButton {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.addFriendButton:hover:not(:disabled) {
+  background: #0056b3;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.removeFriendButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.removeFriendButton:hover:not(:disabled) {
+  background: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.messageButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 5px 5px;
+  font-size: 18px;
+}
+
+.messageButton svg {
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.messageButton:hover {
+  background: #0056b3;
+  color: #ffffff;
+  border-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.messageButton:hover svg {
+  color: #ffffff;
+}
+
+.blockButton {
+  background: var(--bg-tertiary);
+  color: var(--error-color);
+  border: 1px solid var(--border-color);
+}
+
+.blockButton:hover {
+  background: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.moreMenuContainer {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.moreButton {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moreButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.moreMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.menuItem {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+.menuItem:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.removeFriendItem {
+  color: var(--text-primary);
+}
+
+.removeFriendItem:hover:not(:disabled) {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+.dangerItem {
+  color: var(--error-color);
+}
+
+.dangerItem:hover:not(:disabled) {
+  background: #dc3545;
+  color: #ffffff;
 }
 
 .profileUsername {
@@ -178,6 +354,7 @@
     flex-direction: column;
     text-align: center;
     padding: 24px;
+    padding-top: 48px;
   }
 
   .profileName {
@@ -186,6 +363,26 @@
 
   .profileUsername {
     font-size: 16px;
+  }
+
+  .profileActions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .actionButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .moreMenuContainer {
+    top: 12px;
+    right: 12px;
+  }
+
+  .moreMenu {
+    left: auto;
+    right: 0;
   }
 
   .wallSection {
@@ -204,5 +401,32 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profileHeader {
+    padding: 16px;
+    padding-top: 44px;
+  }
+
+  .profileName {
+    font-size: 20px;
+  }
+
+  .actionButton {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .moreButton {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .moreMenuContainer {
+    top: 8px;
+    right: 8px;
   }
 }
