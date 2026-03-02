@@ -18,6 +18,7 @@ const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const MediaDetailPage = lazy(() => import('./pages/MediaDetailPage'));
 const ListsPage = lazy(() => import('./pages/ListsPage'));
+const ListDetailPage = lazy(() => import('./pages/ListDetailPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -150,6 +151,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ListsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница конкретного списка */}
+              <Route 
+                path="/lists/:id" 
+                element={
+                  <ProtectedRoute>
+                    <ListDetailPage />
                   </ProtectedRoute>
                 } 
               />

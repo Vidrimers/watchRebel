@@ -14,6 +14,7 @@ import {
 import { EpisodeTracker, RatingSelector } from '../components/Media';
 import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert.jsx';
+import api from '../services/api';
 import styles from './MediaDetailPage.module.css';
 
 /**
@@ -33,6 +34,9 @@ const MediaDetailPage = () => {
 
   const [selectedListId, setSelectedListId] = useState('');
   const [showListSelector, setShowListSelector] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newListName, setNewListName] = useState('');
+  const [creating, setCreating] = useState(false);
 
   // Загрузка данных при монтировании
   useEffect(() => {
@@ -73,6 +77,63 @@ const MediaDetailPage = () => {
         message: 'Не удалось добавить в список',
         type: 'error'
       });
+    }
+  };
+
+  // Создание нового списка
+  const handleCreateList = async (e) => {
+    e.preventDefault();
+    
+    if (!newListName.trim() || !selectedMedia) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Введите название списка',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      setCreating(true);
+
+      const response = await api.post('/lists', {
+        name: newListName.trim(),
+        mediaType: selectedMedia.media_type || mediaType
+      });
+
+      const newList = response.data;
+      
+      // Добавляем медиа в новый список
+      await dispatch(addToList({
+        listId: newList.id,
+        media: {
+          tmdbId: selectedMedia.id,
+          mediaType: selectedMedia.media_type || mediaType
+        }
+      })).unwrap();
+      
+      // Перезагружаем списки
+      await dispatch(fetchLists());
+      
+      setNewListName('');
+      setShowCreateForm(false);
+      setShowListSelector(false);
+      
+      await showAlert({
+        title: 'Успешно!',
+        message: 'Список создан и контент добавлен',
+        type: 'success'
+      });
+
+    } catch (err) {
+      console.error('Ошибка создания списка:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: err.response?.data?.error || 'Не удалось создать список',
+        type: 'error'
+      });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -240,7 +301,7 @@ const MediaDetailPage = () => {
               {currentList ? (
                 <button 
                   className={`${styles.actionButton} ${styles.inList}`}
-                  disabled
+                  onClick={() => setShowListSelector(!showListSelector)}
                 >
                   ✓ В списке: {currentList.name}
                 </button>
@@ -264,25 +325,69 @@ const MediaDetailPage = () => {
             {/* Селектор списка */}
             {showListSelector && (
               <div className={styles.selector}>
-                <select 
-                  value={selectedListId}
-                  onChange={(e) => setSelectedListId(e.target.value)}
-                  className={styles.select}
-                >
-                  <option value="">Выберите список</option>
-                  {relevantLists.map(list => (
-                    <option key={list.id} value={list.id}>
-                      {list.name}
-                    </option>
-                  ))}
-                </select>
-                <button 
-                  className={styles.confirmButton}
-                  onClick={handleAddToList}
-                  disabled={!selectedListId}
-                >
-                  Добавить
-                </button>
+                {!showCreateForm ? (
+                  <>
+                    <div>
+                      <select 
+                        value={selectedListId}
+                        onChange={(e) => setSelectedListId(e.target.value)}
+                        className={styles.select}
+                      >
+                        <option value="">Выберите список</option>
+                        {relevantLists.map(list => (
+                          <option key={list.id} value={list.id}>
+                            {list.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button 
+                        className={styles.confirmButton}
+                        onClick={handleAddToList}
+                        disabled={!selectedListId}
+                      >
+                        Добавить
+                      </button>
+                    </div>
+                    <button 
+                      className={styles.createListButton}
+                      onClick={() => setShowCreateForm(true)}
+                    >
+                      + Создать список
+                    </button>
+                  </>
+                ) : (
+                  <form onSubmit={handleCreateList} className={styles.createForm}>
+                    <input
+                      type="text"
+                      className={styles.createInput}
+                      placeholder="Название списка"
+                      value={newListName}
+                      onChange={(e) => setNewListName(e.target.value)}
+                      autoFocus
+                      disabled={creating}
+                    />
+                    <div className={styles.createButtons}>
+                      <button 
+                        type="submit" 
+                        className={styles.submitButton}
+                        disabled={creating || !newListName.trim()}
+                      >
+                        {creating ? 'Создание...' : 'Создать'}
+                      </button>
+                      <button 
+                        type="button"
+                        className={styles.cancelButton}
+                        onClick={() => {
+                          setShowCreateForm(false);
+                          setNewListName('');
+                        }}
+                        disabled={creating}
+                      >
+                        Отмена
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             )}
 

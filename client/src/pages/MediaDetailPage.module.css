@@ -182,11 +182,17 @@
 
 .selector {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 16px;
   background: var(--selector-bg, #f8f9fa);
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.selector > div:first-child {
+  display: flex;
+  gap: 12px;
 }
 
 .select {
@@ -219,6 +225,82 @@
 .confirmButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.createListButton {
+  padding: 10px 24px;
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.createListButton:hover {
+  background: var(--primary-dark, #4f46e5);
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.createInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--primary-color, #6366f1);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.createInput:focus {
+  outline: none;
+  border-color: var(--primary-dark, #4f46e5);
+}
+
+.createButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.submitButton,
+.cancelButton {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitButton {
+  background: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: var(--primary-dark, #4f46e5);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-primary, #1f2937);
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--bg-hover, #e5e7eb);
 }
 
 .ratingSelector {

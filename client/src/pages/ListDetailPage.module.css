@@ -1,0 +1,145 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.error button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.backButton {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background: var(--button-bg, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton:hover {
+  background: var(--button-hover-bg, #f8f9fa);
+  transform: translateX(-4px);
+}
+
+.listInfo {
+  flex: 1;
+}
+
+.listName {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+}
+
+.listMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.ownerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color, #6366f1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.ownerLink:hover {
+  color: var(--primary-dark, #4f46e5);
+  text-decoration: underline;
+}
+
+.ownerAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.separator {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.mediaType {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.count {
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .listName {
+    font-size: 24px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .backButton,
+[data-theme="die-my-darling"] .backButton,
+[data-theme="cyberpunk"] .backButton,
+[data-theme="dark-neon-obsidian"] .backButton {
+  background: var(--bg-secondary, #2c2c2c);
+}
+
+[data-theme="dark"] .backButton:hover,
+[data-theme="die-my-darling"] .backButton:hover,
+[data-theme="cyberpunk"] .backButton:hover,
+[data-theme="dark-neon-obsidian"] .backButton:hover {
+  background: var(--bg-hover, #3a3a3a);
+}

@@ -116,6 +116,113 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 /**
+ * GET /api/lists/:id
+ * Получить конкретный список по ID (доступен всем авторизованным пользователям)
+ */
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Получаем информацию о списке
+    const listResult = await executeQuery(
+      `SELECT cl.*, u.display_name as owner_name, u.avatar_url as owner_avatar
+       FROM custom_lists cl
+       JOIN users u ON cl.user_id = u.id
+       WHERE cl.id = ?`,
+      [id]
+    );
+
+    if (!listResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения списка',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (listResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Список не найден',
+        code: 'LIST_NOT_FOUND' 
+      });
+    }
+
+    const list = listResult.data[0];
+
+    // Получаем элементы списка
+    const itemsResult = await executeQuery(
+      'SELECT * FROM list_items WHERE list_id = ? ORDER BY added_at DESC',
+      [id]
+    );
+
+    let items = [];
+    if (itemsResult.success) {
+      const tmdbService = (await import('../services/tmdbService.js')).default;
+      
+      items = await Promise.all(
+        itemsResult.data.map(async (item) => {
+          try {
+            let mediaDetails;
+            if (item.media_type === 'movie') {
+              mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
+            } else {
+              mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
+            }
+
+            return {
+              id: item.id,
+              listId: item.list_id,
+              tmdbId: item.tmdb_id,
+              mediaType: item.media_type,
+              addedAt: item.added_at,
+              title: mediaDetails.title || mediaDetails.name,
+              posterPath: mediaDetails.poster_path,
+              releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
+              voteAverage: mediaDetails.vote_average || 0,
+              overview: mediaDetails.overview
+            };
+          } catch (error) {
+            console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
+            return {
+              id: item.id,
+              listId: item.list_id,
+              tmdbId: item.tmdb_id,
+              mediaType: item.media_type,
+              addedAt: item.added_at,
+              title: 'Неизвестно',
+              posterPath: null,
+              releaseDate: null,
+              voteAverage: 0,
+              overview: null
+            };
+          }
+        })
+      );
+    }
+
+    res.json({
+      id: list.id,
+      userId: list.user_id,
+      name: list.name,
+      mediaType: list.media_type,
+      createdAt: list.created_at,
+      owner: {
+        id: list.user_id,
+        displayName: list.owner_name,
+        avatarUrl: list.owner_avatar
+      },
+      items
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения списка:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
  * POST /api/lists
  * Создать новый пользовательский список
  * 

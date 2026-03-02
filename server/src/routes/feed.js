@@ -57,6 +57,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         wp.tmdb_id,
         wp.media_type,
         wp.poster_path,
+        wp.list_id,
         wp.created_at,
         wp.edited_at,
         author.id as author_id,

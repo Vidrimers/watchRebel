@@ -5,6 +5,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { addReaction, deletePost, fetchWall } from '../../store/slices/wallSlice';
 import ReactionPicker from './ReactionPicker';
 import ReactionTooltip from './ReactionTooltip';
+import AddToListModal from './AddToListModal';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import Icon from '../Common/Icon';
@@ -34,6 +35,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [showAddToListModal, setShowAddToListModal] = useState(false);
 
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
@@ -325,7 +327,10 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         const listName = listNameMatch ? listNameMatch[1] : '';
         
         return (
-          <div className={styles.mediaAddedContent}>
+          <div 
+            className={styles.mediaAddedContent}
+            onClick={handleMediaClick}
+          >
             {post.posterPath && (
               <div className={styles.mediaPoster}>
                 <img 
@@ -336,42 +341,57 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
                   }
                   alt="Постер"
                   className={styles.posterImage}
-                  onClick={handleMediaClick}
                 />
               </div>
             )}
             <div className={styles.mediaTextContent}>
-              <h4 className={styles.movieTitle} onClick={handleMediaClick}>
+              <h4 className={styles.movieTitle}>
                 {movieTitle}
               </h4>
               <p className={styles.mediaAddedText}>
-                Добавил в список: {post.listId && listName ? (
-                  <span 
-                    className={styles.listLink}
+                Добавил в список: <span 
+                  className={post.listId ? styles.listLink : styles.listLinkDisabled}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isModal && post.listId) {
+                      navigate(`/lists/${post.listId}`);
+                    }
+                  }}
+                  style={{ cursor: post.listId ? 'pointer' : 'default' }}
+                  title={post.listId ? 'Перейти к списку' : 'Список недоступен (старый пост)'}
+                >
+                  {listName}
+                </span>
+              </p>
+              <div className={styles.mediaBottomRow}>
+                {post.tmdbId && (
+                  <div className={styles.mediaTypeLabel}>
+                    {post.mediaType === 'movie' ? (
+                      <>
+                        <Icon name="movies" size="small" /> Фильм
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="tv" size="small" /> Сериал
+                      </>
+                    )}
+                  </div>
+                )}
+                {/* Кнопка "В свой список" для других пользователей */}
+                {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
+                  <button
+                    className={styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isModal) {
-                        navigate(`/lists/${post.listId}`);
-                      }
+                      setShowAddToListModal(true);
                     }}
+                    title="Добавить в свой список"
                   >
-                    {listName}
-                  </span>
-                ) : listName}
-              </p>
-              {post.tmdbId && (
-                <div className={styles.mediaTypeLabel}>
-                  {post.mediaType === 'movie' ? (
-                    <>
-                      <Icon name="movies" size="small" /> Фильм
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="tv" size="small" /> Сериал
-                    </>
-                  )}
-                </div>
-              )}
+                    <Icon name="add" size="small" />
+                    В свой список
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -614,6 +634,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
           />
         )}
       </div>
+
+      {/* Модалка добавления в список */}
+      {showAddToListModal && (
+        <AddToListModal
+          tmdbId={post.tmdbId}
+          mediaType={post.mediaType}
+          mediaTitle={post.content?.split('\n')[0]}
+          onClose={() => setShowAddToListModal(false)}
+        />
+      )}
     </div>
     </>
   );
