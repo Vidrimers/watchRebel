@@ -1,0 +1,153 @@
+/* Material Design Dark Theme */
+/* Темная тема в стиле Google Material Design */
+
+[data-theme="material-dark"] {
+  /* Основные цвета фона - Material Dark surfaces */
+  --bg-primary: #121212;         /* Material Dark background */
+  --bg-secondary: #1e1e1e;       /* Material Dark surface (elevation 1) */
+  --bg-tertiary: #232323;        /* Material Dark surface (elevation 2) */
+  --bg-hover: #2c2c2c;           /* Фон при наведении (elevation 4) */
+  --bg-active: #333333;          /* Фон активного элемента (elevation 8) */
+  --bg-input: #1e1e1e;           /* Фон полей ввода */
+  --bg-disabled: #2c2c2c;        /* Фон отключенных элементов */
+
+  /* Цвета текста - Material Design Dark типографика */
+  --text-primary: rgba(255, 255, 255, 0.87);    /* Основной текст - высокая контрастность */
+  --text-secondary: rgba(255, 255, 255, 0.60);  /* Вторичный текст - средняя контрастность */
+  --text-tertiary: rgba(255, 255, 255, 0.38);   /* Третичный текст - низкая контрастность */
+  --text-disabled: rgba(255, 255, 255, 0.38);   /* Отключенный текст */
+  --text-inverse: rgba(0, 0, 0, 0.87);          /* Инверсный текст (на светлом фоне) */
+  --text-link: #90caf9;                          /* Material Blue 200 */
+  --text-link-hover: #64b5f6;                    /* Material Blue 300 */
+
+  /* Акцентные цвета - Material Design Dark палитра */
+  --accent-primary: #90caf9;                     /* Material Blue 200 */
+  --accent-primary-hover: #64b5f6;               /* Material Blue 300 */
+  --accent-primary-active: #42a5f5;              /* Material Blue 400 */
+  --accent-secondary: #ef5350;                   /* Material Red 400 */
+  --accent-secondary-hover: #e53935;             /* Material Red 600 */
+  --accent-tertiary: #ba68c8;                    /* Material Purple 300 */
+
+  /* Цвета состояний - Material Design Dark */
+  --color-success: #66bb6a;                      /* Material Green 400 */
+  --color-success-bg: #1b5e20;                   /* Material Green 900 */
+  --color-success-border: #81c784;               /* Material Green 300 */
+  
+  --color-warning: #ffb74d;                      /* Material Orange 300 */
+  --color-warning-bg: #e65100;                   /* Material Orange 900 */
+  --color-warning-border: #ffa726;               /* Material Orange 400 */
+  
+  --color-error: #ef5350;                        /* Material Red 400 */
+  --color-error-bg: #b71c1c;                     /* Material Red 900 */
+  --color-error-border: #e57373;                 /* Material Red 300 */
+  
+  --color-info: #64b5f6;                         /* Material Blue 300 */
+  --color-info-bg: #0d47a1;                      /* Material Blue 900 */
+  --color-info-border: #90caf9;                  /* Material Blue 200 */
+
+  /* Границы */
+  --border-color: rgba(255, 255, 255, 0.12);     /* Стандартные границы Material Dark */
+  --border-color-light: rgba(255, 255, 255, 0.06);
+  --border-color-dark: rgba(255, 255, 255, 0.20);
+  --border-color-focus: #90caf9;
+
+  /* Тени - Material Design Dark elevation */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.48);
+  --shadow-sm: 0 3px 6px rgba(0, 0, 0, 0.48), 0 3px 6px rgba(0, 0, 0, 0.46);
+  --shadow-md: 0 10px 20px rgba(0, 0, 0, 0.57), 0 6px 6px rgba(0, 0, 0, 0.46);
+  --shadow-lg: 0 14px 28px rgba(0, 0, 0, 0.75), 0 10px 10px rgba(0, 0, 0, 0.44);
+  --shadow-xl: 0 19px 38px rgba(0, 0, 0, 0.90), 0 15px 12px rgba(0, 0, 0, 0.44);
+
+  /* Оверлеи */
+  --overlay-light: rgba(255, 255, 255, 0.12);
+  --overlay-dark: rgba(0, 0, 0, 0.8);
+
+  /* Рейтинги */
+  --rating-star-filled: #ffc107;                 /* Material Amber 500 */
+  --rating-star-empty: #616161;                  /* Material Grey 700 */
+
+  /* Уведомления */
+  --notification-badge: #ef5350;                 /* Material Red 400 */
+  --notification-dot: #66bb6a;                   /* Material Green 400 */
+
+  /* Скроллбар */
+  --scrollbar-track: #1e1e1e;
+  --scrollbar-thumb: #616161;                    /* Material Grey 700 */
+  --scrollbar-thumb-hover: #757575;              /* Material Grey 600 */
+}
+
+/* Дополнительные стили для Material Dark темы */
+[data-theme="material-dark"] body {
+  color-scheme: dark;
+}
+
+/* Улучшенная читаемость для темной темы */
+[data-theme="material-dark"] img {
+  opacity: 0.9;
+}
+
+[data-theme="material-dark"] img:hover {
+  opacity: 1;
+}
+
+/* Стили для выделения текста */
+[data-theme="material-dark"] ::selection {
+  background-color: rgba(144, 202, 249, 0.3);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+/* Стили для скроллбара */
+[data-theme="material-dark"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="material-dark"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="material-dark"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+}
+
+[data-theme="material-dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Material Design ripple эффект для кнопок */
+[data-theme="material-dark"] button {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Улучшенные тени для карточек с elevation */
+[data-theme="material-dark"] .card,
+[data-theme="material-dark"] [class*="card"] {
+  background-color: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base), background-color var(--transition-base);
+}
+
+[data-theme="material-dark"] .card:hover,
+[data-theme="material-dark"] [class*="card"]:hover {
+  background-color: var(--bg-tertiary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Material Design elevation overlay для темной темы */
+[data-theme="material-dark"] .elevation-1 {
+  background-color: #1e1e1e;
+}
+
+[data-theme="material-dark"] .elevation-2 {
+  background-color: #232323;
+}
+
+[data-theme="material-dark"] .elevation-4 {
+  background-color: #2c2c2c;
+}
+
+[data-theme="material-dark"] .elevation-8 {
+  background-color: #333333;
+}

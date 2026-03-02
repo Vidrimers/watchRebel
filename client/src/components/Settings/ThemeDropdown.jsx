@@ -29,6 +29,18 @@ const ThemeDropdown = () => {
       colors: ['#0f0f0f', '#818cf8', '#f472b6']
     },
     {
+      value: 'material-light',
+      label: 'Material Light',
+      icon: '🎨',
+      colors: ['#ffffff', '#1976d2', '#d32f2f']
+    },
+    {
+      value: 'material-dark',
+      label: 'Material Dark',
+      icon: '🌐',
+      colors: ['#121212', '#90caf9', '#ef5350']
+    },
+    {
       value: 'die-my-darling',
       label: 'Die my Darling',
       icon: '🩸',

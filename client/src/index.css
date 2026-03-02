@@ -2,6 +2,8 @@
 @import './styles/variables.css';
 @import './styles/themes/light-cream.css';
 @import './styles/themes/dark.css';
+@import './styles/themes/material-light.css';
+@import './styles/themes/material-dark.css';
 @import './styles/themes/die-my-darling.css';
 @import './styles/themes/steam.css';
 @import './styles/themes/discord.css';

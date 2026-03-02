@@ -16,6 +16,8 @@ const __dirname = path.dirname(__filename);
 const expectedThemes = [
   'light-cream',
   'dark',
+  'material-light',
+  'material-dark',
   'die-my-darling',
   'steam',
   'discord',
