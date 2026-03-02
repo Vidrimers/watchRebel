@@ -148,7 +148,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
                       <p className={styles.userStatus}>{user.userStatus}</p>
                     ) : (
                       <p className={`${styles.setStatusHint} ${isHoveringUserInfo ? styles.visible : ''}`}>
-                        Задать статус ✏️
+                        Задать статус <Icon name="edit" size={14} />
                       </p>
                     )}
                   </div>

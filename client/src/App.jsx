@@ -195,6 +195,16 @@ function App() {
                 } 
               />
 
+              {/* Страница сообщений с конкретным пользователем */}
+              <Route 
+                path="/messages/:userId" 
+                element={
+                  <ProtectedRoute>
+                    <MessagesPage />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Страница друзей */}
               <Route 
                 path="/friends" 
