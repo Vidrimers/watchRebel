@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { addReaction, deletePost, fetchWall } from '../../store/slices/wallSlice';
+import { addReaction, deletePost, updatePost, fetchWall } from '../../store/slices/wallSlice';
 import ReactionPicker from './ReactionPicker';
 import ReactionTooltip from './ReactionTooltip';
 import AddToListModal from './AddToListModal';
@@ -180,15 +180,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
 
     setIsSaving(true);
     try {
-      await api.put(`/wall/${post.id}`, { content: editedContent.trim() });
-      // Перезагружаем посты
-      dispatch(fetchWall(post.userId));
+      await dispatch(updatePost({ 
+        postId: post.id, 
+        content: editedContent.trim() 
+      })).unwrap();
       setIsEditing(false);
     } catch (err) {
       console.error('Ошибка редактирования поста:', err);
       await showAlert({
         title: 'Ошибка',
-        message: err.response?.data?.error || 'Не удалось отредактировать запись',
+        message: err.message || 'Не удалось отредактировать запись',
         type: 'error'
       });
     } finally {

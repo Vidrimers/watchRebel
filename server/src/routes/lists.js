@@ -683,7 +683,7 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
       
       const insertResult = await executeQuery(
         `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, poster_path, list_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
         [postId, userId, userId, 'media_added', postContent, tmdbId, mediaType, localPosterPath || posterPath, list.id]
       );
       

@@ -47,6 +47,18 @@ export const addReaction = createAsyncThunk(
   }
 );
 
+export const updatePost = createAsyncThunk(
+  'wall/updatePost',
+  async ({ postId, content }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/wall/${postId}`, { content });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 export const deletePost = createAsyncThunk(
   'wall/deletePost',
   async (postId, { rejectWithValue }) => {
@@ -124,6 +136,24 @@ const wallSlice = createSlice({
         state.error = null;
       })
       .addCase(addReaction.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      // Update Post
+      .addCase(updatePost.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(updatePost.fulfilled, (state, action) => {
+        const postIndex = state.posts.findIndex(p => p.id === action.payload.id);
+        if (postIndex !== -1) {
+          // Обновляем пост, сохраняя все поля
+          state.posts[postIndex] = {
+            ...state.posts[postIndex],
+            ...action.payload
+          };
+        }
+        state.error = null;
+      })
+      .addCase(updatePost.rejected, (state, action) => {
         state.error = action.payload;
       })
       // Delete Post

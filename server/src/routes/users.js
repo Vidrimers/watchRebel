@@ -256,7 +256,7 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
         const postId = uuidv4();
         const insertResult = await executeQuery(
           `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, created_at)
-           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+           VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
           [postId, id, id, 'status_update', newStatus]
         );
         

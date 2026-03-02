@@ -353,8 +353,8 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     //        wall_owner_id - это владелец стены (на чьей стене)
     const postId = uuidv4();
     const insertResult = await executeQuery(
-      `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, rating)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, rating, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
       [postId, userId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
     );
 
