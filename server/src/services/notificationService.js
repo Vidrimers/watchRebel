@@ -235,9 +235,10 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
  * @param {string} friendId - ID друга, который совершил действие
  * @param {string} actionType - Тип действия ('added_to_list' | 'rated' | 'reviewed')
  * @param {Object} mediaInfo - Информация о медиа (tmdbId, mediaType, title)
+ * @param {string} postId - ID поста на стене (опционально)
  * @returns {Promise<Object>} - Результат создания и отправки уведомлений
  */
-export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
+export async function notifyFriendActivity(friendId, actionType, mediaInfo, postId = null) {
   try {
     // Получаем информацию о друге для Telegram (актуальное имя на момент отправки)
     const friendResult = await executeQuery(
@@ -318,7 +319,7 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo) {
         'friend_activity',
         contentTemplate,
         friendId,
-        null
+        postId  // Передаем postId если есть
       );
 
       if (notificationResult.success) {

@@ -54,6 +54,9 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         wp.wall_owner_id,
         wp.post_type,
         wp.content,
+        wp.tmdb_id,
+        wp.media_type,
+        wp.poster_path,
         wp.created_at,
         wp.edited_at,
         author.id as author_id,
@@ -68,7 +71,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
        LEFT JOIN users author ON wp.user_id = author.id
        LEFT JOIN users owner ON wp.wall_owner_id = owner.id
        WHERE wp.wall_owner_id IN (${placeholders})
-         AND wp.post_type IN ('text', 'status_update')
+         AND wp.post_type IN ('text', 'status_update', 'media_added')
          AND wp.content NOT LIKE '📢 Объявление администратора:%'
        ORDER BY wp.created_at DESC
        LIMIT 10`,
@@ -141,6 +144,10 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           userId: post.user_id,
           postType: post.post_type,
           content: post.content,
+          tmdbId: post.tmdb_id,
+          mediaType: post.media_type,
+          posterPath: post.poster_path,
+          listId: post.list_id,
           createdAt: post.created_at,
           editedAt: post.edited_at,
           author: {

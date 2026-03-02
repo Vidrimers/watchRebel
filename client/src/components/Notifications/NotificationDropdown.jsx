@@ -5,6 +5,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead } from '../../store/slices/notificationsSlice';
 import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
+import api from '../../services/api';
 import styles from './NotificationDropdown.module.css';
 
 /**
@@ -80,7 +81,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   };
 
   // Обработчик клика по уведомлению
-  const handleNotificationClick = (e, notification) => {
+  const handleNotificationClick = async (e, notification) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -89,10 +90,29 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
                           notification.relatedPostId.includes('-') && 
                           notification.relatedPostId.length > 30;
     
-    // Приоритет: если есть валидный связанный пост - открываем модальное окно
+    // Если есть валидный связанный пост - нужно определить куда переходить
     if (isValidPostId) {
-      setSelectedPostId(notification.relatedPostId);
-      return; // Не переходим никуда
+      try {
+        // Загружаем пост чтобы узнать его тип
+        const response = await api.get(`/wall/post/${notification.relatedPostId}`);
+        const post = response.data;
+        
+        // Если это пост о медиа (добавление, оценка, отзыв) - переходим на страницу медиа
+        if (['media_added', 'rating', 'review'].includes(post.postType) && post.tmdbId && post.mediaType) {
+          window.location.href = `/media/${post.mediaType}/${post.tmdbId}`;
+          onClose();
+          return;
+        }
+        
+        // Иначе открываем модалку с постом
+        setSelectedPostId(notification.relatedPostId);
+        return;
+      } catch (err) {
+        console.error('Ошибка загрузки поста:', err);
+        // Если не удалось загрузить пост, просто открываем модалку
+        setSelectedPostId(notification.relatedPostId);
+        return;
+      }
     } 
     // Если есть связанный пользователь (и нет поста) - переходим на его страницу
     else if (notification.relatedUserId) {
@@ -181,7 +201,11 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
                   <li
                     key={notification.id}
                     className={`${styles.item} ${!notification.isRead ? styles.unread : ''}`}
-                    onClick={(e) => handleNotificationClick(e, notification)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleNotificationClick(e, notification);
+                    }}
                     onMouseEnter={() => handleNotificationHover(notification)}
                   >
                     <div className={styles.icon}>

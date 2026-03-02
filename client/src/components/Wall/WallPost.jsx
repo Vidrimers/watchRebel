@@ -315,34 +315,64 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         );
 
       case 'media_added':
+        // Разбиваем content на название фильма и текст о списке
+        const contentLines = post.content ? post.content.split('\n') : [];
+        const movieTitle = contentLines[0] || '';
+        const listText = contentLines[1] || 'Добавил в список';
+        
+        // Извлекаем название списка из текста
+        const listNameMatch = listText.match(/Добавил в список:\s*(.+)/);
+        const listName = listNameMatch ? listNameMatch[1] : '';
+        
         return (
           <div className={styles.mediaAddedContent}>
-            <p className={styles.actionText}>
-              📌 Добавил{isOwnProfile ? '' : 'а'} в список
-            </p>
-            {post.tmdbId && (
-              <div 
-                className={styles.mediaInfo}
-                onClick={handleMediaClick}
-              >
-                <div className={styles.mediaDetails}>
-                  <h4 className={styles.mediaTitle}>
-                    {post.mediaType === 'movie' ? 'Фильм' : 'Сериал'} (ID: {post.tmdbId})
-                  </h4>
-                  <span className={styles.mediaType}>
-                    {post.mediaType === 'movie' ? (
-                      <>
-                        <Icon name="movies" size="small" /> Фильм
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="tv" size="small" /> Сериал
-                      </>
-                    )}
-                  </span>
-                </div>
+            {post.posterPath && (
+              <div className={styles.mediaPoster}>
+                <img 
+                  src={
+                    post.posterPath.startsWith('/uploads/') 
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.posterPath}`
+                      : `https://image.tmdb.org/t/p/w185${post.posterPath}`
+                  }
+                  alt="Постер"
+                  className={styles.posterImage}
+                  onClick={handleMediaClick}
+                />
               </div>
             )}
+            <div className={styles.mediaTextContent}>
+              <h4 className={styles.movieTitle} onClick={handleMediaClick}>
+                {movieTitle}
+              </h4>
+              <p className={styles.mediaAddedText}>
+                Добавил в список: {post.listId && listName ? (
+                  <span 
+                    className={styles.listLink}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isModal) {
+                        navigate(`/lists/${post.listId}`);
+                      }
+                    }}
+                  >
+                    {listName}
+                  </span>
+                ) : listName}
+              </p>
+              {post.tmdbId && (
+                <div className={styles.mediaTypeLabel}>
+                  {post.mediaType === 'movie' ? (
+                    <>
+                      <Icon name="movies" size="small" /> Фильм
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="tv" size="small" /> Сериал
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         );
 

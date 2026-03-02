@@ -510,27 +510,94 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
 
     // Получаем название контента из TMDb для уведомления
     let mediaTitle = `контент #${tmdbId}`;
+    let posterPath = null;
+    let localPosterPath = null;
     try {
       const tmdbService = (await import('../services/tmdbService.js')).default;
+      const { downloadImage } = await import('../utils/imageDownloader.js');
+      
       let mediaDetails;
       if (mediaType === 'movie') {
         mediaDetails = await tmdbService.getMovieDetails(tmdbId);
         mediaTitle = mediaDetails.title;
+        posterPath = mediaDetails.poster_path;
+        console.log(`✅ Получено название фильма из TMDb: "${mediaTitle}"`);
       } else {
         mediaDetails = await tmdbService.getTVDetails(tmdbId);
         mediaTitle = mediaDetails.name;
+        posterPath = mediaDetails.poster_path;
+        console.log(`✅ Получено название сериала из TMDb: "${mediaTitle}"`);
+      }
+
+      // Скачиваем постер на сервер
+      if (posterPath) {
+        try {
+          localPosterPath = await downloadImage(posterPath, 'posters');
+          console.log(`✅ Постер сохранен локально: ${localPosterPath}`);
+        } catch (err) {
+          console.error('⚠️  Ошибка скачивания постера:', err.message);
+          // Используем TMDb URL если не удалось скачать
+          localPosterPath = posterPath;
+        }
       }
     } catch (err) {
-      console.error('Ошибка получения названия из TMDb:', err);
+      console.error('❌ Ошибка получения названия из TMDb:', err);
+      console.error('❌ Будет использовано дефолтное название:', mediaTitle);
+    }
+
+    // Создаем пост на стене о добавлении медиа в список
+    let postId = null;
+    try {
+      postId = uuidv4();
+      
+      console.log('📝 Данные для создания поста:');
+      console.log('  - mediaTitle:', mediaTitle);
+      console.log('  - list.name:', list.name);
+      console.log('  - list.id:', list.id);
+      console.log('  - tmdbId:', tmdbId);
+      console.log('  - posterPath:', posterPath);
+      console.log('  - localPosterPath:', localPosterPath);
+      
+      const postContent = `${mediaTitle}\nДобавил в список: ${list.name}`;
+      
+      console.log('📝 Сформированный postContent:', postContent);
+      
+      console.log('Создание поста на стене:', {
+        postId,
+        userId,
+        wallOwnerId: userId,
+        postType: 'media_added',
+        content: postContent,
+        tmdbId,
+        mediaType,
+        posterPath: localPosterPath || posterPath,
+        listId: list.id
+      });
+      
+      const insertResult = await executeQuery(
+        `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, poster_path, list_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [postId, userId, userId, 'media_added', postContent, tmdbId, mediaType, localPosterPath || posterPath, list.id]
+      );
+      
+      if (insertResult.success) {
+        console.log(`✅ Создан пост на стене: ${postId} для медиа ${tmdbId}`);
+      } else {
+        console.error('❌ Ошибка вставки поста:', insertResult);
+      }
+    } catch (err) {
+      console.error('❌ Ошибка создания поста на стене:', err);
+      // Не блокируем добавление в список если пост не создался
     }
 
     // Отправляем уведомления друзьям об активности
+    // Передаем postId для корректной навигации
     // Не блокируем ответ, если уведомления не отправятся
     notifyFriendActivity(userId, 'added_to_list', {
       tmdbId,
       mediaType,
       title: mediaTitle
-    }).catch(err => {
+    }, postId).catch(err => {
       console.error('Ошибка отправки уведомлений друзьям:', err);
     });
 
