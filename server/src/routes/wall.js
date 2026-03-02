@@ -114,6 +114,107 @@ router.get('/:userId', async (req, res) => {
 });
 
 /**
+ * GET /api/wall/post/:postId
+ * Получить отдельный пост по ID
+ * Используется для модального окна при переходе из уведомлений
+ */
+router.get('/post/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // Получаем пост с информацией об авторе и владельце стены
+    const postResult = await executeQuery(
+      `SELECT 
+        wp.*,
+        author.id as author_id,
+        author.display_name as author_display_name,
+        author.avatar_url as author_avatar_url,
+        author.telegram_username as author_telegram_username,
+        owner.id as wall_owner_id,
+        owner.display_name as wall_owner_display_name,
+        owner.avatar_url as wall_owner_avatar_url
+       FROM wall_posts wp
+       LEFT JOIN users author ON wp.user_id = author.id
+       LEFT JOIN users owner ON wp.wall_owner_id = owner.id
+       WHERE wp.id = ?`,
+      [postId]
+    );
+
+    if (!postResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения поста',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (postResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пост не найден',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    const post = postResult.data[0];
+
+    // Получаем реакции для поста
+    const reactionsResult = await executeQuery(
+      `SELECT r.*, u.display_name, u.avatar_url 
+       FROM reactions r
+       LEFT JOIN users u ON r.user_id = u.id
+       WHERE r.post_id = ?
+       ORDER BY r.created_at DESC`,
+      [postId]
+    );
+
+    const reactions = reactionsResult.success ? reactionsResult.data : [];
+
+    // Формируем ответ
+    const formattedPost = {
+      id: post.id,
+      userId: post.user_id,
+      wallOwnerId: post.wall_owner_id,
+      postType: post.post_type,
+      content: post.content,
+      tmdbId: post.tmdb_id,
+      mediaType: post.media_type,
+      rating: post.rating,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      author: {
+        id: post.author_id,
+        displayName: post.author_display_name,
+        avatarUrl: post.author_avatar_url,
+        telegramUsername: post.author_telegram_username
+      },
+      wallOwner: {
+        id: post.wall_owner_id,
+        displayName: post.wall_owner_display_name,
+        avatarUrl: post.wall_owner_avatar_url
+      },
+      reactions: reactions.map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        emoji: r.emoji,
+        createdAt: r.created_at,
+        user: {
+          displayName: r.display_name,
+          avatarUrl: r.avatar_url
+        }
+      }))
+    };
+
+    res.json(formattedPost);
+
+  } catch (error) {
+    console.error('Ошибка получения поста:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
  * POST /api/wall
  * Создать новую запись на стене
  * 

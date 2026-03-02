@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead, markAllAsRead } from '../../store/slices/notificationsSlice';
+import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
 import styles from './NotificationList.module.css';
 
@@ -12,6 +13,7 @@ import styles from './NotificationList.module.css';
 const NotificationList = () => {
   const dispatch = useAppDispatch();
   const { notifications, loading, unreadCount } = useAppSelector((state) => state.notifications);
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   // Загружаем уведомления при монтировании компонента
   useEffect(() => {
@@ -26,14 +28,23 @@ const NotificationList = () => {
   };
 
   // Обработчик клика по уведомлению
-  const handleNotificationClick = (notification) => {
-    // Переход к связанному контенту
-    if (notification.relatedPostId) {
-      // Переход к посту на стене
-      window.location.href = `/profile/${notification.userId}#post-${notification.relatedPostId}`;
-    } else if (notification.relatedUserId) {
-      // Переход к профилю пользователя
-      window.location.href = `/profile/${notification.relatedUserId}`;
+  const handleNotificationClick = (e, notification) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Проверяем, что relatedPostId это UUID (формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const isValidPostId = notification.relatedPostId && 
+                          notification.relatedPostId.includes('-') && 
+                          notification.relatedPostId.length > 30;
+    
+    // Приоритет: если есть валидный связанный пост - открываем модальное окно
+    if (isValidPostId) {
+      setSelectedPostId(notification.relatedPostId);
+      return; // Не переходим никуда
+    } 
+    // Если есть связанный пользователь (и нет поста) - переходим на его страницу
+    else if (notification.relatedUserId) {
+      window.location.href = `/user/${notification.relatedUserId}`;
     }
   };
 
@@ -124,7 +135,7 @@ const NotificationList = () => {
           <li
             key={notification.id}
             className={`${styles.item} ${!notification.isRead ? styles.unread : ''}`}
-            onClick={() => handleNotificationClick(notification)}
+            onClick={(e) => handleNotificationClick(e, notification)}
             onMouseEnter={() => handleNotificationHover(notification)}
           >
             <div className={styles.icon}>
@@ -142,6 +153,13 @@ const NotificationList = () => {
           </li>
         ))}
       </ul>
+
+      {/* Модальное окно для отображения поста */}
+      <WallPostModal 
+        postId={selectedPostId}
+        isOpen={!!selectedPostId}
+        onClose={() => setSelectedPostId(null)}
+      />
     </div>
   );
 };

@@ -19,8 +19,9 @@ import styles from './WallPost.module.css';
  * @param {boolean} isOwnProfile - Просмотр своего профиля
  * @param {Function} onReactionChange - Callback при изменении реакций
  * @param {boolean} isFeedView - Отображение в общей ленте (для показа "Автор → Владелец")
+ * @param {boolean} isModal - Отображение в модальном окне (отключает навигацию)
  */
-const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false }) => {
+const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, isModal = false }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -248,7 +249,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false }) 
 
   // Переход на страницу медиа
   const handleMediaClick = () => {
-    if (post.tmdbId && post.mediaType) {
+    if (!isModal && post.tmdbId && post.mediaType) {
       navigate(`/media/${post.mediaType}/${post.tmdbId}`);
     }
   };
@@ -452,12 +453,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false }) 
                       }
                       alt={post.author.displayName}
                       className={styles.authorAvatar}
-                      onClick={() => navigate(`/user/${post.author.id}`)}
+                      onClick={isModal ? undefined : () => navigate(`/user/${post.author.id}`)}
+                      style={isModal ? { cursor: 'default' } : {}}
                     />
                   )}
                   <span 
                     className={styles.authorName}
-                    onClick={() => navigate(`/user/${post.author.id}`)}
+                    onClick={isModal ? undefined : () => navigate(`/user/${post.author.id}`)}
+                    style={isModal ? { cursor: 'default' } : {}}
                   >
                     {post.author.displayName}
                   </span>

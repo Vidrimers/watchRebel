@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchNotifications, markAsRead } from '../../store/slices/notificationsSlice';
+import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
 import styles from './NotificationDropdown.module.css';
 
@@ -16,6 +17,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   const { notifications, loading } = useAppSelector((state) => state.notifications);
   const dropdownRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   // Вычисляем позицию dropdown относительно кнопки
   useEffect(() => {
@@ -35,12 +37,25 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
     }
   }, [isOpen, dispatch]);
 
+  // Сбрасываем selectedPostId при закрытии dropdown
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedPostId(null);
+    }
+  }, [isOpen]);
+
   // Закрытие при клике вне dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Проверяем, что клик не по кнопке уведомлений и не по dropdown
+      // Проверяем, что клик не по кнопке уведомлений, не по dropdown и не по модалке поста
       const notificationButton = event.target.closest('.notificationsButton');
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && !notificationButton) {
+      const isModalClick = event.target.closest('[data-modal="wall-post"]');
+      
+      if (dropdownRef.current && 
+          !dropdownRef.current.contains(event.target) && 
+          !notificationButton &&
+          !isModalClick) {
+        setSelectedPostId(null); // Сбрасываем выбранный пост
         onClose();
       }
     };
@@ -65,14 +80,25 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   };
 
   // Обработчик клика по уведомлению
-  const handleNotificationClick = (notification) => {
-    // Переход к связанному контенту
-    if (notification.relatedPostId) {
-      window.location.href = `/user/${notification.userId}#post-${notification.relatedPostId}`;
-    } else if (notification.relatedUserId) {
+  const handleNotificationClick = (e, notification) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Проверяем, что relatedPostId это UUID (формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const isValidPostId = notification.relatedPostId && 
+                          notification.relatedPostId.includes('-') && 
+                          notification.relatedPostId.length > 30;
+    
+    // Приоритет: если есть валидный связанный пост - открываем модальное окно
+    if (isValidPostId) {
+      setSelectedPostId(notification.relatedPostId);
+      return; // Не переходим никуда
+    } 
+    // Если есть связанный пользователь (и нет поста) - переходим на его страницу
+    else if (notification.relatedUserId) {
       window.location.href = `/user/${notification.relatedUserId}`;
+      onClose();
     }
-    onClose();
   };
 
   // Формирование текста уведомления с актуальным именем пользователя
@@ -125,64 +151,77 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   const displayedNotifications = notifications.slice(0, 15);
 
   // Рендерим dropdown через портал в body
-  return createPortal(
-    <div 
-      className={styles.dropdown} 
-      ref={dropdownRef}
-      style={{
-        position: 'fixed',
-        top: `${position.top}px`,
-        right: `${position.right}px`
-      }}
-    >
-      <div className={styles.header}>
-        <h3 className={styles.title}>Уведомления</h3>
-      </div>
-
-      <div className={styles.content}>
-        {loading && displayedNotifications.length === 0 ? (
-          <div className={styles.loading}>Загрузка...</div>
-        ) : displayedNotifications.length === 0 ? (
-          <div className={styles.empty}>
-            <Icon name="bell" size="large" className={styles.emptyIcon} />
-            <p>Пока нет уведомлений</p>
+  return (
+    <>
+      {createPortal(
+        <div 
+          className={styles.dropdown} 
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: `${position.top}px`,
+            right: `${position.right}px`
+          }}
+        >
+          <div className={styles.header}>
+            <h3 className={styles.title}>Уведомления</h3>
           </div>
-        ) : (
-          <ul className={styles.list}>
-            {displayedNotifications.map((notification) => (
-              <li
-                key={notification.id}
-                className={`${styles.item} ${!notification.isRead ? styles.unread : ''}`}
-                onClick={() => handleNotificationClick(notification)}
-                onMouseEnter={() => handleNotificationHover(notification)}
-              >
-                <div className={styles.icon}>
-                  <Icon name={getNotificationIcon(notification.type)} size="medium" />
-                </div>
-                
-                <div className={styles.itemContent}>
-                  <p className={styles.text}>{formatNotificationText(notification)}</p>
-                  <span className={styles.time}>{formatDate(notification.createdAt)}</span>
-                </div>
 
-                {!notification.isRead && (
-                  <div className={styles.unreadDot} aria-label="Непрочитано" />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          <div className={styles.content}>
+            {loading && displayedNotifications.length === 0 ? (
+              <div className={styles.loading}>Загрузка...</div>
+            ) : displayedNotifications.length === 0 ? (
+              <div className={styles.empty}>
+                <Icon name="bell" size="large" className={styles.emptyIcon} />
+                <p>Пока нет уведомлений</p>
+              </div>
+            ) : (
+              <ul className={styles.list}>
+                {displayedNotifications.map((notification) => (
+                  <li
+                    key={notification.id}
+                    className={`${styles.item} ${!notification.isRead ? styles.unread : ''}`}
+                    onClick={(e) => handleNotificationClick(e, notification)}
+                    onMouseEnter={() => handleNotificationHover(notification)}
+                  >
+                    <div className={styles.icon}>
+                      <Icon name={getNotificationIcon(notification.type)} size="medium" />
+                    </div>
+                    
+                    <div className={styles.itemContent}>
+                      <p className={styles.text}>{formatNotificationText(notification)}</p>
+                      <span className={styles.time}>{formatDate(notification.createdAt)}</span>
+                    </div>
 
-      {displayedNotifications.length > 0 && (
-        <div className={styles.footer}>
-          <a href="/notifications" className={styles.showAllButton}>
-            Показать все
-          </a>
-        </div>
+                    {!notification.isRead && (
+                      <div className={styles.unreadDot} aria-label="Непрочитано" />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {displayedNotifications.length > 0 && (
+            <div className={styles.footer}>
+              <a href="/notifications" className={styles.showAllButton}>
+                Показать все
+              </a>
+            </div>
+          )}
+        </div>,
+        document.body
       )}
-    </div>,
-    document.body
+
+      {/* Модальное окно для отображения поста - рендерим отдельно */}
+      <WallPostModal 
+        postId={selectedPostId}
+        isOpen={!!selectedPostId}
+        onClose={() => {
+          setSelectedPostId(null);
+        }}
+      />
+    </>
   );
 };
 
