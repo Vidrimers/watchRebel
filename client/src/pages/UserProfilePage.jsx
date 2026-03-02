@@ -392,9 +392,9 @@ const UserProfilePage = () => {
           </div>
         )}
 
-        {/* Wall - лента активности */}
+        {/* Wall - стена пользователя */}
         <div className={styles.wallSection}>
-          <h2 className={styles.sectionTitle}>Лента активности</h2>
+          <h2 className={styles.sectionTitle}>Стена</h2>
           <Wall 
             userId={userId} 
             isOwnProfile={isOwnProfile}
