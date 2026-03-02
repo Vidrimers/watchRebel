@@ -115,6 +115,31 @@
   color: #ffffff;
 }
 
+.iconButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 5px 5px;
+  font-size: 18px;
+}
+
+.iconButton svg {
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  background: #0056b3;
+  color: #ffffff;
+  border-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.iconButton:hover svg {
+  color: #ffffff;
+}
+
 .blockButton {
   background: var(--bg-tertiary);
   color: var(--error-color);

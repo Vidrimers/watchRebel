@@ -224,6 +224,19 @@ const UserProfilePage = () => {
     }
   };
 
+  /**
+   * Показать сообщение "Скоро будет доступно"
+   */
+  const handleComingSoon = async () => {
+    await showConfirm({
+      title: 'Скоро будет доступно',
+      message: 'Эта функция находится в разработке и скоро будет доступна.',
+      confirmText: 'Понятно',
+      cancelText: null,
+      confirmButtonStyle: 'primary'
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className={styles.errorContainer}>
@@ -290,6 +303,33 @@ const UserProfilePage = () => {
                     title="Отправить сообщение"
                   >
                     <Icon name="message" size={18} />
+                  </button>
+                  
+                  <button 
+                    className={`${styles.actionButton} ${styles.iconButton}`}
+                    onClick={handleComingSoon}
+                    aria-label="Фильмы"
+                    title="Фильмы"
+                  >
+                    <Icon name="movies" size={18} />
+                  </button>
+                  
+                  <button 
+                    className={`${styles.actionButton} ${styles.iconButton}`}
+                    onClick={handleComingSoon}
+                    aria-label="Сериалы"
+                    title="Сериалы"
+                  >
+                    <Icon name="tv" size={18} />
+                  </button>
+                  
+                  <button 
+                    className={`${styles.actionButton} ${styles.iconButton}`}
+                    onClick={handleComingSoon}
+                    aria-label="Хочу посмотреть"
+                    title="Хочу посмотреть"
+                  >
+                    <Icon name="watchlist" size={18} />
                   </button>
                 </div>
               )}
