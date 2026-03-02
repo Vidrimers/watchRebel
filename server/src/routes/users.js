@@ -236,12 +236,27 @@ router.put('/:id', authenticateToken, uploadAvatar.single('avatar'), async (req,
       // Создаем wall post при изменении статуса
       // Только если статус действительно изменился И новый статус не пустой
       if (currentStatus !== newStatus && newStatus !== null) {
+        console.log('📝 Создание поста со статусом:');
+        console.log('  - userId:', id);
+        console.log('  - currentStatus:', currentStatus);
+        console.log('  - newStatus:', newStatus);
+        
         const postId = uuidv4();
-        await executeQuery(
-          `INSERT INTO wall_posts (id, user_id, post_type, content)
-           VALUES (?, ?, ?, ?)`,
-          [postId, id, 'status_update', newStatus]
+        const insertResult = await executeQuery(
+          `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, created_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+          [postId, id, id, 'status_update', newStatus]
         );
+        
+        if (insertResult.success) {
+          console.log('✅ Пост со статусом создан:', postId);
+        } else {
+          console.error('❌ Ошибка создания поста со статусом:', insertResult);
+        }
+      } else {
+        console.log('⏭️  Пост со статусом не создан:');
+        console.log('  - currentStatus === newStatus:', currentStatus === newStatus);
+        console.log('  - newStatus === null:', newStatus === null);
       }
     }
 
