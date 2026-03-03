@@ -132,5 +132,15 @@ const uploadPostImages = multer({
   }
 });
 
-export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages };
+// Настройка multer для изображений комментариев (1 изображение, 10MB)
+const uploadCommentImage = multer({
+  storage: postImageStorage, // Используем то же хранилище что и для постов
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Максимум 10MB
+    files: 1
+  }
+});
+
+export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage };
 export default uploadAvatar;

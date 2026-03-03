@@ -664,7 +664,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
                 onClick={() => setShowComments(!showComments)}
                 title={commentsCount > 0 ? 'Показать комментарии' : 'Комментировать'}
               >
-                💬 {commentsCount > 0 ? commentsCount : 'Комментировать'}
+                <Icon name="message" size="small" />
+                {commentsCount > 0 ? commentsCount : 'Комментировать'}
               </button>
             )}
             

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, checkPostBan } from '../middleware/auth.js';
 import { notifyReaction } from '../services/notificationService.js';
-import { uploadPostImages } from '../middleware/upload.js';
+import { uploadPostImages, uploadCommentImage } from '../middleware/upload.js';
 import { compressImage, isValidImageType } from '../utils/imageProcessor.js';
 import path from 'path';
 
@@ -1272,23 +1272,25 @@ router.delete('/images/:imageId', authenticateToken, async (req, res) => {
  * - content: string (обязательно, максимум 1000 символов)
  * - parent_comment_id: string (опционально, для ответов на комментарии)
  */
-router.post('/:postId/comments', authenticateToken, async (req, res) => {
+router.post('/:postId/comments', authenticateToken, uploadCommentImage.single('image'), async (req, res) => {
   try {
     const { postId } = req.params;
     const userId = req.user.id;
     const { content, parent_comment_id } = req.body;
+    const image = req.file;
 
-    // Валидация контента
-    if (!content || typeof content !== 'string' || content.trim() === '') {
+    // Валидация: должен быть либо контент, либо изображение
+    if ((!content || content.trim() === '') && !image) {
       return res.status(400).json({ 
-        error: 'Контент комментария не может быть пустым',
-        code: 'EMPTY_CONTENT' 
+        error: 'Комментарий должен содержать текст или изображение',
+        code: 'EMPTY_COMMENT' 
       });
     }
 
-    if (content.length > 1000) {
+    // Валидация длины контента (если есть)
+    if (content && content.length > 400) {
       return res.status(400).json({ 
-        error: 'Комментарий не может быть длиннее 1000 символов',
+        error: 'Комментарий не может быть длиннее 400 символов',
         code: 'CONTENT_TOO_LONG' 
       });
     }
@@ -1330,12 +1332,18 @@ router.post('/:postId/comments', authenticateToken, async (req, res) => {
       }
     }
 
+    // Обработка загруженного изображения
+    let imageUrl = null;
+    if (image) {
+      imageUrl = `/uploads/images/${image.filename}`;
+    }
+
     // Создаем комментарий
     const commentId = uuidv4();
     const insertResult = await executeQuery(
-      `INSERT INTO post_comments (id, post_id, user_id, parent_comment_id, content, created_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-      [commentId, postId, userId, parent_comment_id || null, content.trim()]
+      `INSERT INTO post_comments (id, post_id, user_id, parent_comment_id, content, image_url, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+      [commentId, postId, userId, parent_comment_id || null, content ? content.trim() : '', imageUrl]
     );
 
     if (!insertResult.success) {
@@ -1402,6 +1410,7 @@ router.post('/:postId/comments', authenticateToken, async (req, res) => {
       userId: comment.user_id,
       parentCommentId: comment.parent_comment_id,
       content: comment.content,
+      imageUrl: comment.image_url,
       createdAt: comment.created_at,
       editedAt: comment.edited_at,
       author: {
@@ -1501,6 +1510,7 @@ router.get('/:postId/comments', async (req, res) => {
           userId: comment.user_id,
           parentCommentId: comment.parent_comment_id,
           content: comment.content,
+          imageUrl: comment.image_url,
           createdAt: comment.created_at,
           editedAt: comment.edited_at,
           repliesCount,
@@ -1612,6 +1622,7 @@ router.get('/comments/:commentId/replies', async (req, res) => {
           userId: reply.user_id,
           parentCommentId: reply.parent_comment_id,
           content: reply.content,
+          imageUrl: reply.image_url,
           createdAt: reply.created_at,
           editedAt: reply.edited_at,
           repliesCount,

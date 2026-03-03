@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import useConfirm from '../../hooks/useConfirm';
 import ReactionPicker from './ReactionPicker';
+import ImageModal from './ImageModal';
 import api from '../../services/api';
 import styles from './PostComment.module.css';
 
@@ -12,10 +13,15 @@ import styles from './PostComment.module.css';
  * @param {Object} comment - Данные комментария
  * @param {string} postId - ID поста
  * @param {number} depth - Уровень вложенности (для отступов и ограничения)
- * @param {Function} onUpdate - Callback при обновлении комментария
- * @param {Function} onDelete - Callback при удалении комментария
+ * @param {string} parentAuthorName - Имя автора родительского комментария
+ * @param {boolean} isDeleted - Флаг локального удаления
+ * @param {Set} deletedComments - Set с ID удаленных комментариев
+ * @param {Function} onReply - Callback для ответа на комментарий
+ * @param {Function} onEdit - Callback для редактирования комментария
+ * @param {Function} onDelete - Callback для удаления комментария
+ * @param {Function} onRestore - Callback для восстановления комментария
  */
-const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
+const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDeleted = false, deletedComments, onReply, onEdit, onDelete, onRestore }) => {
   const MAX_DEPTH = 2; // Максимальная глубина вложенности
   const currentUser = useAppSelector((state) => state.auth.user);
   const { confirmDialog, showConfirm } = useConfirm();
@@ -31,11 +37,25 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
   const [hasMoreReplies, setHasMoreReplies] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [replyFile, setReplyFile] = useState(null);
+  const [isDraggingReply, setIsDraggingReply] = useState(false);
+  const replyFileInputRef = useRef(null);
+  const editTextareaRef = useRef(null);
   const repliesLimit = 5;
 
   const isOwn = currentUser && comment.userId === currentUser.id;
-  const isDeleted = comment.content === '[Комментарий удален]';
-  const canNestDeeper = depth < MAX_DEPTH; // Можно ли вкладывать глубже
+  const isServerDeleted = comment.content === '[Комментарий удален]';
+
+  // Перемещаем курсор в конец при открытии редактирования
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      const textarea = editTextareaRef.current;
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+      textarea.focus();
+    }
+  }, [isEditing]);
 
   // Загрузка ответов на комментарий
   const loadReplies = async (reset = false) => {
@@ -88,15 +108,12 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
     try {
       setIsSaving(true);
       
-      await api.put(`/wall/comments/${comment.id}`, {
-        content: editedContent.trim()
-      });
+      // Вызываем callback для редактирования
+      if (onEdit) {
+        await onEdit(comment.id, editedContent.trim());
+      }
 
       setIsEditing(false);
-      
-      if (onUpdate) {
-        onUpdate();
-      }
     } catch (error) {
       console.error('Ошибка редактирования комментария:', error);
       alert(error.response?.data?.error || 'Не удалось отредактировать комментарий');
@@ -105,31 +122,10 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
     }
   };
 
-  // Обработка удаления
-  const handleDelete = async () => {
-    const confirmed = await showConfirm(
-      'Вы уверены, что хотите удалить этот комментарий?',
-      'Удалить комментарий'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await api.delete(`/wall/comments/${comment.id}`);
-      
-      if (onDelete) {
-        onDelete();
-      }
-    } catch (error) {
-      console.error('Ошибка удаления комментария:', error);
-      alert(error.response?.data?.error || 'Не удалось удалить комментарий');
-    }
-  };
-
   // Обработка ответа
   const handleReply = () => {
     setShowReplyForm(true);
-    setReplyText(`@${comment.author.displayName} `);
+    setReplyText(''); // Пустое поле
   };
 
   const handleCancelReply = () => {
@@ -140,25 +136,38 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
   const handleSubmitReply = async (e) => {
     e.preventDefault();
     
-    if (!replyText.trim() || submittingReply) return;
+    // Проверяем что есть либо текст, либо файл
+    if (!replyText.trim() && !replyFile) return;
+    if (submittingReply) return;
 
     try {
       setSubmittingReply(true);
       
-      await api.post(`/wall/${postId}/comments`, {
-        content: replyText.trim(),
-        parent_comment_id: comment.id
+      // Создаем FormData для отправки файла
+      const formData = new FormData();
+      if (replyText.trim()) {
+        formData.append('content', replyText.trim());
+      }
+      if (replyFile) {
+        formData.append('image', replyFile);
+      }
+      formData.append('parent_comment_id', comment.id);
+
+      await api.post(`/wall/${postId}/comments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       setReplyText('');
+      setReplyFile(null);
+      if (replyFileInputRef.current) {
+        replyFileInputRef.current.value = '';
+      }
       setShowReplyForm(false);
       
       // Перезагружаем ответы
       await loadReplies(true);
-      
-      if (onUpdate) {
-        onUpdate();
-      }
     } catch (error) {
       console.error('Ошибка отправки ответа:', error);
       alert(error.response?.data?.error || 'Не удалось отправить ответ');
@@ -176,6 +185,70 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
       } else if (showReplyForm) {
         handleSubmitReply(e);
       }
+    }
+  };
+
+  // Обработка выбора файла для ответа
+  const handleReplyFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Проверка размера (макс 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой. Максимальный размер: 10MB');
+        return;
+      }
+      setReplyFile(file);
+    }
+  };
+
+  // Удаление выбранного файла ответа
+  const handleRemoveReplyFile = () => {
+    setReplyFile(null);
+    if (replyFileInputRef.current) {
+      replyFileInputRef.current.value = '';
+    }
+  };
+
+  // Drag & Drop handlers для ответа
+  const handleReplyDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingReply(true);
+  };
+
+  const handleReplyDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingReply(false);
+  };
+
+  const handleReplyDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleReplyDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingReply(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Проверка типа файла
+      if (!file.type.startsWith('image/')) {
+        alert('Можно загружать только изображения');
+        return;
+      }
+      
+      // Проверка размера
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой. Максимальный размер: 10MB');
+        return;
+      }
+      
+      setReplyFile(file);
     }
   };
 
@@ -206,10 +279,10 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
     });
   };
 
-  const paddingLeft = depth > 0 ? Math.min(depth, MAX_DEPTH) * 40 : 0; // Ограничиваем отступ максимальной глубиной
+  const paddingLeft = 0; // Убираем динамические отступы
 
   return (
-    <div className={styles.commentWrapper} style={{ paddingLeft: `${paddingLeft}px` }}>
+    <div className={`${styles.commentWrapper} ${depth === 1 ? styles.isFirstLevelReply : ''}`}>
       {confirmDialog}
       
       <div className={styles.comment}>
@@ -237,6 +310,9 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
           <div className={styles.commentHeader}>
             <span className={styles.authorName}>
               {comment.author.displayName}
+              {depth > 0 && parentAuthorName && (
+                <span className={styles.replyArrow}> → {parentAuthorName}</span>
+              )}
             </span>
             <span className={styles.commentDate}>
               {formatDate(comment.createdAt)}
@@ -248,14 +324,14 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
           {isEditing ? (
             <div className={styles.editForm}>
               <textarea
+                ref={editTextareaRef}
                 className={styles.editInput}
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={1000}
+                maxLength={400}
                 rows={3}
                 disabled={isSaving}
-                autoFocus
               />
               <div className={styles.editActions}>
                 <button
@@ -275,26 +351,65 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
               </div>
             </div>
           ) : (
-            <p className={`${styles.commentText} ${isDeleted ? styles.deletedText : ''}`}>
-              {comment.content}
-            </p>
+            <>
+              <p className={`${styles.commentText} ${(isDeleted || isServerDeleted) ? styles.deletedText : ''}`}>
+                {isDeleted ? '[Комментарий удален]' : comment.content}
+              </p>
+              
+              {/* Изображение комментария */}
+              {!isDeleted && !isServerDeleted && comment.imageUrl && (
+                <div className={styles.commentImage}>
+                  <img 
+                    src={comment.imageUrl.startsWith('http') 
+                      ? comment.imageUrl 
+                      : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.imageUrl}`
+                    }
+                    alt="Изображение комментария"
+                    className={styles.commentImageImg}
+                    onClick={() => setShowImageModal(true)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Модалка для просмотра изображения */}
+          {comment.imageUrl && (
+            <ImageModal
+              imageUrl={comment.imageUrl.startsWith('http') 
+                ? comment.imageUrl 
+                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.imageUrl}`
+              }
+              alt="Изображение комментария"
+              isOpen={showImageModal}
+              onClose={() => setShowImageModal(false)}
+            />
           )}
 
           {/* Действия */}
-          {!isEditing && !isDeleted && (
+          {!isServerDeleted && !isEditing && (
             <div className={styles.commentActions}>
-              <button className={styles.actionButton} onClick={handleReply}>
-                Ответить
-              </button>
-              
-              {isOwn && (
+              {isDeleted ? (
+                // Если локально удален - показываем кнопку восстановления
+                <button className={styles.actionButton} onClick={() => onRestore && onRestore(comment.id)}>
+                  Восстановить
+                </button>
+              ) : (
                 <>
-                  <button className={styles.actionButton} onClick={handleEdit}>
-                    Редактировать
+                  <button className={styles.actionButton} onClick={handleReply}>
+                    Ответить
                   </button>
-                  <button className={styles.actionButton} onClick={handleDelete}>
-                    Удалить
-                  </button>
+                  
+                  {isOwn && (
+                    <>
+                      <button className={styles.actionButton} onClick={handleEdit}>
+                        Редактировать
+                      </button>
+                      <button className={styles.actionButton} onClick={() => onDelete && onDelete(comment.id)}>
+                        Удалить
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -303,38 +418,81 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
           {/* Форма ответа */}
           {showReplyForm && (
             <form className={styles.replyForm} onSubmit={handleSubmitReply}>
-              <div className={styles.textareaWrapper}>
+              <div 
+                className={`${styles.textareaWrapper} ${isDraggingReply ? styles.dragging : ''}`}
+                onDragEnter={handleReplyDragEnter}
+                onDragLeave={handleReplyDragLeave}
+                onDragOver={handleReplyDragOver}
+                onDrop={handleReplyDrop}
+              >
                 <textarea
                   className={styles.replyInput}
                   placeholder={`Ответ для @${comment.author.displayName}...`}
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  maxLength={1000}
+                  maxLength={400}
                   rows={2}
                   disabled={submittingReply}
                   autoFocus
                 />
-                <button
-                  type="button"
-                  className={styles.emojiButton}
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  disabled={submittingReply}
-                  title="Добавить эмодзи"
-                >
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    xmlns="http://www.w3.org/2000/svg"
+                
+                {/* Кнопки внутри textarea */}
+                <div className={styles.textareaButtons}>
+                  {/* Кнопка загрузки файла */}
+                  <button
+                    type="button"
+                    className={styles.fileButton}
+                    onClick={() => replyFileInputRef.current?.click()}
+                    disabled={submittingReply}
+                    title="Прикрепить файл"
                   >
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                    <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
-                    <circle cx="16" cy="10" r="1.5" fill="currentColor"/>
-                    <path d="M8 14.5C8.5 15.5 10 17 12 17C14 17 15.5 15.5 16 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </button>
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path 
+                        d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <input
+                    ref={replyFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReplyFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                  
+                  {/* Кнопка эмодзи */}
+                  <button
+                    type="button"
+                    className={styles.emojiButton}
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    disabled={submittingReply}
+                    title="Добавить эмодзи"
+                  >
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                      <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+                      <circle cx="16" cy="10" r="1.5" fill="currentColor"/>
+                      <path d="M8 14.5C8.5 15.5 10 17 12 17C14 17 15.5 15.5 16 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
                 
                 {/* Панель эмодзи */}
                 {showEmojiPicker && (
@@ -347,11 +505,25 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
                 )}
               </div>
               
+              {/* Выбранный файл */}
+              {replyFile && (
+                <div className={styles.selectedFile}>
+                  <span className={styles.fileName}>{replyFile.name}</span>
+                  <button
+                    type="button"
+                    className={styles.removeFileButton}
+                    onClick={handleRemoveReplyFile}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              
               <div className={styles.replyActions}>
                 <button
                   type="submit"
                   className={styles.submitReplyButton}
-                  disabled={!replyText.trim() || submittingReply}
+                  disabled={(!replyText.trim() && !replyFile) || submittingReply}
                 >
                   {submittingReply ? 'Отправка...' : 'Отправить'}
                 </button>
@@ -377,35 +549,40 @@ const PostComment = ({ comment, postId, depth = 0, onUpdate, onDelete }) => {
               {loadingReplies ? 'Загрузка...' : `Показать ответы (${comment.repliesCount})`}
             </button>
           )}
-
-          {/* Список ответов */}
-          {showReplies && replies.length > 0 && (
-            <div className={styles.repliesList}>
-              {replies.map((reply) => (
-                <PostComment
-                  key={reply.id}
-                  comment={reply}
-                  postId={postId}
-                  depth={canNestDeeper ? depth + 1 : depth} // Ограничиваем глубину
-                  onUpdate={() => loadReplies(true)}
-                  onDelete={() => loadReplies(true)}
-                />
-              ))}
-              
-              {/* Кнопка "Загрузить еще ответы" */}
-              {hasMoreReplies && (
-                <button
-                  className={styles.loadMoreRepliesButton}
-                  onClick={() => loadReplies(false)}
-                  disabled={loadingReplies}
-                >
-                  {loadingReplies ? 'Загрузка...' : 'Показать еще ответы'}
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Список ответов - вынесен за пределы .comment */}
+      {showReplies && replies.length > 0 && (
+        <div className={styles.repliesList}>
+          {replies.map((reply) => (
+            <PostComment
+              key={reply.id}
+              comment={reply}
+              postId={postId}
+              depth={depth + 1}
+              parentAuthorName={comment.author.displayName}
+              isDeleted={deletedComments && deletedComments.has(reply.id)}
+              deletedComments={deletedComments}
+              onReply={onReply}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onRestore={onRestore}
+            />
+          ))}
+          
+          {/* Кнопка "Загрузить еще ответы" */}
+          {hasMoreReplies && (
+            <button
+              className={styles.loadMoreRepliesButton}
+              onClick={() => loadReplies(false)}
+              disabled={loadingReplies}
+            >
+              {loadingReplies ? 'Загрузка...' : 'Показать еще ответы'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

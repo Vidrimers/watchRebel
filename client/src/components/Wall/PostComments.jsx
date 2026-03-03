@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import PostComment from './PostComment';
 import ReactionPicker from './ReactionPicker';
+import Icon from '../Common/Icon';
 import api from '../../services/api';
 import styles from './PostComments.module.css';
 
@@ -25,8 +26,11 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   const [offset, setOffset] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [deletedComments, setDeletedComments] = useState(new Set()); // Локально удаленные комментарии
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const limit = 5;
+  const maxChars = 400; // Лимит символов
 
   // Загрузка комментариев
   const loadComments = async (reset = false) => {
@@ -57,28 +61,42 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
 
   // Загрузка комментариев при монтировании
   useEffect(() => {
-    if (isOpen) {
-      loadComments(true);
-    }
-  }, [postId, isOpen]);
+    // Загружаем комментарии всегда при монтировании
+    loadComments(true);
+  }, [postId]);
 
   // Обработка отправки комментария
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!commentText.trim() || submitting) return;
+    // Проверяем что есть либо текст, либо файл
+    if (!commentText.trim() && !selectedFile) return;
+    if (submitting) return;
 
     try {
       setSubmitting(true);
       
-      // TODO: Добавить поддержку загрузки файла
-      await api.post(`/wall/${postId}/comments`, {
-        content: commentText.trim()
+      // Создаем FormData для отправки файла
+      const formData = new FormData();
+      if (commentText.trim()) {
+        formData.append('content', commentText.trim());
+      }
+      if (selectedFile) {
+        formData.append('image', selectedFile);
+      }
+
+      await api.post(`/wall/${postId}/comments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       // Очищаем поле ввода и файл
       setCommentText('');
       setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       
       // Перезагружаем комментарии
       await loadComments(true);
@@ -130,30 +148,139 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
     }
   };
 
+  // Drag & Drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Проверка типа файла
+      if (!file.type.startsWith('image/')) {
+        alert('Можно загружать только изображения');
+        return;
+      }
+      
+      // Проверка размера
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой. Максимальный размер: 10MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+    }
+  };
+
+  // Обработка закрытия формы комментариев
+  const handleClose = async () => {
+    // Удаляем все локально помеченные комментарии на сервере
+    if (deletedComments.size > 0) {
+      for (const commentId of deletedComments) {
+        try {
+          await api.delete(`/wall/comments/${commentId}`);
+        } catch (error) {
+          console.error('Ошибка удаления комментария:', error);
+        }
+      }
+    }
+    
+    // Очищаем состояние формы
+    setCommentText('');
+    setShowEmojiPicker(false);
+    setSelectedFile(null);
+    setDeletedComments(new Set());
+    
+    // Закрываем форму
+    onClose();
+  };
+
   // Обработка обновления комментария
   const handleCommentUpdate = () => {
     loadComments(true);
   };
 
-  // Обработка удаления комментария
-  const handleCommentDelete = () => {
-    loadComments(true);
+  // Обработка удаления комментария (локально)
+  const handleCommentDelete = (commentId) => {
+    setDeletedComments(prev => new Set([...prev, commentId]));
+  };
+
+  // Восстановление комментария
+  const handleCommentRestore = (commentId) => {
+    setDeletedComments(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(commentId);
+      return newSet;
+    });
+  };
+
+  // Обработка ответа на комментарий
+  const handleCommentReply = async (commentId, authorName, content) => {
+    try {
+      await api.post(`/wall/${postId}/comments`, {
+        content,
+        parent_comment_id: commentId
+      });
+      
+      // Перезагружаем комментарии
+      await loadComments(true);
+    } catch (error) {
+      console.error('Ошибка отправки ответа:', error);
+      throw error;
+    }
+  };
+
+  // Обработка редактирования комментария
+  const handleCommentEdit = async (commentId, content) => {
+    try {
+      await api.put(`/wall/comments/${commentId}`, { content });
+      
+      // Перезагружаем комментарии
+      await loadComments(true);
+    } catch (error) {
+      console.error('Ошибка редактирования комментария:', error);
+      throw error;
+    }
   };
 
   const charCount = commentText.length;
-  const maxChars = 1000;
 
-  // Не показываем компонент если форма закрыта и нет комментариев
+  // Показываем компонент если форма открыта ИЛИ есть комментарии
   if (!isOpen && total === 0) {
     return null;
   }
 
   return (
     <div className={styles.postComments}>
-      {/* Форма добавления комментария */}
+      {/* Форма добавления комментария - показываем только если isOpen */}
       {isOpen && (
         <form className={styles.commentForm} onSubmit={handleSubmit}>
-          <div className={styles.textareaWrapper}>
+          <div 
+            className={`${styles.textareaWrapper} ${isDragging ? styles.dragging : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <textarea
               className={styles.commentInput}
               placeholder="Напишите комментарий..."
@@ -256,12 +383,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
               <button
                 type="button"
                 className={styles.cancelButton}
-                onClick={() => {
-                  onClose();
-                  setCommentText('');
-                  setShowEmojiPicker(false);
-                  setSelectedFile(null);
-                }}
+                onClick={handleClose}
                 disabled={submitting}
               >
                 Отмена
@@ -269,7 +391,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
               <button
                 type="submit"
                 className={styles.submitButton}
-                disabled={!commentText.trim() || submitting}
+                disabled={(!commentText.trim() && !selectedFile) || submitting}
               >
                 {submitting ? 'Отправка...' : 'Отправить'}
               </button>
@@ -285,7 +407,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       {total > 0 && (
         <div className={styles.commentsHeader}>
           <span className={styles.commentsCount}>
-            💬 {total} {total === 1 ? 'комментарий' : total < 5 ? 'комментария' : 'комментариев'}
+            <Icon name="message" size="small" /> {total} {total === 1 ? 'комментарий' : total < 5 ? 'комментария' : 'комментариев'}
           </span>
         </div>
       )}
@@ -298,8 +420,13 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
               key={comment.id}
               comment={comment}
               postId={postId}
-              onUpdate={handleCommentUpdate}
+              depth={0}
+              isDeleted={deletedComments.has(comment.id)}
+              deletedComments={deletedComments}
+              onReply={handleCommentReply}
+              onEdit={handleCommentEdit}
               onDelete={handleCommentDelete}
+              onRestore={handleCommentRestore}
             />
           ))}
         </div>
