@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import ImageComment from './ImageComment';
@@ -22,6 +22,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [deletedComments, setDeletedComments] = useState(new Set()); // Локально удаленные комментарии
   const currentUser = useSelector((state) => state.auth.user);
+  const commentsListRef = useRef(null); // Ссылка на список комментариев для сохранения скролла
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1313';
 
@@ -41,11 +42,31 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   }, [currentIndex, isOpen, images]);
 
   // Загрузка комментариев
-  const loadComments = async (imageId) => {
+  const loadComments = async (imageId, scrollBehavior = 'none') => {
     try {
+      // Сохраняем текущую позицию скролла если нужно
+      const scrollPosition = scrollBehavior === 'preserve' && commentsListRef.current 
+        ? commentsListRef.current.scrollTop 
+        : 0;
+
       setLoading(true);
       const response = await axios.get(`${API_URL}/api/images/${imageId}/comments`);
       setComments(response.data.comments || []);
+
+      // Обрабатываем скролл после рендера
+      if (commentsListRef.current) {
+        setTimeout(() => {
+          if (!commentsListRef.current) return;
+
+          if (scrollBehavior === 'preserve') {
+            // Восстанавливаем позицию скролла
+            commentsListRef.current.scrollTop = scrollPosition;
+          } else if (scrollBehavior === 'bottom') {
+            // Прокручиваем вниз к новому комментарию
+            commentsListRef.current.scrollTop = commentsListRef.current.scrollHeight;
+          }
+        }, 0);
+      }
     } catch (error) {
       console.error('Ошибка загрузки комментариев:', error);
       setComments([]);
@@ -82,8 +103,8 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
         }
       );
 
-      // Перезагружаем комментарии
-      await loadComments(currentImage.id);
+      // Перезагружаем комментарии и прокручиваем к новому
+      await loadComments(currentImage.id, 'bottom');
       
       // Очищаем форму
       setNewComment('');
@@ -106,9 +127,9 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
         }
       );
 
-      // Перезагружаем комментарии
+      // Перезагружаем комментарии с сохранением скролла (редактирование)
       const currentImage = images[currentIndex];
-      await loadComments(currentImage.id);
+      await loadComments(currentImage.id, 'preserve');
     } catch (error) {
       console.error('Ошибка редактирования комментария:', error);
       alert('Не удалось отредактировать комментарий');
@@ -174,8 +195,8 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
           }
         );
 
-        // Перезагружаем комментарии
-        await loadComments(currentImage.id);
+        // Перезагружаем комментарии и прокручиваем к новому ответу
+        await loadComments(currentImage.id, 'bottom');
       } catch (error) {
         console.error('Ошибка создания ответа:', error);
         alert('Не удалось создать ответ');
@@ -254,6 +275,13 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
     if (!isOpen) return;
 
     const handleWheel = (e) => {
+      // Проверяем, не находится ли курсор над панелью комментариев
+      const commentsPanel = e.target.closest('[data-comments-panel]');
+      if (commentsPanel) {
+        // Если курсор над комментариями - не переключаем изображения
+        return;
+      }
+
       e.preventDefault();
       
       if (e.deltaY > 0) {
@@ -322,13 +350,13 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   return (
     <div className={styles.modalOverlay} onClick={handleClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        {/* Кнопка закрытия */}
-        <button className={styles.closeButton} onClick={handleClose}>
-          ×
-        </button>
-
         {/* Основная область с изображением */}
         <div className={styles.imageArea} onClick={handleClose}>
+          {/* Кнопка закрытия */}
+          <button className={styles.closeButton} onClick={handleClose}>
+            ×
+          </button>
+
           {/* Стрелки и изображение - останавливаем всплытие */}
           <div onClick={(e) => e.stopPropagation()}>
             {/* Стрелка влево */}
@@ -370,12 +398,14 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
         </div>
 
         {/* Панель комментариев справа */}
-        <div className={styles.commentsPanel}>
+        <div className={styles.commentsPanel} data-comments-panel="true">
           <div className={styles.commentsPanelHeader}>
             <h3>Комментарии к фото</h3>
-            <span className={styles.commentsCount}>
-              {comments.length > 0 ? `${comments.length}` : ''}
-            </span>
+            {comments.length > 0 && (
+              <span className={styles.commentsCount}>
+                {comments.length}
+              </span>
+            )}
           </div>
 
           {/* Форма добавления комментария */}
@@ -410,7 +440,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
           </div>
 
           {/* Список комментариев */}
-          <div className={styles.commentsList}>
+          <div className={styles.commentsList} ref={commentsListRef}>
             {loading ? (
               <div className={styles.commentsLoading}>Загрузка...</div>
             ) : comments.length === 0 ? (

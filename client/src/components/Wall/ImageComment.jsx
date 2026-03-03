@@ -12,8 +12,9 @@ import styles from './ImageComment.module.css';
  * @param {Function} onRestore - Callback для восстановления комментария
  * @param {boolean} isDeleted - Флаг локального удаления
  * @param {number} depth - Уровень вложенности (для отступов)
+ * @param {string} parentAuthorName - Имя автора родительского комментария (для отображения стрелки)
  */
-const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted = false, depth = 0 }) => {
+const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted = false, depth = 0, parentAuthorName = null }) => {
   const currentUser = useSelector((state) => state.auth.user);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -115,9 +116,9 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted
   };
 
   return (
-    <div className={`${styles.commentWrapper} ${depth > 0 ? styles.reply : ''}`}>
+    <div className={`${styles.commentWrapper} ${depth === 1 ? styles.isFirstLevelReply : ''}`}>
       <div className={styles.comment}>
-        {/* Аватар */}
+        {/* Аватар - показываем всегда */}
         <div className={styles.avatar}>
           {comment.author.avatarUrl ? (
             <img
@@ -135,7 +136,12 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted
         <div className={styles.commentContent}>
           {/* Имя автора и дата */}
           <div className={styles.commentHeader}>
-            <span className={styles.authorName}>{comment.author.displayName}</span>
+            <span className={styles.authorName}>
+              {comment.author.displayName}
+              {depth > 0 && parentAuthorName && (
+                <span className={styles.replyArrow}> → {parentAuthorName}</span>
+              )}
+            </span>
             <span className={styles.commentDate}>
               {formatDate(comment.createdAt)}
               {comment.editedAt && <span className={styles.edited}> (изменено)</span>}
@@ -239,6 +245,7 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted
               onRestore={onRestore}
               isDeleted={isDeleted}
               depth={depth + 1}
+              parentAuthorName={comment.author.displayName}
             />
           ))}
         </div>

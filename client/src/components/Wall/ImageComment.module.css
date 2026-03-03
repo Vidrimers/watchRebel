@@ -2,8 +2,9 @@
   margin-bottom: 12px;
 }
 
-.commentWrapper.reply {
-  padding-left: 40px;
+/* Отступ только для ответов первого уровня */
+.isFirstLevelReply {
+  margin-left: 40px;
 }
 
 .comment {
@@ -54,6 +55,11 @@
   font-weight: 600;
   font-size: 14px;
   color: var(--text-primary, #333);
+}
+
+.replyArrow {
+  font-weight: 400;
+  color: var(--text-secondary, #666);
 }
 
 .commentDate {
@@ -177,6 +183,11 @@
 .replyForm {
   margin-top: 12px;
   margin-bottom: 12px;
+}
+
+/* Отступ для формы ответа только на первом уровне */
+.isFirstLevelReply .replyForm {
+  margin-left: 0;
   padding-left: 42px;
 }
 
