@@ -8,6 +8,7 @@ import ReactionTooltip from './ReactionTooltip';
 import AddToListModal from './AddToListModal';
 import PostImageGrid from './PostImageGrid';
 import ImageGalleryModal from './ImageGalleryModal';
+import PostComments from './PostComments';
 import LinkifiedText from './LinkifiedText';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
@@ -41,11 +42,34 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const [showAddToListModal, setShowAddToListModal] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(0);
 
   // Обработка клика на изображение
   const handleImageClick = (index) => {
     setGalleryStartIndex(index);
     setShowGallery(true);
+  };
+
+  // Загрузка количества комментариев
+  useEffect(() => {
+    const loadCommentsCount = async () => {
+      try {
+        const response = await api.get(`/wall/${post.id}/comments`, {
+          params: { limit: 1, offset: 0 }
+        });
+        setCommentsCount(response.data.total || 0);
+      } catch (error) {
+        console.error('Ошибка загрузки количества комментариев:', error);
+      }
+    };
+
+    loadCommentsCount();
+  }, [post.id]);
+
+  // Обработка добавления комментария
+  const handleCommentAdded = () => {
+    setCommentsCount(prev => prev + 1);
   };
 
   // Обработка добавления реакции
@@ -633,6 +657,17 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         {/* Реакции */}
         {!isAnnouncement && (
           <div className={styles.reactionsContainer}>
+            {/* Кнопка комментирования */}
+            {currentUser && (
+              <button
+                className={styles.commentActionButton}
+                onClick={() => setShowComments(!showComments)}
+                title={commentsCount > 0 ? 'Показать комментарии' : 'Комментировать'}
+              >
+                💬 {commentsCount > 0 ? commentsCount : 'Комментировать'}
+              </button>
+            )}
+            
             {/* Отображение существующих реакций */}
             {reactionsList.length > 0 && (
               <div className={styles.reactionsList}>
@@ -719,6 +754,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
           onClose={() => setShowGallery(false)}
         />
       )}
+
+      {/* Комментарии к посту */}
+      <PostComments 
+        postId={post.id} 
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
     </>
   );

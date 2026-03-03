@@ -91,6 +91,9 @@ const wallSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchWall.fulfilled, (state, action) => {
+        console.log('📦 Redux: Получены посты от сервера:', action.payload.length, 'шт.');
+        console.log('📦 Redux: ID постов:', action.payload.map(p => p.id));
+        console.log('📦 Redux: Первый пост:', action.payload[0]);
         state.posts = action.payload;
         state.loading = false;
         state.error = null;

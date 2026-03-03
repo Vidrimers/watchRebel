@@ -704,6 +704,122 @@ export async function notifyCommentReply(parentCommentId, replyAuthorId, postId,
   }
 }
 
+/**
+ * Отправить уведомление о комментарии к посту
+ * @param {string} postAuthorId - ID автора поста
+ * @param {string} commentAuthorId - ID автора комментария
+ * @param {string} postId - ID поста
+ * @param {string} commentId - ID комментария
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyPostComment(postAuthorId, commentAuthorId, postId, commentId) {
+  try {
+    // Не отправляем уведомление, если пользователь комментирует свой пост
+    if (postAuthorId === commentAuthorId) {
+      return { success: true, message: 'Уведомление не отправлено (пользователь комментирует свой пост)' };
+    }
+
+    // Получаем информацию об авторе комментария
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [commentAuthorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор комментария не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    
+    // В БД сохраняем шаблон без имени
+    const contentTemplate = 'прокомментировал ваш пост';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `💬 <b>Новый комментарий!</b>\n\n${authorName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      postAuthorId,
+      'post_comment',
+      contentTemplate,
+      commentAuthorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(postAuthorId, telegramMessage);
+
+    console.log(`✅ Уведомление о комментарии к посту отправлено пользователю ${postAuthorId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о комментарии к посту:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Отправить уведомление об ответе на комментарий к посту
+ * @param {string} parentCommentAuthorId - ID автора родительского комментария
+ * @param {string} replyAuthorId - ID автора ответа
+ * @param {string} postId - ID поста
+ * @param {string} commentId - ID комментария-ответа
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyPostCommentReply(parentCommentAuthorId, replyAuthorId, postId, commentId) {
+  try {
+    // Не отправляем уведомление, если пользователь отвечает сам себе
+    if (parentCommentAuthorId === replyAuthorId) {
+      return { success: true, message: 'Уведомление не отправлено (пользователь отвечает сам себе)' };
+    }
+
+    // Получаем информацию об авторе ответа
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [replyAuthorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор ответа не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    
+    // В БД сохраняем шаблон без имени
+    const contentTemplate = 'ответил на ваш комментарий';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `💬 <b>Ответ на ваш комментарий!</b>\n\n${authorName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      parentCommentAuthorId,
+      'post_comment_reply',
+      contentTemplate,
+      replyAuthorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(parentCommentAuthorId, telegramMessage);
+
+    console.log(`✅ Уведомление об ответе на комментарий к посту отправлено пользователю ${parentCommentAuthorId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об ответе на комментарий к посту:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   checkNotificationEnabled,
   createNotification,
@@ -715,5 +831,7 @@ export default {
   notifyWallPost,
   notifyWallPostImages,
   notifyImageComment,
-  notifyCommentReply
+  notifyCommentReply,
+  notifyPostComment,
+  notifyPostCommentReply
 };

@@ -1,0 +1,230 @@
+/* Контейнер комментариев */
+.postComments {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Форма добавления комментария */
+.commentForm {
+  margin-bottom: 20px;
+}
+
+.textareaWrapper {
+  position: relative;
+}
+
+.commentInput {
+  width: 100%;
+  padding: 12px 90px 12px 12px; /* Отступ справа для кнопок */
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+
+.commentInput:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.commentInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Кнопки внутри textarea */
+.textareaButtons {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.fileButton,
+.emojiButton {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.fileButton:hover:not(:disabled),
+.emojiButton:hover:not(:disabled) {
+  background: var(--background-tertiary);
+  color: var(--accent-color);
+}
+
+.fileButton:disabled,
+.emojiButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Обертка для ReactionPicker */
+.emojiPickerWrapper {
+  position: absolute;
+  top: 50px;
+  right: 12px;
+  z-index: 100;
+}
+
+/* Выбранный файл */
+.selectedFile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: var(--background-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.fileName {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.removeFileButton {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 8px;
+}
+
+.removeFileButton:hover {
+  background: var(--background-secondary);
+  color: var(--danger-color);
+}
+
+.commentFormFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.charCount {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.formButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.submitButton,
+.cancelButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitButton {
+  background: var(--accent-color);
+  color: white;
+}
+
+.submitButton:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--background-tertiary);
+  color: var(--text-primary);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* Заголовок комментариев */
+.commentsHeader {
+  margin-bottom: 16px;
+}
+
+.commentsCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Список комментариев */
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Кнопка "Загрузить еще" */
+.loadMoreButton {
+  width: 100%;
+  padding: 10px;
+  margin-top: 16px;
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background: var(--background-tertiary);
+}
+
+.loadMoreButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -73,7 +73,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
        LEFT JOIN users owner ON wp.wall_owner_id = owner.id
        WHERE wp.wall_owner_id IN (${placeholders})
          AND wp.post_type IN ('text', 'status_update', 'media_added')
-         AND wp.content NOT LIKE '📢 Объявление администратора:%'
+         AND (wp.content IS NULL OR wp.content NOT LIKE '📢 Объявление администратора:%')
        ORDER BY wp.created_at DESC
        LIMIT 10`,
       allUserIds
@@ -116,7 +116,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       reactions: [] // Объявления без реакций
     })) : [];
 
-    // Для каждого поста получаем реакции
+    // Для каждого поста получаем реакции и изображения
     const postsWithReactions = await Promise.all(
       postsResult.data.map(async (post) => {
         const reactionsResult = await executeQuery(
@@ -138,6 +138,21 @@ router.get('/:userId', authenticateToken, async (req, res) => {
             displayName: r.display_name,
             avatarUrl: r.avatar_url
           }
+        })) : [];
+
+        // Получаем изображения поста
+        const imagesResult = await executeQuery(
+          `SELECT id, image_url, "order" 
+           FROM post_images 
+           WHERE post_id = ? 
+           ORDER BY "order" ASC`,
+          [post.id]
+        );
+
+        const images = imagesResult.success ? imagesResult.data.map(img => ({
+          id: img.id,
+          url: img.image_url,
+          order: img.order
         })) : [];
 
         return {
@@ -163,7 +178,8 @@ router.get('/:userId', authenticateToken, async (req, res) => {
             displayName: post.owner_display_name,
             avatarUrl: post.owner_avatar_url
           },
-          reactions
+          reactions,
+          images // Добавляем массив изображений
         };
       })
     );

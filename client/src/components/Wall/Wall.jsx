@@ -183,9 +183,11 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       const result = await dispatch(createPost(postData)).unwrap();
 
       const postId = result.id;
+      console.log('📝 Создан пост:', postId, result);
 
       // Если есть изображения, загружаем их
       if (selectedImages.length > 0) {
+        console.log('📤 Загрузка изображений для поста:', postId);
         const formData = new FormData();
         selectedImages.forEach(file => {
           formData.append('images', file);
@@ -193,12 +195,16 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
         formData.append('postId', postId);
 
         const token = localStorage.getItem('authToken');
-        await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}/api/wall/images`, formData, {
+        const uploadResponse = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}/api/wall/images`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`
           }
         });
+        console.log('✅ Изображения загружены:', uploadResponse.data);
+        
+        // Ждем немного чтобы сервер успел обработать изображения
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       // Очищаем форму
@@ -207,8 +213,10 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
       setImagePreviews([]);
       
+      console.log('🔄 Перезагрузка стены после создания поста');
       // Перезагружаем стену после создания поста
-      dispatch(fetchWall(userId));
+      await dispatch(fetchWall(userId));
+      console.log('✅ Стена обновлена');
     } catch (err) {
       console.error('Ошибка создания поста:', err);
       await showAlert({

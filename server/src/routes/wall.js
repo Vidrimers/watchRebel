@@ -1264,4 +1264,604 @@ router.delete('/images/:imageId', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/wall/:postId/comments
+ * Создать комментарий к посту
+ * 
+ * Body:
+ * - content: string (обязательно, максимум 1000 символов)
+ * - parent_comment_id: string (опционально, для ответов на комментарии)
+ */
+router.post('/:postId/comments', authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+    const { content, parent_comment_id } = req.body;
+
+    // Валидация контента
+    if (!content || typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ 
+        error: 'Контент комментария не может быть пустым',
+        code: 'EMPTY_CONTENT' 
+      });
+    }
+
+    if (content.length > 1000) {
+      return res.status(400).json({ 
+        error: 'Комментарий не может быть длиннее 1000 символов',
+        code: 'CONTENT_TOO_LONG' 
+      });
+    }
+
+    // Проверяем, существует ли пост
+    const postCheck = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!postCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки поста',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (postCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пост не найден',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    const post = postCheck.data[0];
+
+    // Если указан parent_comment_id, проверяем что родительский комментарий существует
+    if (parent_comment_id) {
+      const parentCheck = await executeQuery(
+        'SELECT * FROM post_comments WHERE id = ? AND post_id = ?',
+        [parent_comment_id, postId]
+      );
+
+      if (!parentCheck.success || parentCheck.data.length === 0) {
+        return res.status(404).json({ 
+          error: 'Родительский комментарий не найден',
+          code: 'PARENT_COMMENT_NOT_FOUND' 
+        });
+      }
+    }
+
+    // Создаем комментарий
+    const commentId = uuidv4();
+    const insertResult = await executeQuery(
+      `INSERT INTO post_comments (id, post_id, user_id, parent_comment_id, content, created_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+      [commentId, postId, userId, parent_comment_id || null, content.trim()]
+    );
+
+    if (!insertResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка создания комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем созданный комментарий с информацией об авторе
+    const commentResult = await executeQuery(
+      `SELECT 
+        pc.*,
+        u.id as author_id,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.id = ?`,
+      [commentId]
+    );
+
+    if (!commentResult.success || commentResult.data.length === 0) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения созданного комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const comment = commentResult.data[0];
+
+    // Отправляем уведомление
+    if (parent_comment_id) {
+      // Уведомление автору родительского комментария
+      const parentCommentResult = await executeQuery(
+        'SELECT user_id FROM post_comments WHERE id = ?',
+        [parent_comment_id]
+      );
+
+      if (parentCommentResult.success && parentCommentResult.data.length > 0) {
+        const parentAuthorId = parentCommentResult.data[0].user_id;
+        
+        // Не отправляем уведомление если отвечаем сами себе
+        if (parentAuthorId !== userId) {
+          const { notifyPostCommentReply } = await import('../services/notificationService.js');
+          notifyPostCommentReply(parentAuthorId, userId, postId, commentId).catch(err => {
+            console.error('Ошибка отправки уведомления об ответе на комментарий:', err);
+          });
+        }
+      }
+    } else {
+      // Уведомление автору поста
+      if (post.user_id !== userId) {
+        const { notifyPostComment } = await import('../services/notificationService.js');
+        notifyPostComment(post.user_id, userId, postId, commentId).catch(err => {
+          console.error('Ошибка отправки уведомления о комментарии к посту:', err);
+        });
+      }
+    }
+
+    res.status(201).json({
+      id: comment.id,
+      postId: comment.post_id,
+      userId: comment.user_id,
+      parentCommentId: comment.parent_comment_id,
+      content: comment.content,
+      createdAt: comment.created_at,
+      editedAt: comment.edited_at,
+      author: {
+        id: comment.author_id,
+        displayName: comment.author_display_name,
+        avatarUrl: comment.author_avatar_url
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/wall/:postId/comments
+ * Получить комментарии к посту с пагинацией
+ * Возвращает только комментарии первого уровня (parent_comment_id = null)
+ * 
+ * Query params:
+ * - limit: number (по умолчанию 5)
+ * - offset: number (по умолчанию 0)
+ */
+router.get('/:postId/comments', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Проверяем, существует ли пост
+    const postCheck = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!postCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки поста',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (postCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пост не найден',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    // Получаем общее количество комментариев первого уровня
+    const countResult = await executeQuery(
+      'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ? AND parent_comment_id IS NULL',
+      [postId]
+    );
+
+    const total = countResult.success ? countResult.data[0].total : 0;
+
+    // Получаем комментарии первого уровня с пагинацией
+    const commentsResult = await executeQuery(
+      `SELECT 
+        pc.*,
+        u.id as author_id,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.post_id = ? AND pc.parent_comment_id IS NULL
+       ORDER BY pc.created_at ASC
+       LIMIT ? OFFSET ?`,
+      [postId, limit, offset]
+    );
+
+    if (!commentsResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения комментариев',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Для каждого комментария получаем количество ответов
+    const commentsWithReplies = await Promise.all(
+      commentsResult.data.map(async (comment) => {
+        const repliesCountResult = await executeQuery(
+          'SELECT COUNT(*) as count FROM post_comments WHERE parent_comment_id = ?',
+          [comment.id]
+        );
+
+        const repliesCount = repliesCountResult.success ? repliesCountResult.data[0].count : 0;
+
+        return {
+          id: comment.id,
+          postId: comment.post_id,
+          userId: comment.user_id,
+          parentCommentId: comment.parent_comment_id,
+          content: comment.content,
+          createdAt: comment.created_at,
+          editedAt: comment.edited_at,
+          repliesCount,
+          author: {
+            id: comment.author_id,
+            displayName: comment.author_display_name,
+            avatarUrl: comment.author_avatar_url
+          }
+        };
+      })
+    );
+
+    const hasMore = offset + limit < total;
+
+    res.json({
+      comments: commentsWithReplies,
+      total,
+      hasMore,
+      limit,
+      offset
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения комментариев:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/wall/comments/:commentId/replies
+ * Получить ответы на комментарий с пагинацией
+ * 
+ * Query params:
+ * - limit: number (по умолчанию 5)
+ * - offset: number (по умолчанию 0)
+ */
+router.get('/comments/:commentId/replies', async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Проверяем, существует ли родительский комментарий
+    const commentCheck = await executeQuery(
+      'SELECT * FROM post_comments WHERE id = ?',
+      [commentId]
+    );
+
+    if (!commentCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (commentCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Комментарий не найден',
+        code: 'COMMENT_NOT_FOUND' 
+      });
+    }
+
+    // Получаем общее количество ответов
+    const countResult = await executeQuery(
+      'SELECT COUNT(*) as total FROM post_comments WHERE parent_comment_id = ?',
+      [commentId]
+    );
+
+    const total = countResult.success ? countResult.data[0].total : 0;
+
+    // Получаем ответы с пагинацией
+    const repliesResult = await executeQuery(
+      `SELECT 
+        pc.*,
+        u.id as author_id,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.parent_comment_id = ?
+       ORDER BY pc.created_at ASC
+       LIMIT ? OFFSET ?`,
+      [commentId, limit, offset]
+    );
+
+    if (!repliesResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения ответов',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Для каждого ответа получаем количество вложенных ответов
+    const repliesWithNested = await Promise.all(
+      repliesResult.data.map(async (reply) => {
+        const nestedCountResult = await executeQuery(
+          'SELECT COUNT(*) as count FROM post_comments WHERE parent_comment_id = ?',
+          [reply.id]
+        );
+
+        const repliesCount = nestedCountResult.success ? nestedCountResult.data[0].count : 0;
+
+        return {
+          id: reply.id,
+          postId: reply.post_id,
+          userId: reply.user_id,
+          parentCommentId: reply.parent_comment_id,
+          content: reply.content,
+          createdAt: reply.created_at,
+          editedAt: reply.edited_at,
+          repliesCount,
+          author: {
+            id: reply.author_id,
+            displayName: reply.author_display_name,
+            avatarUrl: reply.author_avatar_url
+          }
+        };
+      })
+    );
+
+    const hasMore = offset + limit < total;
+
+    res.json({
+      replies: repliesWithNested,
+      total,
+      hasMore,
+      limit,
+      offset
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения ответов на комментарий:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * PUT /api/wall/comments/:commentId
+ * Редактировать комментарий
+ * Только автор комментария может его редактировать
+ * 
+ * Body:
+ * - content: string (обязательно, максимум 1000 символов)
+ */
+router.put('/comments/:commentId', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+    const { content } = req.body;
+
+    // Валидация контента
+    if (!content || typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ 
+        error: 'Контент комментария не может быть пустым',
+        code: 'EMPTY_CONTENT' 
+      });
+    }
+
+    if (content.length > 1000) {
+      return res.status(400).json({ 
+        error: 'Комментарий не может быть длиннее 1000 символов',
+        code: 'CONTENT_TOO_LONG' 
+      });
+    }
+
+    // Проверяем, существует ли комментарий и принадлежит ли он пользователю
+    const commentCheck = await executeQuery(
+      'SELECT * FROM post_comments WHERE id = ?',
+      [commentId]
+    );
+
+    if (!commentCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (commentCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Комментарий не найден',
+        code: 'COMMENT_NOT_FOUND' 
+      });
+    }
+
+    const comment = commentCheck.data[0];
+
+    if (comment.user_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Нет прав на редактирование этого комментария',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Обновляем комментарий
+    const updateResult = await executeQuery(
+      "UPDATE post_comments SET content = ?, edited_at = datetime('now', 'localtime') WHERE id = ?",
+      [content.trim(), commentId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Получаем обновленный комментарий с информацией об авторе
+    const updatedCommentResult = await executeQuery(
+      `SELECT 
+        pc.*,
+        u.id as author_id,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.id = ?`,
+      [commentId]
+    );
+
+    if (!updatedCommentResult.success || updatedCommentResult.data.length === 0) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения обновленного комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    const updatedComment = updatedCommentResult.data[0];
+
+    res.json({
+      id: updatedComment.id,
+      postId: updatedComment.post_id,
+      userId: updatedComment.user_id,
+      parentCommentId: updatedComment.parent_comment_id,
+      content: updatedComment.content,
+      createdAt: updatedComment.created_at,
+      editedAt: updatedComment.edited_at,
+      author: {
+        id: updatedComment.author_id,
+        displayName: updatedComment.author_display_name,
+        avatarUrl: updatedComment.author_avatar_url
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка редактирования комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/wall/comments/:commentId
+ * Удалить комментарий
+ * Только автор комментария или владелец поста может удалить комментарий
+ * Если есть ответы - заменяет на "[Комментарий удален]"
+ * Если нет ответов - удаляет полностью
+ */
+router.delete('/comments/:commentId', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+
+    // Получаем комментарий и информацию о посте
+    const commentCheck = await executeQuery(
+      `SELECT pc.*, wp.user_id as post_author_id 
+       FROM post_comments pc
+       LEFT JOIN wall_posts wp ON pc.post_id = wp.id
+       WHERE pc.id = ?`,
+      [commentId]
+    );
+
+    if (!commentCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (commentCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Комментарий не найден',
+        code: 'COMMENT_NOT_FOUND' 
+      });
+    }
+
+    const comment = commentCheck.data[0];
+
+    // Проверяем права: автор комментария или владелец поста
+    if (comment.user_id !== userId && comment.post_author_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Нет прав на удаление этого комментария',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Проверяем, есть ли ответы на этот комментарий
+    const repliesCheck = await executeQuery(
+      'SELECT COUNT(*) as count FROM post_comments WHERE parent_comment_id = ?',
+      [commentId]
+    );
+
+    const hasReplies = repliesCheck.success && repliesCheck.data[0].count > 0;
+
+    if (hasReplies) {
+      // Если есть ответы - заменяем контент на "[Комментарий удален]"
+      const updateResult = await executeQuery(
+        "UPDATE post_comments SET content = '[Комментарий удален]', edited_at = datetime('now', 'localtime') WHERE id = ?",
+        [commentId]
+      );
+
+      if (!updateResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка обновления комментария',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      res.json({ 
+        message: 'Комментарий помечен как удаленный',
+        commentId,
+        deleted: false,
+        replaced: true
+      });
+    } else {
+      // Если нет ответов - удаляем полностью
+      const deleteResult = await executeQuery(
+        'DELETE FROM post_comments WHERE id = ?',
+        [commentId]
+      );
+
+      if (!deleteResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка удаления комментария',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      res.json({ 
+        message: 'Комментарий успешно удален',
+        commentId,
+        deleted: true,
+        replaced: false
+      });
+    }
+
+  } catch (error) {
+    console.error('Ошибка удаления комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;
