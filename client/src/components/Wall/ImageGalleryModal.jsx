@@ -20,6 +20,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null); // { commentId, authorName }
   const [loading, setLoading] = useState(false);
+  const [deletedComments, setDeletedComments] = useState(new Set()); // Локально удаленные комментарии
   const currentUser = useSelector((state) => state.auth.user);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1313';
@@ -114,34 +115,76 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
     }
   };
 
-  // Удаление комментария
+  // Удаление комментария (локально, без подтверждения)
   const handleDeleteComment = async (commentId) => {
-    if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) {
-      return;
-    }
+    // Добавляем в список локально удаленных
+    setDeletedComments(prev => new Set([...prev, commentId]));
+  };
 
-    try {
+  // Восстановление комментария
+  const handleRestoreComment = (commentId) => {
+    setDeletedComments(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(commentId);
+      return newSet;
+    });
+  };
+
+  // Окончательное удаление всех локально удаленных комментариев при закрытии
+  const handleClose = async () => {
+    if (deletedComments.size > 0) {
       const token = localStorage.getItem('authToken');
-      await axios.delete(
-        `${API_URL}/api/images/comments/${commentId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
+      // Удаляем все локально помеченные комментарии на сервере
+      for (const commentId of deletedComments) {
+        try {
+          await axios.delete(
+            `${API_URL}/api/images/comments/${commentId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+        } catch (error) {
+          console.error('Ошибка удаления комментария:', error);
         }
-      );
-
-      // Перезагружаем комментарии
-      const currentImage = images[currentIndex];
-      await loadComments(currentImage.id);
-    } catch (error) {
-      console.error('Ошибка удаления комментария:', error);
-      alert('Не удалось удалить комментарий');
+      }
     }
+    
+    // Очищаем список удаленных и закрываем
+    setDeletedComments(new Set());
+    onClose();
   };
 
   // Ответ на комментарий
-  const handleReply = (commentId, authorName) => {
-    setReplyTo({ commentId, authorName });
-    setNewComment(`@${authorName} `);
+  const handleReply = async (commentId, authorName, content) => {
+    // Если передан content, значит это отправка ответа из компонента комментария
+    if (content) {
+      const currentImage = images[currentIndex];
+      if (!currentImage || !currentImage.id) return;
+
+      try {
+        const token = localStorage.getItem('authToken');
+        await axios.post(
+          `${API_URL}/api/images/${currentImage.id}/comments`,
+          {
+            content: content,
+            parent_comment_id: commentId
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        // Перезагружаем комментарии
+        await loadComments(currentImage.id);
+      } catch (error) {
+        console.error('Ошибка создания ответа:', error);
+        alert('Не удалось создать ответ');
+      }
+    } else {
+      // Старый вариант - устанавливаем replyTo для формы вверху (на случай если понадобится)
+      setReplyTo({ commentId, authorName });
+      setNewComment(`@${authorName} `);
+    }
   };
 
   // Отмена ответа
@@ -277,15 +320,15 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={handleClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* Кнопка закрытия */}
-        <button className={styles.closeButton} onClick={onClose}>
+        <button className={styles.closeButton} onClick={handleClose}>
           ×
         </button>
 
         {/* Основная область с изображением */}
-        <div className={styles.imageArea} onClick={onClose}>
+        <div className={styles.imageArea} onClick={handleClose}>
           {/* Стрелки и изображение - останавливаем всплытие */}
           <div onClick={(e) => e.stopPropagation()}>
             {/* Стрелка влево */}
@@ -382,6 +425,8 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
                   onReply={handleReply}
                   onEdit={handleEditComment}
                   onDelete={handleDeleteComment}
+                  onRestore={handleRestoreComment}
+                  isDeleted={deletedComments.has(comment.id)}
                   depth={0}
                 />
               ))

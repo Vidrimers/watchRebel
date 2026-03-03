@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import styles from './ImageComment.module.css';
 
@@ -9,16 +9,30 @@ import styles from './ImageComment.module.css';
  * @param {Function} onReply - Callback для ответа на комментарий
  * @param {Function} onEdit - Callback для редактирования комментария
  * @param {Function} onDelete - Callback для удаления комментария
+ * @param {Function} onRestore - Callback для восстановления комментария
+ * @param {boolean} isDeleted - Флаг локального удаления
  * @param {number} depth - Уровень вложенности (для отступов)
  */
-const ImageComment = ({ comment, onReply, onEdit, onDelete, depth = 0 }) => {
+const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted = false, depth = 0 }) => {
   const currentUser = useSelector((state) => state.auth.user);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const editTextareaRef = useRef(null);
 
   const isOwnComment = currentUser && currentUser.id === comment.author.id;
-  const isDeleted = comment.content === '[Комментарий удален]';
+  const isServerDeleted = comment.content === '[Комментарий удален]';
+
+  // Перемещаем курсор в конец при открытии редактирования
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      const textarea = editTextareaRef.current;
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+      textarea.focus();
+    }
+  }, [isEditing]);
 
   // Форматирование даты
   const formatDate = (dateString) => {
@@ -66,11 +80,42 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, depth = 0 }) => {
   // Обработка ответа
   const handleReplyClick = () => {
     setIsReplying(true);
-    onReply(comment.id, comment.author.displayName);
+    setReplyContent(''); // Пустое поле
+  };
+
+  // Отправка ответа
+  const handleSendReply = () => {
+    if (replyContent.trim().length === 0) {
+      alert('Комментарий не может быть пустым');
+      return;
+    }
+
+    if (replyContent.length > 500) {
+      alert('Комментарий не может быть длиннее 500 символов');
+      return;
+    }
+
+    onReply(comment.id, comment.author.displayName, replyContent.trim());
+    setIsReplying(false);
+    setReplyContent('');
+  };
+
+  // Отмена ответа
+  const handleCancelReply = () => {
+    setIsReplying(false);
+    setReplyContent('');
+  };
+
+  // Обработка Enter для отправки ответа
+  const handleReplyKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply();
+    }
   };
 
   return (
-    <div className={styles.commentWrapper} style={{ paddingLeft: `${depth * 20}px` }}>
+    <div className={`${styles.commentWrapper} ${depth > 0 ? styles.reply : ''}`}>
       <div className={styles.comment}>
         {/* Аватар */}
         <div className={styles.avatar}>
@@ -101,11 +146,11 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, depth = 0 }) => {
           {isEditing ? (
             <div className={styles.editForm}>
               <textarea
+                ref={editTextareaRef}
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 maxLength={500}
                 className={styles.editTextarea}
-                autoFocus
               />
               <div className={styles.editActions}>
                 <span className={styles.charCounter}>
@@ -120,31 +165,66 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, depth = 0 }) => {
               </div>
             </div>
           ) : (
-            <p className={`${styles.commentText} ${isDeleted ? styles.deletedText : ''}`}>
-              {comment.content}
+            <p className={`${styles.commentText} ${(isDeleted || isServerDeleted) ? styles.deletedText : ''}`}>
+              {isDeleted ? '[Комментарий удален]' : comment.content}
             </p>
           )}
 
           {/* Действия с комментарием */}
-          {!isDeleted && !isEditing && (
+          {!isServerDeleted && !isEditing && (
             <div className={styles.commentActions}>
-              <button onClick={handleReplyClick} className={styles.actionButton}>
-                Ответить
-              </button>
-              {isOwnComment && (
+              {isDeleted ? (
+                // Если локально удален - показываем кнопку восстановления
+                <button onClick={() => onRestore(comment.id)} className={styles.actionButton}>
+                  Восстановить
+                </button>
+              ) : (
                 <>
-                  <button onClick={() => setIsEditing(true)} className={styles.actionButton}>
-                    Редактировать
+                  <button onClick={handleReplyClick} className={styles.actionButton}>
+                    Ответить
                   </button>
-                  <button onClick={() => onDelete(comment.id)} className={styles.actionButton}>
-                    Удалить
-                  </button>
+                  {isOwnComment && (
+                    <>
+                      <button onClick={() => setIsEditing(true)} className={styles.actionButton}>
+                        Редактировать
+                      </button>
+                      <button onClick={() => onDelete(comment.id)} className={styles.actionButton}>
+                        Удалить
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Форма ответа */}
+      {isReplying && (
+        <div className={styles.replyForm}>
+          <textarea
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            onKeyDown={handleReplyKeyDown}
+            placeholder={`Ответить ${comment.author.displayName}...`}
+            maxLength={500}
+            className={styles.replyTextarea}
+            autoFocus
+          />
+          <div className={styles.replyActions}>
+            <span className={styles.charCounter}>
+              {replyContent.length}/500
+            </span>
+            <button onClick={handleSendReply} className={styles.sendButton}>
+              Отправить
+            </button>
+            <button onClick={handleCancelReply} className={styles.cancelButton}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Рекурсивное отображение ответов */}
       {comment.replies && comment.replies.length > 0 && (
@@ -156,6 +236,8 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, depth = 0 }) => {
               onReply={onReply}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRestore={onRestore}
+              isDeleted={isDeleted}
               depth={depth + 1}
             />
           ))}

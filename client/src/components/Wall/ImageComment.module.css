@@ -2,6 +2,10 @@
   margin-bottom: 12px;
 }
 
+.commentWrapper.reply {
+  padding-left: 40px;
+}
+
 .comment {
   display: flex;
   gap: 10px;
@@ -166,4 +170,58 @@
 
 .replies {
   margin-top: 8px;
+}
+
+
+/* Форма ответа */
+.replyForm {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding-left: 42px;
+}
+
+.replyTextarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--bg-input, white);
+  color: var(--text-primary, #333);
+  margin-bottom: 8px;
+}
+
+.replyTextarea::placeholder {
+  color: var(--text-tertiary, #999);
+  opacity: 0.7;
+}
+
+.replyTextarea:focus {
+  outline: none;
+  border-color: var(--accent-color, #007bff);
+}
+
+.replyActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sendButton {
+  padding: 6px 12px;
+  background: var(--accent-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sendButton:hover {
+  background: var(--accent-hover, #0056b3);
 }
