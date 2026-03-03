@@ -46,6 +46,13 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
   const editTextareaRef = useRef(null);
   const repliesLimit = 5;
 
+  // Функция склонения для слова "ответ"
+  const getRepliesText = (count) => {
+    if (count === 1) return '1 ответ';
+    if (count >= 2 && count <= 4) return `${count} ответа`;
+    return `${count} ответов`;
+  };
+
   // Состояние для лайков
   const [isLiked, setIsLiked] = useState(comment.isLikedByCurrentUser || false);
   const [likesCount, setLikesCount] = useState(comment.likesCount || 0);
@@ -56,6 +63,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
   const [loadingLikes, setLoadingLikes] = useState(false);
   const likeButtonRef = useRef(null);
   const tooltipTimeoutRef = useRef(null);
+  const hideTooltipTimeoutRef = useRef(null);
 
   const isOwn = currentUser && comment.userId === currentUser.id;
   const isServerDeleted = comment.content === '[Комментарий удален]';
@@ -350,8 +358,17 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
     if (tooltipTimeoutRef.current) {
       clearTimeout(tooltipTimeoutRef.current);
     }
-    // Убираем задержку, чтобы тултип не исчезал сразу
-    // Тултип сам обработает onMouseLeave
+    // Даем время пользователю переместить мышь на tooltip
+    hideTooltipTimeoutRef.current = setTimeout(() => {
+      setShowLikesTooltip(false);
+    }, 200);
+  };
+
+  // Отменить скрытие при наведении на tooltip
+  const handleTooltipMouseEnter = () => {
+    if (hideTooltipTimeoutRef.current) {
+      clearTimeout(hideTooltipTimeoutRef.current);
+    }
   };
 
   // Скрыть тултип при уходе мыши с тултипа
@@ -359,11 +376,14 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
     setShowLikesTooltip(false);
   };
 
-  // Очистка таймаута при размонтировании
+  // Очистка таймаутов при размонтировании
   useEffect(() => {
     return () => {
       if (tooltipTimeoutRef.current) {
         clearTimeout(tooltipTimeoutRef.current);
+      }
+      if (hideTooltipTimeoutRef.current) {
+        clearTimeout(hideTooltipTimeoutRef.current);
       }
     };
   }, []);
@@ -569,7 +589,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
                     <ReactionTooltip
                       users={likedUsers}
                       position={likesTooltipPosition}
-                      onMouseEnter={() => setShowLikesTooltip(true)}
+                      onMouseEnter={handleTooltipMouseEnter}
                       onMouseLeave={handleTooltipMouseLeave}
                     />
                   )}
@@ -709,7 +729,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
               onClick={() => loadReplies(true)}
               disabled={loadingReplies}
             >
-              {loadingReplies ? 'Загрузка...' : `Показать ответы (${comment.repliesCount})`}
+              {loadingReplies ? 'Загрузка...' : getRepliesText(comment.repliesCount)}
             </button>
           )}
         </div>
