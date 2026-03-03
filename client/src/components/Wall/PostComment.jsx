@@ -3,6 +3,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import useConfirm from '../../hooks/useConfirm';
 import ReactionPicker from './ReactionPicker';
 import ImageModal from './ImageModal';
+import LinkifiedText from './LinkifiedText';
 import api from '../../services/api';
 import styles from './PostComment.module.css';
 
@@ -352,9 +353,13 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
             </div>
           ) : (
             <>
-              <p className={`${styles.commentText} ${(isDeleted || isServerDeleted) ? styles.deletedText : ''}`}>
-                {isDeleted ? '[Комментарий удален]' : comment.content}
-              </p>
+              <div className={`${styles.commentText} ${(isDeleted || isServerDeleted) ? styles.deletedText : ''}`}>
+                {isDeleted || isServerDeleted ? (
+                  '[Комментарий удален]'
+                ) : (
+                  <LinkifiedText text={comment.content} />
+                )}
+              </div>
               
               {/* Изображение комментария */}
               {!isDeleted && !isServerDeleted && comment.imageUrl && (

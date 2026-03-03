@@ -26,7 +26,6 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   const [offset, setOffset] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [deletedComments, setDeletedComments] = useState(new Set()); // Локально удаленные комментарии
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const limit = 5;
@@ -192,23 +191,11 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   };
 
   // Обработка закрытия формы комментариев
-  const handleClose = async () => {
-    // Удаляем все локально помеченные комментарии на сервере
-    if (deletedComments.size > 0) {
-      for (const commentId of deletedComments) {
-        try {
-          await api.delete(`/wall/comments/${commentId}`);
-        } catch (error) {
-          console.error('Ошибка удаления комментария:', error);
-        }
-      }
-    }
-    
+  const handleClose = () => {
     // Очищаем состояние формы
     setCommentText('');
     setShowEmojiPicker(false);
     setSelectedFile(null);
-    setDeletedComments(new Set());
     
     // Закрываем форму
     onClose();
@@ -219,18 +206,28 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
     loadComments(true);
   };
 
-  // Обработка удаления комментария (локально)
-  const handleCommentDelete = (commentId) => {
-    setDeletedComments(prev => new Set([...prev, commentId]));
+  // Обработка удаления комментария (сразу на сервере)
+  const handleCommentDelete = async (commentId) => {
+    try {
+      await api.delete(`/wall/comments/${commentId}`);
+      
+      // Перезагружаем комментарии
+      await loadComments(true);
+    } catch (error) {
+      console.error('Ошибка удаления комментария:', error);
+      
+      // Если комментарий уже удален (404), просто перезагружаем список
+      if (error.response?.status === 404) {
+        await loadComments(true);
+      } else {
+        alert(error.response?.data?.error || 'Не удалось удалить комментарий');
+      }
+    }
   };
 
-  // Восстановление комментария
+  // Восстановление комментария (не используется, оставлено для совместимости)
   const handleCommentRestore = (commentId) => {
-    setDeletedComments(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(commentId);
-      return newSet;
-    });
+    // Больше не нужно, так как удаляем сразу
   };
 
   // Обработка ответа на комментарий
@@ -421,8 +418,8 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
               comment={comment}
               postId={postId}
               depth={0}
-              isDeleted={deletedComments.has(comment.id)}
-              deletedComments={deletedComments}
+              isDeleted={false}
+              deletedComments={new Set()}
               onReply={handleCommentReply}
               onEdit={handleCommentEdit}
               onDelete={handleCommentDelete}
