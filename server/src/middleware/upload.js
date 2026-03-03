@@ -74,11 +74,12 @@ const postImageStorage = multer.diskStorage({
     cb(null, imagesDir);
   },
   filename: (req, file, cb) => {
-    // Генерируем уникальное имя файла: userId_timestamp.ext
+    // Генерируем уникальное имя файла: userId_timestamp_random.ext
     const userId = req.user.id;
     const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000); // Добавляем случайное число
     const ext = path.extname(file.originalname);
-    const filename = `${userId}_${timestamp}${ext}`;
+    const filename = `${userId}_${timestamp}_${random}${ext}`;
     cb(null, filename);
   }
 });

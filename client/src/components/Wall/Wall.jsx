@@ -104,6 +104,33 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     addImages(files);
   };
 
+  // Обработчик вставки из буфера обмена (Ctrl+V)
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+    
+    // Проходим по всем элементам буфера обмена
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Проверяем, что это изображение
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push(file);
+        }
+      }
+    }
+
+    // Если нашли изображения, добавляем их
+    if (imageFiles.length > 0) {
+      e.preventDefault(); // Предотвращаем вставку текста
+      addImages(imageFiles);
+    }
+  };
+
   // Обработка создания нового текстового поста
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -169,8 +196,10 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const handleKeyDown = (e) => {
     // Если нажат Enter без Shift - отправляем пост
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault(); // Предотвращаем перенос строки
-      handleCreatePost(e);
+      e.preventDefault(); // Предотвращаем перенос строки и submit формы
+      // Не вызываем handleCreatePost здесь - форма сама вызовет через submit
+      // Вместо этого программно вызываем submit формы
+      e.target.form.requestSubmit();
     }
     // Если нажат Enter с Shift - разрешаем перенос строки (стандартное поведение)
   };
@@ -200,44 +229,51 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       {(isOwnProfile || canPostOnWall()) && (
         <div className={styles.createPostContainer}>
           <form onSubmit={handleCreatePost} className={styles.createPostForm}>
-            <textarea
-              className={styles.postInput}
-              placeholder={isOwnProfile ? "Что у вас нового?" : "Написать на стене..."}
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={3}
-              disabled={isCreating}
-            />
-
-            {/* Drag and drop зона */}
+            {/* Textarea с drag & drop */}
             <div 
-              className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
+              className={styles.textareaWrapper}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
-              {imagePreviews.length === 0 ? (
-                <p>Перетащите изображения сюда или нажмите кнопку ниже</p>
-              ) : (
-                <div className={styles.imagePreviews}>
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className={styles.imagePreview}>
-                      <img src={preview} alt={`Preview ${index + 1}`} />
-                      <button
-                        type="button"
-                        className={styles.removeImageBtn}
-                        onClick={() => removeImage(index)}
-                        disabled={isCreating}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+              <textarea
+                className={styles.postInput}
+                placeholder={isOwnProfile ? "Что у вас нового?" : "Написать на стене..."}
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                rows={3}
+                disabled={isCreating}
+              />
+              
+              {/* Оверлей для drag & drop - показывается только при перетаскивании */}
+              {isDragging && (
+                <div className={styles.dragOverlay}>
+                  <p>Отпустите изображения здесь</p>
                 </div>
               )}
             </div>
+
+            {/* Превью изображений */}
+            {imagePreviews.length > 0 && (
+              <div className={styles.imagePreviews}>
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className={styles.imagePreview}>
+                    <img src={preview} alt={`Preview ${index + 1}`} />
+                    <button
+                      type="button"
+                      className={styles.removeImageBtn}
+                      onClick={() => removeImage(index)}
+                      disabled={isCreating}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Кнопки управления */}
             <div className={styles.postActions}>

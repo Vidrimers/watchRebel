@@ -311,11 +311,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         );
 
       case 'text':
-        // Если нет контента и нет изображений, не отображаем текстовый блок
-        if (!post.content && (!post.images || post.images.length === 0)) {
-          return null;
-        }
-        
         return (
           <div className={styles.textContent}>
             {isEditing ? (

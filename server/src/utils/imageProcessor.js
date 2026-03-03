@@ -16,6 +16,15 @@ export async function compressImage(filePath, maxSizeMB = 3) {
 
     console.log(`📊 Размер изображения: ${fileSizeInMB.toFixed(2)} MB`);
 
+    // Проверяем расширение файла
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Для GIF не применяем сжатие через sharp (чтобы сохранить анимацию)
+    if (ext === '.gif') {
+      console.log('🎬 GIF файл - пропускаем сжатие для сохранения анимации');
+      return filePath;
+    }
+
     // Если файл меньше максимального размера, возвращаем исходный путь
     if (fileSizeInMB <= maxSizeMB) {
       console.log('✅ Изображение не требует сжатия');
@@ -43,7 +52,6 @@ export async function compressImage(filePath, maxSizeMB = 3) {
     }
 
     // Создаем временный путь для сжатого изображения
-    const ext = path.extname(filePath);
     const compressedPath = filePath.replace(ext, `_compressed${ext}`);
 
     // Сжимаем изображение

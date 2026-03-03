@@ -33,37 +33,42 @@
 /* Кнопка закрытия */
 .closeButton {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  color: white;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
   border: none;
-  font-size: 32px;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
   z-index: 10001;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .closeButton:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover, rgba(0, 0, 0, 0.1));
+  transform: scale(1.05);
 }
 
-/* Область с изображением (70% ширины) */
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+/* Область с изображением (75% ширины) */
 .imageArea {
-  flex: 0 0 70%;
+  flex: 0 0 75%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   padding: 60px 20px 20px;
+  cursor: pointer;
 }
 
 /* Контейнер изображения */
@@ -74,6 +79,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  cursor: default;
 }
 
 /* Изображение */
@@ -85,12 +91,19 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* Индикатор текущего изображения */
-.imageCounter {
+/* Контейнер для информации об изображении */
+.imageInfo {
   position: absolute;
   bottom: -40px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Индикатор текущего изображения */
+.imageCounter {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
@@ -98,6 +111,25 @@
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Метаданные изображения */
+.imageMetadata {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.imageMetadata .separator {
+  opacity: 0.5;
 }
 
 /* Кнопки навигации */
@@ -132,9 +164,9 @@
   right: 20px;
 }
 
-/* Панель комментариев (30% ширины) */
+/* Панель комментариев (25% ширины) */
 .commentsPanel {
-  flex: 0 0 30%;
+  flex: 0 0 25%;
   background: var(--bg-primary, #ffffff);
   display: flex;
   flex-direction: column;
