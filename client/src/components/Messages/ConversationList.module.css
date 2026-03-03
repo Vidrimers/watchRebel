@@ -251,7 +251,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.875rem;
-  background: var(--input-bg);
+  background: var(--bg-input);
   color: var(--text-primary);
   width: calc(100% - 3rem);
 }
