@@ -27,9 +27,28 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [sortBy, setSortBy] = useState('default');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const fileInputRef = useRef(null);
+  const sortDropdownRef = useRef(null);
   const limit = 5;
-  const maxChars = 400; // Лимит символов
+  const maxChars = 400;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    if (showSortDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSortDropdown]);
 
   // Загрузка комментариев
   const loadComments = async (reset = false) => {
@@ -38,7 +57,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       const currentOffset = reset ? 0 : offset;
       
       const response = await api.get(`/wall/${postId}/comments`, {
-        params: { limit, offset: currentOffset }
+        params: { limit, offset: currentOffset, sortBy }
       });
 
       if (reset) {
@@ -63,6 +82,13 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
     // Загружаем комментарии всегда при монтировании
     loadComments(true);
   }, [postId]);
+
+  // Перезагрузка комментариев при изменении сортировки
+  useEffect(() => {
+    if (total > 0) {
+      loadComments(true);
+    }
+  }, [sortBy]);
 
   // Обработка отправки комментария
   const handleSubmit = async (e) => {
@@ -261,6 +287,23 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
 
   const charCount = commentText.length;
 
+  // Варианты сортировки
+  const sortOptions = [
+    { value: 'default', label: 'По умолчанию' },
+    { value: 'likes_desc', label: 'Больше лайков' },
+    { value: 'likes_asc', label: 'Меньше лайков' },
+    { value: 'newest', label: 'Сначала новые' },
+    { value: 'oldest', label: 'Сначала старые' }
+  ];
+
+  const currentSortLabel = sortOptions.find(opt => opt.value === sortBy)?.label || 'По умолчанию';
+
+  // Обработка изменения сортировки
+  const handleSortChange = (value) => {
+    setSortBy(value);
+    setShowSortDropdown(false);
+  };
+
   // Показываем компонент если форма открыта ИЛИ есть комментарии
   if (!isOpen && total === 0) {
     return null;
@@ -400,12 +443,85 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
         </form>
       )}
 
-      {/* Счетчик комментариев */}
+      {/* Счетчик комментариев и сортировка */}
       {total > 0 && (
         <div className={styles.commentsHeader}>
           <span className={styles.commentsCount}>
             <Icon name="message" size="small" /> {total} {total === 1 ? 'комментарий' : total < 5 ? 'комментария' : 'комментариев'}
           </span>
+          
+          <div className={styles.sortWrapper} ref={sortDropdownRef}>
+            <button
+              type="button"
+              className={styles.sortButton}
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              title="Сортировка комментариев"
+            >
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  d="M3 6h18M3 12h15M3 18h12" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round"
+                />
+              </svg>
+              {sortBy !== 'default' && <span className={styles.sortLabel}>{currentSortLabel}</span>}
+              <svg 
+                width="12" 
+                height="12" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                className={showSortDropdown ? styles.arrowUp : styles.arrowDown}
+              >
+                <path 
+                  d="M6 9l6 6 6-6" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            
+            {showSortDropdown && (
+              <div className={styles.sortDropdown}>
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`${styles.sortOption} ${sortBy === option.value ? styles.active : ''}`}
+                    onClick={() => handleSortChange(option.value)}
+                  >
+                    {option.label}
+                    {sortBy === option.value && (
+                      <svg 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path 
+                          d="M20 6L9 17l-5-5" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

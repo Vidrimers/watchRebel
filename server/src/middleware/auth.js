@@ -172,8 +172,65 @@ export async function checkPostBan(req, res, next) {
   }
 }
 
+/**
+ * Middleware для опциональной аутентификации
+ * Если токен есть - проверяет и добавляет req.user
+ * Если токена нет - просто пропускает дальше без ошибки
+ */
+export async function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    // Если токена нет - просто идем дальше
+    if (!token) {
+      return next();
+    }
+
+    // Проверяем токен в базе данных
+    const result = await executeQuery(
+      `SELECT s.*, u.* 
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.token = ? AND s.expires_at > datetime('now')`,
+      [token]
+    );
+
+    // Если токен валидный - добавляем пользователя
+    if (result.success && result.data && result.data.length > 0) {
+      const session = result.data[0];
+
+      // Не добавляем заблокированных пользователей
+      if (!session.is_blocked) {
+        req.user = {
+          id: session.user_id,
+          telegramUsername: session.telegram_username,
+          displayName: session.display_name,
+          avatarUrl: session.avatar_url,
+          userStatus: session.user_status,
+          isAdmin: Boolean(session.is_admin),
+          theme: session.theme,
+          authMethod: session.auth_method || 'telegram',
+          email: session.email,
+          emailVerified: Boolean(session.email_verified),
+          googleId: session.google_id,
+          discordId: session.discord_id
+        };
+        req.sessionId = session.id;
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Ошибка опциональной аутентификации:', error);
+    // При ошибке просто идем дальше без пользователя
+    next();
+  }
+}
+
 export default {
   authenticateToken,
+  optionalAuth,
   requireAdmin,
   checkPostBan
 };

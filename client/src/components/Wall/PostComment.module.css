@@ -2,6 +2,7 @@
 .commentWrapper {
   transition: padding-left 0.2s;
   margin-bottom: 12px;
+  position: relative;
 }
 
 /* Отступ только для ответов первого уровня */
@@ -14,6 +15,7 @@
   display: flex;
   gap: 12px;
   padding: 12px 0;
+  position: relative;
 }
 
 /* Аватар */
@@ -113,8 +115,19 @@
 /* Действия */
 .commentActions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-top: 4px;
+}
+
+.commentActionsLeft {
+  display: flex;
+  gap: 12px;
+}
+
+.commentActionsRight {
+  margin-left: auto;
 }
 
 .actionButton {
@@ -129,6 +142,69 @@
 
 .actionButton:hover {
   color: var(--accent-color);
+}
+
+/* Кнопка лайка */
+.likeButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Показываем кнопку лайка при наведении на комментарий */
+.commentWrapper:hover .likeButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Всегда показываем кнопку лайка если есть лайки */
+.likeButton.hasLikes {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.likeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.likeButton.liked {
+  color: #ef4444;
+}
+
+.likeButton.liked:hover {
+  color: #dc2626;
+}
+
+/* Всегда показываем лайкнутую кнопку */
+.likeButton.liked {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.heartIcon {
+  transition: transform 0.2s;
+}
+
+.likeButton:hover .heartIcon {
+  transform: scale(1.1);
+}
+
+.likeButton:active .heartIcon {
+  transform: scale(0.95);
+}
+
+.likesCount {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.likesCount.likedCount {
+  color: #ef4444;
 }
 
 /* Форма редактирования */

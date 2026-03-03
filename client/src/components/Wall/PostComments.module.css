@@ -213,13 +213,127 @@
 
 /* Заголовок комментариев */
 .commentsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 99999 !important;
 }
 
 .commentsCount {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Сортировка комментариев */
+.sortWrapper {
+  position: relative;
+  z-index: 99999 !important;
+}
+
+.sortButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 6px;
+  position: relative;
+  z-index: 99999 !important;
+}
+
+.sortButton:hover {
+  background: var(--background-tertiary);
+  color: var(--text-primary);
+}
+
+.sortLabel {
+  font-weight: 500;
+}
+
+.arrowDown,
+.arrowUp {
+  transition: transform 0.2s;
+}
+
+.arrowUp {
+  transform: rotate(180deg);
+}
+
+.sortDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-primary, #ffffff);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 99999 !important;
+  overflow: hidden;
+}
+
+.sortOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sortOption:hover {
+  background: var(--background-secondary);
+}
+
+.sortOption.active {
+  background: var(--background-tertiary);
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.sortOption svg {
+  color: var(--accent-color);
+}
+
+/* Адаптивный дизайн */
+@media (max-width: 768px) {
+  .commentsHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sortWrapper {
+    width: 100%;
+  }
+
+  .sortButton {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sortDropdown {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
 }
 
 /* Список комментариев */

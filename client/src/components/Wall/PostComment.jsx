@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import useConfirm from '../../hooks/useConfirm';
 import ReactionPicker from './ReactionPicker';
+import ReactionTooltip from './ReactionTooltip';
 import ImageModal from './ImageModal';
 import LinkifiedText from './LinkifiedText';
 import api from '../../services/api';
@@ -45,8 +46,25 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
   const editTextareaRef = useRef(null);
   const repliesLimit = 5;
 
+  // Состояние для лайков
+  const [isLiked, setIsLiked] = useState(comment.isLikedByCurrentUser || false);
+  const [likesCount, setLikesCount] = useState(comment.likesCount || 0);
+  const [isLiking, setIsLiking] = useState(false);
+  const [showLikesTooltip, setShowLikesTooltip] = useState(false);
+  const [likesTooltipPosition, setLikesTooltipPosition] = useState({ x: 0, y: 0 });
+  const [likedUsers, setLikedUsers] = useState([]);
+  const [loadingLikes, setLoadingLikes] = useState(false);
+  const likeButtonRef = useRef(null);
+  const tooltipTimeoutRef = useRef(null);
+
   const isOwn = currentUser && comment.userId === currentUser.id;
   const isServerDeleted = comment.content === '[Комментарий удален]';
+
+  // Обновляем состояние лайков при изменении пропса comment
+  useEffect(() => {
+    setIsLiked(comment.isLikedByCurrentUser || false);
+    setLikesCount(comment.likesCount || 0);
+  }, [comment.isLikedByCurrentUser, comment.likesCount]);
 
   // Перемещаем курсор в конец при открытии редактирования
   useEffect(() => {
@@ -259,6 +277,97 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
     setShowEmojiPicker(false);
   };
 
+  // Обработка лайка комментария
+  const handleLike = async () => {
+    if (isLiking || !currentUser) return;
+
+    try {
+      setIsLiking(true);
+      
+      // Оптимистичное обновление UI
+      const newIsLiked = !isLiked;
+      const newLikesCount = newIsLiked ? likesCount + 1 : likesCount - 1;
+      
+      setIsLiked(newIsLiked);
+      setLikesCount(newLikesCount);
+
+      // Отправляем запрос на сервер
+      const response = await api.post(`/wall/comments/${comment.id}/like`);
+      
+      // Обновляем с реальными данными с сервера
+      setIsLiked(response.data.liked);
+      setLikesCount(response.data.likesCount);
+      
+      // Сбрасываем список лайкнувших, чтобы перезагрузить при следующем наведении
+      setLikedUsers([]);
+    } catch (error) {
+      console.error('Ошибка лайка комментария:', error);
+      // Откатываем изменения при ошибке
+      setIsLiked(!isLiked);
+      setLikesCount(isLiked ? likesCount + 1 : likesCount - 1);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // Загрузка списка лайкнувших
+  const loadLikedUsers = async () => {
+    if (loadingLikes || likedUsers.length > 0 || likesCount === 0) return;
+
+    try {
+      setLoadingLikes(true);
+      const response = await api.get(`/wall/comments/${comment.id}/likes`);
+      setLikedUsers(response.data.users);
+    } catch (error) {
+      console.error('Ошибка загрузки списка лайков:', error);
+    } finally {
+      setLoadingLikes(false);
+    }
+  };
+
+  // Показать тултип с лайкнувшими
+  const handleLikeMouseEnter = () => {
+    if (likesCount === 0) return;
+
+    // Загружаем список пользователей
+    loadLikedUsers();
+
+    // Показываем тултип с задержкой
+    tooltipTimeoutRef.current = setTimeout(() => {
+      if (likeButtonRef.current) {
+        const rect = likeButtonRef.current.getBoundingClientRect();
+        setLikesTooltipPosition({
+          x: rect.left,
+          y: rect.bottom + 8
+        });
+        setShowLikesTooltip(true);
+      }
+    }, 300);
+  };
+
+  // Скрыть тултип
+  const handleLikeMouseLeave = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    // Убираем задержку, чтобы тултип не исчезал сразу
+    // Тултип сам обработает onMouseLeave
+  };
+
+  // Скрыть тултип при уходе мыши с тултипа
+  const handleTooltipMouseLeave = () => {
+    setShowLikesTooltip(false);
+  };
+
+  // Очистка таймаута при размонтировании
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -394,28 +503,77 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
           {/* Действия */}
           {!isServerDeleted && !isEditing && (
             <div className={styles.commentActions}>
-              {isDeleted ? (
-                // Если локально удален - показываем кнопку восстановления
-                <button className={styles.actionButton} onClick={() => onRestore && onRestore(comment.id)}>
-                  Восстановить
-                </button>
-              ) : (
-                <>
-                  <button className={styles.actionButton} onClick={handleReply}>
-                    Ответить
+              <div className={styles.commentActionsLeft}>
+                {isDeleted ? (
+                  // Если локально удален - показываем кнопку восстановления
+                  <button className={styles.actionButton} onClick={() => onRestore && onRestore(comment.id)}>
+                    Восстановить
+                  </button>
+                ) : (
+                  <>
+                    <button className={styles.actionButton} onClick={handleReply}>
+                      Ответить
+                    </button>
+                    
+                    {isOwn && (
+                      <>
+                        <button className={styles.actionButton} onClick={handleEdit}>
+                          Редактировать
+                        </button>
+                        <button className={styles.actionButton} onClick={() => onDelete && onDelete(comment.id)}>
+                          Удалить
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+              
+              {/* Кнопка лайка справа */}
+              {!isDeleted && (
+                <div className={styles.commentActionsRight}>
+                  <button 
+                    ref={likeButtonRef}
+                    className={`${styles.actionButton} ${styles.likeButton} ${isLiked ? styles.liked : ''} ${likesCount > 0 ? styles.hasLikes : ''}`}
+                    onClick={handleLike}
+                    onMouseEnter={handleLikeMouseEnter}
+                    onMouseLeave={handleLikeMouseLeave}
+                    disabled={isLiking || !currentUser}
+                    title={isLiked ? 'Убрать лайк' : 'Лайкнуть'}
+                  >
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill={isLiked ? '#ef4444' : 'none'}
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={styles.heartIcon}
+                    >
+                      <path 
+                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {likesCount > 0 && (
+                      <span className={`${styles.likesCount} ${isLiked ? styles.likedCount : ''}`}>
+                        {likesCount}
+                      </span>
+                    )}
                   </button>
                   
-                  {isOwn && (
-                    <>
-                      <button className={styles.actionButton} onClick={handleEdit}>
-                        Редактировать
-                      </button>
-                      <button className={styles.actionButton} onClick={() => onDelete && onDelete(comment.id)}>
-                        Удалить
-                      </button>
-                    </>
+                  {/* Тултип со списком лайкнувших */}
+                  {showLikesTooltip && likedUsers.length > 0 && (
+                    <ReactionTooltip
+                      users={likedUsers}
+                      position={likesTooltipPosition}
+                      onMouseEnter={() => setShowLikesTooltip(true)}
+                      onMouseLeave={handleTooltipMouseLeave}
+                    />
                   )}
-                </>
+                </div>
               )}
             </div>
           )}

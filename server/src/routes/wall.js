@@ -1,7 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
-import { authenticateToken, checkPostBan } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth, checkPostBan } from '../middleware/auth.js';
 import { notifyReaction } from '../services/notificationService.js';
 import { uploadPostImages, uploadCommentImage } from '../middleware/upload.js';
 import { compressImage, isValidImageType } from '../utils/imageProcessor.js';
@@ -1437,12 +1437,28 @@ router.post('/:postId/comments', authenticateToken, uploadCommentImage.single('i
  * Query params:
  * - limit: number (по умолчанию 5)
  * - offset: number (по умолчанию 0)
+ * - sortBy: string (по умолчанию 'default')
+ *   - 'default': сначала популярные (больше ответов), потом с лайками, потом новые
+ *   - 'likes_desc': больше лайков
+ *   - 'likes_asc': меньше лайков
+ *   - 'newest': сначала новые
+ *   - 'oldest': сначала старые
  */
-router.get('/:postId/comments', async (req, res) => {
+router.get('/:postId/comments', optionalAuth, async (req, res) => {
   try {
     const { postId } = req.params;
     const limit = parseInt(req.query.limit) || 5;
     const offset = parseInt(req.query.offset) || 0;
+    const sortBy = req.query.sortBy || 'default';
+
+    // Валидация sortBy
+    const validSortOptions = ['default', 'likes_desc', 'likes_asc', 'newest', 'oldest'];
+    if (!validSortOptions.includes(sortBy)) {
+      return res.status(400).json({ 
+        error: 'Неверный параметр sortBy',
+        code: 'INVALID_SORT_OPTION' 
+      });
+    }
 
     // Проверяем, существует ли пост
     const postCheck = await executeQuery(
@@ -1472,17 +1488,47 @@ router.get('/:postId/comments', async (req, res) => {
 
     const total = countResult.success ? countResult.data[0].total : 0;
 
+    // Определяем ORDER BY в зависимости от sortBy
+    let orderByClause;
+    switch (sortBy) {
+      case 'default':
+        // Сначала популярные (больше ответов), потом с лайками, потом новые
+        orderByClause = 'ORDER BY replies_count DESC, likes_count DESC, pc.created_at DESC';
+        break;
+      case 'likes_desc':
+        // Больше лайков
+        orderByClause = 'ORDER BY likes_count DESC, pc.created_at DESC';
+        break;
+      case 'likes_asc':
+        // Меньше лайков
+        orderByClause = 'ORDER BY likes_count ASC, pc.created_at DESC';
+        break;
+      case 'newest':
+        // Сначала новые
+        orderByClause = 'ORDER BY pc.created_at DESC';
+        break;
+      case 'oldest':
+        // Сначала старые
+        orderByClause = 'ORDER BY pc.created_at ASC';
+        break;
+      default:
+        orderByClause = 'ORDER BY replies_count DESC, likes_count DESC, pc.created_at DESC';
+    }
+
     // Получаем комментарии первого уровня с пагинацией
+    // Используем подзапросы для получения repliesCount и likesCount
     const commentsResult = await executeQuery(
       `SELECT 
         pc.*,
         u.id as author_id,
         u.display_name as author_display_name,
-        u.avatar_url as author_avatar_url
+        u.avatar_url as author_avatar_url,
+        (SELECT COUNT(*) FROM post_comments WHERE parent_comment_id = pc.id) as replies_count,
+        (SELECT COUNT(*) FROM comment_likes WHERE comment_id = pc.id) as likes_count
        FROM post_comments pc
        LEFT JOIN users u ON pc.user_id = u.id
        WHERE pc.post_id = ? AND pc.parent_comment_id IS NULL
-       ORDER BY pc.created_at ASC
+       ${orderByClause}
        LIMIT ? OFFSET ?`,
       [postId, limit, offset]
     );
@@ -1494,15 +1540,20 @@ router.get('/:postId/comments', async (req, res) => {
       });
     }
 
-    // Для каждого комментария получаем количество ответов
-    const commentsWithReplies = await Promise.all(
+    // Для каждого комментария проверяем, лайкнул ли текущий пользователь
+    const currentUserId = req.user?.id; // ID текущего пользователя (если авторизован)
+    
+    const commentsWithLikes = await Promise.all(
       commentsResult.data.map(async (comment) => {
-        const repliesCountResult = await executeQuery(
-          'SELECT COUNT(*) as count FROM post_comments WHERE parent_comment_id = ?',
-          [comment.id]
-        );
-
-        const repliesCount = repliesCountResult.success ? repliesCountResult.data[0].count : 0;
+        // Проверяем, лайкнул ли текущий пользователь этот комментарий
+        let isLikedByCurrentUser = false;
+        if (currentUserId) {
+          const likeCheckResult = await executeQuery(
+            'SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+            [comment.id, currentUserId]
+          );
+          isLikedByCurrentUser = likeCheckResult.success && likeCheckResult.data.length > 0;
+        }
 
         return {
           id: comment.id,
@@ -1513,7 +1564,9 @@ router.get('/:postId/comments', async (req, res) => {
           imageUrl: comment.image_url,
           createdAt: comment.created_at,
           editedAt: comment.edited_at,
-          repliesCount,
+          repliesCount: comment.replies_count,
+          likesCount: comment.likes_count,
+          isLikedByCurrentUser,
           author: {
             id: comment.author_id,
             displayName: comment.author_display_name,
@@ -1526,11 +1579,12 @@ router.get('/:postId/comments', async (req, res) => {
     const hasMore = offset + limit < total;
 
     res.json({
-      comments: commentsWithReplies,
+      comments: commentsWithLikes,
       total,
       hasMore,
       limit,
-      offset
+      offset,
+      sortBy
     });
 
   } catch (error) {
@@ -1550,7 +1604,7 @@ router.get('/:postId/comments', async (req, res) => {
  * - limit: number (по умолчанию 5)
  * - offset: number (по умолчанию 0)
  */
-router.get('/comments/:commentId/replies', async (req, res) => {
+router.get('/comments/:commentId/replies', optionalAuth, async (req, res) => {
   try {
     const { commentId } = req.params;
     const limit = parseInt(req.query.limit) || 5;
@@ -1606,15 +1660,36 @@ router.get('/comments/:commentId/replies', async (req, res) => {
       });
     }
 
-    // Для каждого ответа получаем количество вложенных ответов
+    // Для каждого ответа получаем количество вложенных ответов и лайков
+    const currentUserId = req.user?.id; // ID текущего пользователя (если авторизован)
+    
     const repliesWithNested = await Promise.all(
       repliesResult.data.map(async (reply) => {
+        // Количество вложенных ответов
         const nestedCountResult = await executeQuery(
           'SELECT COUNT(*) as count FROM post_comments WHERE parent_comment_id = ?',
           [reply.id]
         );
 
         const repliesCount = nestedCountResult.success ? nestedCountResult.data[0].count : 0;
+
+        // Количество лайков
+        const likesCountResult = await executeQuery(
+          'SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = ?',
+          [reply.id]
+        );
+
+        const likesCount = likesCountResult.success ? likesCountResult.data[0].count : 0;
+
+        // Проверяем, лайкнул ли текущий пользователь этот ответ
+        let isLikedByCurrentUser = false;
+        if (currentUserId) {
+          const likeCheckResult = await executeQuery(
+            'SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+            [reply.id, currentUserId]
+          );
+          isLikedByCurrentUser = likeCheckResult.success && likeCheckResult.data.length > 0;
+        }
 
         return {
           id: reply.id,
@@ -1626,6 +1701,8 @@ router.get('/comments/:commentId/replies', async (req, res) => {
           createdAt: reply.created_at,
           editedAt: reply.edited_at,
           repliesCount,
+          likesCount,
+          isLikedByCurrentUser,
           author: {
             id: reply.author_id,
             displayName: reply.author_display_name,
@@ -1875,4 +1952,169 @@ router.delete('/comments/:commentId', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/wall/comments/:commentId/like
+ * Добавить/удалить лайк комментария (toggle)
+ * Если лайк уже есть - удалить
+ * Если лайка нет - добавить
+ */
+router.post('/comments/:commentId/like', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+
+    // Получаем информацию о комментарии и его авторе
+    const commentResult = await executeQuery(
+      `SELECT pc.*, u.display_name as author_name
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.id = ?`,
+      [commentId]
+    );
+
+    if (!commentResult.success || commentResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Комментарий не найден',
+        code: 'COMMENT_NOT_FOUND' 
+      });
+    }
+
+    const comment = commentResult.data[0];
+
+    // Проверяем, есть ли уже лайк от этого пользователя
+    const existingLikeResult = await executeQuery(
+      'SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+      [commentId, userId]
+    );
+
+    let liked = false;
+
+    if (existingLikeResult.success && existingLikeResult.data.length > 0) {
+      // Лайк уже есть - удаляем (unlike)
+      const deleteResult = await executeQuery(
+        'DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+        [commentId, userId]
+      );
+
+      if (!deleteResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка удаления лайка',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      liked = false;
+    } else {
+      // Лайка нет - добавляем
+      const likeId = uuidv4();
+      const insertResult = await executeQuery(
+        'INSERT INTO comment_likes (id, comment_id, user_id) VALUES (?, ?, ?)',
+        [likeId, commentId, userId]
+      );
+
+      if (!insertResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка добавления лайка',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      liked = true;
+
+      // Отправляем уведомление автору комментария (если это не он сам)
+      if (comment.user_id !== userId) {
+        try {
+          // Получаем информацию о пользователе, который лайкнул
+          const likerResult = await executeQuery(
+            'SELECT display_name FROM users WHERE id = ?',
+            [userId]
+          );
+
+          if (likerResult.success && likerResult.data.length > 0) {
+            const likerName = likerResult.data[0].display_name;
+
+            // Создаем уведомление в БД
+            const notificationId = uuidv4();
+            await executeQuery(
+              `INSERT INTO notifications (id, user_id, type, content, related_user_id, related_post_id)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                notificationId,
+                comment.user_id,
+                'comment_like',
+                `${likerName} лайкнул ваш комментарий`,
+                userId,
+                comment.post_id
+              ]
+            );
+          }
+        } catch (notifError) {
+          console.error('Ошибка отправки уведомления о лайке комментария:', notifError);
+          // Не прерываем выполнение, если уведомление не отправилось
+        }
+      }
+    }
+
+    // Подсчитываем общее количество лайков
+    const countResult = await executeQuery(
+      'SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = ?',
+      [commentId]
+    );
+
+    const likesCount = countResult.success ? countResult.data[0].count : 0;
+
+    res.json({ 
+      liked,
+      likesCount,
+      commentId
+    });
+
+  } catch (error) {
+    console.error('Ошибка обработки лайка комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * GET /api/wall/comments/:commentId/likes
+ * Получить список пользователей, лайкнувших комментарий
+ */
+router.get('/comments/:commentId/likes', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+
+    // Получаем список пользователей, лайкнувших комментарий
+    const likesResult = await executeQuery(
+      `SELECT u.id, u.display_name as name, u.avatar_url as avatarUrl
+       FROM comment_likes cl
+       LEFT JOIN users u ON cl.user_id = u.id
+       WHERE cl.comment_id = ?
+       ORDER BY cl.created_at DESC`,
+      [commentId]
+    );
+
+    if (!likesResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения лайков',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({ 
+      users: likesResult.data 
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения списка лайков комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;
+
