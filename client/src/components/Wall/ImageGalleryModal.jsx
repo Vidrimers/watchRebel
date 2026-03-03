@@ -69,7 +69,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
     if (!currentImage || !currentImage.id) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await axios.post(
         `${API_URL}/api/images/${currentImage.id}/comments`,
         {
@@ -96,7 +96,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   // Редактирование комментария
   const handleEditComment = async (commentId, newContent) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       await axios.put(
         `${API_URL}/api/images/comments/${commentId}`,
         { content: newContent },
@@ -121,7 +121,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       await axios.delete(
         `${API_URL}/api/images/comments/${commentId}`,
         {
@@ -150,9 +150,10 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
     setNewComment('');
   };
 
-  // Обработка Ctrl+Enter для отправки
+  // Обработка Enter для отправки
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Предотвращаем перенос строки
       handleCreateComment();
     }
   };
@@ -361,7 +362,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
               </button>
             </div>
             <div className={styles.commentHint}>
-              Ctrl+Enter для отправки
+              Enter для отправки, Shift+Enter для новой строки
             </div>
           </div>
 
