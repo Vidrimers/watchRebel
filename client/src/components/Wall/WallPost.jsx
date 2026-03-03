@@ -161,6 +161,31 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     }
   };
 
+  // Обработка закрепления/открепления поста
+  const handlePinPost = async () => {
+    try {
+      if (post.isPinned) {
+        // Открепляем пост
+        await api.delete(`/wall/${post.id}/unpin`);
+      } else {
+        // Закрепляем пост
+        await api.post(`/wall/${post.id}/pin`);
+      }
+      
+      // Перезагружаем стену
+      if (post.wallOwner?.id) {
+        dispatch(fetchWall(post.wallOwner.id));
+      }
+    } catch (err) {
+      console.error('Ошибка закрепления/открепления поста:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: err.response?.data?.error || 'Не удалось выполнить действие',
+        type: 'error'
+      });
+    }
+  };
+
   // Обработка редактирования поста
   const handleEditPost = () => {
     setIsEditing(true);
@@ -480,7 +505,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     <>
       {confirmDialog}
       {alertDialog}
-      <div className={`${styles.wallPost} ${isAnnouncement ? styles.announcementPost : ''}`}>
+      <div className={`${styles.wallPost} ${isAnnouncement ? styles.announcementPost : ''} ${post.isPinned ? styles.pinnedPost : ''}`}>
+      {/* Метка закрепленного поста */}
+      {post.isPinned && (
+        <div className={styles.pinnedLabel}>
+          <Icon name="pinned" size="small" className={styles.pinnedIcon} />
+          <span className={styles.pinnedText}>Закреплено</span>
+        </div>
+      )}
+      
       {/* Заголовок поста с именем автора */}
       {!isAnnouncement && !isFeedView && (
         <div className={styles.postHeader}>
@@ -543,6 +576,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
             post.wallOwner?.id === currentUser.id
           ) && (
             <div className={styles.postActions}>
+              {/* Закрепить может только владелец стены на своей стене */}
+              {isOwnProfile && currentUser && post.wallOwner?.id === currentUser.id && (
+                <button
+                  className={styles.pinButton}
+                  onClick={handlePinPost}
+                  title={post.isPinned ? 'Открепить' : 'Закрепить'}
+                >
+                  <Icon name={post.isPinned ? 'pinned' : 'pin'} size="small" />
+                </button>
+              )}
               {/* Редактировать может только автор */}
               {post.author?.id === currentUser.id && canEdit() && (post.postType === 'text' || post.postType === 'review') && !isEditing && (
                 <button

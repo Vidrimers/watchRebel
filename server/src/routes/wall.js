@@ -10,14 +10,15 @@ const router = express.Router();
  * GET /api/wall/:userId
  * Получить все записи стены пользователя
  * Записи отсортированы в хронологическом порядке (новые сверху)
+ * Закрепленный пост отображается первым с флагом isPinned: true
  */
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Получаем информацию о владельце стены
+    // Получаем информацию о владельце стены и его закрепленном посте
     const wallOwnerResult = await executeQuery(
-      'SELECT id, display_name, avatar_url, telegram_username FROM users WHERE id = ?',
+      'SELECT id, display_name, avatar_url, telegram_username, pinned_post_id FROM users WHERE id = ?',
       [userId]
     );
 
@@ -29,6 +30,7 @@ router.get('/:userId', async (req, res) => {
     }
 
     const wallOwner = wallOwnerResult.data[0];
+    const pinnedPostId = wallOwner.pinned_post_id;
 
     // Получаем все записи стены пользователя с информацией об авторе
     const postsResult = await executeQuery(
@@ -76,6 +78,9 @@ router.get('/:userId', async (req, res) => {
           }
         })) : [];
 
+        // Определяем, является ли пост закрепленным
+        const isPinned = pinnedPostId && post.id === pinnedPostId;
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -88,6 +93,7 @@ router.get('/:userId', async (req, res) => {
           rating: post.rating,
           createdAt: post.created_at,
           editedAt: post.edited_at,
+          isPinned, // Добавляем флаг закрепленного поста
           author: {
             id: post.author_id,
             displayName: post.author_display_name,
@@ -104,7 +110,17 @@ router.get('/:userId', async (req, res) => {
       })
     );
 
-    res.json(postsWithReactions);
+    // Сортируем посты: закрепленный первым, затем остальные по дате
+    const sortedPosts = postsWithReactions.sort((a, b) => {
+      // Закрепленный пост всегда первый
+      if (a.isPinned) return -1;
+      if (b.isPinned) return 1;
+      
+      // Остальные по дате (уже отсортированы в SQL, но на всякий случай)
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.json(sortedPosts);
 
   } catch (error) {
     console.error('Ошибка получения стены:', error);
@@ -849,6 +865,140 @@ router.delete('/:postId/reactions/:reactionId', authenticateToken, async (req, r
 
   } catch (error) {
     console.error('Ошибка удаления реакции:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/wall/:postId/pin
+ * Закрепить пост на стене
+ * Только владелец стены может закрепить пост
+ */
+router.post('/:postId/pin', authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем, существует ли пост
+    const postCheck = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!postCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки записи',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (postCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Запись не найдена',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    const post = postCheck.data[0];
+
+    // Проверяем, что пользователь - владелец стены
+    if (post.wall_owner_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Только владелец стены может закрепить пост',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Обновляем pinned_post_id в таблице users
+    const updateResult = await executeQuery(
+      'UPDATE users SET pinned_post_id = ? WHERE id = ?',
+      [postId, userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка закрепления поста',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({ 
+      message: 'Пост успешно закреплен',
+      postId,
+      pinnedPostId: postId
+    });
+
+  } catch (error) {
+    console.error('Ошибка закрепления поста:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/wall/:postId/unpin
+ * Открепить пост от стены
+ * Только владелец стены может открепить пост
+ */
+router.delete('/:postId/unpin', authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем, что этот пост действительно закреплен у пользователя
+    const userCheck = await executeQuery(
+      'SELECT pinned_post_id FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!userCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки пользователя',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (userCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const user = userCheck.data[0];
+
+    if (user.pinned_post_id !== postId) {
+      return res.status(400).json({ 
+        error: 'Этот пост не закреплен',
+        code: 'POST_NOT_PINNED' 
+      });
+    }
+
+    // Открепляем пост (устанавливаем pinned_post_id в NULL)
+    const updateResult = await executeQuery(
+      'UPDATE users SET pinned_post_id = NULL WHERE id = ?',
+      [userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка открепления поста',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({ 
+      message: 'Пост успешно откреплен',
+      postId
+    });
+
+  } catch (error) {
+    console.error('Ошибка открепления поста:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

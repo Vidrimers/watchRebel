@@ -7,6 +7,36 @@
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
+/* Закрепленный пост */
+.pinnedPost {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.pinnedLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.pinnedIcon {
+  color: var(--accent-color, #6366f1);
+}
+
+.pinnedText {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-color, #6366f1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Заголовок поста с именем автора */
 .postHeader {
   margin-bottom: 12px;
@@ -368,7 +398,8 @@
 }
 
 .editButton,
-.deleteButton {
+.deleteButton,
+.pinButton {
   padding: 4px 8px;
   background: transparent;
   border: 1px solid transparent;
@@ -387,6 +418,12 @@
 .deleteButton:hover:not(:disabled) {
   opacity: 1;
   color: var(--danger-color, #ef4444);
+}
+
+.pinButton:hover {
+  opacity: 1;
+  color: var(--accent-color, #6366f1);
+  transform: scale(1.1);
 }
 
 .editButton:disabled,

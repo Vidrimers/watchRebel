@@ -48,7 +48,9 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     edit: '✏️',
     delete: '🗑️',
     close: '✕',
-    announcement: '📢'
+    announcement: '📢',
+    pin: '📍',
+    pinned: '📌'
   };
 
   const iconId = `icon-${name}`;
