@@ -1,0 +1,21 @@
+.linkifiedText {
+  /* Контейнер для текста с ссылками */
+}
+
+.textParagraph {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.link {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: all 0.2s;
+  word-break: break-all;
+}
+
+.link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}

@@ -4,6 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchWall, createPost } from '../../store/slices/wallSlice';
 import WallPost from './WallPost';
 import Icon from '../Common/Icon';
+import useAlert from '../../hooks/useAlert';
 import styles from './Wall.module.css';
 import axios from 'axios';
 
@@ -15,6 +16,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const dispatch = useAppDispatch();
   const { posts, loading, error } = useAppSelector((state) => state.wall);
   const { user: currentUser } = useAppSelector((state) => state.auth);
+  const { alertDialog, showAlert } = useAlert();
   const [newPostContent, setNewPostContent] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -44,19 +46,38 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   };
 
   // Добавление изображений
-  const addImages = (files) => {
+  const addImages = async (files) => {
     // Фильтруем только изображения
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Проверяем, были ли отфильтрованы файлы
+    const rejectedFiles = files.filter(file => !file.type.startsWith('image/'));
+    if (rejectedFiles.length > 0) {
+      const rejectedNames = rejectedFiles.map(f => f.name).join(', ');
+      await showAlert({
+        title: 'Недопустимый формат',
+        message: `Файлы отклонены: ${rejectedNames}\n\nРазрешены только изображения (JPG, PNG, GIF, WebP)`,
+        type: 'error'
+      });
+    }
     
     // Ограничение: максимум 10 изображений
     const remainingSlots = 10 - selectedImages.length;
     const filesToAdd = imageFiles.slice(0, remainingSlots);
 
     if (filesToAdd.length === 0) {
-      if (imageFiles.length === 0) {
-        alert('Выберите файлы изображений');
-      } else {
-        alert('Достигнут лимит в 10 изображений');
+      if (imageFiles.length === 0 && rejectedFiles.length === 0) {
+        await showAlert({
+          title: 'Файлы не выбраны',
+          message: 'Выберите файлы изображений',
+          type: 'warning'
+        });
+      } else if (imageFiles.length > 0) {
+        await showAlert({
+          title: 'Лимит изображений',
+          message: 'Достигнут лимит в 10 изображений',
+          type: 'warning'
+        });
       }
       return;
     }
@@ -137,7 +158,11 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     
     // Проверяем, что есть либо текст, либо изображения
     if (!newPostContent.trim() && selectedImages.length === 0) {
-      alert('Добавьте текст или изображения');
+      await showAlert({
+        title: 'Пустой пост',
+        message: 'Добавьте текст или изображения',
+        type: 'warning'
+      });
       return;
     }
 
@@ -186,7 +211,11 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       dispatch(fetchWall(userId));
     } catch (err) {
       console.error('Ошибка создания поста:', err);
-      alert(err.message || 'Ошибка создания поста');
+      await showAlert({
+        title: 'Ошибка',
+        message: err.message || 'Ошибка создания поста',
+        type: 'error'
+      });
     } finally {
       setIsCreating(false);
     }
@@ -224,6 +253,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
 
   return (
     <div className={styles.wall}>
+      {alertDialog}
       {/* Форма создания нового поста */}
       {/* Показываем для своего профиля или если можно писать на чужой стене */}
       {(isOwnProfile || canPostOnWall()) && (

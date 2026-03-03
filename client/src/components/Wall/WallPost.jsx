@@ -8,6 +8,7 @@ import ReactionTooltip from './ReactionTooltip';
 import AddToListModal from './AddToListModal';
 import PostImageGrid from './PostImageGrid';
 import ImageGalleryModal from './ImageGalleryModal';
+import LinkifiedText from './LinkifiedText';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import Icon from '../Common/Icon';
@@ -305,7 +306,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
               Статус обновлен:
             </p>
             <div className={styles.statusText}>
-              <p>{cleanContent(post.content)}</p>
+              <LinkifiedText text={cleanContent(post.content)} />
             </div>
           </div>
         );
@@ -341,14 +342,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
               </div>
             ) : (
               post.content && (
-                <p>
+                <>
                   {isAnnouncement && (
                     <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
                       <Icon name="announcement" size="medium" color="#ff4444" />
                     </span>
                   )}
-                  {cleanContent(post.content)}
-                </p>
+                  <LinkifiedText text={cleanContent(post.content)} />
+                </>
               )
             )}
           </div>
@@ -479,7 +480,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
             )}
             {post.content && (
               <div className={styles.reviewText}>
-                <p>{cleanContent(post.content)}</p>
+                <LinkifiedText text={cleanContent(post.content)} />
               </div>
             )}
           </div>
