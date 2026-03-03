@@ -39,3 +39,4 @@ migration-*.sql
 server/src/database/migrations/*.js
 server/scripts/migrate-*.js
 cloudflared-tunnel*
+Порядок

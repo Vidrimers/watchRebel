@@ -6,6 +6,8 @@ import { addReaction, deletePost, updatePost, fetchWall } from '../../store/slic
 import ReactionPicker from './ReactionPicker';
 import ReactionTooltip from './ReactionTooltip';
 import AddToListModal from './AddToListModal';
+import PostImageGrid from './PostImageGrid';
+import ImageGalleryModal from './ImageGalleryModal';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import Icon from '../Common/Icon';
@@ -36,6 +38,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const [editedContent, setEditedContent] = useState(post.content || '');
   const [isSaving, setIsSaving] = useState(false);
   const [showAddToListModal, setShowAddToListModal] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+
+  // Обработка клика на изображение
+  const handleImageClick = (index) => {
+    setGalleryStartIndex(index);
+    setShowGallery(true);
+  };
 
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
@@ -301,6 +311,11 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         );
 
       case 'text':
+        // Если нет контента и нет изображений, не отображаем текстовый блок
+        if (!post.content && (!post.images || post.images.length === 0)) {
+          return null;
+        }
+        
         return (
           <div className={styles.textContent}>
             {isEditing ? (
@@ -330,14 +345,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
                 </div>
               </div>
             ) : (
-              <p>
-                {isAnnouncement && (
-                  <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
-                    <Icon name="announcement" size="medium" color="#ff4444" />
-                  </span>
-                )}
-                {cleanContent(post.content)}
-              </p>
+              post.content && (
+                <p>
+                  {isAnnouncement && (
+                    <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
+                      <Icon name="announcement" size="medium" color="#ff4444" />
+                    </span>
+                  )}
+                  {cleanContent(post.content)}
+                </p>
+              )
             )}
           </div>
         );
@@ -562,6 +579,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         {renderPostContent()}
       </div>
 
+      {/* Изображения поста */}
+      {post.images && post.images.length > 0 && (
+        <PostImageGrid 
+          images={post.images} 
+          onImageClick={handleImageClick}
+        />
+      )}
+
       {/* Футер с датой и реакциями */}
       <div className={styles.postFooter}>
         <div className={styles.postFooterLeft}>
@@ -686,6 +711,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
           mediaType={post.mediaType}
           mediaTitle={post.content?.split('\n')[0]}
           onClose={() => setShowAddToListModal(false)}
+        />
+      )}
+
+      {/* Галерея изображений */}
+      {showGallery && post.images && post.images.length > 0 && (
+        <ImageGalleryModal
+          images={post.images}
+          startIndex={galleryStartIndex}
+          isOpen={showGallery}
+          onClose={() => setShowGallery(false)}
         />
       )}
     </div>

@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, checkPostBan } from '../middleware/auth.js';
 import { notifyReaction } from '../services/notificationService.js';
+import { uploadPostImages } from '../middleware/upload.js';
+import { compressImage, isValidImageType } from '../utils/imageProcessor.js';
+import path from 'path';
 
 const router = express.Router();
 
@@ -54,9 +57,10 @@ router.get('/:userId', async (req, res) => {
       });
     }
 
-    // Для каждого поста получаем реакции
+    // Для каждого поста получаем реакции и изображения
     const postsWithReactions = await Promise.all(
       postsResult.data.map(async (post) => {
+        // Получаем реакции
         const reactionsResult = await executeQuery(
           `SELECT r.*, u.display_name, u.avatar_url 
            FROM reactions r
@@ -76,6 +80,21 @@ router.get('/:userId', async (req, res) => {
             displayName: r.display_name,
             avatarUrl: r.avatar_url
           }
+        })) : [];
+
+        // Получаем изображения поста
+        const imagesResult = await executeQuery(
+          `SELECT id, image_url, "order" 
+           FROM post_images 
+           WHERE post_id = ? 
+           ORDER BY "order" ASC`,
+          [post.id]
+        );
+
+        const images = imagesResult.success ? imagesResult.data.map(img => ({
+          id: img.id,
+          url: img.image_url,
+          order: img.order
         })) : [];
 
         // Определяем, является ли пост закрепленным
@@ -105,7 +124,8 @@ router.get('/:userId', async (req, res) => {
             displayName: wallOwner.display_name,
             avatarUrl: wallOwner.avatar_url
           },
-          reactions
+          reactions,
+          images // Добавляем массив изображений
         };
       })
     );
@@ -186,6 +206,21 @@ router.get('/post/:postId', async (req, res) => {
 
     const reactions = reactionsResult.success ? reactionsResult.data : [];
 
+    // Получаем изображения поста
+    const imagesResult = await executeQuery(
+      `SELECT id, image_url, "order" 
+       FROM post_images 
+       WHERE post_id = ? 
+       ORDER BY "order" ASC`,
+      [postId]
+    );
+
+    const images = imagesResult.success ? imagesResult.data.map(img => ({
+      id: img.id,
+      url: img.image_url,
+      order: img.order
+    })) : [];
+
     // Формируем ответ
     const formattedPost = {
       id: post.id,
@@ -220,7 +255,8 @@ router.get('/post/:postId', async (req, res) => {
           displayName: r.display_name,
           avatarUrl: r.avatar_url
         }
-      }))
+      })),
+      images // Добавляем массив изображений
     };
 
     res.json(formattedPost);
@@ -314,11 +350,16 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     }
 
     // Валидация для текстовых постов
-    if (postType === 'text' && (!content || content.trim() === '')) {
-      return res.status(400).json({ 
-        error: 'content обязателен для текстовых постов',
-        code: 'MISSING_CONTENT' 
-      });
+    if (postType === 'text') {
+      // Для текстовых постов content может быть пустым, если будут добавлены изображения
+      // Разрешаем null, undefined или отсутствие content
+      // Запрещаем только явно пустую строку после trim
+      if (content !== null && content !== undefined && content.trim() === '') {
+        return res.status(400).json({ 
+          error: 'content не может быть пустой строкой',
+          code: 'EMPTY_CONTENT' 
+        });
+      }
     }
 
     // Валидация для статусных постов
@@ -999,6 +1040,223 @@ router.delete('/:postId/unpin', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка открепления поста:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/wall/images
+ * Загрузить изображения для поста
+ * Принимает до 10 изображений
+ * Автоматически сжимает изображения больше 3MB
+ * 
+ * Body (multipart/form-data):
+ * - images: File[] (до 10 файлов)
+ * - postId: string (ID поста, к которому прикрепляются изображения)
+ * 
+ * Returns: массив URL загруженных изображений
+ */
+router.post('/images', authenticateToken, uploadPostImages.array('images', 10), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.body;
+
+    // Проверяем наличие файлов
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ 
+        error: 'Не загружено ни одного изображения',
+        code: 'NO_FILES' 
+      });
+    }
+
+    // Проверяем наличие postId
+    if (!postId) {
+      return res.status(400).json({ 
+        error: 'postId обязателен',
+        code: 'MISSING_POST_ID' 
+      });
+    }
+
+    // Проверяем, что пост существует и принадлежит пользователю
+    const postCheck = await executeQuery(
+      'SELECT * FROM wall_posts WHERE id = ? AND user_id = ?',
+      [postId, userId]
+    );
+
+    if (!postCheck.success || postCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пост не найден или не принадлежит пользователю',
+        code: 'POST_NOT_FOUND' 
+      });
+    }
+
+    // Валидация типов файлов
+    for (const file of req.files) {
+      if (!isValidImageType(file.mimetype)) {
+        return res.status(400).json({ 
+          error: `Недопустимый тип файла: ${file.originalname}. Разрешены только jpg, jpeg, png, gif, webp`,
+          code: 'INVALID_FILE_TYPE' 
+        });
+      }
+    }
+
+    console.log(`📤 Загружено ${req.files.length} изображений для поста ${postId}`);
+
+    // Обрабатываем каждое изображение
+    const processedImages = [];
+    
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      
+      try {
+        // Сжимаем изображение если нужно
+        const processedPath = await compressImage(file.path, 3);
+        
+        // Получаем относительный путь для сохранения в БД
+        const relativePath = `/uploads/images/${path.basename(processedPath)}`;
+        
+        // Сохраняем информацию об изображении в БД
+        const imageId = uuidv4();
+        const insertResult = await executeQuery(
+          `INSERT INTO post_images (id, post_id, image_url, "order", created_at)
+           VALUES (?, ?, ?, ?, datetime('now', 'localtime'))`,
+          [imageId, postId, relativePath, i]
+        );
+
+        if (!insertResult.success) {
+          console.error('Ошибка сохранения изображения в БД:', insertResult.error);
+          continue;
+        }
+
+        processedImages.push({
+          id: imageId,
+          url: relativePath,
+          order: i
+        });
+
+        console.log(`✅ Изображение ${i + 1}/${req.files.length} обработано: ${relativePath}`);
+      } catch (error) {
+        console.error(`Ошибка обработки изображения ${file.originalname}:`, error);
+        // Продолжаем обработку остальных файлов
+      }
+    }
+
+    if (processedImages.length === 0) {
+      return res.status(500).json({ 
+        error: 'Не удалось обработать ни одного изображения',
+        code: 'PROCESSING_FAILED' 
+      });
+    }
+
+    console.log(`✅ Успешно загружено ${processedImages.length} изображений`);
+
+    // Проверяем, загружены ли изображения на чужую стену
+    const post = postCheck.data[0];
+    if (post.wall_owner_id && post.wall_owner_id !== userId) {
+      // Отправляем уведомление владельцу стены
+      const { notifyWallPostImages } = await import('../services/notificationService.js');
+      
+      notifyWallPostImages(post.wall_owner_id, userId, postId, processedImages.length).catch(err => {
+        console.error('Ошибка отправки уведомления о загрузке изображений:', err);
+      });
+    }
+
+    res.status(201).json({
+      message: `Загружено ${processedImages.length} изображений`,
+      images: processedImages
+    });
+
+  } catch (error) {
+    console.error('Ошибка загрузки изображений:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/wall/images/:imageId
+ * Удалить изображение из поста
+ * Только автор поста может удалить изображение
+ */
+router.delete('/images/:imageId', authenticateToken, async (req, res) => {
+  try {
+    const { imageId } = req.params;
+    const userId = req.user.id;
+
+    // Получаем информацию об изображении и посте
+    const imageCheck = await executeQuery(
+      `SELECT pi.*, wp.user_id as post_author_id 
+       FROM post_images pi
+       LEFT JOIN wall_posts wp ON pi.post_id = wp.id
+       WHERE pi.id = ?`,
+      [imageId]
+    );
+
+    if (!imageCheck.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки изображения',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (imageCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Изображение не найдено',
+        code: 'IMAGE_NOT_FOUND' 
+      });
+    }
+
+    const image = imageCheck.data[0];
+
+    // Проверяем права (только автор поста может удалить изображение)
+    if (image.post_author_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Нет прав на удаление этого изображения',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Удаляем файл с сервера
+    const fs = await import('fs/promises');
+    const { fileURLToPath } = await import('url');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    
+    const filePath = path.join(__dirname, '../../', image.image_url);
+    
+    try {
+      await fs.unlink(filePath);
+      console.log(`🗑️ Файл удален: ${filePath}`);
+    } catch (error) {
+      console.error('Ошибка удаления файла:', error);
+      // Продолжаем удаление из БД даже если файл не найден
+    }
+
+    // Удаляем запись из БД
+    const deleteResult = await executeQuery(
+      'DELETE FROM post_images WHERE id = ?',
+      [imageId]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка удаления изображения из БД',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({ 
+      message: 'Изображение успешно удалено',
+      imageId 
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления изображения:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

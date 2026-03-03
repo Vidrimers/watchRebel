@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 const avatarsDir = path.join(__dirname, '../../uploads/avatars');
 const announcementsDir = path.join(__dirname, '../../uploads/announcements');
 const messagesDir = path.join(__dirname, '../../uploads/messages');
+const imagesDir = path.join(__dirname, '../../uploads/images');
 
 if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir, { recursive: true });
@@ -19,6 +20,9 @@ if (!fs.existsSync(announcementsDir)) {
 }
 if (!fs.existsSync(messagesDir)) {
   fs.mkdirSync(messagesDir, { recursive: true });
+}
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
 }
 
 // Настройка хранилища для аватаров
@@ -64,6 +68,21 @@ const messageStorage = multer.diskStorage({
   }
 });
 
+// Настройка хранилища для изображений постов
+const postImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, imagesDir);
+  },
+  filename: (req, file, cb) => {
+    // Генерируем уникальное имя файла: userId_timestamp.ext
+    const userId = req.user.id;
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const filename = `${userId}_${timestamp}${ext}`;
+    cb(null, filename);
+  }
+});
+
 // Фильтр файлов - только изображения
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -102,5 +121,15 @@ const uploadMessageFiles = multer({
   }
 });
 
-export { uploadAvatar, uploadAnnouncement, uploadMessageFiles };
+// Настройка multer для изображений постов (до 10 изображений, 10MB каждое)
+const uploadPostImages = multer({
+  storage: postImageStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Максимум 10MB (будет сжато до 3MB)
+    files: 10 // Максимум 10 изображений
+  }
+});
+
+export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages };
 export default uploadAvatar;

@@ -29,7 +29,7 @@ function VerifyEmailPage() {
         console.log('Email подтвержден:', response.data);
 
         // Сохраняем токен
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('authToken', response.data.token);
 
         // Обновляем Redux store
         dispatch(login(response.data));

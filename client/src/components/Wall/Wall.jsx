@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchWall, createPost } from '../../store/slices/wallSlice';
 import WallPost from './WallPost';
+import Icon from '../Common/Icon';
 import styles from './Wall.module.css';
+import axios from 'axios';
 
 /**
  * Компонент стены активности пользователя
@@ -15,6 +17,10 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [newPostContent, setNewPostContent] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Загрузка постов при монтировании компонента
   useEffect(() => {
@@ -31,23 +37,123 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     return false; // Никто не может писать
   };
 
+  // Обработка выбора файлов
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    addImages(files);
+  };
+
+  // Добавление изображений
+  const addImages = (files) => {
+    // Фильтруем только изображения
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Ограничение: максимум 10 изображений
+    const remainingSlots = 10 - selectedImages.length;
+    const filesToAdd = imageFiles.slice(0, remainingSlots);
+
+    if (filesToAdd.length === 0) {
+      if (imageFiles.length === 0) {
+        alert('Выберите файлы изображений');
+      } else {
+        alert('Достигнут лимит в 10 изображений');
+      }
+      return;
+    }
+
+    // Создаем превью для новых изображений
+    const newPreviews = filesToAdd.map(file => URL.createObjectURL(file));
+    
+    setSelectedImages(prev => [...prev, ...filesToAdd]);
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  // Удаление изображения из списка
+  const removeImage = (index) => {
+    // Освобождаем URL объекта
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Drag and drop обработчики
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    addImages(files);
+  };
+
   // Обработка создания нового текстового поста
   const handleCreatePost = async (e) => {
     e.preventDefault();
     
-    if (!newPostContent.trim()) {
+    // Проверяем, что есть либо текст, либо изображения
+    if (!newPostContent.trim() && selectedImages.length === 0) {
+      alert('Добавьте текст или изображения');
       return;
     }
 
     setIsCreating(true);
     try {
-      await dispatch(createPost({
+      // Создаем пост
+      // Если нет текста, передаем undefined (не будет включено в запрос)
+      const postData = {
         postType: 'text',
-        content: newPostContent.trim(),
-        targetUserId: isOwnProfile ? undefined : userId // Добавляем targetUserId для чужой стены
-      })).unwrap();
+        targetUserId: isOwnProfile ? undefined : userId
+      };
       
+      // Добавляем content только если он не пустой
+      if (newPostContent.trim()) {
+        postData.content = newPostContent.trim();
+      }
+      
+      const result = await dispatch(createPost(postData)).unwrap();
+
+      const postId = result.id;
+
+      // Если есть изображения, загружаем их
+      if (selectedImages.length > 0) {
+        const formData = new FormData();
+        selectedImages.forEach(file => {
+          formData.append('images', file);
+        });
+        formData.append('postId', postId);
+
+        const token = localStorage.getItem('authToken');
+        await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}/api/wall/images`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+      
+      // Очищаем форму
       setNewPostContent('');
+      setSelectedImages([]);
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setImagePreviews([]);
       
       // Перезагружаем стену после создания поста
       dispatch(fetchWall(userId));
@@ -103,13 +209,62 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
               rows={3}
               disabled={isCreating}
             />
-            <button 
-              type="submit" 
-              className={styles.submitButton}
-              disabled={!newPostContent.trim() || isCreating}
+
+            {/* Drag and drop зона */}
+            <div 
+              className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
-              {isCreating ? 'Публикация...' : 'Опубликовать'}
-            </button>
+              {imagePreviews.length === 0 ? (
+                <p>Перетащите изображения сюда или нажмите кнопку ниже</p>
+              ) : (
+                <div className={styles.imagePreviews}>
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className={styles.imagePreview}>
+                      <img src={preview} alt={`Preview ${index + 1}`} />
+                      <button
+                        type="button"
+                        className={styles.removeImageBtn}
+                        onClick={() => removeImage(index)}
+                        disabled={isCreating}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Кнопки управления */}
+            <div className={styles.postActions}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                className={styles.attachButton}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isCreating || selectedImages.length >= 10}
+              >
+                <Icon name="paperclip" size="small" />
+              </button>
+              <button 
+                type="submit" 
+                className={styles.submitButton}
+                disabled={(!newPostContent.trim() && selectedImages.length === 0) || isCreating}
+              >
+                {isCreating ? 'Публикация...' : 'Опубликовать'}
+              </button>
+            </div>
           </form>
         </div>
       )}

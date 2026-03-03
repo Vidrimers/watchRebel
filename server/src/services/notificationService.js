@@ -509,6 +509,62 @@ export async function notifyWallPost(wallOwnerId, authorId, postId) {
   }
 }
 
+/**
+ * Создать и отправить уведомление о загрузке изображений на стене
+ * @param {string} wallOwnerId - ID владельца стены
+ * @param {string} authorId - ID автора, загрузившего изображения
+ * @param {string} postId - ID поста
+ * @param {number} imageCount - Количество загруженных изображений
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyWallPostImages(wallOwnerId, authorId, postId, imageCount) {
+  try {
+    // Получаем информацию об авторе для Telegram (актуальное имя на момент отправки)
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [authorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    
+    // Формируем текст в зависимости от количества изображений
+    const photoWord = imageCount === 1 ? 'фото' : imageCount < 5 ? 'фотографии' : 'фотографий';
+    
+    // В БД сохраняем шаблон без имени, имя будет подставляться динамически
+    const contentTemplate = `добавил ${imageCount} ${photoWord} на вашей стене`;
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `📷 <b>Новые фото на вашей стене!</b>\n\n${authorName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      wallOwnerId,
+      'wall_post',
+      contentTemplate,
+      authorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(wallOwnerId, telegramMessage);
+
+    console.log(`✅ Уведомление о загрузке ${imageCount} изображений отправлено пользователю ${wallOwnerId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о загрузке изображений:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   checkNotificationEnabled,
   createNotification,
@@ -517,5 +573,6 @@ export default {
   notifyFriendActivity,
   notifyModeration,
   sendRenameNotification,
-  notifyWallPost
+  notifyWallPost,
+  notifyWallPostImages
 };

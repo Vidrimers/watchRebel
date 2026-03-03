@@ -1,0 +1,143 @@
+/* Основной контейнер сетки */
+.imageGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Обертка для каждого изображения */
+.imageWrapper {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-tertiary, #f3f4f6);
+  transition: transform 0.2s;
+}
+
+.imageWrapper:hover {
+  transform: scale(1.02);
+}
+
+/* Изображение */
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Оверлей для индикатора "+N" */
+.moreOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.moreText {
+  color: white;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+/* Сетка для 1 изображения - большое превью */
+.grid1 {
+  grid-template-columns: 1fr;
+  max-height: 500px;
+}
+
+.grid1 .imageWrapper {
+  aspect-ratio: 16 / 9;
+  max-height: 500px;
+}
+
+/* Сетка для 2 изображений - 2 колонки */
+.grid2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid2 .imageWrapper {
+  aspect-ratio: 1;
+}
+
+/* Сетка для 3 изображений - 2 больших + 1 маленький */
+.grid3 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.grid3 .imageWrapper:first-child {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  aspect-ratio: 1;
+}
+
+.grid3 .imageWrapper:nth-child(2),
+.grid3 .imageWrapper:nth-child(3) {
+  aspect-ratio: 1;
+}
+
+/* Сетка для 4 изображений - 2x2 */
+.grid4 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.grid4 .imageWrapper {
+  aspect-ratio: 1;
+}
+
+/* Сетка для 5+ изображений - 3x3 с индикатором */
+.grid5plus {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.grid5plus .imageWrapper {
+  aspect-ratio: 1;
+}
+
+.grid5plus .imageWrapper:first-child {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .imageGrid {
+    gap: 4px;
+  }
+
+  .grid1 .imageWrapper {
+    max-height: 300px;
+  }
+
+  .moreText {
+    font-size: 24px;
+  }
+
+  /* На мобильных упрощаем сетку для 3 изображений */
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+  }
+
+  .grid3 .imageWrapper:first-child {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    aspect-ratio: 16 / 9;
+  }
+
+  .grid3 .imageWrapper:nth-child(2),
+  .grid3 .imageWrapper:nth-child(3) {
+    aspect-ratio: 1;
+  }
+}
