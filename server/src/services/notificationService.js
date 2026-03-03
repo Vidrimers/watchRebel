@@ -565,6 +565,145 @@ export async function notifyWallPostImages(wallOwnerId, authorId, postId, imageC
   }
 }
 
+/**
+ * Создать и отправить уведомление о комментарии к изображению
+ * @param {string} postId - ID поста с изображением
+ * @param {string} imageId - ID изображения
+ * @param {string} commentAuthorId - ID автора комментария
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyImageComment(postId, imageId, commentAuthorId) {
+  try {
+    // Получаем владельца поста
+    const postResult = await executeQuery(
+      'SELECT user_id FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    if (!postResult.success || postResult.data.length === 0) {
+      return { success: false, error: 'Пост не найден' };
+    }
+
+    const postOwnerId = postResult.data[0].user_id;
+
+    // Не отправляем уведомление, если пользователь комментирует свое же изображение
+    if (postOwnerId === commentAuthorId) {
+      return { success: true, message: 'Уведомление не отправлено (автор комментирует свое изображение)' };
+    }
+
+    // Получаем информацию об авторе комментария
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [commentAuthorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор комментария не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    
+    // В БД сохраняем шаблон без имени
+    const contentTemplate = 'прокомментировал ваше фото';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `💬 <b>Новый комментарий к фото!</b>\n\n${authorName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      postOwnerId,
+      'image_comment',
+      contentTemplate,
+      commentAuthorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(postOwnerId, telegramMessage);
+
+    console.log(`✅ Уведомление о комментарии к изображению отправлено пользователю ${postOwnerId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о комментарии к изображению:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Создать и отправить уведомление об ответе на комментарий к изображению
+ * @param {string} parentCommentId - ID родительского комментария
+ * @param {string} replyAuthorId - ID автора ответа
+ * @param {string} postId - ID поста
+ * @param {string} imageId - ID изображения
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyCommentReply(parentCommentId, replyAuthorId, postId, imageId) {
+  try {
+    // Получаем автора родительского комментария
+    const parentCommentResult = await executeQuery(
+      'SELECT user_id FROM image_comments WHERE id = ?',
+      [parentCommentId]
+    );
+
+    if (!parentCommentResult.success || parentCommentResult.data.length === 0) {
+      return { success: false, error: 'Родительский комментарий не найден' };
+    }
+
+    const parentCommentAuthorId = parentCommentResult.data[0].user_id;
+
+    // Не отправляем уведомление, если пользователь отвечает сам себе
+    if (parentCommentAuthorId === replyAuthorId) {
+      return { success: true, message: 'Уведомление не отправлено (пользователь отвечает сам себе)' };
+    }
+
+    // Получаем информацию об авторе ответа
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [replyAuthorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      return { success: false, error: 'Автор ответа не найден' };
+    }
+
+    const authorName = authorResult.data[0].display_name;
+    
+    // В БД сохраняем шаблон без имени
+    const contentTemplate = 'ответил на ваш комментарий';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `💬 <b>Ответ на ваш комментарий!</b>\n\n${authorName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      parentCommentAuthorId,
+      'comment_reply',
+      contentTemplate,
+      replyAuthorId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(parentCommentAuthorId, telegramMessage);
+
+    console.log(`✅ Уведомление об ответе на комментарий отправлено пользователю ${parentCommentAuthorId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об ответе на комментарий:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   checkNotificationEnabled,
   createNotification,
@@ -574,5 +713,7 @@ export default {
   notifyModeration,
   sendRenameNotification,
   notifyWallPost,
-  notifyWallPostImages
+  notifyWallPostImages,
+  notifyImageComment,
+  notifyCommentReply
 };

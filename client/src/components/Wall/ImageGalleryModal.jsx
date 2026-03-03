@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import ImageComment from './ImageComment';
 import styles from './ImageGalleryModal.module.css';
 
 /**
@@ -13,11 +16,146 @@ import styles from './ImageGalleryModal.module.css';
 const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [imageMetadata, setImageMetadata] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState(null); // { commentId, authorName }
+  const [loading, setLoading] = useState(false);
+  const currentUser = useSelector((state) => state.auth.user);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1313';
 
   // Обновляем индекс при изменении startIndex
   useEffect(() => {
     setCurrentIndex(startIndex);
   }, [startIndex]);
+
+  // Загружаем комментарии при смене изображения
+  useEffect(() => {
+    if (!isOpen || !images || images.length === 0) return;
+
+    const currentImage = images[currentIndex];
+    if (currentImage && currentImage.id) {
+      loadComments(currentImage.id);
+    }
+  }, [currentIndex, isOpen, images]);
+
+  // Загрузка комментариев
+  const loadComments = async (imageId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/images/${imageId}/comments`);
+      setComments(response.data.comments || []);
+    } catch (error) {
+      console.error('Ошибка загрузки комментариев:', error);
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Создание комментария
+  const handleCreateComment = async () => {
+    if (!newComment.trim()) {
+      alert('Комментарий не может быть пустым');
+      return;
+    }
+
+    if (newComment.length > 500) {
+      alert('Комментарий не может быть длиннее 500 символов');
+      return;
+    }
+
+    const currentImage = images[currentIndex];
+    if (!currentImage || !currentImage.id) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/api/images/${currentImage.id}/comments`,
+        {
+          content: newComment.trim(),
+          parent_comment_id: replyTo?.commentId || null
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Перезагружаем комментарии
+      await loadComments(currentImage.id);
+      
+      // Очищаем форму
+      setNewComment('');
+      setReplyTo(null);
+    } catch (error) {
+      console.error('Ошибка создания комментария:', error);
+      alert('Не удалось создать комментарий');
+    }
+  };
+
+  // Редактирование комментария
+  const handleEditComment = async (commentId, newContent) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/api/images/comments/${commentId}`,
+        { content: newContent },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Перезагружаем комментарии
+      const currentImage = images[currentIndex];
+      await loadComments(currentImage.id);
+    } catch (error) {
+      console.error('Ошибка редактирования комментария:', error);
+      alert('Не удалось отредактировать комментарий');
+    }
+  };
+
+  // Удаление комментария
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `${API_URL}/api/images/comments/${commentId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Перезагружаем комментарии
+      const currentImage = images[currentIndex];
+      await loadComments(currentImage.id);
+    } catch (error) {
+      console.error('Ошибка удаления комментария:', error);
+      alert('Не удалось удалить комментарий');
+    }
+  };
+
+  // Ответ на комментарий
+  const handleReply = (commentId, authorName) => {
+    setReplyTo({ commentId, authorName });
+    setNewComment(`@${authorName} `);
+  };
+
+  // Отмена ответа
+  const handleCancelReply = () => {
+    setReplyTo(null);
+    setNewComment('');
+  };
+
+  // Обработка Ctrl+Enter для отправки
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleCreateComment();
+    }
+  };
 
   // Загружаем метаданные изображения
   useEffect(() => {
@@ -191,11 +329,62 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
         <div className={styles.commentsPanel}>
           <div className={styles.commentsPanelHeader}>
             <h3>Комментарии к фото</h3>
+            <span className={styles.commentsCount}>
+              {comments.length > 0 ? `${comments.length}` : ''}
+            </span>
           </div>
-          <div className={styles.commentsPanelContent}>
-            <p className={styles.commentsPlaceholder}>
-              Комментарии к изображениям будут доступны в следующей версии
-            </p>
+
+          {/* Форма добавления комментария */}
+          <div className={styles.commentForm}>
+            {replyTo && (
+              <div className={styles.replyIndicator}>
+                <span>Ответ для {replyTo.authorName}</span>
+                <button onClick={handleCancelReply} className={styles.cancelReplyButton}>
+                  ×
+                </button>
+              </div>
+            )}
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={replyTo ? `Ответ для @${replyTo.authorName}...` : 'Напишите комментарий...'}
+              maxLength={500}
+              className={styles.commentTextarea}
+            />
+            <div className={styles.commentFormActions}>
+              <span className={styles.charCounter}>
+                {newComment.length}/500
+              </span>
+              <button onClick={handleCreateComment} className={styles.sendButton}>
+                Отправить
+              </button>
+            </div>
+            <div className={styles.commentHint}>
+              Ctrl+Enter для отправки
+            </div>
+          </div>
+
+          {/* Список комментариев */}
+          <div className={styles.commentsList}>
+            {loading ? (
+              <div className={styles.commentsLoading}>Загрузка...</div>
+            ) : comments.length === 0 ? (
+              <div className={styles.commentsEmpty}>
+                Пока нет комментариев. Будьте первым!
+              </div>
+            ) : (
+              comments.map((comment) => (
+                <ImageComment
+                  key={comment.id}
+                  comment={comment}
+                  onReply={handleReply}
+                  onEdit={handleEditComment}
+                  onDelete={handleDeleteComment}
+                  depth={0}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
