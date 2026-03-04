@@ -28,6 +28,26 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [sortBy, setSortBy] = useState('default');
+
+  // Функция склонения слова "комментарий"
+  const getCommentsText = (count) => {
+    const lastDigit = count % 10;
+    const lastTwoDigits = count % 100;
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+      return 'комментариев';
+    }
+
+    if (lastDigit === 1) {
+      return 'комментарий';
+    }
+
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return 'комментария';
+    }
+
+    return 'комментариев';
+  };
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const fileInputRef = useRef(null);
   const sortDropdownRef = useRef(null);
@@ -447,7 +467,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       {total > 0 && (
         <div className={styles.commentsHeader}>
           <span className={styles.commentsCount}>
-            <Icon name="message" size="small" /> {total} {total === 1 ? 'комментарий' : total < 5 ? 'комментария' : 'комментариев'}
+            <Icon name="message" size="small" /> {total} {getCommentsText(total)}
           </span>
           
           <div className={styles.sortWrapper} ref={sortDropdownRef}>

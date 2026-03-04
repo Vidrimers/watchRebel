@@ -45,6 +45,26 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(0);
 
+  // Функция склонения слова "комментарий"
+  const getCommentsText = (count) => {
+    const lastDigit = count % 10;
+    const lastTwoDigits = count % 100;
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+      return `${count} комментариев`;
+    }
+
+    if (lastDigit === 1) {
+      return `${count} комментарий`;
+    }
+
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return `${count} комментария`;
+    }
+
+    return `${count} комментариев`;
+  };
+
   // Обработка клика на изображение
   const handleImageClick = (index) => {
     setGalleryStartIndex(index);
