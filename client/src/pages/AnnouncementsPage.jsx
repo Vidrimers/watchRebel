@@ -12,10 +12,11 @@ const AnnouncementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newAnnouncement, setNewAnnouncement] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Состояние для Telegram объявления
   const [showTelegramModal, setShowTelegramModal] = useState(false);
@@ -52,19 +53,23 @@ const AnnouncementsPage = () => {
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
     
-    if (!newAnnouncement.trim()) {
+    // Проверяем, что есть хотя бы текст или изображения
+    if (!newAnnouncement.trim() && selectedImages.length === 0) {
+      setError('Добавьте текст или изображения');
       return;
     }
 
     try {
       setCreating(true);
       
-      // Создаем FormData для отправки файла
+      // Создаем FormData для отправки файлов
       const formData = new FormData();
-      formData.append('content', newAnnouncement.trim());
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
+      formData.append('content', newAnnouncement.trim() || ' '); // Отправляем пробел если текста нет
+      
+      // Добавляем все выбранные изображения
+      selectedImages.forEach((image) => {
+        formData.append('images', image);
+      });
       
       await api.post('/admin/announcements', formData, {
         headers: {
@@ -73,8 +78,9 @@ const AnnouncementsPage = () => {
       });
       
       setNewAnnouncement('');
-      setSelectedImage(null);
-      setImagePreview(null);
+      setSelectedImages([]);
+      setImagePreviews([]);
+      setError(null);
       await fetchAnnouncements();
     } catch (err) {
       console.error('Ошибка создания объявления:', err);
@@ -85,8 +91,21 @@ const AnnouncementsPage = () => {
   };
 
   const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    addImages(files);
+  };
+
+  const addImages = (files) => {
+    // Проверяем, не превышает ли общее количество 5
+    if (selectedImages.length + files.length > 5) {
+      setError('Можно загрузить максимум 5 изображений');
+      return;
+    }
+
+    const validFiles = [];
+    const newPreviews = [];
+
+    files.forEach((file) => {
       // Проверяем тип файла
       if (!file.type.startsWith('image/')) {
         setError('Можно загружать только изображения');
@@ -99,20 +118,46 @@ const AnnouncementsPage = () => {
         return;
       }
       
-      setSelectedImage(file);
+      validFiles.push(file);
       
       // Создаем превью
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        newPreviews.push(reader.result);
+        if (newPreviews.length === validFiles.length) {
+          setImagePreviews([...imagePreviews, ...newPreviews]);
+        }
       };
       reader.readAsDataURL(file);
-    }
+    });
+
+    setSelectedImages([...selectedImages, ...validFiles]);
   };
 
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
+  const handleRemoveImage = (index) => {
+    setSelectedImages(selectedImages.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    addImages(files);
   };
 
   const handleDeleteAnnouncement = async (id) => {
@@ -197,39 +242,58 @@ const AnnouncementsPage = () => {
             <textarea
               value={newAnnouncement}
               onChange={(e) => setNewAnnouncement(e.target.value)}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               placeholder="Введите текст объявления..."
-              className={styles.textarea}
+              className={`${styles.textarea} ${isDragging ? styles.dragging : ''}`}
               rows={4}
               disabled={creating}
             />
             
             {/* Кнопка загрузки изображения внутри textarea */}
-            <label htmlFor="imageInput" className={styles.attachButton} title="Прикрепить изображение">
+            <label 
+              htmlFor="imageInput" 
+              className={styles.attachButton} 
+              title="Прикрепить изображения"
+            >
               <Icon name="paperclip" size="medium" />
             </label>
+            
+            {/* Скрытый input для загрузки файлов */}
             <input
               id="imageInput"
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageSelect}
-              className={styles.imageInput}
-              disabled={creating}
+              className={styles.hiddenFileInput}
+              disabled={creating || selectedImages.length >= 5}
             />
           </div>
           
-          {/* Превью изображения */}
-          {imagePreview && (
-            <div className={styles.imagePreview}>
-              <img src={imagePreview} alt="Превью" />
-              <button
-                type="button"
-                className={styles.removeImageButton}
-                onClick={handleRemoveImage}
-                disabled={creating}
-                title="Удалить изображение"
-              >
-                <Icon name="close" size="small" />
-              </button>
+          {/* Превью изображений */}
+          {imagePreviews.length > 0 && (
+            <div className={styles.imagePreviewsContainer}>
+              <div className={styles.imagePreviewsHeader}>
+                <span>Изображения: {selectedImages.length} / 5</span>
+              </div>
+              <div className={styles.imagePreviews}>
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className={styles.imagePreview}>
+                    <img src={preview} alt={`Превью ${index + 1}`} />
+                    <button
+                      type="button"
+                      className={styles.removeImageButton}
+                      onClick={() => handleRemoveImage(index)}
+                      disabled={creating}
+                      title="Удалить изображение"
+                    >
+                      <Icon name="close" size="small" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           
@@ -237,7 +301,7 @@ const AnnouncementsPage = () => {
             <button 
               type="submit" 
               className={styles.createButton}
-              disabled={creating || !newAnnouncement.trim()}
+              disabled={creating || (!newAnnouncement.trim() && selectedImages.length === 0)}
             >
               {creating ? 'Создание...' : 'Создать объявление'}
             </button>
@@ -289,13 +353,17 @@ const AnnouncementsPage = () => {
                   {announcement.content}
                 </div>
                 
-                {/* Изображение объявления */}
-                {announcement.imageUrl && (
-                  <div className={styles.announcementImage}>
-                    <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${announcement.imageUrl}`} 
-                      alt="Изображение объявления" 
-                    />
+                {/* Изображения объявления */}
+                {announcement.imageUrls && announcement.imageUrls.length > 0 && (
+                  <div className={styles.announcementImages}>
+                    {announcement.imageUrls.map((imageUrl, index) => (
+                      <div key={index} className={styles.announcementImage}>
+                        <img 
+                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${imageUrl}`} 
+                          alt={`Изображение ${index + 1}`} 
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
 

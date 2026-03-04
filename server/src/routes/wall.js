@@ -97,6 +97,16 @@ router.get('/:userId', async (req, res) => {
           order: img.order
         })) : [];
 
+        // Парсим image_urls для объявлений (JSON массив)
+        let imageUrls = [];
+        if (post.image_urls) {
+          try {
+            imageUrls = JSON.parse(post.image_urls);
+          } catch (e) {
+            console.error('Ошибка парсинга image_urls:', e);
+          }
+        }
+
         // Определяем, является ли пост закрепленным
         const isPinned = pinnedPostId && post.id === pinnedPostId;
 
@@ -125,7 +135,8 @@ router.get('/:userId', async (req, res) => {
             avatarUrl: wallOwner.avatar_url
           },
           reactions,
-          images // Добавляем массив изображений
+          images, // Добавляем массив изображений
+          imageUrls // Добавляем массив URL изображений для объявлений
         };
       })
     );

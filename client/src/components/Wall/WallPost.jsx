@@ -399,6 +399,37 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
           </div>
         );
 
+      case 'announcement':
+        return (
+          <div className={styles.announcementContent}>
+            {post.content && (
+              <>
+                <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
+                  <Icon name="announcement" size="medium" color="#ff4444" />
+                </span>
+                <LinkifiedText text={cleanContent(post.content)} />
+              </>
+            )}
+            {/* Галерея изображений объявления */}
+            {post.imageUrls && post.imageUrls.length > 0 && (
+              <div className={styles.announcementImages}>
+                {post.imageUrls.map((imageUrl, index) => (
+                  <div 
+                    key={index} 
+                    className={styles.announcementImage}
+                    onClick={() => handleImageClick(index)}
+                  >
+                    <img 
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
+                      alt={`Изображение ${index + 1}`} 
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       case 'media_added':
         // Разбиваем content на название фильма и текст о списке
         const contentLines = post.content ? post.content.split('\n') : [];
@@ -767,13 +798,30 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       )}
 
       {/* Галерея изображений */}
-      {showGallery && post.images && post.images.length > 0 && (
-        <ImageGalleryModal
-          images={post.images}
-          startIndex={galleryStartIndex}
-          isOpen={showGallery}
-          onClose={() => setShowGallery(false)}
-        />
+      {showGallery && (
+        <>
+          {/* Галерея для постов с изображениями */}
+          {post.images && post.images.length > 0 && (
+            <ImageGalleryModal
+              images={post.images}
+              startIndex={galleryStartIndex}
+              isOpen={showGallery}
+              onClose={() => setShowGallery(false)}
+            />
+          )}
+          {/* Галерея для объявлений с изображениями */}
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <ImageGalleryModal
+              images={post.imageUrls.map(url => ({
+                url: `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${url}`,
+                id: url
+              }))}
+              startIndex={galleryStartIndex}
+              isOpen={showGallery}
+              onClose={() => setShowGallery(false)}
+            />
+          )}
+        </>
       )}
 
       {/* Комментарии к посту */}

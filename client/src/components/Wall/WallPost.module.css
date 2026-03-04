@@ -705,3 +705,102 @@
   background: var(--bg-secondary, #2c2c2c);
   border-color: var(--border-color, #444);
 }
+
+/* Галерея изображений объявления */
+.announcementContent {
+  margin-top: 10px;
+}
+
+.announcementImages {
+  margin-top: 15px;
+  display: grid;
+  gap: 10px;
+}
+
+/* Сетка для разного количества изображений */
+.announcementImages:has(.announcementImage:only-child) {
+  grid-template-columns: 1fr;
+}
+
+.announcementImages:has(.announcementImage:nth-child(2):last-child) {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.announcementImages:has(.announcementImage:nth-child(3)) {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.announcementImages:has(.announcementImage:nth-child(4)) {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.announcementImages:has(.announcementImage:nth-child(5)) {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.announcementImage {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.announcementImage:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
+}
+
+.announcementImage::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.2s ease;
+  pointer-events: none;
+}
+
+.announcementImage:hover::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.announcementImage img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Для одного изображения - больше высота */
+.announcementImages:has(.announcementImage:only-child) .announcementImage img {
+  height: 400px;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .announcementImages {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .announcementImage img {
+    height: 250px;
+  }
+  
+  .announcementImages:has(.announcementImage:only-child) .announcementImage img {
+    height: 300px;
+  }
+}
+
+/* Темная тема */
+:global(.dark) .announcementImage {
+  border-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .announcementImage:hover {
+  border-color: var(--accent-color-dark, #818cf8);
+}

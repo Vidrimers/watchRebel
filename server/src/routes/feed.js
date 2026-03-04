@@ -102,19 +102,35 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     );
 
     // Преобразуем объявления в формат постов
-    const announcementPosts = announcementsResult.success ? announcementsResult.data.map(a => ({
-      id: a.id,
-      userId: a.user_id,
-      postType: 'text',
-      content: `📢 Объявление администратора:\n\n${a.content}`,
-      createdAt: a.created_at,
-      editedAt: null,
-      author: {
-        displayName: a.display_name,
-        avatarUrl: a.avatar_url
-      },
-      reactions: [] // Объявления без реакций
-    })) : [];
+    const announcementPosts = [];
+    if (announcementsResult.success) {
+      for (const a of announcementsResult.data) {
+        // Получаем изображения объявления
+        const imagesResult = await executeQuery(
+          'SELECT image_path FROM announcement_images WHERE announcement_id = ? ORDER BY created_at',
+          [a.id]
+        );
+
+        const imageUrls = imagesResult.success && imagesResult.data.length > 0
+          ? imagesResult.data.map(img => img.image_path)
+          : [];
+
+        announcementPosts.push({
+          id: a.id,
+          userId: a.user_id,
+          postType: 'announcement',
+          content: `📢 Объявление администратора:\n\n${a.content}`,
+          createdAt: a.created_at,
+          editedAt: null,
+          author: {
+            displayName: a.display_name,
+            avatarUrl: a.avatar_url
+          },
+          reactions: [], // Объявления без реакций
+          imageUrls // Добавляем массив URL изображений
+        });
+      }
+    }
 
     // Для каждого поста получаем реакции и изображения
     const postsWithReactions = await Promise.all(

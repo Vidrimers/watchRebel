@@ -100,6 +100,7 @@ export async function runMigrations() {
         tmdb_id INTEGER,
         media_type TEXT,
         rating INTEGER,
+        image_urls TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         edited_at DATETIME,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -195,6 +196,18 @@ export async function runMigrations() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (created_by) REFERENCES users(id)
       );
+
+      -- Таблица изображений объявлений
+      CREATE TABLE IF NOT EXISTS announcement_images (
+        id TEXT PRIMARY KEY,
+        announcement_id TEXT NOT NULL,
+        image_path TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (announcement_id) REFERENCES announcements(id) ON DELETE CASCADE
+      );
+
+      -- Индекс для быстрого поиска изображений по announcement_id
+      CREATE INDEX IF NOT EXISTS idx_announcement_images_announcement_id ON announcement_images(announcement_id);
 
       -- Таблица рефералов
       CREATE TABLE IF NOT EXISTS referrals (

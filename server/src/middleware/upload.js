@@ -104,12 +104,13 @@ const uploadAvatar = multer({
   }
 });
 
-// Настройка multer для изображений объявлений
+// Настройка multer для изображений объявлений (до 5 изображений)
 const uploadAnnouncement = multer({
   storage: announcementStorage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // Максимум 5MB
+    fileSize: 5 * 1024 * 1024, // Максимум 5MB на изображение
+    files: 5 // Максимум 5 изображений
   }
 });
 

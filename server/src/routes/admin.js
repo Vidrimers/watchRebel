@@ -322,20 +322,17 @@ router.post('/users/:id/block', async (req, res) => {
  * 
  * Body (multipart/form-data):
  * - content: string (текст объявления)
- * - image: file (опционально, изображение для объявления)
+ * - images: files (опционально, до 5 изображений для объявления)
  */
-router.post('/announcements', uploadAnnouncement.single('image'), async (req, res) => {
+router.post('/announcements', uploadAnnouncement.array('images', 5), async (req, res) => {
   try {
     const { content } = req.body;
 
-    if (!content || content.trim().length === 0) {
-      // Удаляем загруженный файл, если контент пустой
-      if (req.file) {
-        await fs.unlink(req.file.path).catch(() => {});
-      }
+    // Проверяем, что есть хотя бы контент или изображения
+    if ((!content || content.trim().length === 0) && (!req.files || req.files.length === 0)) {
       return res.status(400).json({ 
-        error: 'Содержание объявления не может быть пустым',
-        code: 'EMPTY_CONTENT' 
+        error: 'Необходимо добавить текст или изображения',
+        code: 'EMPTY_ANNOUNCEMENT' 
       });
     }
 
@@ -343,23 +340,44 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
     const { v4: uuidv4 } = await import('uuid');
     const announcementId = uuidv4();
     
-    // Формируем URL изображения, если файл был загружен
-    const imageUrl = req.file ? `/uploads/announcements/${req.file.filename}` : null;
+    // Формируем массив URL изображений, если файлы были загружены
+    const imageUrls = req.files && req.files.length > 0 
+      ? req.files.map(file => `/uploads/announcements/${file.filename}`)
+      : [];
+
+    // Сохраняем первое изображение в поле image_url для обратной совместимости
+    const imageUrl = imageUrls.length > 0 ? imageUrls[0] : null;
+
+    // Используем пробел если контента нет, но есть изображения
+    const announcementContent = content && content.trim().length > 0 ? content : ' ';
 
     const insertAnnouncementResult = await executeQuery(
       'INSERT INTO announcements (id, content, image_url, created_by) VALUES (?, ?, ?, ?)',
-      [announcementId, content, imageUrl, req.user.id]
+      [announcementId, announcementContent, imageUrl, req.user.id]
     );
 
     if (!insertAnnouncementResult.success) {
-      // Удаляем загруженный файл в случае ошибки
-      if (req.file) {
-        await fs.unlink(req.file.path).catch(() => {});
+      // Удаляем загруженные файлы в случае ошибки
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          await fs.unlink(file.path).catch(() => {});
+        }
       }
       return res.status(500).json({ 
         error: 'Ошибка создания объявления',
         code: 'DATABASE_ERROR' 
       });
+    }
+
+    // Сохраняем все изображения в таблицу announcement_images
+    if (imageUrls.length > 0) {
+      for (const imageUrl of imageUrls) {
+        const imageId = uuidv4();
+        await executeQuery(
+          'INSERT INTO announcement_images (id, announcement_id, image_path) VALUES (?, ?, ?)',
+          [imageId, announcementId, imageUrl]
+        );
+      }
     }
 
     // Получаем всех пользователей
@@ -372,18 +390,23 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
 
     if (usersResult.success && usersResult.data.length > 0) {
       // Создаем пост на стене каждого пользователя
-      const announcementContent = `📢 Объявление администратора:\n\n${content}\n\n[announcement_id:${announcementId}]`;
+      const postContent = announcementContent.trim().length > 0 
+        ? `📢 Объявление администратора:\n\n${announcementContent}\n\n[announcement_id:${announcementId}]`
+        : `📢 Объявление администратора\n\n[announcement_id:${announcementId}]`;
+      
+      // Преобразуем массив URL в JSON строку для хранения в БД
+      const imageUrlsJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
       
       for (const user of usersResult.data) {
         const postId = uuidv4();
         await executeQuery(
-          `INSERT INTO wall_posts (id, user_id, post_type, content)
-           VALUES (?, ?, 'text', ?)`,
-          [postId, user.id, announcementContent]
+          `INSERT INTO wall_posts (id, user_id, post_type, content, image_urls)
+           VALUES (?, ?, 'announcement', ?, ?)`,
+          [postId, user.id, postContent, imageUrlsJson]
         );
 
         // Отправляем уведомление в Telegram
-        const notificationResult = await notifyModeration(user.id, 'announcement', { content });
+        const notificationResult = await notifyModeration(user.id, 'announcement', { content: announcementContent });
         if (notificationResult.success) {
           if (notificationResult.skipped) {
             notificationsSkipped++;
@@ -397,7 +420,7 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
     res.status(201).json({
       id: announcementId,
       content,
-      imageUrl,
+      imageUrls,
       createdBy: req.user.id,
       postsCreated: usersResult.success ? usersResult.data.length : 0,
       notificationsSent,
@@ -406,9 +429,11 @@ router.post('/announcements', uploadAnnouncement.single('image'), async (req, re
     });
 
   } catch (error) {
-    // Удаляем загруженный файл в случае ошибки
-    if (req.file) {
-      await fs.unlink(req.file.path).catch(() => {});
+    // Удаляем загруженные файлы в случае ошибки
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        await fs.unlink(file.path).catch(() => {});
+      }
     }
     console.error('Ошибка создания объявления:', error);
     res.status(500).json({ 
@@ -782,7 +807,7 @@ router.get('/users/:id/moderation', async (req, res) => {
 
 /**
  * GET /api/admin/announcements
- * Получить все объявления
+ * Получить все объявления с изображениями
  * Только для администратора
  */
 router.get('/announcements', async (req, res) => {
@@ -801,14 +826,28 @@ router.get('/announcements', async (req, res) => {
       });
     }
 
-    const announcements = announcementsResult.data.map(announcement => ({
-      id: announcement.id,
-      content: announcement.content,
-      imageUrl: announcement.image_url,
-      createdBy: announcement.created_by,
-      creatorName: announcement.creator_name,
-      createdAt: announcement.created_at
-    }));
+    // Для каждого объявления получаем изображения
+    const announcements = [];
+    for (const announcement of announcementsResult.data) {
+      const imagesResult = await executeQuery(
+        'SELECT image_path FROM announcement_images WHERE announcement_id = ? ORDER BY created_at',
+        [announcement.id]
+      );
+
+      const imageUrls = imagesResult.success && imagesResult.data.length > 0
+        ? imagesResult.data.map(img => img.image_path)
+        : (announcement.image_url ? [announcement.image_url] : []);
+
+      announcements.push({
+        id: announcement.id,
+        content: announcement.content,
+        imageUrl: announcement.image_url, // Для обратной совместимости
+        imageUrls, // Массив всех изображений
+        createdBy: announcement.created_by,
+        creatorName: announcement.creator_name,
+        createdAt: announcement.created_at
+      });
+    }
 
     res.json(announcements);
 
@@ -823,7 +862,7 @@ router.get('/announcements', async (req, res) => {
 
 /**
  * DELETE /api/admin/announcements/:id
- * Удалить объявление
+ * Удалить объявление и все связанные изображения
  * Только для администратора
  */
 router.delete('/announcements/:id', async (req, res) => {
@@ -852,15 +891,21 @@ router.delete('/announcements/:id', async (req, res) => {
 
     const announcement = announcementCheck.data[0];
 
+    // Получаем все изображения объявления
+    const imagesResult = await executeQuery(
+      'SELECT image_path FROM announcement_images WHERE announcement_id = ?',
+      [id]
+    );
+
     // Удаляем связанные посты на стене
     await executeQuery(
       `DELETE FROM wall_posts 
-       WHERE post_type = 'text' 
+       WHERE post_type = 'announcement' 
        AND (content LIKE ? OR content LIKE ?)`,
       [`%announcement_id:${id}%`, `📢 Объявление администратора:%`]
     );
 
-    // Удаляем объявление
+    // Удаляем объявление (каскадно удалятся записи из announcement_images)
     const deleteResult = await executeQuery(
       'DELETE FROM announcements WHERE id = ?',
       [id]
@@ -873,7 +918,17 @@ router.delete('/announcements/:id', async (req, res) => {
       });
     }
 
-    // Удаляем файл изображения, если он существует
+    // Удаляем все файлы изображений
+    if (imagesResult.success && imagesResult.data.length > 0) {
+      for (const image of imagesResult.data) {
+        const imagePath = path.join(__dirname, '../..', image.image_path);
+        await fs.unlink(imagePath).catch((err) => {
+          console.error('Ошибка удаления файла изображения:', err);
+        });
+      }
+    }
+
+    // Удаляем старое изображение из поля image_url (для обратной совместимости)
     if (announcement.image_url) {
       const imagePath = path.join(__dirname, '../..', announcement.image_url);
       await fs.unlink(imagePath).catch((err) => {
