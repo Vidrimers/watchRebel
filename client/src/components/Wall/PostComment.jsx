@@ -411,13 +411,103 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
 
   const paddingLeft = 0; // Убираем динамические отступы
 
+  // Переход на страницу пользователя
+  const handleUserClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/user/${comment.author.id}`;
+  };
+
+  // Состояние для тултипа родительского комментария
+  const [showParentTooltip, setShowParentTooltip] = useState(false);
+  const [parentTooltipPosition, setParentTooltipPosition] = useState({ x: 0, y: 0 });
+  const [parentComment, setParentComment] = useState(null);
+  const [loadingParentComment, setLoadingParentComment] = useState(false);
+  const parentNameRef = useRef(null);
+  const parentTooltipTimeoutRef = useRef(null);
+  const hideParentTooltipTimeoutRef = useRef(null);
+
+  // Загрузка родительского комментария
+  const loadParentComment = async () => {
+    if (loadingParentComment || parentComment || !comment.parentCommentId) return;
+
+    try {
+      setLoadingParentComment(true);
+      const response = await api.get(`/wall/comments/${comment.parentCommentId}`);
+      setParentComment(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки родительского комментария:', error);
+    } finally {
+      setLoadingParentComment(false);
+    }
+  };
+
+  // Показать тултип с родительским комментарием
+  const handleParentNameMouseEnter = () => {
+    if (!comment.parentCommentId) return;
+
+    // Загружаем родительский комментарий
+    loadParentComment();
+
+    // Показываем тултип с задержкой
+    parentTooltipTimeoutRef.current = setTimeout(() => {
+      if (parentNameRef.current) {
+        const rect = parentNameRef.current.getBoundingClientRect();
+        setParentTooltipPosition({
+          x: rect.left,
+          y: rect.bottom + 8
+        });
+        setShowParentTooltip(true);
+      }
+    }, 300);
+  };
+
+  // Скрыть тултип родительского комментария
+  const handleParentNameMouseLeave = () => {
+    if (parentTooltipTimeoutRef.current) {
+      clearTimeout(parentTooltipTimeoutRef.current);
+    }
+    hideParentTooltipTimeoutRef.current = setTimeout(() => {
+      setShowParentTooltip(false);
+    }, 200);
+  };
+
+  // Отменить скрытие при наведении на tooltip
+  const handleParentTooltipMouseEnter = () => {
+    if (hideParentTooltipTimeoutRef.current) {
+      clearTimeout(hideParentTooltipTimeoutRef.current);
+    }
+  };
+
+  // Скрыть тултип при уходе мыши с тултипа
+  const handleParentTooltipMouseLeave = () => {
+    setShowParentTooltip(false);
+  };
+
+  // Очистка таймаутов при размонтировании
+  useEffect(() => {
+    return () => {
+      if (parentTooltipTimeoutRef.current) {
+        clearTimeout(parentTooltipTimeoutRef.current);
+      }
+      if (hideParentTooltipTimeoutRef.current) {
+        clearTimeout(hideParentTooltipTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className={`${styles.commentWrapper} ${depth === 1 ? styles.isFirstLevelReply : ''}`}>
       {confirmDialog}
       
       <div className={styles.comment}>
         {/* Аватар */}
-        <div className={styles.avatar}>
+        <div 
+          className={styles.avatar}
+          onClick={handleUserClick}
+          style={{ cursor: 'pointer' }}
+          title={`Перейти на страницу ${comment.author.displayName}`}
+        >
           {comment.author.avatarUrl ? (
             <img 
               src={comment.author.avatarUrl.startsWith('http') 
@@ -439,9 +529,23 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
           {/* Заголовок */}
           <div className={styles.commentHeader}>
             <span className={styles.authorName}>
-              {comment.author.displayName}
+              <span 
+                className={styles.authorNameLink}
+                onClick={handleUserClick}
+                title={`Перейти на страницу ${comment.author.displayName}`}
+              >
+                {comment.author.displayName}
+              </span>
               {depth > 0 && parentAuthorName && (
-                <span className={styles.replyArrow}> → {parentAuthorName}</span>
+                <span 
+                  ref={parentNameRef}
+                  className={styles.replyArrow}
+                  onMouseEnter={handleParentNameMouseEnter}
+                  onMouseLeave={handleParentNameMouseLeave}
+                >
+                  {' → '}
+                  <span className={styles.parentAuthorName}>{parentAuthorName}</span>
+                </span>
               )}
             </span>
             <span className={styles.commentDate}>
@@ -764,6 +868,29 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
               {loadingReplies ? 'Загрузка...' : 'Показать еще ответы'}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Тултип с родительским комментарием */}
+      {showParentTooltip && parentComment && (
+        <div 
+          className={styles.parentCommentTooltip}
+          style={{
+            position: 'fixed',
+            left: `${parentTooltipPosition.x}px`,
+            top: `${parentTooltipPosition.y}px`,
+            zIndex: 10000
+          }}
+          onMouseEnter={handleParentTooltipMouseEnter}
+          onMouseLeave={handleParentTooltipMouseLeave}
+        >
+          <div className={styles.tooltipHeader}>
+            <span className={styles.tooltipAuthor}>{parentComment.author.displayName}</span>
+            <span className={styles.tooltipDate}>{formatDate(parentComment.createdAt)}</span>
+          </div>
+          <div className={styles.tooltipContent}>
+            {parentComment.content}
+          </div>
         </div>
       )}
     </div>

@@ -65,9 +65,29 @@
   color: var(--text-primary);
 }
 
+.authorNameLink {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.authorNameLink:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
 .replyArrow {
   color: var(--text-tertiary);
   font-weight: 400;
+}
+
+.parentAuthorName {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.parentAuthorName:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
 }
 
 .commentDate {
@@ -511,4 +531,76 @@
 .textareaWrapper.dragging {
   border-color: var(--accent-color);
   background: rgba(99, 102, 241, 0.05);
+}
+
+/* Тултип с родительским комментарием */
+.parentCommentTooltip {
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.tooltipAuthor {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.tooltipDate {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.tooltipContent {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Темная тема для тултипа */
+[data-theme="dark"] .parentCommentTooltip {
+  background: var(--bg-secondary, #2c2c2c);
+  border-color: var(--border-color, #444);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .tooltipHeader {
+  border-bottom-color: var(--border-color, #444);
+}
+
+[data-theme="dark"] .tooltipAuthor {
+  color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme="dark"] .tooltipContent {
+  color: var(--text-primary, #e0e0e0);
 }

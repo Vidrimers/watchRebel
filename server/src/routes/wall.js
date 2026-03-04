@@ -1597,6 +1597,88 @@ router.get('/:postId/comments', optionalAuth, async (req, res) => {
 });
 
 /**
+ * GET /api/wall/comments/:commentId
+ * Получить один комментарий по ID
+ */
+router.get('/comments/:commentId', optionalAuth, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const currentUserId = req.user?.id;
+
+    // Получаем комментарий с информацией об авторе
+    const commentResult = await executeQuery(
+      `SELECT 
+        pc.*,
+        u.id as author_id,
+        u.display_name as author_display_name,
+        u.avatar_url as author_avatar_url
+       FROM post_comments pc
+       LEFT JOIN users u ON pc.user_id = u.id
+       WHERE pc.id = ?`,
+      [commentId]
+    );
+
+    if (!commentResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка получения комментария',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (commentResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Комментарий не найден',
+        code: 'COMMENT_NOT_FOUND' 
+      });
+    }
+
+    const comment = commentResult.data[0];
+
+    // Проверяем, лайкнул ли текущий пользователь этот комментарий
+    let isLikedByCurrentUser = false;
+    if (currentUserId) {
+      const likeCheckResult = await executeQuery(
+        'SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+        [comment.id, currentUserId]
+      );
+      isLikedByCurrentUser = likeCheckResult.success && likeCheckResult.data.length > 0;
+    }
+
+    // Подсчитываем количество лайков
+    const likesCountResult = await executeQuery(
+      'SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = ?',
+      [comment.id]
+    );
+    const likesCount = likesCountResult.success ? likesCountResult.data[0].count : 0;
+
+    res.json({
+      id: comment.id,
+      postId: comment.post_id,
+      userId: comment.user_id,
+      parentCommentId: comment.parent_comment_id,
+      content: comment.content,
+      imageUrl: comment.image_url,
+      createdAt: comment.created_at,
+      editedAt: comment.edited_at,
+      likesCount,
+      isLikedByCurrentUser,
+      author: {
+        id: comment.author_id,
+        displayName: comment.author_display_name,
+        avatarUrl: comment.author_avatar_url
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения комментария:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
  * GET /api/wall/comments/:commentId/replies
  * Получить ответы на комментарий с пагинацией
  * 
