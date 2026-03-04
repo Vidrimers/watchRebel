@@ -297,6 +297,16 @@
   transform: none;
 }
 
+/* Состояние "запрос отправлен" */
+.addFriendButton.requestSent {
+  background-color: var(--color-warning, #f59e0b);
+  cursor: default;
+}
+
+.addFriendButton.requestSent:hover {
+  transform: none;
+}
+
 /* Карточка медиа */
 .mediaCard {
   position: relative;

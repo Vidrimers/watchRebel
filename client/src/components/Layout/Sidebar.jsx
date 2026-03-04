@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -9,6 +9,7 @@ import SearchBar from '../Search/SearchBar';
 import StatusEditModal from '../User/StatusEditModal';
 import { NotificationBadge, NotificationDropdown } from '../Notifications';
 import Icon from '../Common/Icon';
+import api from '../../services/api';
 import styles from './Sidebar.module.css';
 
 /**
@@ -19,6 +20,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isHoveringUserInfo, setIsHoveringUserInfo] = useState(false);
+  const [friendRequestsCount, setFriendRequestsCount] = useState(0);
   const notificationButtonRef = useRef(null);
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -28,6 +30,27 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   
   // Проверяем, находимся ли мы на странице поиска
   const isSearchPage = location.pathname === '/search';
+
+  // Загружаем количество входящих запросов в друзья
+  useEffect(() => {
+    const fetchFriendRequests = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const response = await api.get('/friend-requests');
+        setFriendRequestsCount(response.data.length);
+      } catch (error) {
+        console.error('Ошибка загрузки запросов в друзья:', error);
+      }
+    };
+
+    fetchFriendRequests();
+    
+    // Обновляем каждые 30 секунд
+    const interval = setInterval(fetchFriendRequests, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   // Закрытие сайдбара при клике на ссылку (для мобильных)
   const handleLinkClick = () => {
@@ -179,6 +202,9 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
           <li className={styles.navItem}>
             <a href="/friends" className={styles.navLink} title="Друзья" onClick={handleLinkClick}>
               <Icon name="friends" size="medium" /> {!narrow && !isSearchPage && 'Друзья'}
+              {friendRequestsCount > 0 && (
+                <span className={styles.friendRequestsBadge}>{friendRequestsCount}</span>
+              )}
             </a>
           </li>
           <li className={styles.navItem}>

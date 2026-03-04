@@ -78,7 +78,7 @@ const FeedPage = () => {
           </div>
         ) : posts.length === 0 ? (
           <div className={styles.emptyState}>
-            <p className={styles.emptyIcon}>📭</p>
+            <Icon name="mailbox" size={64} className={styles.emptyIcon} />
             <h2>Лента пуста</h2>
             <p className={styles.emptyHint}>
               Добавьте друзей, чтобы видеть их активность здесь

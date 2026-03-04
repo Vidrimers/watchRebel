@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, optionalAuth, checkPostBan } from '../middleware/auth.js';
-import { notifyReaction } from '../services/notificationService.js';
+import { notifyReaction, createNotification } from '../services/notificationService.js';
 import { uploadPostImages, uploadCommentImage } from '../middleware/upload.js';
 import { compressImage, isValidImageType } from '../utils/imageProcessor.js';
 import path from 'path';
@@ -2031,21 +2031,13 @@ router.post('/comments/:commentId/like', authenticateToken, async (req, res) => 
           );
 
           if (likerResult.success && likerResult.data.length > 0) {
-            const likerName = likerResult.data[0].display_name;
-
-            // Создаем уведомление в БД
-            const notificationId = uuidv4();
-            await executeQuery(
-              `INSERT INTO notifications (id, user_id, type, content, related_user_id, related_post_id)
-               VALUES (?, ?, ?, ?, ?, ?)`,
-              [
-                notificationId,
-                comment.user_id,
-                'comment_like',
-                `${likerName} лайкнул ваш комментарий`,
-                userId,
-                comment.post_id
-              ]
+            // Создаем уведомление через сервис
+            await createNotification(
+              comment.user_id,
+              'comment_like',
+              'лайкнул ваш комментарий',
+              userId,
+              comment.post_id
             );
           }
         } catch (notifError) {

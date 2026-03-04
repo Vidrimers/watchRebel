@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { verifyTelegramAuth, extractUserData } from '../utils/telegramAuth.js';
 import { sendVerificationEmail } from '../services/emailService.js';
+import { createNotification } from '../services/notificationService.js';
 import passport from '../config/passport.js';
 import { 
   loginRateLimiter, 
@@ -345,18 +346,22 @@ router.post('/telegram-referral', async (req, res) => {
         const notificationId1 = uuidv4();
         const notificationId2 = uuidv4();
 
-        // Уведомление для реферера - сохраняем шаблон без имени
-        await executeQuery(
-          `INSERT INTO notifications (id, user_id, type, content, related_user_id)
-           VALUES (?, ?, ?, ?, ?)`,
-          [notificationId1, referrerId, 'friend_activity', 'зарегистрировался по вашей реферальной ссылке!', telegramId]
+        // Уведомление для реферера через сервис
+        await createNotification(
+          referrerId,
+          'friend_activity',
+          'зарегистрировался по вашей реферальной ссылке!',
+          telegramId,
+          null
         );
 
-        // Уведомление для нового пользователя - здесь имя не нужно
-        await executeQuery(
-          `INSERT INTO notifications (id, user_id, type, content, related_user_id)
-           VALUES (?, ?, ?, ?, ?)`,
-          [notificationId2, telegramId, 'friend_activity', 'Вы автоматически добавлены в друзья с пригласившим вас пользователем!', referrerId]
+        // Уведомление для нового пользователя через сервис
+        await createNotification(
+          telegramId,
+          'friend_activity',
+          'Вы автоматически добавлены в друзья с пригласившим вас пользователем!',
+          referrerId,
+          null
         );
       }
 

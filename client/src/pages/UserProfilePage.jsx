@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import useConfirm from '../hooks/useConfirm';
+import useAlert from '../hooks/useAlert';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import Icon from '../components/Common/Icon';
@@ -18,6 +19,7 @@ const UserProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { confirmDialog, showConfirm } = useConfirm();
+  const { alertDialog, showAlert } = useAlert();
   
   const { user: currentUser, isAuthenticated } = useAppSelector((state) => state.auth);
   const [profileUser, setProfileUser] = useState(null);
@@ -26,6 +28,7 @@ const UserProfilePage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false); // Пользователь заблокировал меня
 
   // Определяем, это свой профиль или чужой
   const isOwnProfile = currentUser?.id === userId;
@@ -53,12 +56,28 @@ const UserProfilePage = () => {
         setProfileUser(response.data);
         setIsBlocked(response.data.isBlockedByMe || false);
         
-        // Проверяем, являемся ли мы друзьями
+        // Проверяем, являемся ли мы друзьями или есть ли отправленный запрос
         if (currentUser?.id) {
           try {
+            // Проверяем дружбу
             const friendsResponse = await api.get(`/users/${currentUser.id}/friends`);
             const friends = friendsResponse.data || [];
-            setIsFriend(friends.some(friend => friend.id === userId));
+            const areFriends = friends.some(friend => friend.id === userId);
+            
+            if (areFriends) {
+              setIsFriend(true);
+            } else {
+              // Проверяем, есть ли отправленный запрос
+              try {
+                const requestsResponse = await api.get('/friend-requests/sent');
+                const sentRequests = requestsResponse.data || [];
+                const hasPendingRequest = sentRequests.some(req => req.to_user_id === userId);
+                setIsFriend(hasPendingRequest ? 'pending' : false);
+              } catch (err) {
+                console.error('Ошибка проверки запросов:', err);
+                setIsFriend(false);
+              }
+            }
           } catch (err) {
             console.error('Ошибка проверки дружбы:', err);
             setIsFriend(false);
@@ -66,6 +85,11 @@ const UserProfilePage = () => {
         }
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
+        
+        // Проверяем, заблокировал ли пользователь меня
+        if (error.response?.status === 403 && error.response?.data?.code === 'ACCESS_DENIED') {
+          setAccessDenied(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -109,19 +133,32 @@ const UserProfilePage = () => {
   };
 
   /**
-   * Добавить пользователя в друзья
+   * Добавить пользователя в друзья (отправить запрос)
    */
   const handleAddFriend = async () => {
     if (actionLoading) return;
     
     try {
       setActionLoading(true);
-      await api.post(`/users/${userId}/friends`);
-      setIsFriend(true);
-      console.log('Пользователь добавлен в друзья');
+      await api.post('/friend-requests', { toUserId: userId });
+      
+      // Показываем уведомление
+      await showAlert({
+        title: 'Запрос отправлен',
+        message: 'Запрос в друзья успешно отправлен',
+        type: 'success'
+      });
+      
+      // Обновляем состояние - теперь показываем "Запрос отправлен"
+      setIsFriend('pending'); // Используем 'pending' для обозначения отправленного запроса
+      console.log('Запрос в друзья отправлен');
     } catch (error) {
-      console.error('Ошибка добавления в друзья:', error);
-      alert(error.response?.data?.error || 'Ошибка добавления в друзья');
+      console.error('Ошибка отправки запроса в друзья:', error);
+      await showAlert({
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Ошибка отправки запроса в друзья',
+        type: 'error'
+      });
     } finally {
       setActionLoading(false);
     }
@@ -185,10 +222,21 @@ const UserProfilePage = () => {
       setIsBlocked(true);
       setIsFriend(false); // Автоматически удаляется из друзей
       setShowMoreMenu(false);
+      
+      await showAlert({
+        title: 'Пользователь заблокирован',
+        message: `${profileUser?.displayName} заблокирован`,
+        type: 'success'
+      });
+      
       console.log('Пользователь заблокирован');
     } catch (error) {
       console.error('Ошибка блокировки пользователя:', error);
-      alert(error.response?.data?.error || 'Ошибка блокировки пользователя');
+      await showAlert({
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Ошибка блокировки пользователя',
+        type: 'error'
+      });
     } finally {
       setActionLoading(false);
     }
@@ -215,10 +263,21 @@ const UserProfilePage = () => {
       await api.delete(`/users/${userId}/unblock`);
       setIsBlocked(false);
       setShowMoreMenu(false);
+      
+      await showAlert({
+        title: 'Пользователь разблокирован',
+        message: `${profileUser?.displayName} разблокирован`,
+        type: 'success'
+      });
+      
       console.log('Пользователь разблокирован');
     } catch (error) {
       console.error('Ошибка разблокировки пользователя:', error);
-      alert(error.response?.data?.error || 'Ошибка разблокировки пользователя');
+      await showAlert({
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Ошибка разблокировки пользователя',
+        type: 'error'
+      });
     } finally {
       setActionLoading(false);
     }
@@ -253,6 +312,21 @@ const UserProfilePage = () => {
     );
   }
 
+  // Если пользователь заблокировал меня
+  if (accessDenied) {
+    return (
+      <UserPageLayout user={currentUser}>
+        <div className={styles.errorContainer}>
+          <div className={styles.accessDenied}>
+            <Icon name="block" size={64} />
+            <h2>Доступ ограничен</h2>
+            <p>Этот пользователь ограничил доступ к своему профилю</p>
+          </div>
+        </div>
+      </UserPageLayout>
+    );
+  }
+
   if (!profileUser) {
     return (
       <div className={styles.errorContainer}>
@@ -264,6 +338,7 @@ const UserProfilePage = () => {
   return (
     <UserPageLayout user={currentUser}>
       {confirmDialog}
+      {alertDialog}
       <div className={styles.profileContainer}>
         {/* Заголовок профиля (только для чужих профилей) */}
         {!isOwnProfile && (
@@ -349,13 +424,20 @@ const UserProfilePage = () => {
                 <div className={styles.moreMenu}>
                   {/* Добавить/удалить из друзей */}
                   {!isBlocked && (
-                    isFriend ? (
+                    isFriend === true ? (
                       <button 
                         className={`${styles.menuItem} ${styles.removeFriendItem}`}
                         onClick={handleRemoveFriend}
                         disabled={actionLoading}
                       >
                         ➖ Удалить из друзей
+                      </button>
+                    ) : isFriend === 'pending' ? (
+                      <button 
+                        className={styles.menuItem}
+                        disabled={true}
+                      >
+                        ⏳ Запрос отправлен
                       </button>
                     ) : (
                       <button 

@@ -33,6 +33,18 @@ const NotificationList = () => {
     e.preventDefault();
     e.stopPropagation();
     
+    // Для запросов в друзья переходим на страницу друзей с вкладкой запросов
+    if (notification.type === 'friend_request') {
+      window.location.href = '/friends?tab=requests';
+      return;
+    }
+    
+    // Для принятых запросов переходим на профиль пользователя
+    if (notification.type === 'friend_request_accepted' && notification.relatedUserId) {
+      window.location.href = `/user/${notification.relatedUserId}`;
+      return;
+    }
+    
     // Проверяем, что relatedPostId это UUID (формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     const isValidPostId = notification.relatedPostId && 
                           notification.relatedPostId.includes('-') && 
@@ -69,11 +81,33 @@ const NotificationList = () => {
 
   // Формирование текста уведомления с актуальным именем пользователя
   const formatNotificationText = (notification) => {
-    // Если есть связанный пользователь, подставляем его актуальное имя
+    // Если есть связанный пользователь
     if (notification.relatedUser && notification.relatedUser.displayName) {
-      return `${notification.relatedUser.displayName} ${notification.content}`;
+      const userName = notification.relatedUser.displayName;
+      const content = notification.content;
+      
+      // Проверяем, начинается ли content с какого-то имени (старый формат)
+      // Если да - заменяем старое имя на актуальное
+      // Если нет - добавляем имя в начало (новый формат)
+      
+      // Ищем первое слово в content (это может быть старое имя)
+      const firstWord = content.split(' ')[0];
+      
+      // Если первое слово начинается с заглавной буквы и не является служебным словом
+      // то это скорее всего старое имя пользователя
+      const serviceWords = ['хочет', 'принял', 'лайкнул', 'добавил', 'оценил', 'написал', 'отреагировал', 'зарегистрировался'];
+      
+      if (firstWord && firstWord[0] === firstWord[0].toUpperCase() && !serviceWords.includes(firstWord.toLowerCase())) {
+        // Это старый формат с именем - заменяем первое слово на актуальное имя
+        const contentWithoutOldName = content.split(' ').slice(1).join(' ');
+        return `${userName} ${contentWithoutOldName}`;
+      } else {
+        // Это новый формат без имени - добавляем имя
+        return `${userName} ${content}`;
+      }
     }
-    // Иначе возвращаем content как есть (для самолайков и системных уведомлений)
+    
+    // Иначе возвращаем content как есть (для системных уведомлений без relatedUser)
     return notification.content;
   };
 
@@ -110,6 +144,10 @@ const NotificationList = () => {
         return <Icon name="heart" size="small" />;
       case 'friend_activity':
         return <Icon name="user" size="small" />;
+      case 'friend_request':
+        return <Icon name="friends" size="small" />;
+      case 'friend_request_accepted':
+        return <Icon name="friends" size="small" />;
       default:
         return <Icon name="bell" size="small" />;
     }

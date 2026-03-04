@@ -69,8 +69,8 @@ export async function createNotification(userId, type, content, relatedUserId = 
     const notificationId = uuidv4();
     
     const result = await executeQuery(
-      `INSERT INTO notifications (id, user_id, type, content, related_user_id, related_post_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO notifications (id, user_id, type, content, related_user_id, related_post_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
       [notificationId, userId, type, content, relatedUserId, relatedPostId]
     );
 

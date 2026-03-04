@@ -267,3 +267,210 @@
     font-size: 0.9375rem;
   }
 }
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tab {
+  position: relative;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.activeTab {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
+.requestsBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--accent-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Список запросов */
+.requestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.requestCard {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.requestCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
+}
+
+.requestAvatar {
+  flex-shrink: 0;
+  margin-right: 1.5rem;
+}
+
+.requestInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.requestName {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.requestUsername {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.requestDate {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.requestActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.acceptButton {
+  padding: 0.75rem 1.5rem;
+  background: var(--success-color, #10b981);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.acceptButton:hover {
+  background: var(--success-dark, #059669);
+  transform: scale(1.05);
+}
+
+.acceptButton:active {
+  transform: scale(0.98);
+}
+
+.rejectButton {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--error-color, #ef4444);
+  border: 1px solid var(--error-color, #ef4444);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rejectButton:hover {
+  background: var(--error-color, #ef4444);
+  color: white;
+  transform: scale(1.05);
+}
+
+.rejectButton:active {
+  transform: scale(0.98);
+}
+
+.blockButton {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.blockButton:hover {
+  background: var(--error-color, #ef4444);
+  color: white;
+  border-color: var(--error-color, #ef4444);
+  transform: scale(1.05);
+}
+
+.blockButton:active {
+  transform: scale(0.98);
+}
+
+/* Адаптивность для запросов */
+@media (max-width: 768px) {
+  .tabs {
+    gap: 0.5rem;
+  }
+
+  .tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .requestCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .requestAvatar {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  .requestInfo {
+    margin-bottom: 1rem;
+  }
+
+  .requestActions {
+    width: 100%;
+  }
+
+  .acceptButton,
+  .rejectButton,
+  .blockButton {
+    width: 100%;
+  }
+}

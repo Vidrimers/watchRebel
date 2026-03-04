@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
+import { useLocation } from 'react-router-dom';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import ReferralStats from '../components/User/ReferralStats';
@@ -15,16 +16,29 @@ import styles from './FriendsPage.module.css';
  */
 const FriendsPage = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const location = useLocation();
   const [friends, setFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReferrals, setShowReferrals] = useState(false);
+  const [activeTab, setActiveTab] = useState('friends'); // 'friends' или 'requests'
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
+
+  // Проверяем query параметр при загрузке
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'requests') {
+      setActiveTab('requests');
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (user) {
       loadFriends();
+      loadFriendRequests();
     }
   }, [user]);
 
@@ -39,6 +53,15 @@ const FriendsPage = () => {
       setError('Не удалось загрузить список друзей');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFriendRequests = async () => {
+    try {
+      const response = await api.get('/friend-requests');
+      setFriendRequests(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки запросов в друзья:', err);
     }
   };
 
@@ -78,6 +101,94 @@ const FriendsPage = () => {
     }
   };
 
+  const handleAcceptRequest = async (requestId, userName) => {
+    try {
+      await api.put(`/friend-requests/${requestId}/accept`);
+      await showAlert({
+        title: 'Успешно',
+        message: `${userName} добавлен в друзья`,
+        type: 'success'
+      });
+      // Перезагружаем списки
+      loadFriends();
+      loadFriendRequests();
+    } catch (err) {
+      console.error('Ошибка принятия запроса:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось принять запрос. Попробуйте еще раз.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId, userName) => {
+    const confirmed = await showConfirm({
+      title: 'Отклонить запрос?',
+      message: `Вы уверены, что хотите отклонить запрос от ${userName}?`,
+      confirmText: 'Отклонить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await api.put(`/friend-requests/${requestId}/reject`);
+      await showAlert({
+        title: 'Запрос отклонен',
+        message: `Запрос от ${userName} отклонен`,
+        type: 'success'
+      });
+      // Перезагружаем список запросов
+      loadFriendRequests();
+    } catch (err) {
+      console.error('Ошибка отклонения запроса:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось отклонить запрос. Попробуйте еще раз.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleBlockUser = async (requestId, userId, userName) => {
+    const confirmed = await showConfirm({
+      title: 'Заблокировать пользователя?',
+      message: `Вы уверены, что хотите заблокировать ${userName}? Вы не будете видеть его посты и сообщения.`,
+      confirmText: 'Заблокировать',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      // Сначала отклоняем запрос
+      await api.put(`/friend-requests/${requestId}/reject`);
+      // Затем блокируем пользователя
+      await api.post(`/users/${userId}/block`);
+      await showAlert({
+        title: 'Пользователь заблокирован',
+        message: `${userName} заблокирован`,
+        type: 'success'
+      });
+      // Перезагружаем список запросов
+      loadFriendRequests();
+    } catch (err) {
+      console.error('Ошибка блокировки пользователя:', err);
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось заблокировать пользователя. Попробуйте еще раз.',
+        type: 'error'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <UserPageLayout user={user}>
@@ -107,6 +218,22 @@ const FriendsPage = () => {
           <>
             <h1 className={styles.title}>Мои друзья</h1>
             
+            {/* Вкладки */}
+            <div className={styles.tabs}>
+              <button
+                className={`${styles.tab} ${activeTab === 'friends' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('friends')}
+              >
+                Друзья ({friends.length})
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'requests' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('requests')}
+              >
+                Запросы в друзья ({friendRequests.length})
+              </button>
+            </div>
+            
             {/* Кнопка для открытия списка рефералов */}
             <div className={styles.referralCard} onClick={() => setShowReferrals(true)}>
               <div className={styles.referralCardContent}>
@@ -116,54 +243,114 @@ const FriendsPage = () => {
               <Icon name="chevron-right" size="small" />
             </div>
             
-            {friends.length === 0 ? (
-              <div className={styles.empty}>
-                <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
-                <p>У вас пока нет друзей</p>
-                <p className={styles.emptyHint}>
-                  Найдите пользователей через поиск и добавьте их в друзья
-                </p>
-              </div>
-            ) : (
-              <div className={styles.friendsList}>
-                {friends.map((friend) => (
-                  <div key={friend.id} className={styles.friendCard}>
-                    <UserAvatar 
-                      user={friend} 
-                      size="medium" 
-                      className={styles.friendAvatar}
-                    />
-                    
-                    <div className={styles.friendInfo}>
-                      <h3 className={styles.friendName}>
-                        {friend.displayName}
-                        {friend.userStatus && (
-                          <span className={styles.friendStatus}> | {friend.userStatus}</span>
-                        )}
-                      </h3>
-                      {friend.telegramUsername && (
-                        <p className={styles.friendUsername}>@{friend.telegramUsername}</p>
-                      )}
-                    </div>
-                    
-                    <div className={styles.friendActions}>
-                      <button
-                        className={styles.visitButton}
-                        onClick={() => handleVisitProfile(friend.id)}
-                      >
-                        Перейти в профиль
-                      </button>
+            {/* Контент вкладок */}
+            {activeTab === 'friends' ? (
+              friends.length === 0 ? (
+                <div className={styles.empty}>
+                  <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
+                  <p>У вас пока нет друзей</p>
+                  <p className={styles.emptyHint}>
+                    Найдите пользователей через поиск и добавьте их в друзья
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.friendsList}>
+                  {friends.map((friend) => (
+                    <div key={friend.id} className={styles.friendCard}>
+                      <UserAvatar 
+                        user={friend} 
+                        size="medium" 
+                        className={styles.friendAvatar}
+                      />
                       
-                      <button
-                        className={styles.removeFriendButton}
-                        onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
-                      >
-                        Удалить из друзей
-                      </button>
+                      <div className={styles.friendInfo}>
+                        <h3 className={styles.friendName}>
+                          {friend.displayName}
+                          {friend.userStatus && (
+                            <span className={styles.friendStatus}> | {friend.userStatus}</span>
+                          )}
+                        </h3>
+                        {friend.telegramUsername && (
+                          <p className={styles.friendUsername}>@{friend.telegramUsername}</p>
+                        )}
+                      </div>
+                      
+                      <div className={styles.friendActions}>
+                        <button
+                          className={styles.visitButton}
+                          onClick={() => handleVisitProfile(friend.id)}
+                        >
+                          Перейти в профиль
+                        </button>
+                        
+                        <button
+                          className={styles.removeFriendButton}
+                          onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
+                        >
+                          Удалить из друзей
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              // Вкладка запросов в друзья
+              friendRequests.length === 0 ? (
+                <div className={styles.empty}>
+                  <span className={styles.emptyIcon}><Icon name="friends" size="large" /></span>
+                  <p>Нет новых запросов в друзья</p>
+                </div>
+              ) : (
+                <div className={styles.requestsList}>
+                  {friendRequests.map((request) => (
+                    <div key={request.id} className={styles.requestCard}>
+                      <UserAvatar 
+                        user={{ 
+                          id: request.from_user_id,
+                          displayName: request.display_name,
+                          avatarUrl: request.avatar_url
+                        }} 
+                        size="medium" 
+                        className={styles.requestAvatar}
+                      />
+                      
+                      <div className={styles.requestInfo}>
+                        <h3 className={styles.requestName}>{request.display_name}</h3>
+                        {request.telegram_username && (
+                          <p className={styles.requestUsername}>@{request.telegram_username}</p>
+                        )}
+                        <p className={styles.requestDate}>
+                          {new Date(request.created_at).toLocaleDateString('ru-RU')}
+                        </p>
+                      </div>
+                      
+                      <div className={styles.requestActions}>
+                        <button
+                          className={styles.acceptButton}
+                          onClick={() => handleAcceptRequest(request.id, request.display_name)}
+                        >
+                          ✓ Принять
+                        </button>
+                        
+                        <button
+                          className={styles.rejectButton}
+                          onClick={() => handleRejectRequest(request.id, request.display_name)}
+                        >
+                          ✗ Отклонить
+                        </button>
+                        
+                        <button
+                          className={styles.blockButton}
+                          onClick={() => handleBlockUser(request.id, request.from_user_id, request.display_name)}
+                        >
+                          🚫 Заблокировать
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </>
         ) : (

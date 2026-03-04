@@ -140,6 +140,38 @@ export async function runMigrations() {
         UNIQUE(user_id, friend_id)
       );
 
+      -- Таблица запросов в друзья
+      CREATE TABLE IF NOT EXISTS friend_requests (
+        id TEXT PRIMARY KEY,
+        from_user_id TEXT NOT NULL,
+        to_user_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(from_user_id, to_user_id)
+      );
+
+      -- Индексы для friend_requests
+      CREATE INDEX IF NOT EXISTS idx_friend_requests_from_user_id ON friend_requests(from_user_id);
+      CREATE INDEX IF NOT EXISTS idx_friend_requests_to_user_id ON friend_requests(to_user_id);
+      CREATE INDEX IF NOT EXISTS idx_friend_requests_status ON friend_requests(status);
+
+      -- Таблица блокировок пользователей
+      CREATE TABLE IF NOT EXISTS user_blocks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        blocked_user_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (blocked_user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(user_id, blocked_user_id)
+      );
+
+      -- Индексы для user_blocks
+      CREATE INDEX IF NOT EXISTS idx_user_blocks_user_id ON user_blocks(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_user_id ON user_blocks(blocked_user_id);
+
       -- Таблица уведомлений
       CREATE TABLE IF NOT EXISTS notifications (
         id TEXT PRIMARY KEY,

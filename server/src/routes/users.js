@@ -111,12 +111,37 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Проверяем, заблокирован ли этот пользователь текущим пользователем
     let isBlockedByMe = false;
+    let hasBlockedMe = false;
+    
     if (currentUserId !== id) {
+      // Проверяем, заблокировал ли я его
       const blockCheck = await executeQuery(
         'SELECT id FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
         [currentUserId, id]
       );
       isBlockedByMe = blockCheck.success && blockCheck.data.length > 0;
+      
+      // Проверяем, заблокировал ли он меня
+      const blockedMeCheck = await executeQuery(
+        'SELECT id FROM user_blocks WHERE user_id = ? AND blocked_user_id = ?',
+        [id, currentUserId]
+      );
+      hasBlockedMe = blockedMeCheck.success && blockedMeCheck.data.length > 0;
+      
+      // Если он заблокировал меня и я не админ - запрещаем доступ
+      const currentUserResult = await executeQuery(
+        'SELECT is_admin FROM users WHERE id = ?',
+        [currentUserId]
+      );
+      const isAdmin = currentUserResult.success && currentUserResult.data.length > 0 && currentUserResult.data[0].is_admin;
+      
+      if (hasBlockedMe && !isAdmin) {
+        return res.status(403).json({ 
+          error: 'Доступ запрещён',
+          code: 'ACCESS_DENIED',
+          message: 'Этот пользователь ограничил доступ к своему профилю'
+        });
+      }
     }
 
     res.json({
@@ -1225,6 +1250,12 @@ router.post('/:id/block', authenticateToken, async (req, res) => {
     // Удаляем из друзей, если были друзьями
     await executeQuery(
       'DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
+      [userId, blockedUserId, blockedUserId, userId]
+    );
+
+    // Удаляем все запросы в друзья между пользователями
+    await executeQuery(
+      'DELETE FROM friend_requests WHERE (from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?)',
       [userId, blockedUserId, blockedUserId, userId]
     );
 

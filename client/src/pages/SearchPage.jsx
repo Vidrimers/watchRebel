@@ -29,6 +29,7 @@ const SearchPage = () => {
   // Состояние для друзей
   const [friends, setFriends] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const [sentRequests, setSentRequests] = useState([]); // ID пользователей, которым отправлены запросы
   
   const query = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
@@ -65,6 +66,10 @@ const SearchPage = () => {
       try {
         const response = await api.get(`/users/${user.id}/friends`);
         setFriends(response.data || []);
+        
+        // Загружаем исходящие запросы в друзья
+        const requestsResponse = await api.get('/friend-requests/sent');
+        setSentRequests(requestsResponse.data.map(req => req.to_user_id));
       } catch (error) {
         console.error('Ошибка загрузки друзей:', error);
       } finally {
@@ -245,7 +250,14 @@ const SearchPage = () => {
   };
 
   /**
-   * Добавление в друзья
+   * Проверка, отправлен ли запрос в друзья
+   */
+  const isRequestSent = (userId) => {
+    return sentRequests.includes(userId);
+  };
+
+  /**
+   * Отправка запроса в друзья
    */
   const handleAddFriend = async (e, userId, userName) => {
     e.stopPropagation();
@@ -263,19 +275,19 @@ const SearchPage = () => {
     setAddingFriend(userId);
     
     try {
-      await api.post(`/users/${userId}/friends`);
+      // Отправляем запрос в друзья
+      await api.post('/friend-requests', { toUserId: userId });
       
-      // Обновляем список друзей
-      const response = await api.get(`/users/${user.id}/friends`);
-      setFriends(response.data || []);
+      // Добавляем в список отправленных запросов
+      setSentRequests(prev => [...prev, userId]);
       
       await showAlert({
-        title: 'Успешно!',
-        message: `${userName} добавлен в друзья`,
+        title: 'Запрос отправлен!',
+        message: `Запрос в друзья отправлен пользователю ${userName}`,
         type: 'success'
       });
     } catch (error) {
-      console.error('Ошибка добавления в друзья:', error);
+      console.error('Ошибка отправки запроса в друзья:', error);
       
       if (error.response?.data?.code === 'ALREADY_FRIENDS') {
         await showAlert({
@@ -283,10 +295,16 @@ const SearchPage = () => {
           message: `${userName} уже в вашем списке друзей`,
           type: 'info'
         });
+      } else if (error.response?.data?.code === 'REQUEST_ALREADY_SENT') {
+        await showAlert({
+          title: 'Запрос уже отправлен',
+          message: `Вы уже отправили запрос в друзья пользователю ${userName}`,
+          type: 'info'
+        });
       } else {
         await showAlert({
           title: 'Ошибка',
-          message: error.response?.data?.error || 'Не удалось добавить в друзья',
+          message: error.response?.data?.error || 'Не удалось отправить запрос в друзья',
           type: 'error'
         });
       }
@@ -427,12 +445,20 @@ const SearchPage = () => {
                           >
                             ✓
                           </button>
+                        ) : isRequestSent(result.data.id) ? (
+                          <button
+                            className={`${styles.addFriendButton} ${styles.requestSent}`}
+                            disabled
+                            title="Запрос отправлен"
+                          >
+                            ⏱
+                          </button>
                         ) : (
                           <button
                             className={styles.addFriendButton}
                             onClick={(e) => handleAddFriend(e, result.data.id, result.data.displayName)}
                             disabled={addingFriend === result.data.id}
-                            title="Добавить в друзья"
+                            title="Отправить запрос в друзья"
                           >
                             {addingFriend === result.data.id ? '...' : '+'}
                           </button>

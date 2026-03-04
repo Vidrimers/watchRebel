@@ -373,6 +373,29 @@
   font-size: 18px;
 }
 
+.accessDenied {
+  text-align: center;
+  padding: 40px;
+  max-width: 500px;
+}
+
+.accessDenied h2 {
+  font-size: 24px;
+  color: var(--text-primary);
+  margin: 20px 0 10px 0;
+}
+
+.accessDenied p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.accessDenied svg {
+  color: var(--color-error, #ef4444);
+  opacity: 0.6;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .profileHeader {

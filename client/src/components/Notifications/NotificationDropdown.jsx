@@ -123,11 +123,33 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
 
   // Формирование текста уведомления с актуальным именем пользователя
   const formatNotificationText = (notification) => {
-    // Если есть связанный пользователь, подставляем его актуальное имя
+    // Если есть связанный пользователь
     if (notification.relatedUser && notification.relatedUser.displayName) {
-      return `${notification.relatedUser.displayName} ${notification.content}`;
+      const userName = notification.relatedUser.displayName;
+      const content = notification.content;
+      
+      // Проверяем, начинается ли content с какого-то имени (старый формат)
+      // Если да - заменяем старое имя на актуальное
+      // Если нет - добавляем имя в начало (новый формат)
+      
+      // Ищем первое слово в content (это может быть старое имя)
+      const firstWord = content.split(' ')[0];
+      
+      // Если первое слово начинается с заглавной буквы и не является служебным словом
+      // то это скорее всего старое имя пользователя
+      const serviceWords = ['хочет', 'принял', 'лайкнул', 'добавил', 'оценил', 'написал', 'отреагировал', 'зарегистрировался'];
+      
+      if (firstWord && firstWord[0] === firstWord[0].toUpperCase() && !serviceWords.includes(firstWord.toLowerCase())) {
+        // Это старый формат с именем - заменяем первое слово на актуальное имя
+        const contentWithoutOldName = content.split(' ').slice(1).join(' ');
+        return `${userName} ${contentWithoutOldName}`;
+      } else {
+        // Это новый формат без имени - добавляем имя
+        return `${userName} ${content}`;
+      }
     }
-    // Иначе возвращаем content как есть (для самолайков и системных уведомлений)
+    
+    // Иначе возвращаем content как есть (для системных уведомлений без relatedUser)
     return notification.content;
   };
 

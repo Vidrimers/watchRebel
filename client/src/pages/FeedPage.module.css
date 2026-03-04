@@ -59,8 +59,9 @@
 }
 
 .emptyIcon {
-  font-size: 64px;
   margin-bottom: 20px;
+  color: var(--text-tertiary, #9ca3af);
+  opacity: 0.6;
 }
 
 .emptyState h2 {
