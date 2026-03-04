@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, optionalAuth, checkPostBan } from '../middleware/auth.js';
-import { notifyReaction, createNotification } from '../services/notificationService.js';
+import { notifyReaction, createNotification, notifyCommentLike } from '../services/notificationService.js';
 import { uploadPostImages, uploadCommentImage } from '../middleware/upload.js';
 import { compressImage, isValidImageType } from '../utils/imageProcessor.js';
 import path from 'path';
@@ -2023,27 +2023,10 @@ router.post('/comments/:commentId/like', authenticateToken, async (req, res) => 
 
       // Отправляем уведомление автору комментария (если это не он сам)
       if (comment.user_id !== userId) {
-        try {
-          // Получаем информацию о пользователе, который лайкнул
-          const likerResult = await executeQuery(
-            'SELECT display_name FROM users WHERE id = ?',
-            [userId]
-          );
-
-          if (likerResult.success && likerResult.data.length > 0) {
-            // Создаем уведомление через сервис
-            await createNotification(
-              comment.user_id,
-              'comment_like',
-              'лайкнул ваш комментарий',
-              userId,
-              comment.post_id
-            );
-          }
-        } catch (notifError) {
-          console.error('Ошибка отправки уведомления о лайке комментария:', notifError);
-          // Не прерываем выполнение, если уведомление не отправилось
-        }
+        // Используем функцию notifyCommentLike которая отправляет и в БД и в Telegram
+        notifyCommentLike(comment.user_id, userId, comment.post_id, commentId).catch(err => {
+          console.error('Ошибка отправки уведомления о лайке комментария:', err);
+        });
       }
     }
 

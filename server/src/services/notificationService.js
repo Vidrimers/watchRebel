@@ -820,6 +820,64 @@ export async function notifyPostCommentReply(parentCommentAuthorId, replyAuthorI
   }
 }
 
+/**
+ * Отправить уведомление о лайке комментария
+ * @param {string} commentAuthorId - ID автора комментария
+ * @param {string} likerId - ID пользователя, который лайкнул
+ * @param {string} postId - ID поста
+ * @param {string} commentId - ID комментария
+ * @returns {Promise<Object>} - Результат создания и отправки уведомления
+ */
+export async function notifyCommentLike(commentAuthorId, likerId, postId, commentId) {
+  try {
+    // Не отправляем уведомление, если пользователь лайкает свой комментарий
+    if (commentAuthorId === likerId) {
+      return { success: true, message: 'Уведомление не отправлено (пользователь лайкает свой комментарий)' };
+    }
+
+    // Получаем информацию о пользователе, который лайкнул
+    const likerResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [likerId]
+    );
+
+    if (!likerResult.success || likerResult.data.length === 0) {
+      return { success: false, error: 'Пользователь не найден' };
+    }
+
+    const likerName = likerResult.data[0].display_name;
+    
+    // В БД сохраняем шаблон без имени
+    const contentTemplate = 'лайкнул ваш комментарий';
+    
+    // Для Telegram используем актуальное имя
+    const telegramMessage = `❤️ <b>Новый лайк комментария!</b>\n\n${likerName} ${contentTemplate}`;
+
+    // Создаем уведомление в базе данных
+    const notificationResult = await createNotification(
+      commentAuthorId,
+      'comment_like',
+      contentTemplate,
+      likerId,
+      postId
+    );
+
+    if (!notificationResult.success) {
+      return notificationResult;
+    }
+
+    // Отправляем уведомление в Telegram
+    await sendTelegramNotification(commentAuthorId, telegramMessage);
+
+    console.log(`✅ Уведомление о лайке комментария отправлено пользователю ${commentAuthorId}`);
+
+    return notificationResult;
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о лайке комментария:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   checkNotificationEnabled,
   createNotification,
@@ -833,5 +891,6 @@ export default {
   notifyImageComment,
   notifyCommentReply,
   notifyPostComment,
-  notifyPostCommentReply
+  notifyPostCommentReply,
+  notifyCommentLike
 };
