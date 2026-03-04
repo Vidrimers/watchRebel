@@ -10,6 +10,11 @@
   margin-left: 40px;
 }
 
+/* Отступ для ответов второго уровня */
+.isSecondLevelReply {
+  margin-left: 40px;
+}
+
 /* Комментарий */
 .comment {
   display: flex;

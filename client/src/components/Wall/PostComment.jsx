@@ -497,7 +497,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
   }, []);
 
   return (
-    <div className={`${styles.commentWrapper} ${depth === 1 ? styles.isFirstLevelReply : ''}`}>
+    <div className={`${styles.commentWrapper} ${depth === 1 ? styles.isFirstLevelReply : ''} ${depth === 2 ? styles.isSecondLevelReply : ''}`}>
       {confirmDialog}
       
       <div className={styles.comment}>
