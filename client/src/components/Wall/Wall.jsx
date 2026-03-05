@@ -34,19 +34,34 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
 
   // WebSocket обработчик для обновления постов в реальном времени
   const handleWebSocketMessage = useCallback((data) => {
+    // Новый пост
+    if (data.type === 'feed_new_post') {
+      const newPost = data.post;
+      
+      // Если это пост на текущей стене (проверяем wallOwnerId)
+      if (newPost.wallOwnerId === userId) {
+        // Добавляем пост через Redux
+        dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
+      }
+    }
     // Обновление поста (реакция или комментарий)
-    if (data.type === 'feed_post_update') {
-      const { postId, updateType } = data;
+    else if (data.type === 'feed_post_update') {
+      const { postId, updateType, data: updateData } = data;
       
       // Проверяем, есть ли этот пост на текущей стене
       const postExists = posts.some(post => post.id === postId);
       
-      if (postExists && updateType === 'comment') {
-        // Увеличиваем счётчик комментариев для этого поста
-        dispatch(incrementCommentsCount({ postId }));
+      if (postExists) {
+        if (updateType === 'comment') {
+          // Увеличиваем счётчик комментариев для этого поста
+          dispatch(incrementCommentsCount({ postId }));
+        } else if (updateType === 'rating_update') {
+          // Обновляем рейтинг - перезагружаем стену
+          dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
+        }
       }
     }
-  }, [posts, dispatch]);
+  }, [posts, dispatch, userId]);
 
   // Подключаем WebSocket обработчик
   useEffect(() => {
@@ -216,11 +231,9 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       const result = await dispatch(createPost(postData)).unwrap();
 
       const postId = result.id;
-      console.log('📝 Создан пост:', postId, result);
 
       // Если есть изображения, загружаем их
       if (selectedImages.length > 0) {
-        console.log('📤 Загрузка изображений для поста:', postId);
         const formData = new FormData();
         selectedImages.forEach(file => {
           formData.append('images', file);
@@ -246,10 +259,8 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
       setImagePreviews([]);
       
-      console.log('🔄 Перезагрузка стены после создания поста');
       // Перезагружаем стену после создания поста
       await dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
-      console.log('✅ Стена обновлена');
     } catch (err) {
       console.error('Ошибка создания поста:', err);
       await showAlert({

@@ -31,8 +31,23 @@ const FeedPage = () => {
   // WebSocket обработчик для обновлений ленты
   const handleWebSocketMessage = useCallback((data) => {
     if (data.type === 'feed_new_post') {
-      // Новый пост - увеличиваем счетчик
-      setNewPostsCount(prev => prev + 1);
+      const newPost = data.post;
+      
+      // Если это пост текущего пользователя - добавляем сразу в ленту
+      if (newPost.author?.id === user?.id) {
+        setItems(prevPosts => {
+          // Проверяем, нет ли уже этого поста (избегаем дублирования)
+          const postExists = prevPosts.some(p => p.id === newPost.id);
+          if (postExists) {
+            return prevPosts;
+          }
+          // Добавляем пост в начало ленты
+          return [newPost, ...prevPosts];
+        });
+      } else {
+        // Для постов друзей - увеличиваем счетчик
+        setNewPostsCount(prev => prev + 1);
+      }
     } else if (data.type === 'feed_post_update') {
       // Обновление поста (реакция или комментарий)
       const { postId, updateType, data: updateData } = data;
@@ -69,10 +84,15 @@ const FeedPage = () => {
               return { ...post, reactions: updatedReactions };
             } else if (updateType === 'comment') {
               // Увеличиваем счетчик комментариев
-              console.log(`📊 FeedPage: Получено WebSocket событие comment для поста ${postId}, старый count: ${post.commentsCount || 0}`);
               return { 
                 ...post, 
                 commentsCount: (post.commentsCount || 0) + 1 
+              };
+            } else if (updateType === 'rating_update') {
+              // Обновляем рейтинг в посте
+              return {
+                ...post,
+                rating: updateData.rating
               };
             }
           }

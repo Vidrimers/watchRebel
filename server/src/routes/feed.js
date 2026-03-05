@@ -60,6 +60,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         wp.media_type,
         wp.poster_path,
         wp.list_id,
+        wp.rating,
         wp.created_at,
         wp.edited_at,
         author.id as author_id,
@@ -189,6 +190,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           mediaType: post.media_type,
           posterPath: post.poster_path,
           listId: post.list_id,
+          rating: post.rating, // Оценка пользователя
           createdAt: post.created_at,
           editedAt: post.edited_at,
           commentsCount, // Общее количество комментариев (включая ответы)

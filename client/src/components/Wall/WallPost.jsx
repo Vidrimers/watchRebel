@@ -94,7 +94,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
 
     // Если commentsCount есть в post (пришёл с сервера или обновлён через WebSocket)
     if (post.commentsCount !== undefined) {
-      console.log(`📊 WallPost ${post.id}: Обновление commentsCount с ${commentsCount} на ${post.commentsCount}`);
       setCommentsCount(post.commentsCount);
     } else {
       // Иначе загружаем с сервера (для старых постов или при ошибке)
@@ -103,7 +102,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           const response = await api.get(`/wall/${post.id}/comments`, {
             params: { limit: 1, offset: 0 }
           });
-          console.log(`📊 WallPost ${post.id}: Загружен commentsCount с сервера: ${response.data.totalWithReplies || 0}`);
           setCommentsCount(response.data.totalWithReplies || 0);
         } catch (error) {
           console.error('Ошибка загрузки количества комментариев:', error);
@@ -491,10 +489,20 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         );
 
       case 'media_added':
-        // Разбиваем content на название фильма и текст о списке
+        // Разбиваем content на название фильма, текст о списке и оригинальное название
         const contentLines = post.content ? post.content.split('\n') : [];
         const movieTitle = contentLines[0] || '';
         const listText = contentLines[1] || 'Добавил в список';
+        const originalTitle = contentLines[2] || ''; // Оригинальное название (если есть)
+        
+        console.log('🎬 Парсинг media_added поста:', {
+          postId: post.id,
+          contentLines,
+          movieTitle,
+          listText,
+          originalTitle,
+          shouldShowOriginal: originalTitle && originalTitle !== movieTitle
+        });
         
         // Извлекаем название списка из текста
         const listNameMatch = listText.match(/Добавил в список:\s*(.+)/);
@@ -521,6 +529,9 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
             <div className={styles.mediaTextContent}>
               <h4 className={styles.movieTitle}>
                 {movieTitle}
+                {originalTitle && originalTitle !== movieTitle && (
+                  <span className={styles.originalTitle}>{originalTitle}</span>
+                )}
               </h4>
               <p className={styles.mediaAddedText}>
                 Добавил в список: <span 

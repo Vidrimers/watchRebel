@@ -82,10 +82,20 @@ router.post('/', authenticateToken, async (req, res) => {
 
       if (wallPostCheck.success && wallPostCheck.data.length > 0) {
         // Обновляем рейтинг в существующем посте (любого типа)
+        const postId = wallPostCheck.data[0].id;
         await executeQuery(
           'UPDATE wall_posts SET rating = ? WHERE id = ?',
-          [rating, wallPostCheck.data[0].id]
+          [rating, postId]
         );
+        
+        // Отправляем WebSocket уведомление об обновлении рейтинга
+        const { notifyFeedPostUpdate } = await import('../services/websocketService.js');
+        notifyFeedPostUpdate(postId, 'rating_update', {
+          rating,
+          userId
+        }).catch(err => {
+          console.error('Ошибка отправки WebSocket уведомления об обновлении рейтинга:', err);
+        });
       }
     } else {
       // Создаем новый рейтинг
@@ -112,10 +122,20 @@ router.post('/', authenticateToken, async (req, res) => {
 
       if (existingPostCheck.success && existingPostCheck.data.length > 0) {
         // Обновляем существующий пост (любого типа), добавляя рейтинг
+        const postId = existingPostCheck.data[0].id;
         await executeQuery(
           'UPDATE wall_posts SET rating = ? WHERE id = ?',
-          [rating, existingPostCheck.data[0].id]
+          [rating, postId]
         );
+        
+        // Отправляем WebSocket уведомление об обновлении рейтинга
+        const { notifyFeedPostUpdate } = await import('../services/websocketService.js');
+        notifyFeedPostUpdate(postId, 'rating_update', {
+          rating,
+          userId
+        }).catch(err => {
+          console.error('Ошибка отправки WebSocket уведомления об обновлении рейтинга:', err);
+        });
       } else {
         // Создаём новый пост с рейтингом
         const wallPostId = uuidv4();

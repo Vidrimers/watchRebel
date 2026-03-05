@@ -619,6 +619,7 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
     let mediaTitle = `контент #${tmdbId}`;
     let posterPath = null;
     let localPosterPath = null;
+    let originalTitle = ''; // Инициализируем оригинальное название
     try {
       const tmdbService = (await import('../services/tmdbService.js')).default;
       const { downloadImage } = await import('../utils/imageDownloader.js');
@@ -628,12 +629,16 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
         mediaDetails = await tmdbService.getMovieDetails(tmdbId);
         mediaTitle = mediaDetails.title;
         posterPath = mediaDetails.poster_path;
+        originalTitle = mediaDetails.original_title || ''; // Получаем оригинальное название для фильма
         console.log(`✅ Получено название фильма из TMDb: "${mediaTitle}"`);
+        console.log(`✅ Оригинальное название фильма: "${originalTitle}"`);
       } else {
         mediaDetails = await tmdbService.getTVDetails(tmdbId);
         mediaTitle = mediaDetails.name;
         posterPath = mediaDetails.poster_path;
+        originalTitle = mediaDetails.original_name || ''; // Получаем оригинальное название для сериала
         console.log(`✅ Получено название сериала из TMDb: "${mediaTitle}"`);
+        console.log(`✅ Оригинальное название сериала: "${originalTitle}"`);
       }
 
       // Скачиваем постер на сервер
@@ -659,15 +664,17 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
       
       console.log('📝 Данные для создания поста:');
       console.log('  - mediaTitle:', mediaTitle);
+      console.log('  - originalTitle:', originalTitle);
       console.log('  - list.name:', list.name);
       console.log('  - list.id:', list.id);
       console.log('  - tmdbId:', tmdbId);
       console.log('  - posterPath:', posterPath);
       console.log('  - localPosterPath:', localPosterPath);
       
-      const postContent = `${mediaTitle}\nДобавил в список: ${list.name}`;
+      const postContent = `${mediaTitle}\nДобавил в список: ${list.name}\n${originalTitle || ''}`;
       
       console.log('📝 Сформированный postContent:', postContent);
+      console.log('📝 Строки postContent:', postContent.split('\n'));
       
       console.log('Создание поста на стене:', {
         postId,

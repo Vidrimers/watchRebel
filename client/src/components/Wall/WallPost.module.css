@@ -199,10 +199,20 @@
   line-height: 1.4;
   cursor: pointer;
   transition: color 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .movieTitle:hover {
   color: var(--primary-color, #6366f1);
+}
+
+.originalTitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-tertiary, #9ca3af);
+  font-style: italic;
 }
 
 .mediaAddedText {

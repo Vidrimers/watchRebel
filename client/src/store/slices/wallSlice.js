@@ -117,7 +117,6 @@ const wallSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchWall.fulfilled, (state, action) => {
-        console.log('📦 Redux: Получены посты от сервера:', action.payload.posts?.length || action.payload.length, 'шт.');
         const posts = action.payload.posts || action.payload;
         const hasMore = action.payload.hasMore !== undefined ? action.payload.hasMore : true;
         

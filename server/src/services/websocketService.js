@@ -153,15 +153,26 @@ export async function notifyFeedNewPost(authorId, post) {
     const friends = friendsResult.data;
     console.log(`📢 Отправка уведомления о новом посте ${friends.length} друзьям`);
 
-    // Отправляем уведомление каждому другу
+    // Собираем всех получателей: друзья + сам автор
+    const recipients = new Set();
+    
+    // Добавляем друзей
     friends.forEach(friend => {
-      const ws = clients.get(friend.friend_id);
+      recipients.add(friend.friend_id);
+    });
+    
+    // Добавляем самого автора (чтобы пост появился в его ленте)
+    recipients.add(authorId);
+
+    // Отправляем уведомление каждому получателю
+    recipients.forEach(recipientId => {
+      const ws = clients.get(recipientId);
       if (ws && ws.readyState === 1) {
         ws.send(JSON.stringify({
           type: 'feed_new_post',
           post
         }));
-        console.log(`✅ Уведомление о посте отправлено пользователю ${friend.friend_id}`);
+        console.log(`✅ Уведомление о посте отправлено пользователю ${recipientId}`);
       }
     });
   } catch (error) {
