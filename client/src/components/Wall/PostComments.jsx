@@ -91,7 +91,15 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       setTotal(response.data.total);
       setHasMore(response.data.hasMore);
     } catch (error) {
-      console.error('Ошибка загрузки комментариев:', error);
+      // Если пост не найден (404) - не показываем ошибку, просто не загружаем комментарии
+      if (error.status === 404) {
+        console.warn('Пост не найден, комментарии не загружены');
+        setComments([]);
+        setTotal(0);
+        setHasMore(false);
+      } else {
+        console.error('Ошибка загрузки комментариев:', error);
+      }
     } finally {
       setLoading(false);
     }

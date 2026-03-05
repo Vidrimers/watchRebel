@@ -352,7 +352,8 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
     const announcementContent = content && content.trim().length > 0 ? content : ' ';
 
     const insertAnnouncementResult = await executeQuery(
-      'INSERT INTO announcements (id, content, image_url, created_by) VALUES (?, ?, ?, ?)',
+      `INSERT INTO announcements (id, content, image_url, created_by, created_at) 
+       VALUES (?, ?, ?, ?, datetime('now', 'localtime'))`,
       [announcementId, announcementContent, imageUrl, req.user.id]
     );
 
@@ -380,13 +381,9 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
       }
     }
 
-    // Получаем всех пользователей
     const usersResult = await executeQuery(
       'SELECT id FROM users WHERE is_blocked = 0'
     );
-
-    let notificationsSent = 0;
-    let notificationsSkipped = 0;
 
     if (usersResult.success && usersResult.data.length > 0) {
       // Создаем пост на стене каждого пользователя
@@ -397,24 +394,24 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
       // Преобразуем массив URL в JSON строку для хранения в БД
       const imageUrlsJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
       
+      console.log(`📝 Создаём посты объявления ${announcementId} для ${usersResult.data.length} пользователей`);
+      
       for (const user of usersResult.data) {
         const postId = uuidv4();
-        await executeQuery(
-          `INSERT INTO wall_posts (id, user_id, post_type, content, image_urls)
-           VALUES (?, ?, 'announcement', ?, ?)`,
-          [postId, user.id, postContent, imageUrlsJson]
+        const insertResult = await executeQuery(
+          `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, image_urls, created_at)
+           VALUES (?, ?, ?, 'announcement', ?, ?, datetime('now', 'localtime'))`,
+          [postId, user.id, user.id, postContent, imageUrlsJson]
         );
-
-        // Отправляем уведомление в Telegram
-        const notificationResult = await notifyModeration(user.id, 'announcement', { content: announcementContent });
-        if (notificationResult.success) {
-          if (notificationResult.skipped) {
-            notificationsSkipped++;
-          } else {
-            notificationsSent++;
-          }
+        
+        if (!insertResult.success) {
+          console.error(`❌ Ошибка создания поста для пользователя ${user.id}:`, insertResult.error);
+        } else {
+          console.log(`✅ Пост создан для пользователя ${user.id}, wall_owner_id: ${user.id}`);
         }
       }
+      
+      console.log(`✅ Создано постов: ${usersResult.data.length}`);
     }
 
     res.status(201).json({
@@ -423,8 +420,6 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
       imageUrls,
       createdBy: req.user.id,
       postsCreated: usersResult.success ? usersResult.data.length : 0,
-      notificationsSent,
-      notificationsSkipped,
       message: 'Объявление создано и опубликовано на стенах всех пользователей'
     });
 
@@ -898,12 +893,16 @@ router.delete('/announcements/:id', async (req, res) => {
     );
 
     // Удаляем связанные посты на стене
-    await executeQuery(
+    console.log(`🔍 Ищем посты для удаления с announcement_id:${id}`);
+    
+    const deletePostsResult = await executeQuery(
       `DELETE FROM wall_posts 
        WHERE post_type = 'announcement' 
-       AND (content LIKE ? OR content LIKE ?)`,
-      [`%announcement_id:${id}%`, `📢 Объявление администратора:%`]
+       AND content LIKE ?`,
+      [`%[announcement_id:${id}]%`]
     );
+
+    console.log(`🗑️ Удалено постов объявления ${id}:`, deletePostsResult.changes || 0);
 
     // Удаляем объявление (каскадно удалятся записи из announcement_images)
     const deleteResult = await executeQuery(
@@ -1010,6 +1009,53 @@ router.post('/telegram-announcement', async (req, res) => {
       failed: failCount,
       errors: errors.length > 0 ? errors : undefined
     });
+
+  } catch (error) {
+    console.error('Ошибка отправки объявления в Telegram:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/admin/telegram-announcement-self
+ * Отправить объявление только себе в Telegram (для проверки)
+ * Только для администратора
+ * 
+ * Body:
+ * - content: string (текст объявления)
+ */
+router.post('/telegram-announcement-self', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Содержание объявления не может быть пустым',
+        code: 'EMPTY_CONTENT' 
+      });
+    }
+
+    // Отправляем объявление только текущему админу
+    try {
+      await notifyModeration(req.user.id, 'announcement', {
+        content: content.trim()
+      });
+
+      res.json({
+        message: 'Объявление отправлено вам в Telegram',
+        success: true
+      });
+    } catch (err) {
+      console.error('Ошибка отправки объявления:', err);
+      res.status(500).json({ 
+        error: 'Не удалось отправить объявление',
+        code: 'SEND_ERROR',
+        details: err.message
+      });
+    }
 
   } catch (error) {
     console.error('Ошибка отправки объявления в Telegram:', error);

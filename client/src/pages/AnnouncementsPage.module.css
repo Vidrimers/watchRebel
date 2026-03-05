@@ -620,3 +620,199 @@
   background: var(--bg-tertiary-dark, #3a3a3a);
   border-color: var(--accent-primary-dark, #818cf8);
 }
+
+/* Панель инструментов форматирования */
+.formattingToolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.formatButton {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formatButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.formatButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formatButton strong {
+  font-weight: 700;
+}
+
+.formatButton em {
+  font-style: italic;
+}
+
+.formatButton code {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+/* Textarea для Telegram */
+.telegramTextarea {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Секция превью */
+.previewSection {
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.previewSection h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.telegramPreview {
+  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.telegramPreview strong {
+  font-weight: 700;
+}
+
+.telegramPreview em {
+  font-style: italic;
+}
+
+.telegramPreview u {
+  text-decoration: underline;
+}
+
+.telegramPreview s {
+  text-decoration: line-through;
+}
+
+.telegramPreview code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.telegramPreview pre {
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.telegramPreview blockquote {
+  border-left: 3px solid #0088cc;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.telegramPreview a {
+  color: #0088cc;
+  text-decoration: none;
+}
+
+.telegramPreview a:hover {
+  text-decoration: underline;
+}
+
+.telegramPreview :global(.numbered-item),
+.telegramPreview :global(.bullet-item) {
+  margin: 4px 0;
+  padding-left: 8px;
+}
+
+.telegramPreview :global(.numbered-item .number) {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* Кнопка "Отправить себе" */
+.telegramSendToSelfButton {
+  flex: 1;
+  padding: 12px 20px;
+  background: #34c759;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.telegramSendToSelfButton:hover:not(:disabled) {
+  background: #2da84a;
+  transform: translateY(-1px);
+}
+
+.telegramSendToSelfButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Обновляем кнопки модалки для трёх кнопок */
+.telegramModalButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .formattingToolbar {
+    flex-wrap: wrap;
+  }
+
+  .telegramModalButtons {
+    flex-direction: column;
+  }
+
+  .telegramSendToSelfButton,
+  .telegramSendButton,
+  .telegramCancelButton {
+    width: 100%;
+  }
+}

@@ -409,6 +409,19 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
     });
   };
 
+  // Форматирование точного времени для tooltip
+  const formatExactDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
+  };
+
   const paddingLeft = 0; // Убираем динамические отступы
 
   // Переход на страницу пользователя
@@ -548,7 +561,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
                 </span>
               )}
             </span>
-            <span className={styles.commentDate}>
+            <span className={styles.commentDate} data-tooltip={formatExactDate(comment.createdAt)}>
               {formatDate(comment.createdAt)}
               {comment.editedAt && <span className={styles.edited}> (изменено)</span>}
             </span>

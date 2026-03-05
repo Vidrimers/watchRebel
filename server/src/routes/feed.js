@@ -86,7 +86,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       });
     }
 
-    // Получаем последние объявления администратора (не более 3)
+    // Получаем все объявления администратора
     const announcementsResult = await executeQuery(
       `SELECT 
         a.id,
@@ -97,8 +97,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         u.avatar_url
        FROM announcements a
        LEFT JOIN users u ON a.created_by = u.id
-       ORDER BY a.created_at DESC
-       LIMIT 3`
+       ORDER BY a.created_at DESC`
     );
 
     // Преобразуем объявления в формат постов

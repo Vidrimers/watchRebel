@@ -330,6 +330,19 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     });
   };
 
+  // Форматирование точного времени для tooltip
+  const formatExactDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   // Переход на страницу медиа
   const handleMediaClick = () => {
     if (!isModal && post.tmdbId && post.mediaType) {
@@ -661,7 +674,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       {/* Футер с датой и реакциями */}
       <div className={styles.postFooter}>
         <div className={styles.postFooterLeft}>
-          <span className={styles.postDate}>
+          <span className={styles.postDate} data-tooltip={formatExactDate(post.createdAt)}>
             {formatDate(post.createdAt)}
             {post.editedAt && <span className={styles.editedLabel}> (изменено)</span>}
           </span>
@@ -809,16 +822,17 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
               onClose={() => setShowGallery(false)}
             />
           )}
-          {/* Галерея для объявлений с изображениями */}
+          {/* Галерея для объявлений с изображениями (без комментариев) */}
           {post.imageUrls && post.imageUrls.length > 0 && (
             <ImageGalleryModal
               images={post.imageUrls.map(url => ({
-                url: `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${url}`,
+                url: url, // Передаём чистый URL, ImageGalleryModal сам добавит API_URL
                 id: url
               }))}
               startIndex={galleryStartIndex}
               isOpen={showGallery}
               onClose={() => setShowGallery(false)}
+              hideComments={true}
             />
           )}
         </>

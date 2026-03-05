@@ -71,6 +71,15 @@
   cursor: pointer;
 }
 
+/* Полноэкранный режим без commentsPanel */
+.modalContent:has(.commentsPanel:not(:empty)) .imageArea {
+  flex: 0 0 75%;
+}
+
+.modalContent:not(:has(.commentsPanel)) .imageArea {
+  flex: 1;
+}
+
 /* Контейнер изображения */
 .imageContainer {
   max-width: 100%;

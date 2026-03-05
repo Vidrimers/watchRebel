@@ -12,8 +12,9 @@ import styles from './ImageGalleryModal.module.css';
  * @param {number} startIndex - Индекс изображения для начального отображения
  * @param {boolean} isOpen - Открыта ли галерея
  * @param {Function} onClose - Callback для закрытия галереи
+ * @param {boolean} hideComments - Скрыть панель комментариев (для объявлений)
  */
-const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
+const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose, hideComments = false }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [imageMetadata, setImageMetadata] = useState(null);
   const [comments, setComments] = useState([]);
@@ -33,13 +34,15 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
 
   // Загружаем комментарии при смене изображения
   useEffect(() => {
+    // Не загружаем комментарии если они скрыты (для объявлений)
+    if (hideComments) return;
     if (!isOpen || !images || images.length === 0) return;
 
     const currentImage = images[currentIndex];
     if (currentImage && currentImage.id) {
       loadComments(currentImage.id);
     }
-  }, [currentIndex, isOpen, images]);
+  }, [currentIndex, isOpen, images, hideComments]);
 
   // Загрузка комментариев
   const loadComments = async (imageId, scrollBehavior = 'none') => {
@@ -398,15 +401,16 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
         </div>
 
         {/* Панель комментариев справа */}
-        <div className={styles.commentsPanel} data-comments-panel="true">
-          <div className={styles.commentsPanelHeader}>
-            <h3>Комментарии к фото</h3>
-            {comments.length > 0 && (
-              <span className={styles.commentsCount}>
-                {comments.length}
-              </span>
-            )}
-          </div>
+        {!hideComments && (
+          <div className={styles.commentsPanel} data-comments-panel="true">
+            <div className={styles.commentsPanelHeader}>
+              <h3>Комментарии к фото</h3>
+              {comments.length > 0 && (
+                <span className={styles.commentsCount}>
+                  {comments.length}
+                </span>
+              )}
+            </div>
 
           {/* Форма добавления комментария */}
           <div className={styles.commentForm}>
@@ -463,6 +467,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose }) => {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

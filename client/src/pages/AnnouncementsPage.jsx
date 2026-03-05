@@ -23,6 +23,7 @@ const AnnouncementsPage = () => {
   const [telegramAnnouncement, setTelegramAnnouncement] = useState('');
   const [sendingTelegram, setSendingTelegram] = useState(false);
   const [telegramProgress, setTelegramProgress] = useState(null);
+  const [sendingToSelf, setSendingToSelf] = useState(false);
 
   // Проверка прав администратора
   useEffect(() => {
@@ -190,7 +191,7 @@ const AnnouncementsPage = () => {
         failed: response.data.failed
       });
       
-      // Показываем результат на 3 секунды
+      // Показываем результат на 3 секунды, затем закрываем модалку
       setTimeout(() => {
         setShowTelegramModal(false);
         setTelegramAnnouncement('');
@@ -203,6 +204,146 @@ const AnnouncementsPage = () => {
     } finally {
       setSendingTelegram(false);
     }
+  };
+
+  const handleSendToSelf = async () => {
+    if (!telegramAnnouncement.trim()) {
+      return;
+    }
+
+    try {
+      setSendingToSelf(true);
+      
+      await api.post('/admin/telegram-announcement-self', {
+        content: telegramAnnouncement.trim()
+      });
+      
+      // Показываем уведомление об успехе
+      alert('Объявление отправлено вам в Telegram!');
+    } catch (err) {
+      console.error('Ошибка отправки объявления себе:', err);
+      setError('Не удалось отправить объявление');
+    } finally {
+      setSendingToSelf(false);
+    }
+  };
+
+  // Функции для форматирования текста (Telegram MarkdownV2)
+  const insertFormatting = (before, after = '', placeholder = '') => {
+    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = telegramAnnouncement.substring(start, end);
+    const textToInsert = selectedText || placeholder;
+    const newText = 
+      telegramAnnouncement.substring(0, start) +
+      before + textToInsert + after +
+      telegramAnnouncement.substring(end);
+    
+    setTelegramAnnouncement(newText);
+    
+    // Восстанавливаем фокус и позицию курсора
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        const newCursorPos = start + before.length + selectedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      } else {
+        // Если текст не был выделен, выделяем placeholder
+        const selectionStart = start + before.length;
+        const selectionEnd = selectionStart + placeholder.length;
+        textarea.setSelectionRange(selectionStart, selectionEnd);
+      }
+    }, 0);
+  };
+
+  const insertAtCursor = (text) => {
+    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const newText = 
+      telegramAnnouncement.substring(0, start) +
+      text +
+      telegramAnnouncement.substring(start);
+    
+    setTelegramAnnouncement(newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + text.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // Telegram форматирование
+  const handleBold = () => insertFormatting('*', '*', 'текст');
+  const handleItalic = () => insertFormatting('_', '_', 'текст');
+  const handleUnderline = () => insertFormatting('__', '__', 'текст');
+  const handleStrikethrough = () => insertFormatting('~', '~', 'текст');
+  const handleCode = () => insertFormatting('`', '`', 'код');
+  const handleMonospace = () => insertFormatting('```\n', '\n```', 'код');
+  const handleQuote = () => insertAtCursor('> ');
+  const handleLink = () => insertFormatting('[', '](https://example.com)', 'текст ссылки');
+  const handleBulletList = () => insertAtCursor('• ');
+  const handleNumberedList = () => {
+    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    // Находим номер для следующего пункта
+    const textBefore = telegramAnnouncement.substring(0, start);
+    const lines = textBefore.split('\n');
+    const lastLine = lines[lines.length - 1];
+    const match = lastLine.match(/^(\d+)\.\s/);
+    const nextNumber = match ? parseInt(match[1]) + 1 : 1;
+    insertAtCursor(`${nextNumber}. `);
+  };
+
+  // Рендер превью с Telegram форматированием
+  const renderTelegramPreview = (text) => {
+    if (!text) return 'Превью появится здесь...';
+    
+    let html = text;
+    
+    // Экранируем HTML теги
+    html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Ссылки: [текст](url)
+    html = html.replace(/\[([^\]]+?)\]\(([^)]+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Моноширинный блок: ```текст``` (обрабатываем первым)
+    html = html.replace(/```\n?([\s\S]+?)\n?```/g, '<pre>$1</pre>');
+    
+    // Инлайн код: `текст`
+    html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
+    
+    // Жирный текст: *текст*
+    html = html.replace(/\*([^*]+?)\*/g, '<strong>$1</strong>');
+    
+    // Подчёркнутый: __текст__
+    html = html.replace(/__([^_]+?)__/g, '<u>$1</u>');
+    
+    // Курсив: _текст_ (один подчёркивание, не два)
+    html = html.replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>');
+    
+    // Зачёркнутый: ~текст~
+    html = html.replace(/~([^~]+?)~/g, '<s>$1</s>');
+    
+    // Цитаты: > текст
+    html = html.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // Нумерованные списки: 1. текст
+    html = html.replace(/^(\d+)\.\s(.+)$/gm, '<div class="numbered-item"><span class="number">$1.</span> $2</div>');
+    
+    // Маркированные списки: • текст
+    html = html.replace(/^•\s(.+)$/gm, '<div class="bullet-item">• $1</div>');
+    
+    // Переносы строк
+    html = html.replace(/\n/g, '<br/>');
+    
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
   const formatDate = (dateString) => {
@@ -404,14 +545,117 @@ const AnnouncementsPage = () => {
               Объявление будет отправлено всем пользователям через Telegram бота
             </p>
             
+            {/* Панель инструментов форматирования */}
+            <div className={styles.formattingToolbar}>
+              <button
+                type="button"
+                onClick={handleBold}
+                className={styles.formatButton}
+                title="Жирный (*текст*)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <strong>B</strong>
+              </button>
+              <button
+                type="button"
+                onClick={handleItalic}
+                className={styles.formatButton}
+                title="Курсив (_текст_)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <em>I</em>
+              </button>
+              <button
+                type="button"
+                onClick={handleUnderline}
+                className={styles.formatButton}
+                title="Подчёркнутый (__текст__)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <u>U</u>
+              </button>
+              <button
+                type="button"
+                onClick={handleStrikethrough}
+                className={styles.formatButton}
+                title="Зачёркнутый (~текст~)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <s>S</s>
+              </button>
+              <button
+                type="button"
+                onClick={handleCode}
+                className={styles.formatButton}
+                title="Код (`код`)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <code>{'<>'}</code>
+              </button>
+              <button
+                type="button"
+                onClick={handleMonospace}
+                className={styles.formatButton}
+                title="Блок кода (```код```)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <code>{'{ }'}</code>
+              </button>
+              <button
+                type="button"
+                onClick={handleQuote}
+                className={styles.formatButton}
+                title="Цитата (> текст)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <span>"</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleLink}
+                className={styles.formatButton}
+                title="Ссылка ([текст](url))"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <span>🔗</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBulletList}
+                className={styles.formatButton}
+                title="Маркированный список (• текст)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <span>•</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNumberedList}
+                className={styles.formatButton}
+                title="Нумерованный список (1. текст)"
+                disabled={sendingTelegram || sendingToSelf}
+              >
+                <span>1.</span>
+              </button>
+            </div>
+
+            {/* Редактор текста */}
             <textarea
               value={telegramAnnouncement}
               onChange={(e) => setTelegramAnnouncement(e.target.value)}
               placeholder="Введите текст объявления для Telegram..."
-              className={styles.textarea}
+              className={`${styles.textarea} ${styles.telegramTextarea}`}
               rows={6}
-              disabled={sendingTelegram}
+              disabled={sendingTelegram || sendingToSelf}
             />
+
+            {/* Превью сообщения */}
+            <div className={styles.previewSection}>
+              <h4>Превью сообщения:</h4>
+              <div className={styles.telegramPreview}>
+                {renderTelegramPreview(telegramAnnouncement)}
+              </div>
+            </div>
 
             {telegramProgress && (
               <div className={styles.progressInfo}>
@@ -428,9 +672,16 @@ const AnnouncementsPage = () => {
 
             <div className={styles.telegramModalButtons}>
               <button
+                className={styles.telegramSendToSelfButton}
+                onClick={handleSendToSelf}
+                disabled={sendingTelegram || sendingToSelf || !telegramAnnouncement.trim()}
+              >
+                {sendingToSelf ? 'Отправка...' : 'Отправить себе'}
+              </button>
+              <button
                 className={styles.telegramSendButton}
                 onClick={handleSendTelegramAnnouncement}
-                disabled={sendingTelegram || !telegramAnnouncement.trim()}
+                disabled={sendingTelegram || sendingToSelf || !telegramAnnouncement.trim()}
               >
                 {sendingTelegram ? 'Отправка...' : 'Отправить'}
               </button>
@@ -441,7 +692,7 @@ const AnnouncementsPage = () => {
                   setTelegramAnnouncement('');
                   setTelegramProgress(null);
                 }}
-                disabled={sendingTelegram}
+                disabled={sendingTelegram || sendingToSelf}
               >
                 Отмена
               </button>

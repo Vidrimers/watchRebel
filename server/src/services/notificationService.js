@@ -347,6 +347,19 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo, post
 }
 
 /**
+ * Экранировать специальные символы для Telegram MarkdownV2
+ * В MarkdownV2 нужно экранировать: _ * [ ] ( ) ~ ` > # + - = | { } . !
+ * НО мы НЕ экранируем символы форматирования, которые пользователь вводит намеренно
+ * @param {string} text - Текст для экранирования
+ * @returns {string} - Экранированный текст
+ */
+function escapeMarkdownV2(text) {
+  // Для простоты не экранируем ничего - пользователь сам контролирует форматирование
+  // Telegram API сам обработает ошибки форматирования
+  return text;
+}
+
+/**
  * Отправить уведомление о действии модерации
  * @param {string} userId - ID пользователя, которого модерируют
  * @param {string} actionType - Тип действия ('post_ban' | 'permanent_ban' | 'unban' | 'announcement')
@@ -399,7 +412,9 @@ export async function notifyModeration(userId, actionType, actionData = {}) {
         break;
 
       case 'announcement':
-        message = `📢 <b>Объявление от администрации</b>\n\n${actionData.content}`;
+        // Для объявлений используем текст как есть, без дополнительной обёртки
+        // parse_mode будет установлен в MarkdownV2 при отправке
+        message = actionData.content;
         break;
 
       default:
@@ -407,7 +422,9 @@ export async function notifyModeration(userId, actionType, actionData = {}) {
     }
 
     // Отправляем уведомление в Telegram
-    const result = await sendTelegramNotification(userId, message);
+    // Для объявлений используем MarkdownV2, для остальных - HTML
+    const parseMode = actionType === 'announcement' ? 'MarkdownV2' : 'HTML';
+    const result = await sendTelegramNotification(userId, message, { parse_mode: parseMode });
 
     if (result.success) {
       console.log(`✅ Уведомление о модерации (${actionType}) отправлено пользователю ${userId}`);

@@ -382,6 +382,72 @@
 .postDate {
   font-size: 13px;
   color: var(--text-tertiary, #9ca3af);
+  position: relative;
+  cursor: help;
+  transition: color 0.2s;
+}
+
+.postDate:hover {
+  color: var(--text-secondary, #6b7280);
+}
+
+/* Кастомный tooltip */
+.postDate::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Стрелка tooltip */
+.postDate::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+}
+
+.postDate:hover::after,
+.postDate:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+  transition-delay: 0.5s;
+}
+
+/* Темная тема для tooltip */
+:global([data-theme="dark"]) .postDate::after,
+:global([data-theme="die-my-darling"]) .postDate::after,
+:global([data-theme="cyberpunk"]) .postDate::after,
+:global([data-theme="dark-neon-obsidian"]) .postDate::after {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
+}
+
+:global([data-theme="dark"]) .postDate::before,
+:global([data-theme="die-my-darling"]) .postDate::before,
+:global([data-theme="cyberpunk"]) .postDate::before,
+:global([data-theme="dark-neon-obsidian"]) .postDate::before {
+  border-top-color: rgba(255, 255, 255, 0.95);
 }
 
 .editedLabel {
