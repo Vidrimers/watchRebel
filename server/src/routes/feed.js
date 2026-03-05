@@ -181,6 +181,23 @@ router.get('/:userId', authenticateToken, async (req, res) => {
 
         const commentsCount = commentsCountResult.success ? commentsCountResult.data[0].total : 0;
 
+        // Для постов media_added проверяем, есть ли этот медиа в списках текущего пользователя
+        let userListName = null;
+        if (post.post_type === 'media_added' && post.tmdb_id) {
+          const userListResult = await executeQuery(
+            `SELECT cl.name 
+             FROM list_items li
+             JOIN custom_lists cl ON li.list_id = cl.id
+             WHERE cl.user_id = ? AND li.tmdb_id = ? AND li.media_type = ?
+             LIMIT 1`,
+            [userId, post.tmdb_id, post.media_type]
+          );
+          
+          if (userListResult.success && userListResult.data.length > 0) {
+            userListName = userListResult.data[0].name;
+          }
+        }
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -194,6 +211,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           createdAt: post.created_at,
           editedAt: post.edited_at,
           commentsCount, // Общее количество комментариев (включая ответы)
+          userListName, // Название списка текущего пользователя (если медиа в его списке)
           author: {
             id: post.author_id,
             displayName: post.author_display_name,

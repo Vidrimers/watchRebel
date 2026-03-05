@@ -573,15 +573,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 {/* Кнопка "В свой список" для других пользователей */}
                 {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
                   <button
-                    className={styles.addToMyListButton}
+                    className={post.userListName ? styles.inMyListButton : styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title="Добавить в свой список"
+                    title={post.userListName ? `Переместить в другой список` : 'Добавить в свой список'}
                   >
-                    <Icon name="add" size="small" />
-                    В свой список
+                    <Icon name={post.userListName ? 'check' : 'add'} size="small" />
+                    {post.userListName ? `В списке: ${post.userListName}` : 'В свой список'}
                   </button>
                 )}
               </div>

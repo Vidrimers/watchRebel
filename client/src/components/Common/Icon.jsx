@@ -51,7 +51,8 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     announcement: '📢',
     pin: '📍',
     pinned: '📌',
-    refresh: '🔄'
+    refresh: '🔄',
+    check: '✓'
   };
 
   const iconId = `icon-${name}`;
