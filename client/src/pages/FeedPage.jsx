@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import WallPost from '../components/Wall/WallPost';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
+import { addMessageHandler, removeMessageHandler } from '../services/websocket';
 import styles from './FeedPage.module.css';
 
 /**
@@ -13,6 +14,7 @@ import styles from './FeedPage.module.css';
  */
 const FeedPage = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const [newPostsCount, setNewPostsCount] = useState(0);
 
   // Функция загрузки ленты с пагинацией
   const fetchFeed = async (limit, offset) => {
@@ -24,21 +26,131 @@ const FeedPage = () => {
   };
 
   // Используем хук infinite scroll
-  const { items: posts, loading, hasMore, refresh, error } = useInfiniteScroll(fetchFeed, 20);
+  const { items: posts, loading, hasMore, refresh, error, setItems } = useInfiniteScroll(fetchFeed, 20);
 
-  // Автообновление ленты каждые 30 секунд (только первая страница)
+  // WebSocket обработчик для обновлений ленты
+  const handleWebSocketMessage = useCallback((data) => {
+    if (data.type === 'feed_new_post') {
+      // Новый пост - увеличиваем счетчик
+      setNewPostsCount(prev => prev + 1);
+    } else if (data.type === 'feed_post_update') {
+      // Обновление поста (реакция или комментарий)
+      const { postId, updateType, data: updateData } = data;
+      
+      setItems(prevPosts => {
+        return prevPosts.map(post => {
+          if (post.id === postId) {
+            if (updateType === 'reaction') {
+              // Обновляем реакции
+              const existingReactionIndex = post.reactions?.findIndex(
+                r => r.userId === updateData.userId
+              );
+              
+              const updatedReactions = post.reactions ? [...post.reactions] : [];
+              
+              if (existingReactionIndex >= 0) {
+                // Обновляем существующую реакцию
+                updatedReactions[existingReactionIndex] = {
+                  id: updateData.reactionId,
+                  userId: updateData.userId,
+                  emoji: updateData.emoji,
+                  user: updateData.user
+                };
+              } else {
+                // Добавляем новую реакцию
+                updatedReactions.push({
+                  id: updateData.reactionId,
+                  userId: updateData.userId,
+                  emoji: updateData.emoji,
+                  user: updateData.user
+                });
+              }
+              
+              return { ...post, reactions: updatedReactions };
+            } else if (updateType === 'comment') {
+              // Увеличиваем счетчик комментариев
+              return { 
+                ...post, 
+                commentsCount: (post.commentsCount || 0) + 1 
+              };
+            }
+          }
+          return post;
+        });
+      });
+    } else if (data.type === 'feed_reaction_local') {
+      // Локальное обновление реакции (от текущего пользователя)
+      const { postId, reaction } = data;
+      
+      setItems(prevPosts => {
+        return prevPosts.map(post => {
+          if (post.id === postId) {
+            const existingReactionIndex = post.reactions?.findIndex(
+              r => r.userId === user?.id
+            );
+            
+            let updatedReactions = post.reactions ? [...post.reactions] : [];
+            
+            if (reaction) {
+              // Добавляем или обновляем реакцию
+              if (existingReactionIndex >= 0) {
+                updatedReactions[existingReactionIndex] = reaction;
+              } else {
+                updatedReactions.push(reaction);
+              }
+            } else {
+              // Удаляем реакцию
+              if (existingReactionIndex >= 0) {
+                updatedReactions.splice(existingReactionIndex, 1);
+              }
+            }
+            
+            return { ...post, reactions: updatedReactions };
+          }
+          return post;
+        });
+      });
+    }
+  }, [setItems, user]);
+
+  // Подключаем WebSocket обработчик
   useEffect(() => {
-    const interval = setInterval(() => {
-      refresh();
-    }, 30000); // 30 секунд
+    addMessageHandler(handleWebSocketMessage);
+    
+    return () => {
+      removeMessageHandler(handleWebSocketMessage);
+    };
+  }, [handleWebSocketMessage]);
 
-    return () => clearInterval(interval);
-  }, [refresh]);
-
-  // Обработчик добавления реакции - обновляем ленту
-  const handleReactionAdded = () => {
+  // Обработчик обновления ленты (показать новые посты)
+  const handleShowNewPosts = () => {
+    setNewPostsCount(0);
     refresh();
   };
+
+  // Обработчик изменения реакции - отправляем локальное событие
+  const handleReactionChange = useCallback((postId, reaction) => {
+    // Отправляем локальное событие для обновления UI
+    handleWebSocketMessage({
+      type: 'feed_reaction_local',
+      postId,
+      reaction
+    });
+  }, [handleWebSocketMessage]);
+
+  // Обработчик удаления поста
+  const handlePostDeleted = useCallback((postId) => {
+    setItems(prevPosts => prevPosts.filter(post => post.id !== postId));
+  }, [setItems]);
+
+  // Обработчик редактирования поста
+  const handlePostUpdated = useCallback((postId, updatedContent) => {
+    setItems(prevPosts => {
+      return prevPosts.map(post => 
+        post.id === postId ? { ...post, content: updatedContent } : post
+      );
+    });
+  }, [setItems]);
 
   return (
     <UserPageLayout user={user}>
@@ -48,6 +160,18 @@ const FeedPage = () => {
             <Icon name="feed" size="medium" /> Лента друзей
           </h1>
         </div>
+
+        {/* Кнопка показа новых постов */}
+        {newPostsCount > 0 && (
+          <div className={styles.newPostsNotification}>
+            <button 
+              className={styles.newPostsButton}
+              onClick={handleShowNewPosts}
+            >
+              <Icon name="refresh" size="small" /> Показать {newPostsCount} {newPostsCount === 1 ? 'новый пост' : 'новых постов'}
+            </button>
+          </div>
+        )}
 
         {loading && posts.length === 0 ? (
           <div className={styles.loading}>
@@ -187,7 +311,9 @@ const FeedPage = () => {
                   <WallPost 
                     post={post}
                     isOwnProfile={false}
-                    onReactionChange={handleReactionAdded}
+                    onReactionChange={(reaction) => handleReactionChange(post.id, reaction)}
+                    onPostDeleted={() => handlePostDeleted(post.id)}
+                    onPostUpdated={(updatedContent) => handlePostUpdated(post.id, updatedContent)}
                     isFeedView={true}
                   />
                 </div>

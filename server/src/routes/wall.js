@@ -481,9 +481,13 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
       });
     }
 
-    res.status(201).json({
+    // Отправляем WebSocket уведомление друзьям о новом посте в ленте
+    const { notifyFeedNewPost } = await import('../services/websocketService.js');
+    
+    const postForFeed = {
       id: post.id,
       userId: post.user_id,
+      wallOwnerId: wallOwnerId,
       postType: post.post_type,
       content: post.content,
       tmdbId: post.tmdb_id,
@@ -504,7 +508,13 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
         avatarUrl: post.owner_avatar_url
       },
       reactions: []
+    };
+
+    notifyFeedNewPost(userId, postForFeed).catch(err => {
+      console.error('Ошибка отправки WebSocket уведомления о новом посте:', err);
     });
+
+    res.status(201).json(postForFeed);
 
   } catch (error) {
     console.error('Ошибка создания записи на стене:', error);
@@ -837,6 +847,21 @@ router.post('/:postId/reactions', authenticateToken, async (req, res) => {
     }
 
     const reaction = reactionResult.data[0];
+
+    // Отправляем WebSocket уведомление об обновлении поста (новая реакция)
+    const { notifyFeedPostUpdate } = await import('../services/websocketService.js');
+    
+    notifyFeedPostUpdate(postId, 'reaction', {
+      reactionId: reaction.id,
+      userId: reaction.user_id,
+      emoji: reaction.emoji,
+      user: {
+        displayName: reaction.display_name,
+        avatarUrl: reaction.avatar_url
+      }
+    }).catch(err => {
+      console.error('Ошибка отправки WebSocket уведомления о реакции:', err);
+    });
 
     res.status(201).json({
       id: reaction.id,
@@ -1425,6 +1450,24 @@ router.post('/:postId/comments', authenticateToken, uploadCommentImage.single('i
         });
       }
     }
+
+    // Отправляем WebSocket уведомление об обновлении поста (новый комментарий)
+    const { notifyFeedPostUpdate } = await import('../services/websocketService.js');
+    
+    notifyFeedPostUpdate(postId, 'comment', {
+      commentId: comment.id,
+      userId: comment.user_id,
+      content: comment.content,
+      imageUrl: comment.image_url,
+      parentCommentId: comment.parent_comment_id,
+      author: {
+        id: comment.author_id,
+        displayName: comment.author_display_name,
+        avatarUrl: comment.author_avatar_url
+      }
+    }).catch(err => {
+      console.error('Ошибка отправки WebSocket уведомления о комментарии:', err);
+    });
 
     res.status(201).json({
       id: comment.id,

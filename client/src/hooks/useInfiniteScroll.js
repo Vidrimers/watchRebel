@@ -97,6 +97,7 @@ const useInfiniteScroll = (fetchFunction, initialLimit = 20) => {
 
   return {
     items,
+    setItems,
     loading,
     hasMore,
     loadMore,

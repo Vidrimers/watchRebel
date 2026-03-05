@@ -23,10 +23,12 @@ import styles from './WallPost.module.css';
  * @param {Object} post - Данные поста
  * @param {boolean} isOwnProfile - Просмотр своего профиля
  * @param {Function} onReactionChange - Callback при изменении реакций
+ * @param {Function} onPostDeleted - Callback при удалении поста
+ * @param {Function} onPostUpdated - Callback при редактировании поста
  * @param {boolean} isFeedView - Отображение в общей ленте (для показа "Автор → Владелец")
  * @param {boolean} isModal - Отображение в модальном окне (отключает навигацию)
  */
-const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, isModal = false }) => {
+const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostUpdated, isFeedView = false, isModal = false }) => {
   // Проверка, является ли пост объявлением администратора (нужно в начале для useEffect)
   const isAnnouncement = post.postType === 'announcement' || post.content?.startsWith('📢 Объявление администратора:');
 
@@ -112,7 +114,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   // Обработка добавления реакции
   const handleAddReaction = async (emoji) => {
     try {
-      await dispatch(addReaction({ 
+      const result = await dispatch(addReaction({ 
         postId: post.id, 
         emoji 
       })).unwrap();
@@ -120,7 +122,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       
       // Вызываем callback если он передан (для FeedPage)
       if (onReactionChange) {
-        onReactionChange();
+        // Передаем данные новой реакции
+        onReactionChange({
+          id: result.id,
+          userId: currentUser.id,
+          emoji: emoji,
+          user: {
+            displayName: currentUser.displayName,
+            avatarUrl: currentUser.avatarUrl
+          }
+        });
       }
     } catch (err) {
       console.error('Ошибка добавления реакции:', err);
@@ -136,7 +147,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       
       // Вызываем callback если он передан (для FeedPage)
       if (onReactionChange) {
-        onReactionChange();
+        // Передаем null для удаления реакции
+        onReactionChange(null);
       }
     } catch (err) {
       console.error('Ошибка удаления реакции:', err);
@@ -222,6 +234,11 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     setIsDeleting(true);
     try {
       await dispatch(deletePost(post.id)).unwrap();
+      
+      // Вызываем callback если он передан (для FeedPage)
+      if (onPostDeleted) {
+        onPostDeleted();
+      }
     } catch (err) {
       console.error('Ошибка удаления поста:', err);
       await showAlert({
@@ -282,6 +299,11 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         content: editedContent.trim() 
       })).unwrap();
       setIsEditing(false);
+      
+      // Вызываем callback если он передан (для FeedPage)
+      if (onPostUpdated) {
+        onPostUpdated(editedContent.trim());
+      }
     } catch (err) {
       console.error('Ошибка редактирования поста:', err);
       await showAlert({

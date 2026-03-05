@@ -127,3 +127,96 @@ export function sendReadNotification(userId, conversationId) {
 export function getActiveConnections() {
   return clients.size;
 }
+
+/**
+ * Отправить уведомление о новом посте в ленте друзьям пользователя
+ */
+export async function notifyFeedNewPost(authorId, post) {
+  try {
+    // Получаем список друзей автора поста
+    const friendsResult = await executeQuery(
+      `SELECT DISTINCT 
+        CASE 
+          WHEN user_id = ? THEN friend_id 
+          ELSE user_id 
+        END as friend_id
+       FROM friends 
+       WHERE user_id = ? OR friend_id = ?`,
+      [authorId, authorId, authorId]
+    );
+
+    if (!friendsResult.success) {
+      console.error('Ошибка получения списка друзей для уведомления о посте');
+      return;
+    }
+
+    const friends = friendsResult.data;
+    console.log(`📢 Отправка уведомления о новом посте ${friends.length} друзьям`);
+
+    // Отправляем уведомление каждому другу
+    friends.forEach(friend => {
+      const ws = clients.get(friend.friend_id);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'feed_new_post',
+          post
+        }));
+        console.log(`✅ Уведомление о посте отправлено пользователю ${friend.friend_id}`);
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о новом посте:', error);
+  }
+}
+
+/**
+ * Отправить уведомление об обновлении поста (лайк, комментарий)
+ */
+export async function notifyFeedPostUpdate(postId, updateType, data) {
+  try {
+    // Получаем информацию о посте и его авторе
+    const postResult = await executeQuery(
+      `SELECT user_id, wall_owner_id FROM wall_posts WHERE id = ?`,
+      [postId]
+    );
+
+    if (!postResult.success || postResult.data.length === 0) {
+      return;
+    }
+
+    const post = postResult.data[0];
+    
+    // Получаем список друзей автора и владельца стены
+    const friendsResult = await executeQuery(
+      `SELECT DISTINCT 
+        CASE 
+          WHEN user_id IN (?, ?) THEN friend_id 
+          ELSE user_id 
+        END as friend_id
+       FROM friends 
+       WHERE user_id IN (?, ?) OR friend_id IN (?, ?)`,
+      [post.user_id, post.wall_owner_id, post.user_id, post.wall_owner_id, post.user_id, post.wall_owner_id]
+    );
+
+    if (!friendsResult.success) {
+      return;
+    }
+
+    const friends = friendsResult.data;
+
+    // Отправляем уведомление каждому другу
+    friends.forEach(friend => {
+      const ws = clients.get(friend.friend_id);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'feed_post_update',
+          postId,
+          updateType, // 'reaction' | 'comment'
+          data
+        }));
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об обновлении поста:', error);
+  }
+}
