@@ -18,12 +18,20 @@
   color: var(--text-primary, #1f2937);
 }
 
+/* Обертка для authorInfo и rating */
+.authorInfoWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
 /* Информация об авторе */
 .authorInfo {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
 }
 
 .authorAvatar {
@@ -73,9 +81,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
   padding: 12px;
-  background: var(--bg-primary, #fff);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   width: fit-content;
 }
@@ -94,13 +101,13 @@
 /* Текст отзыва */
 .reviewText {
   padding: 16px;
-  background: var(--bg-primary, #fff);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   border-left: 4px solid var(--primary-color, #6366f1);
   margin-bottom: 20px;
   font-size: 15px;
   line-height: 1.6;
-  color: var(--text-primary, #1f2937);
+  color: var(--text-primary, #e5e7eb);
   white-space: pre-wrap;
   word-wrap: break-word;
   max-height: 400px;
@@ -167,15 +174,16 @@
 [data-theme="die-my-darling"] .rating,
 [data-theme="cyberpunk"] .rating,
 [data-theme="dark-neon-obsidian"] .rating {
-  background: var(--bg-primary, #1a1a1a);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] .reviewText,
 [data-theme="die-my-darling"] .reviewText,
 [data-theme="cyberpunk"] .reviewText,
 [data-theme="dark-neon-obsidian"] .reviewText {
-  background: var(--bg-primary, #1a1a1a);
+  background: rgba(255, 255, 255, 0.05);
   border-color: var(--primary-color, #6366f1);
+  color: var(--text-primary, #e5e7eb);
 }
 
 [data-theme="dark"] .reviewText::-webkit-scrollbar-track,
@@ -189,6 +197,12 @@
 @media (max-width: 768px) {
   .reviewDisplay {
     padding: 16px;
+  }
+
+  .authorInfoWrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   .authorAvatar {

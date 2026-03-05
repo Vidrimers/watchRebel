@@ -2,7 +2,7 @@ import { WebSocketServer } from 'ws';
 import { executeQuery } from '../database/db.js';
 
 let wss = null;
-const clients = new Map(); // userId -> WebSocket connection
+export const clients = new Map(); // userId -> WebSocket connection
 
 /**
  * Инициализация WebSocket сервера

@@ -94,26 +94,42 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    // Получаем информацию о фильме/сериале из TMDb
-    const tmdbServiceModule = await import('../services/tmdbService.js');
-    const tmdbService = tmdbServiceModule.default;
+    const listItem = listItemCheck.data[0];
     
-    let mediaDetails;
-    if (mediaType === 'movie') {
-      mediaDetails = await tmdbService.getMovieDetails(tmdbId);
-    } else {
-      mediaDetails = await tmdbService.getTVDetails(tmdbId);
+    // Используем данные из списка (они уже есть в БД)
+    let title = listItem.title;
+    let posterPath = listItem.poster_path;
+
+    // Если данных нет в списке, пытаемся получить из TMDb
+    if (!title || !posterPath) {
+      try {
+        const tmdbServiceModule = await import('../services/tmdbService.js');
+        const tmdbService = tmdbServiceModule.default;
+        
+        let mediaDetails;
+        if (mediaType === 'movie') {
+          mediaDetails = await tmdbService.getMovieDetails(tmdbId);
+        } else {
+          mediaDetails = await tmdbService.getTVDetails(tmdbId);
+        }
+
+        if (mediaDetails) {
+          title = mediaDetails.title || mediaDetails.name;
+          posterPath = mediaDetails.poster_path;
+        }
+      } catch (error) {
+        console.error('Ошибка получения данных из TMDb (используем данные из списка):', error);
+        // Продолжаем с данными из списка
+      }
     }
 
-    if (!mediaDetails) {
-      return res.status(404).json({ 
-        error: 'Фильм/сериал не найден в TMDb',
-        code: 'MEDIA_NOT_FOUND' 
+    // Если все еще нет названия, возвращаем ошибку
+    if (!title) {
+      return res.status(400).json({ 
+        error: 'Не удалось получить информацию о фильме/сериале',
+        code: 'MEDIA_INFO_UNAVAILABLE' 
       });
     }
-
-    const title = mediaDetails.title || mediaDetails.name;
-    const posterPath = mediaDetails.poster_path;
 
     // Проверяем, есть ли уже отзыв пользователя на этот фильм
     const existingReviewCheck = await executeQuery(
@@ -182,9 +198,10 @@ router.post('/', authenticateToken, async (req, res) => {
     const post = postResult.data[0];
 
     // Отправляем уведомления друзьям
+    console.log(`🔔 [POST /reviews] Начало отправки уведомлений. UserId: ${userId}, PostId: ${postId}, Title: ${title}`);
     const { notifyFriendPostedReview } = await import('../services/notificationService.js');
     notifyFriendPostedReview(userId, tmdbId, mediaType, title, postId).catch(err => {
-      console.error('Ошибка отправки уведомлений о новом отзыве:', err);
+      console.error('❌ [POST /reviews] Ошибка отправки уведомлений о новом отзыве:', err);
     });
 
     // Отправляем WebSocket уведомление о новом посте в ленте
@@ -398,25 +415,54 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     const existingReview = existingReviewResult.data[0];
 
-    // Получаем информацию о фильме/сериале из TMDb для обновления названия
-    const tmdbServiceModule = await import('../services/tmdbService.js');
-    const tmdbService = tmdbServiceModule.default;
-    
-    let mediaDetails;
-    if (existingReview.media_type === 'movie') {
-      mediaDetails = await tmdbService.getMovieDetails(existingReview.tmdb_id);
-    } else {
-      mediaDetails = await tmdbService.getTVDetails(existingReview.tmdb_id);
+    // Получаем название из существующего контента отзыва (первая строка)
+    const existingContent = existingReview.content || '';
+    const existingLines = existingContent.split('\n');
+    let title = existingLines[0] || '';
+
+    // Если названия нет, пытаемся получить из списка пользователя
+    if (!title) {
+      const listItemCheck = await executeQuery(
+        `SELECT title FROM list_items li
+         JOIN custom_lists cl ON li.list_id = cl.id
+         WHERE cl.user_id = ? AND li.tmdb_id = ? AND li.media_type = ?
+         LIMIT 1`,
+        [userId, existingReview.tmdb_id, existingReview.media_type]
+      );
+
+      if (listItemCheck.success && listItemCheck.data.length > 0) {
+        title = listItemCheck.data[0].title;
+      }
     }
 
-    if (!mediaDetails) {
-      return res.status(404).json({ 
-        error: 'Фильм/сериал не найден в TMDb',
-        code: 'MEDIA_NOT_FOUND' 
+    // Если все еще нет названия, пытаемся получить из TMDb
+    if (!title) {
+      try {
+        const tmdbServiceModule = await import('../services/tmdbService.js');
+        const tmdbService = tmdbServiceModule.default;
+        
+        let mediaDetails;
+        if (existingReview.media_type === 'movie') {
+          mediaDetails = await tmdbService.getMovieDetails(existingReview.tmdb_id);
+        } else {
+          mediaDetails = await tmdbService.getTVDetails(existingReview.tmdb_id);
+        }
+
+        if (mediaDetails) {
+          title = mediaDetails.title || mediaDetails.name;
+        }
+      } catch (error) {
+        console.error('Ошибка получения данных из TMDb при редактировании отзыва:', error);
+      }
+    }
+
+    // Если все еще нет названия, возвращаем ошибку
+    if (!title) {
+      return res.status(400).json({ 
+        error: 'Не удалось получить информацию о фильме/сериале',
+        code: 'MEDIA_INFO_UNAVAILABLE' 
       });
     }
-
-    const title = mediaDetails.title || mediaDetails.name;
 
     // Формат content: первая строка - название фильма, остальное - текст отзыва
     const reviewContent = `${title}\n${trimmedReview}`;

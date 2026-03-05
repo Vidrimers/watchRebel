@@ -1,5 +1,6 @@
 import { executeQuery } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
+import { clients } from './websocketService.js';
 
 /**
  * Проверить, включено ли уведомление для пользователя
@@ -923,6 +924,8 @@ export default {
  */
 export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, mediaTitle, postId) {
   try {
+    console.log(`🔔 [notifyFriendPostedReview] СТАРТ. AuthorId: ${authorId}, MediaTitle: ${mediaTitle}, PostId: ${postId}`);
+    
     // Получаем информацию об авторе
     const authorResult = await executeQuery(
       'SELECT id, display_name, telegram_username FROM users WHERE id = ?',
@@ -930,14 +933,16 @@ export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, medi
     );
 
     if (!authorResult.success || authorResult.data.length === 0) {
-      console.error('Автор отзыва не найден');
+      console.error('❌ [notifyFriendPostedReview] Автор отзыва не найден');
       return { success: false, error: 'Автор не найден' };
     }
 
     const author = authorResult.data[0];
     const authorName = author.display_name || author.telegram_username || 'Пользователь';
+    console.log(`✅ [notifyFriendPostedReview] Автор найден: ${authorName} (${authorId})`);
 
     // Получаем список друзей автора
+    console.log(`🔍 [notifyFriendPostedReview] Запрос друзей для пользователя ${authorId}`);
     const friendsResult = await executeQuery(
       `SELECT DISTINCT 
         CASE 
@@ -950,34 +955,39 @@ export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, medi
     );
 
     if (!friendsResult.success) {
-      console.error('Ошибка получения списка друзей:', friendsResult.error);
+      console.error('❌ [notifyFriendPostedReview] Ошибка получения списка друзей:', friendsResult.error);
       return { success: false, error: friendsResult.error };
     }
 
+    console.log(`📊 [notifyFriendPostedReview] Найдено друзей: ${friendsResult.data.length}`);
+    
     if (friendsResult.data.length === 0) {
-      console.log('У пользователя нет друзей для уведомления');
+      console.log('⚠️ [notifyFriendPostedReview] У пользователя нет друзей для уведомления');
       return { success: true, message: 'Нет друзей для уведомления' };
     }
 
     const friends = friendsResult.data;
-    console.log(`📢 Отправка уведомлений о новом отзыве ${friends.length} друзьям`);
+    console.log(`📢 [notifyFriendPostedReview] Начинаем отправку уведомлений ${friends.length} друзьям`);
 
     // Отправляем уведомления каждому другу
     const notifications = [];
     
     for (const friend of friends) {
       const friendId = friend.friend_id;
+      console.log(`👤 [notifyFriendPostedReview] Обработка друга: ${friendId}`);
 
       // Проверяем настройки уведомлений друга
       const isEnabled = await checkNotificationEnabled(friendId, 'friend_posted_review');
+      console.log(`⚙️ [notifyFriendPostedReview] Настройки уведомлений для ${friendId}: ${isEnabled ? 'включены' : 'отключены'}`);
       
       if (!isEnabled) {
-        console.log(`⏭️ Пропускаем уведомление для ${friendId} (отключено в настройках)`);
+        console.log(`⏭️ [notifyFriendPostedReview] Пропускаем уведомление для ${friendId} (отключено в настройках)`);
         continue;
       }
 
       // Создаем уведомление на сайте
       const content = `${authorName} написал отзыв на "${mediaTitle}"`;
+      console.log(`📝 [notifyFriendPostedReview] Создаем уведомление для ${friendId}: "${content}"`);
       
       const notificationResult = await createNotification(
         friendId,
@@ -988,32 +998,41 @@ export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, medi
       );
 
       if (notificationResult.success) {
+        console.log(`✅ [notifyFriendPostedReview] Уведомление создано для ${friendId}`);
         notifications.push(notificationResult.notification);
 
         // Отправляем WebSocket уведомление
-        const { notifyUser } = await import('./websocketService.js');
-        notifyUser(friendId, {
-          type: 'friend_posted_review',
-          notification: notificationResult.notification
-        }).catch(err => {
-          console.error('Ошибка отправки WebSocket уведомления:', err);
-        });
+        try {
+          const ws = clients.get(friendId);
+          if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({
+              type: 'notification',
+              notification: notificationResult.notification
+            }));
+            console.log(`✅ [notifyFriendPostedReview] WebSocket уведомление отправлено для ${friendId}`);
+          } else {
+            console.log(`⚠️ [notifyFriendPostedReview] WebSocket не подключен для ${friendId}`);
+          }
+        } catch (err) {
+          console.error(`❌ [notifyFriendPostedReview] Ошибка отправки WebSocket уведомления для ${friendId}:`, err);
+        }
 
         // Отправляем уведомление в Telegram
         try {
-          const { sendTelegramNotification } = await import('../../telegram-bot/src/index.js');
-          
           const telegramMessage = `📝 ${authorName} написал отзыв на "${mediaTitle}"\n\n` +
-            `Посмотреть отзыв: ${process.env.PUBLIC_URL}/media/${mediaType}/${tmdbId}/review/${postId}`;
+            `Посмотреть: ${process.env.PUBLIC_URL}/media/${mediaType}/${tmdbId}?reviewPost=${postId}`;
 
           await sendTelegramNotification(friendId, telegramMessage);
+          console.log(`✅ [notifyFriendPostedReview] Telegram уведомление отправлено для ${friendId}`);
         } catch (error) {
-          console.error('Ошибка отправки Telegram уведомления:', error);
+          console.error(`❌ [notifyFriendPostedReview] Ошибка отправки Telegram уведомления для ${friendId}:`, error.message);
         }
+      } else {
+        console.error(`❌ [notifyFriendPostedReview] Не удалось создать уведомление для ${friendId}:`, notificationResult.error);
       }
     }
 
-    console.log(`✅ Отправлено ${notifications.length} уведомлений о новом отзыве`);
+    console.log(`✅ [notifyFriendPostedReview] ЗАВЕРШЕНО. Отправлено ${notifications.length} уведомлений о новом отзыве`);
 
     return {
       success: true,

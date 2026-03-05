@@ -620,12 +620,20 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         const reviewMovieTitle = reviewLines[0] || '';
         const reviewText = reviewLines.slice(1).join('\n').trim() || '';
         
+        // Проверяем, является ли текущий пользователь автором поста
+        const isAuthor = currentUser && post.author?.id === currentUser.id;
+        
         return (
           <div 
             className={styles.reviewContent}
             onClick={() => {
               if (!isModal && post.tmdbId && post.mediaType) {
-                navigate(`/media/${post.mediaType}/${post.tmdbId}?reviewPost=${post.id}`);
+                // Если автор - переход на обычную страницу фильма для редактирования
+                // Если не автор - переход с параметром reviewPost для просмотра
+                const url = isAuthor 
+                  ? `/media/${post.mediaType}/${post.tmdbId}`
+                  : `/media/${post.mediaType}/${post.tmdbId}?reviewPost=${post.id}`;
+                navigate(url);
               }
             }}
             style={{ cursor: isModal ? 'default' : 'pointer' }}

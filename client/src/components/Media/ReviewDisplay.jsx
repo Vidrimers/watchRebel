@@ -29,39 +29,41 @@ const ReviewDisplay = ({ review, media, onGoToMediaPage }) => {
         <h3 className={styles.title}>Отзыв пользователя</h3>
       </div>
 
-      <div className={styles.authorInfo}>
-        {review.author?.avatarUrl && (
-          <img 
-            src={
-              review.author.avatarUrl.startsWith('http') 
-                ? review.author.avatarUrl 
-                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${review.author.avatarUrl}`
-            }
-            alt={review.author.displayName}
-            className={styles.authorAvatar}
-            onClick={() => navigate(`/user/${review.author.userId}`)}
-          />
-        )}
-        <div className={styles.authorDetails}>
-          <span 
-            className={styles.authorName}
-            onClick={() => navigate(`/user/${review.author.userId}`)}
-          >
-            {review.author?.displayName || 'Пользователь'}
-          </span>
-          <span className={styles.reviewDate}>
-            {formatDate(review.createdAt)}
-            {review.editedAt && <span className={styles.edited}> (изменено)</span>}
-          </span>
+      <div className={styles.authorInfoWrapper}>
+        <div className={styles.authorInfo}>
+          {review.author?.avatarUrl && (
+            <img 
+              src={
+                review.author.avatarUrl.startsWith('http') 
+                  ? review.author.avatarUrl 
+                  : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${review.author.avatarUrl}`
+              }
+              alt={review.author.displayName}
+              className={styles.authorAvatar}
+              onClick={() => navigate(`/user/${review.author.userId}`)}
+            />
+          )}
+          <div className={styles.authorDetails}>
+            <span 
+              className={styles.authorName}
+              onClick={() => navigate(`/user/${review.author.userId}`)}
+            >
+              {review.author?.displayName || 'Пользователь'}
+            </span>
+            <span className={styles.reviewDate}>
+              {formatDate(review.createdAt)}
+              {review.editedAt && <span className={styles.edited}> (изменено)</span>}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {review.rating && (
-        <div className={styles.rating}>
-          <span className={styles.ratingStars}>★</span>
-          <span className={styles.ratingNumber}>{review.rating}/10</span>
-        </div>
-      )}
+        {review.rating && (
+          <div className={styles.rating}>
+            <span className={styles.ratingStars}>★</span>
+            <span className={styles.ratingNumber}>{review.rating}/10</span>
+          </div>
+        )}
+      </div>
 
       <div className={styles.reviewText}>
         {review.reviewText}

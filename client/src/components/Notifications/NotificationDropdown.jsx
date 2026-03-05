@@ -97,8 +97,15 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
         const response = await api.get(`/wall/post/${notification.relatedPostId}`);
         const post = response.data;
         
-        // Если это пост о медиа (добавление, оценка, отзыв) - переходим на страницу медиа
-        if (['media_added', 'rating', 'review'].includes(post.postType) && post.tmdbId && post.mediaType) {
+        // Если это отзыв - переходим на страницу медиа с параметром reviewPost
+        if (post.postType === 'review' && post.tmdbId && post.mediaType) {
+          window.location.href = `/media/${post.mediaType}/${post.tmdbId}?reviewPost=${notification.relatedPostId}`;
+          onClose();
+          return;
+        }
+        
+        // Если это пост о медиа (добавление, оценка) - переходим на страницу медиа
+        if (['media_added', 'rating'].includes(post.postType) && post.tmdbId && post.mediaType) {
           window.location.href = `/media/${post.mediaType}/${post.tmdbId}`;
           onClose();
           return;
