@@ -506,6 +506,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
                   {listName}
                 </span>
               </p>
+              {/* Отображение рейтинга если есть */}
+              {post.rating && (
+                <div className={styles.postRating}>
+                  <span className={styles.ratingStars}>★</span>
+                  <span className={styles.ratingNumber}>{post.rating}/10</span>
+                  <span className={styles.ratingAuthor}>(оценка пользователя {post.author?.displayName || 'неизвестно'})</span>
+                </div>
+              )}
               <div className={styles.mediaBottomRow}>
                 {post.tmdbId && (
                   <div className={styles.mediaTypeLabel}>

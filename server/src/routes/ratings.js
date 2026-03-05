@@ -73,6 +73,20 @@ router.post('/', authenticateToken, async (req, res) => {
           code: 'DATABASE_ERROR' 
         });
       }
+
+      // Обновляем пост на стене если он существует
+      const wallPostCheck = await executeQuery(
+        'SELECT * FROM wall_posts WHERE user_id = ? AND tmdb_id = ? AND media_type = ? ORDER BY created_at DESC LIMIT 1',
+        [userId, tmdbId, mediaType]
+      );
+
+      if (wallPostCheck.success && wallPostCheck.data.length > 0) {
+        // Обновляем рейтинг в существующем посте (любого типа)
+        await executeQuery(
+          'UPDATE wall_posts SET rating = ? WHERE id = ?',
+          [rating, wallPostCheck.data[0].id]
+        );
+      }
     } else {
       // Создаем новый рейтинг
       ratingId = uuidv4();
@@ -90,16 +104,31 @@ router.post('/', authenticateToken, async (req, res) => {
       }
 
       // Автоматически создаем запись на стене при добавлении нового рейтинга
-      const wallPostId = uuidv4();
-      const wallPostResult = await executeQuery(
-        `INSERT INTO wall_posts (id, user_id, post_type, tmdb_id, media_type, rating)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [wallPostId, userId, 'rating', tmdbId, mediaType, rating]
+      // Проверяем, есть ли уже ЛЮБОЙ пост с этим фильмом
+      const existingPostCheck = await executeQuery(
+        'SELECT * FROM wall_posts WHERE user_id = ? AND tmdb_id = ? AND media_type = ? ORDER BY created_at DESC LIMIT 1',
+        [userId, tmdbId, mediaType]
       );
 
-      if (!wallPostResult.success) {
-        console.error('Ошибка создания записи на стене:', wallPostResult.error);
-        // Не возвращаем ошибку, так как рейтинг уже создан
+      if (existingPostCheck.success && existingPostCheck.data.length > 0) {
+        // Обновляем существующий пост (любого типа), добавляя рейтинг
+        await executeQuery(
+          'UPDATE wall_posts SET rating = ? WHERE id = ?',
+          [rating, existingPostCheck.data[0].id]
+        );
+      } else {
+        // Создаём новый пост с рейтингом
+        const wallPostId = uuidv4();
+        const wallPostResult = await executeQuery(
+          `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, tmdb_id, media_type, rating)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [wallPostId, userId, userId, 'rating', tmdbId, mediaType, rating]
+        );
+
+        if (!wallPostResult.success) {
+          console.error('Ошибка создания записи на стене:', wallPostResult.error);
+          // Не возвращаем ошибку, так как рейтинг уже создан
+        }
       }
     }
 

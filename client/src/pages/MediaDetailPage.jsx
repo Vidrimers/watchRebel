@@ -9,8 +9,10 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   fetchEpisodeProgress,
-  markEpisodeWatched
+  markEpisodeWatched,
+  fetchRatings
 } from '../store/slices/listsSlice';
+import { fetchWall } from '../store/slices/wallSlice';
 import { EpisodeTracker, RatingSelector } from '../components/Media';
 import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert.jsx';
@@ -40,16 +42,17 @@ const MediaDetailPage = () => {
 
   // Загрузка данных при монтировании
   useEffect(() => {
-    if (mediaType && mediaId) {
+    if (mediaType && mediaId && user) {
       dispatch(getMediaDetails({ type: mediaType, id: mediaId }));
       dispatch(fetchLists());
+      dispatch(fetchRatings(user.id));
       
       // Для сериалов загружаем прогресс
       if (mediaType === 'tv') {
         dispatch(fetchEpisodeProgress(mediaId));
       }
     }
-  }, [dispatch, mediaType, mediaId]);
+  }, [dispatch, mediaType, mediaId, user]);
 
   // Обработка добавления в список
   const handleAddToList = async () => {
@@ -399,10 +402,16 @@ const MediaDetailPage = () => {
                 title: selectedMedia.title || selectedMedia.name
               }}
               currentRating={currentRating}
+              isInList={!!currentList}
               onRatingSet={async (rating) => {
+                // Перезагружаем стену пользователя чтобы обновить пост с рейтингом
+                if (user) {
+                  dispatch(fetchWall({ userId: user.id, limit: 20, offset: 0 }));
+                }
+                
                 await showAlert({
                   title: 'Оценка сохранена!',
-                  message: `Оценка ${rating}/10 добавлена на стену`,
+                  message: `Оценка ${rating}/10 добавлена`,
                   type: 'success'
                 });
               }}

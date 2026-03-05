@@ -7,14 +7,14 @@ import styles from './RatingSelector.module.css';
  * Компонент для выбора рейтинга от 1 до 10
  * При выставлении оценки автоматически создается запись на стене
  */
-const RatingSelector = ({ media, currentRating = null, onRatingSet }) => {
+const RatingSelector = ({ media, currentRating = null, isInList = false, onRatingSet }) => {
   const dispatch = useDispatch();
   const [hoveredRating, setHoveredRating] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Обработка выбора рейтинга
   const handleRatingClick = async (rating) => {
-    if (isSubmitting) return;
+    if (isSubmitting || !isInList) return;
 
     setIsSubmitting(true);
     
@@ -47,18 +47,26 @@ const RatingSelector = ({ media, currentRating = null, onRatingSet }) => {
         Ваша оценка: {displayRating ? `${displayRating}/10` : 'не оценено'}
       </div>
       
+      {!isInList && (
+        <div className={styles.warningMessage}>
+          Добавьте фильм в свой список, чтобы оценить
+        </div>
+      )}
+      
       <div className={styles.ratingButtons}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
           <button
             key={rating}
             className={`${styles.ratingButton} ${
               displayRating && rating <= displayRating ? styles.active : ''
-            } ${currentRating === rating ? styles.selected : ''}`}
+            } ${currentRating === rating ? styles.selected : ''} ${
+              !isInList ? styles.disabled : ''
+            }`}
             onClick={() => handleRatingClick(rating)}
-            onMouseEnter={() => setHoveredRating(rating)}
+            onMouseEnter={() => isInList && setHoveredRating(rating)}
             onMouseLeave={() => setHoveredRating(null)}
-            disabled={isSubmitting}
-            title={`Оценить на ${rating}`}
+            disabled={isSubmitting || !isInList}
+            title={isInList ? `Оценить на ${rating}` : 'Добавьте в список, чтобы оценить'}
           >
             {rating}
           </button>

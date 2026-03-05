@@ -164,6 +164,19 @@ export const markEpisodeWatched = createAsyncThunk(
   }
 );
 
+// Загрузить рейтинги пользователя
+export const fetchRatings = createAsyncThunk(
+  'lists/fetchRatings',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/ratings/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 // Поставить рейтинг
 export const addRating = createAsyncThunk(
   'lists/addRating',
@@ -395,6 +408,24 @@ const listsSlice = createSlice({
         state.error = null;
       })
       .addCase(markEpisodeWatched.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch Ratings
+      .addCase(fetchRatings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRatings.fulfilled, (state, action) => {
+        // Преобразуем массив рейтингов в объект { tmdbId: rating }
+        state.ratings = action.payload.reduce((acc, item) => {
+          acc[item.tmdbId] = item.rating;
+          return acc;
+        }, {});
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(fetchRatings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
