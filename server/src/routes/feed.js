@@ -7,11 +7,13 @@ const router = express.Router();
 /**
  * GET /api/feed/:userId
  * Получить ленту активности друзей, самого пользователя и объявлений администратора
- * Возвращает последние 10 текстовых постов
+ * Query params: limit (default 20), offset (default 0)
  */
 router.get('/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
 
     // Проверяем, что пользователь запрашивает свою ленту
     if (req.user.id !== userId) {
@@ -46,7 +48,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     // Создаем плейсхолдеры для SQL запроса
     const placeholders = allUserIds.map(() => '?').join(',');
 
-    // Получаем последние 10 текстовых постов и статусов от друзей и самого пользователя
+    // Получаем последние посты от друзей и самого пользователя с пагинацией
     const postsResult = await executeQuery(
       `SELECT 
         wp.id,
@@ -75,8 +77,8 @@ router.get('/:userId', authenticateToken, async (req, res) => {
          AND wp.post_type IN ('text', 'status_update', 'media_added')
          AND (wp.content IS NULL OR wp.content NOT LIKE '📢 Объявление администратора:%')
        ORDER BY wp.created_at DESC
-       LIMIT 10`,
-      allUserIds
+       LIMIT ? OFFSET ?`,
+      [...allUserIds, limit, offset]
     );
 
     if (!postsResult.success) {
@@ -199,12 +201,23 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       })
     );
 
-    // Объединяем объявления и посты, сортируем по дате
-    const allPosts = [...announcementPosts, ...postsWithReactions]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10); // Берем только 10 последних
+    // Объявления добавляем только на первой странице (offset=0)
+    let allPosts = postsWithReactions;
+    if (offset === 0) {
+      // Объединяем объявления и посты, сортируем по дате
+      allPosts = [...announcementPosts, ...postsWithReactions]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
 
-    res.json(allPosts);
+    // Проверяем есть ли ещё посты
+    const hasMore = postsWithReactions.length === limit;
+
+    res.json({
+      posts: allPosts,
+      hasMore,
+      offset,
+      limit
+    });
 
   } catch (error) {
     console.error('Ошибка получения ленты:', error);

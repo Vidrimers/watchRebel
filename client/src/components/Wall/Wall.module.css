@@ -278,3 +278,45 @@
     width: 100%;
   }
 }
+
+
+/* Контейнер кнопки "Загрузить ещё" */
+.loadMoreContainer {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+  margin-top: 20px;
+}
+
+.loadMoreButton {
+  padding: 12px 32px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loadMoreButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Сообщение о конце списка */
+.endOfList {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  font-style: italic;
+}

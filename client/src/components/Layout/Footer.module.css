@@ -1,40 +1,46 @@
-/* Футер прижат к низу страницы */
+/* Футер прижат к низу экрана (fixed) */
 .footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background-color: var(--bg-secondary, #ffffff);
   border-top: 1px solid var(--border-color, #e0e0e0);
-  padding: 20px;
-  margin-top: auto;
+  padding: 12px 20px;
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .footerContent {
   max-width: 1820px;
   margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 15px;
 }
 
 .copyright {
   margin: 0;
   color: var(--text-secondary, #666);
-  font-size: 14px;
-  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .links {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .link {
   color: var(--text-secondary, #666);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .link:hover {
@@ -43,25 +49,30 @@
 
 .separator {
   color: var(--text-secondary, #999);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
   .footer {
-    padding: 15px 10px;
+    padding: 10px 15px;
   }
 
   .footerContent {
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .copyright,
   .link {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .links {
-    gap: 8px;
+    gap: 6px;
+  }
+
+  .separator {
+    font-size: 11px;
   }
 }

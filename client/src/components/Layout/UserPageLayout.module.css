@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary, #f5f5f0);
+  padding-bottom: 60px; /* Отступ для fixed footer */
 }
 
 /* Обертка для контента (Wall + Sidebar) */
@@ -38,6 +39,10 @@
 
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
+  .pageContainer {
+    padding-bottom: 80px; /* Больше отступ на мобильных т.к. footer выше */
+  }
+
   .contentWrapper {
     padding: 10px;
   }

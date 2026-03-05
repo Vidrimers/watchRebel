@@ -196,3 +196,20 @@
     padding: 12px;
   }
 }
+
+/* Индикатор загрузки при подгрузке */
+.loadingMore {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Сообщение о конце списка */
+.endOfList {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  font-style: italic;
+}

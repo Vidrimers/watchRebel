@@ -18,6 +18,8 @@ const router = express.Router();
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
 
     // Получаем информацию о владельце стены и его закрепленном посте
     const wallOwnerResult = await executeQuery(
@@ -35,7 +37,7 @@ router.get('/:userId', async (req, res) => {
     const wallOwner = wallOwnerResult.data[0];
     const pinnedPostId = wallOwner.pinned_post_id;
 
-    // Получаем все записи стены пользователя с информацией об авторе
+    // Получаем записи стены пользователя с пагинацией
     const postsResult = await executeQuery(
       `SELECT 
         wp.*,
@@ -46,8 +48,9 @@ router.get('/:userId', async (req, res) => {
        FROM wall_posts wp
        LEFT JOIN users author ON wp.user_id = author.id
        WHERE wp.wall_owner_id = ? 
-       ORDER BY wp.created_at DESC`,
-      [userId]
+       ORDER BY wp.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [userId, limit, offset]
     );
 
     if (!postsResult.success) {
@@ -151,7 +154,15 @@ router.get('/:userId', async (req, res) => {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    res.json(sortedPosts);
+    // Проверяем есть ли ещё посты
+    const hasMore = postsWithReactions.length === limit;
+
+    res.json({
+      posts: sortedPosts,
+      hasMore,
+      offset,
+      limit
+    });
 
   } catch (error) {
     console.error('Ошибка получения стены:', error);

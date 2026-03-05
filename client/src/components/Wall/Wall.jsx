@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchWall, createPost } from '../../store/slices/wallSlice';
+import { fetchWall, loadMoreWall, createPost } from '../../store/slices/wallSlice';
 import WallPost from './WallPost';
 import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert';
@@ -10,11 +10,11 @@ import axios from 'axios';
 
 /**
  * Компонент стены активности пользователя
- * Отображает ленту постов в хронологическом порядке (новые сверху)
+ * Отображает ленту постов в хронологическом порядке (новые сверху) с пагинацией
  */
 const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = false }) => {
   const dispatch = useAppDispatch();
-  const { posts, loading, error } = useAppSelector((state) => state.wall);
+  const { posts, loading, error, hasMore, offset, limit } = useAppSelector((state) => state.wall);
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const { alertDialog, showAlert } = useAlert();
   const [newPostContent, setNewPostContent] = useState('');
@@ -27,9 +27,16 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   // Загрузка постов при монтировании компонента
   useEffect(() => {
     if (userId) {
-      dispatch(fetchWall(userId));
+      dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
     }
   }, [dispatch, userId]);
+
+  // Обработчик загрузки ещё постов
+  const handleLoadMore = () => {
+    if (!loading && hasMore && userId) {
+      dispatch(loadMoreWall({ userId, limit, offset }));
+    }
+  };
 
   // Определяем, можно ли писать на этой стене
   const canPostOnWall = () => {
@@ -367,13 +374,35 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
             )}
           </div>
         ) : (
-          posts.map((post) => (
-            <WallPost 
-              key={post.id} 
-              post={post}
-              isOwnProfile={isOwnProfile}
-            />
-          ))
+          <>
+            {posts.map((post) => (
+              <WallPost 
+                key={post.id} 
+                post={post}
+                isOwnProfile={isOwnProfile}
+              />
+            ))}
+
+            {/* Кнопка "Загрузить ещё" */}
+            {hasMore && posts.length > 0 && (
+              <div className={styles.loadMoreContainer}>
+                <button
+                  className={styles.loadMoreButton}
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                >
+                  {loading ? 'Загрузка...' : 'Загрузить ещё'}
+                </button>
+              </div>
+            )}
+
+            {/* Сообщение о конце списка */}
+            {!hasMore && posts.length > 0 && (
+              <div className={styles.endOfList}>
+                <p>Вы просмотрели все посты</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

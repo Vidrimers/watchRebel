@@ -27,6 +27,9 @@ import styles from './WallPost.module.css';
  * @param {boolean} isModal - Отображение в модальном окне (отключает навигацию)
  */
 const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, isModal = false }) => {
+  // Проверка, является ли пост объявлением администратора (нужно в начале для useEffect)
+  const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -82,8 +85,11 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     }));
   };
 
-  // Загрузка количества комментариев
+  // Загрузка количества комментариев (не для объявлений)
   useEffect(() => {
+    // Пропускаем загрузку для объявлений
+    if (isAnnouncement) return;
+
     const loadCommentsCount = async () => {
       try {
         const response = await api.get(`/wall/${post.id}/comments`, {
@@ -96,7 +102,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     };
 
     loadCommentsCount();
-  }, [post.id]);
+  }, [post.id, isAnnouncement]);
 
   // Обработка добавления комментария
   const handleCommentAdded = () => {
@@ -301,9 +307,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     const hourInMs = 60 * 60 * 1000;
     return (now - createdAt) < hourInMs;
   };
-
-  // Проверка, является ли пост объявлением администратора
-  const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
 
   // Функция для очистки контента от служебных маркеров
   const cleanContent = (content) => {
@@ -858,13 +861,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
         </>
       )}
 
-      {/* Комментарии к посту */}
-      <PostComments 
-        postId={post.id} 
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-        onCommentAdded={handleCommentAdded}
-      />
+      {/* Комментарии к посту (не для объявлений) */}
+      {!isAnnouncement && (
+        <PostComments 
+          postId={post.id} 
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          onCommentAdded={handleCommentAdded}
+        />
+      )}
     </div>
     </>
   );

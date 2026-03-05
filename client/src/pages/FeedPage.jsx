@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import WallPost from '../components/Wall/WallPost';
 import Icon from '../components/Common/Icon';
@@ -8,47 +9,35 @@ import styles from './FeedPage.module.css';
 
 /**
  * Страница ленты активности друзей
- * Отображает последние посты от всех друзей пользователя
+ * Отображает последние посты от всех друзей пользователя с infinite scroll
  */
 const FeedPage = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Функция загрузки ленты
-  const fetchFeed = async () => {
-    if (!user) return;
-
-    try {
-      setError(null);
-      const response = await api.get(`/feed/${user.id}`);
-      setPosts(response.data);
-    } catch (err) {
-      console.error('Ошибка загрузки ленты:', err);
-      setError(err.response?.data?.error || 'Не удалось загрузить ленту');
-    } finally {
-      setLoading(false);
-    }
+  // Функция загрузки ленты с пагинацией
+  const fetchFeed = async (limit, offset) => {
+    if (!user) return { posts: [], hasMore: false };
+    const response = await api.get(`/feed/${user.id}`, {
+      params: { limit, offset }
+    });
+    return response.data;
   };
 
-  // Загрузка ленты при монтировании компонента
-  useEffect(() => {
-    fetchFeed();
-  }, [user]);
+  // Используем хук infinite scroll
+  const { items: posts, loading, hasMore, refresh, error } = useInfiniteScroll(fetchFeed, 20);
 
-  // Автообновление ленты каждые 30 секунд
+  // Автообновление ленты каждые 30 секунд (только первая страница)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchFeed();
+      refresh();
     }, 30000); // 30 секунд
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [refresh]);
 
   // Обработчик добавления реакции - обновляем ленту
   const handleReactionAdded = () => {
-    fetchFeed();
+    refresh();
   };
 
   return (
@@ -71,7 +60,7 @@ const FeedPage = () => {
             </p>
             <button 
               className={styles.retryButton}
-              onClick={fetchFeed}
+              onClick={refresh}
             >
               Попробовать снова
             </button>
@@ -204,6 +193,20 @@ const FeedPage = () => {
                 </div>
               );
             })}
+
+            {/* Индикатор загрузки при подгрузке */}
+            {loading && posts.length > 0 && (
+              <div className={styles.loadingMore}>
+                <p>Загрузка...</p>
+              </div>
+            )}
+
+            {/* Сообщение о конце списка */}
+            {!hasMore && posts.length > 0 && (
+              <div className={styles.endOfList}>
+                <p>Вы просмотрели все посты</p>
+              </div>
+            )}
           </div>
         )}
       </div>

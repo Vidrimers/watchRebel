@@ -13,9 +13,25 @@ const handleError = (error, rejectWithValue) => {
 
 export const fetchWall = createAsyncThunk(
   'wall/fetchWall',
-  async (userId, { rejectWithValue }) => {
+  async ({ userId, limit = 20, offset = 0 }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/wall/${userId}`);
+      const response = await api.get(`/wall/${userId}`, {
+        params: { limit, offset }
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+export const loadMoreWall = createAsyncThunk(
+  'wall/loadMoreWall',
+  async ({ userId, limit = 20, offset = 0 }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/wall/${userId}`, {
+        params: { limit, offset }
+      });
       return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);
@@ -76,7 +92,10 @@ const wallSlice = createSlice({
   initialState: {
     posts: [],
     loading: false,
-    error: null
+    error: null,
+    hasMore: true,
+    offset: 0,
+    limit: 20
   },
   reducers: {
     clearError: (state) => {
@@ -85,20 +104,42 @@ const wallSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Wall
+      // Fetch Wall (начальная загрузка)
       .addCase(fetchWall.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchWall.fulfilled, (state, action) => {
-        console.log('📦 Redux: Получены посты от сервера:', action.payload.length, 'шт.');
-        console.log('📦 Redux: ID постов:', action.payload.map(p => p.id));
-        console.log('📦 Redux: Первый пост:', action.payload[0]);
-        state.posts = action.payload;
+        console.log('📦 Redux: Получены посты от сервера:', action.payload.posts?.length || action.payload.length, 'шт.');
+        const posts = action.payload.posts || action.payload;
+        const hasMore = action.payload.hasMore !== undefined ? action.payload.hasMore : true;
+        
+        state.posts = posts;
+        state.hasMore = hasMore;
+        state.offset = posts.length;
         state.loading = false;
         state.error = null;
       })
       .addCase(fetchWall.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Load More Wall (подгрузка)
+      .addCase(loadMoreWall.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loadMoreWall.fulfilled, (state, action) => {
+        const newPosts = action.payload.posts || action.payload;
+        const hasMore = action.payload.hasMore !== undefined ? action.payload.hasMore : true;
+        
+        state.posts = [...state.posts, ...newPosts];
+        state.hasMore = hasMore;
+        state.offset = state.posts.length;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(loadMoreWall.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
