@@ -222,7 +222,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       
       console.log('🔄 Перезагрузка стены после создания поста');
       // Перезагружаем стену после создания поста
-      await dispatch(fetchWall(userId));
+      await dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
       console.log('✅ Стена обновлена');
     } catch (err) {
       console.error('Ошибка создания поста:', err);

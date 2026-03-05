@@ -843,7 +843,7 @@
 /* Одиночное изображение - адаптивная высота */
 .announcementImageSingle img {
   height: auto;
-  max-height: 600px;
+  max-height: 400px;
   object-fit: contain;
   background: var(--bg-secondary, #f9fafb);
 }
@@ -868,7 +868,7 @@
   }
   
   .announcementImageSingle img {
-    max-height: 400px;
+    max-height: 300px;
   }
   
   .announcementImageLandscape img {

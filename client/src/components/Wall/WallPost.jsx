@@ -28,7 +28,7 @@ import styles from './WallPost.module.css';
  */
 const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, isModal = false }) => {
   // Проверка, является ли пост объявлением администратора (нужно в начале для useEffect)
-  const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
+  const isAnnouncement = post.postType === 'announcement' || post.content?.startsWith('📢 Объявление администратора:');
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -132,7 +132,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
     try {
       await api.delete(`/wall/${post.id}/reactions/${reactionId}`);
       // Перезагружаем посты
-      dispatch(fetchWall(post.userId));
+      dispatch(fetchWall({ userId: post.wallOwner?.id || post.userId, limit: 20, offset: 0 }));
       
       // Вызываем callback если он передан (для FeedPage)
       if (onReactionChange) {
@@ -246,7 +246,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       
       // Перезагружаем стену
       if (post.wallOwner?.id) {
-        dispatch(fetchWall(post.wallOwner.id));
+        dispatch(fetchWall({ userId: post.wallOwner.id, limit: 20, offset: 0 }));
       }
     } catch (err) {
       console.error('Ошибка закрепления/открепления поста:', err);
@@ -317,8 +317,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
       .replace(/\n{3,}/g, '\n\n') // Заменяем 3+ переноса на 2
       .trim();
     
-    // Убираем эмодзи объявления из текста (будем показывать иконкой)
-    cleaned = cleaned.replace('📢 Объявление администратора:', 'Объявление администратора:');
+    // Убираем только эмодзи 📢 из начала, оставляем текст "Объявление администратора:"
+    cleaned = cleaned.replace(/^📢\s*/i, '');
     
     return cleaned;
   };
@@ -366,6 +366,48 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
 
   // Рендер контента в зависимости от типа поста
   const renderPostContent = () => {
+    // Если это объявление (по типу или по контенту), всегда используем case 'announcement'
+    if (isAnnouncement) {
+      return (
+        <div className={styles.announcementContent}>
+          {post.content && (
+            <>
+              <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
+                <Icon name="announcement" size="medium" color="#ff4444" />
+              </span>
+              <LinkifiedText text={cleanContent(post.content)} />
+            </>
+          )}
+          {/* Галерея изображений объявления */}
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <div className={styles.announcementImages}>
+              {post.imageUrls.map((imageUrl, index) => {
+                const orientation = announcementImageOrientations[index] || 'landscape';
+                const imageCount = post.imageUrls.length;
+                const orientationClass = imageCount === 1 
+                  ? styles.announcementImageSingle 
+                  : (orientation === 'portrait' ? styles.announcementImagePortrait : styles.announcementImageLandscape);
+
+                return (
+                  <div 
+                    key={index} 
+                    className={`${styles.announcementImage} ${orientationClass}`}
+                    onClick={() => handleImageClick(index)}
+                  >
+                    <img 
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
+                      alt={`Изображение ${index + 1}`}
+                      onLoad={(e) => handleAnnouncementImageLoad(index, e)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     switch (post.postType) {
       case 'status_update':
         return (
@@ -412,56 +454,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
                 </div>
               </div>
             ) : (
-              post.content && (
-                <>
-                  {isAnnouncement && (
-                    <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
-                      <Icon name="announcement" size="medium" color="#ff4444" />
-                    </span>
-                  )}
-                  <LinkifiedText text={cleanContent(post.content)} />
-                </>
-              )
-            )}
-          </div>
-        );
-
-      case 'announcement':
-        return (
-          <div className={styles.announcementContent}>
-            {post.content && (
-              <>
-                <span style={{ color: '#ff4444', display: 'inline-flex', alignItems: 'center', marginRight: '6px', verticalAlign: 'middle' }}>
-                  <Icon name="announcement" size="medium" color="#ff4444" />
-                </span>
-                <LinkifiedText text={cleanContent(post.content)} />
-              </>
-            )}
-            {/* Галерея изображений объявления */}
-            {post.imageUrls && post.imageUrls.length > 0 && (
-              <div className={styles.announcementImages}>
-                {post.imageUrls.map((imageUrl, index) => {
-                  const orientation = announcementImageOrientations[index] || 'landscape';
-                  const imageCount = post.imageUrls.length;
-                  const orientationClass = imageCount === 1 
-                    ? styles.announcementImageSingle 
-                    : (orientation === 'portrait' ? styles.announcementImagePortrait : styles.announcementImageLandscape);
-
-                  return (
-                    <div 
-                      key={index} 
-                      className={`${styles.announcementImage} ${orientationClass}`}
-                      onClick={() => handleImageClick(index)}
-                    >
-                      <img 
-                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
-                        alt={`Изображение ${index + 1}`}
-                        onLoad={(e) => handleAnnouncementImageLoad(index, e)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              post.content && <LinkifiedText text={cleanContent(post.content)} />
             )}
           </div>
         );

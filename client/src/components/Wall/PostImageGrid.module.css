@@ -31,14 +31,14 @@
 /* Одиночное изображение - адаптивная высота с сохранением пропорций */
 .imageWrapper.single {
   aspect-ratio: auto;
-  max-height: 600px;
+  max-height: 400px;
   height: auto;
 }
 
 .imageWrapper.single .image {
   object-fit: contain;
   height: auto;
-  max-height: 600px;
+  max-height: 400px;
 }
 
 /* Горизонтальные изображения в галерее */
@@ -125,11 +125,11 @@
   }
 
   .imageWrapper.single {
-    max-height: 400px;
+    max-height: 300px;
   }
 
   .imageWrapper.single .image {
-    max-height: 400px;
+    max-height: 300px;
   }
 
   .imageWrapper.landscape {

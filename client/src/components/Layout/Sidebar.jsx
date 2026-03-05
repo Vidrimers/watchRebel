@@ -89,7 +89,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
       userStatus: newStatus 
     })).unwrap();
     // Перезагружаем ленту, чтобы показать новый пост со статусом
-    dispatch(fetchWall(user.id));
+    dispatch(fetchWall({ userId: user.id, limit: 20, offset: 0 }));
   };
 
   const handleDeleteStatus = async () => {
