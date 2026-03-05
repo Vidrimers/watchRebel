@@ -1,0 +1,225 @@
+/* Контейнер отзыва */
+.reviewDisplay {
+  background: transparent;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+/* Информация об авторе */
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.authorAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.authorAvatar:hover {
+  transform: scale(1.1);
+}
+
+.authorDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.authorName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-color, #6366f1);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.authorName:hover {
+  color: var(--primary-dark, #4f46e5);
+  text-decoration: underline;
+}
+
+.reviewDate {
+  font-size: 13px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.edited {
+  font-style: italic;
+}
+
+/* Рейтинг */
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-primary, #fff);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.ratingStars {
+  color: var(--rating-color, #fbbf24);
+  font-size: 24px;
+}
+
+.ratingNumber {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+/* Текст отзыва */
+.reviewText {
+  padding: 16px;
+  background: var(--bg-primary, #fff);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color, #6366f1);
+  margin-bottom: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary, #1f2937);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Кастомный скроллбар для отзыва */
+.reviewText::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reviewText::-webkit-scrollbar-track {
+  background: var(--bg-secondary, #f3f4f6);
+  border-radius: 4px;
+}
+
+.reviewText::-webkit-scrollbar-thumb {
+  background: var(--primary-color, #6366f1);
+  border-radius: 4px;
+}
+
+.reviewText::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark, #4f46e5);
+}
+
+/* Действия */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.goToMediaButton {
+  padding: 12px 24px;
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.goToMediaButton:hover {
+  background: var(--primary-dark, #4f46e5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.goToMediaButton:active {
+  transform: translateY(0);
+}
+
+/* Темная тема */
+[data-theme="dark"] .reviewDisplay,
+[data-theme="die-my-darling"] .reviewDisplay,
+[data-theme="cyberpunk"] .reviewDisplay,
+[data-theme="dark-neon-obsidian"] .reviewDisplay {
+  background: transparent;
+  border-color: var(--border-color, #444);
+}
+
+[data-theme="dark"] .rating,
+[data-theme="die-my-darling"] .rating,
+[data-theme="cyberpunk"] .rating,
+[data-theme="dark-neon-obsidian"] .rating {
+  background: var(--bg-primary, #1a1a1a);
+}
+
+[data-theme="dark"] .reviewText,
+[data-theme="die-my-darling"] .reviewText,
+[data-theme="cyberpunk"] .reviewText,
+[data-theme="dark-neon-obsidian"] .reviewText {
+  background: var(--bg-primary, #1a1a1a);
+  border-color: var(--primary-color, #6366f1);
+}
+
+[data-theme="dark"] .reviewText::-webkit-scrollbar-track,
+[data-theme="die-my-darling"] .reviewText::-webkit-scrollbar-track,
+[data-theme="cyberpunk"] .reviewText::-webkit-scrollbar-track,
+[data-theme="dark-neon-obsidian"] .reviewText::-webkit-scrollbar-track {
+  background: var(--bg-secondary, #2c2c2c);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .reviewDisplay {
+    padding: 16px;
+  }
+
+  .authorAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .authorName {
+    font-size: 15px;
+  }
+
+  .rating {
+    padding: 10px;
+  }
+
+  .ratingStars {
+    font-size: 20px;
+  }
+
+  .ratingNumber {
+    font-size: 18px;
+  }
+
+  .reviewText {
+    padding: 12px;
+    font-size: 14px;
+    max-height: 300px;
+  }
+
+  .goToMediaButton {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}

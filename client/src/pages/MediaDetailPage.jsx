@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { getMediaDetails } from '../store/slices/mediaSlice';
@@ -12,8 +12,9 @@ import {
   markEpisodeWatched,
   fetchRatings
 } from '../store/slices/listsSlice';
+import { fetchUserReview, fetchReviewByPost } from '../store/slices/reviewsSlice';
 import { fetchWall } from '../store/slices/wallSlice';
-import { EpisodeTracker, RatingSelector } from '../components/Media';
+import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../components/Media';
 import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
@@ -23,9 +24,11 @@ import styles from './MediaDetailPage.module.css';
  * Детальная страница медиа-контента
  * Отображает полную информацию о фильме/сериале
  * Позволяет добавлять в списки, оценивать, отслеживать прогресс
+ * Поддерживает режим просмотра отзыва другого пользователя
  */
 const MediaDetailPage = () => {
   const { mediaType, mediaId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { alertDialog, showAlert } = useAlert();
@@ -33,6 +36,7 @@ const MediaDetailPage = () => {
   const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
   const { customLists, episodeProgress, ratings, watchlist } = useAppSelector((state) => state.lists);
   const { user } = useAppSelector((state) => state.auth);
+  const { userReviews, currentReview } = useAppSelector((state) => state.reviews);
 
   const [selectedListId, setSelectedListId] = useState('');
   const [showListSelector, setShowListSelector] = useState(false);
@@ -40,12 +44,28 @@ const MediaDetailPage = () => {
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
 
+  // Проверяем режим просмотра отзыва
+  const reviewPostId = searchParams.get('reviewPost');
+  const isReviewMode = !!reviewPostId;
+
   // Загрузка данных при монтировании
   useEffect(() => {
     if (mediaType && mediaId && user) {
       dispatch(getMediaDetails({ type: mediaType, id: mediaId }));
       dispatch(fetchLists());
       dispatch(fetchRatings(user.id));
+
+      // Если режим просмотра отзыва - загружаем отзыв по postId
+      if (reviewPostId) {
+        dispatch(fetchReviewByPost(reviewPostId));
+      } else {
+        // Иначе загружаем отзыв текущего пользователя
+        dispatch(fetchUserReview({
+          userId: user.id,
+          tmdbId: parseInt(mediaId),
+          mediaType
+        }));
+      }
       
       // Для сериалов загружаем прогресс
       if (mediaType === 'tv') {
@@ -228,6 +248,10 @@ const MediaDetailPage = () => {
   // Получаем текущий рейтинг пользователя
   const currentRating = ratings[mediaId] || null;
 
+  // Получаем существующий отзыв пользователя
+  const reviewKey = `${mediaId}_${mediaType}`;
+  const existingReview = userReviews[reviewKey] || null;
+
   // Проверяем, в каком списке находится элемент
   const isInWatchlist = watchlist.some(
     item => item.tmdbId === parseInt(mediaId) && item.mediaType === (selectedMedia.media_type || mediaType)
@@ -394,27 +418,85 @@ const MediaDetailPage = () => {
               </div>
             )}
 
-            {/* Компонент рейтинга */}
-            <RatingSelector
-              media={{
-                tmdbId: selectedMedia.id,
-                mediaType: selectedMedia.media_type || mediaType,
-                title: selectedMedia.title || selectedMedia.name
-              }}
-              currentRating={currentRating}
-              isInList={!!currentList}
-              onRatingSet={async (rating) => {
-                // Перезагружаем стену пользователя чтобы обновить пост с рейтингом
-                if (user) {
-                  dispatch(fetchWall({ userId: user.id, limit: 20, offset: 0 }));
-                }
-                
-                await showAlert({
-                  title: 'Оценка сохранена!',
-                  message: `Оценка ${rating}/10 добавлена`,
-                  type: 'success'
-                });
-              }}
+            {/* Компонент рейтинга - скрываем в режиме просмотра отзыва */}
+            {!isReviewMode && (
+              <RatingSelector
+                media={{
+                  tmdbId: selectedMedia.id,
+                  mediaType: selectedMedia.media_type || mediaType,
+                  title: selectedMedia.title || selectedMedia.name
+                }}
+                currentRating={currentRating}
+                isInList={!!currentList}
+                onRatingSet={async (rating) => {
+                  // Перезагружаем стену пользователя чтобы обновить пост с рейтингом
+                  if (user) {
+                    dispatch(fetchWall({ userId: user.id, limit: 20, offset: 0 }));
+                  }
+                  
+                  await showAlert({
+                    title: 'Оценка сохранена!',
+                    message: `Оценка ${rating}/10 добавлена`,
+                    type: 'success'
+                  });
+                }}
+              />
+            )}
+
+            {/* Режим просмотра отзыва другого пользователя */}
+            {isReviewMode && currentReview ? (
+              <ReviewDisplay
+                review={currentReview}
+                media={{
+                  tmdbId: selectedMedia.id,
+                  mediaType: selectedMedia.media_type || mediaType,
+                  title: selectedMedia.title || selectedMedia.name
+                }}
+                onGoToMediaPage={() => {
+                  // Переход на обычную страницу фильма без параметра reviewPost
+                  navigate(`/media/${mediaType}/${mediaId}`);
+                }}
+              />
+            ) : (
+              /* Обычный режим - компонент отзыва текущего пользователя */
+              <ReviewEditor
+                media={{
+                  tmdbId: selectedMedia.id,
+                  mediaType: selectedMedia.media_type || mediaType,
+                  title: selectedMedia.title || selectedMedia.name
+                }}
+                isInList={!!currentList}
+                currentRating={currentRating}
+                existingReview={existingReview}
+                onReviewPublished={async () => {
+                  // Перезагружаем отзыв для отображения на странице
+                  if (user) {
+                    dispatch(fetchUserReview({
+                      userId: user.id,
+                      tmdbId: parseInt(mediaId),
+                      mediaType
+                    }));
+                  }
+                  // Стена обновится автоматически через WebSocket
+                  
+                  await showAlert({
+                    title: 'Отзыв опубликован!',
+                    message: 'Ваш отзыв успешно опубликован на стене',
+                    type: 'success'
+                  });
+                }}
+                onReviewDeleted={async () => {
+                  // Стена обновится автоматически через WebSocket
+                  // Отзыв уже удален из Redux state в reviewsSlice
+                  
+                  await showAlert({
+                    title: 'Отзыв удален',
+                    message: 'Ваш отзыв успешно удален',
+                    type: 'success'
+                  });
+                }}
+              />
+            )}
             />
           </div>
         </div>

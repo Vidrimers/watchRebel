@@ -44,6 +44,28 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
         dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
       }
     }
+    // Обновление содержимого поста (редактирование)
+    else if (data.type === 'post_updated') {
+      const updatedPost = data.post;
+      
+      // Если это пост на текущей стене
+      if (updatedPost.wallOwnerId === userId) {
+        // Перезагружаем стену
+        dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
+      }
+    }
+    // Удаление поста
+    else if (data.type === 'post_deleted') {
+      const { postId } = data;
+      
+      // Проверяем, есть ли этот пост на текущей стене
+      const postExists = posts.some(post => post.id === postId);
+      
+      if (postExists) {
+        // Перезагружаем стену
+        dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
+      }
+    }
     // Обновление поста (реакция или комментарий)
     else if (data.type === 'feed_post_update') {
       const { postId, updateType, data: updateData } = data;

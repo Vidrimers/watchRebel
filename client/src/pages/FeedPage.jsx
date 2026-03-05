@@ -48,6 +48,26 @@ const FeedPage = () => {
         // Для постов друзей - увеличиваем счетчик
         setNewPostsCount(prev => prev + 1);
       }
+    } else if (data.type === 'post_updated') {
+      // Обновление содержимого поста (редактирование)
+      const updatedPost = data.post;
+      
+      setItems(prevPosts => {
+        return prevPosts.map(post => {
+          if (post.id === updatedPost.id) {
+            // Обновляем пост полностью
+            return { ...post, ...updatedPost };
+          }
+          return post;
+        });
+      });
+    } else if (data.type === 'post_deleted') {
+      // Удаление поста
+      const { postId } = data;
+      
+      setItems(prevPosts => {
+        return prevPosts.filter(post => post.id !== postId);
+      });
     } else if (data.type === 'feed_post_update') {
       // Обновление поста (реакция или комментарий)
       const { postId, updateType, data: updateData } = data;

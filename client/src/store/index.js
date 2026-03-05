@@ -6,6 +6,7 @@ import wallReducer from './slices/wallSlice';
 import notificationsReducer from './slices/notificationsSlice';
 import themeReducer from './slices/themeSlice';
 import messagesReducer from './slices/messagesSlice';
+import reviewsReducer from './slices/reviewsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,7 +16,8 @@ export const store = configureStore({
     wall: wallReducer,
     notifications: notificationsReducer,
     theme: themeReducer,
-    messages: messagesReducer
+    messages: messagesReducer,
+    reviews: reviewsReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

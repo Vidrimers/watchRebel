@@ -250,3 +250,107 @@ export async function notifyFeedPostUpdate(postId, updateType, data) {
     console.error('Ошибка отправки уведомления об обновлении поста:', error);
   }
 }
+
+/**
+ * Отправить уведомление об обновлении содержимого поста (редактирование)
+ */
+export async function notifyPostUpdated(authorId, updatedPost) {
+  try {
+    // Получаем список друзей автора поста
+    const friendsResult = await executeQuery(
+      `SELECT DISTINCT 
+        CASE 
+          WHEN user_id = ? THEN friend_id 
+          ELSE user_id 
+        END as friend_id
+       FROM friends 
+       WHERE user_id = ? OR friend_id = ?`,
+      [authorId, authorId, authorId]
+    );
+
+    if (!friendsResult.success) {
+      console.error('Ошибка получения списка друзей для уведомления об обновлении поста');
+      return;
+    }
+
+    const friends = friendsResult.data;
+    console.log(`📝 Отправка уведомления об обновлении поста ${friends.length} друзьям`);
+
+    // Собираем всех получателей: друзья + сам автор
+    const recipients = new Set();
+    
+    // Добавляем друзей
+    friends.forEach(friend => {
+      recipients.add(friend.friend_id);
+    });
+    
+    // Добавляем самого автора (чтобы пост обновился в его ленте и на стене)
+    recipients.add(authorId);
+
+    // Отправляем уведомление каждому получателю
+    recipients.forEach(recipientId => {
+      const ws = clients.get(recipientId);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'post_updated',
+          post: updatedPost
+        }));
+        console.log(`✅ Уведомление об обновлении поста отправлено пользователю ${recipientId}`);
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об обновлении поста:', error);
+  }
+}
+
+/**
+ * Отправить уведомление об удалении поста
+ */
+export async function notifyPostDeleted(authorId, postId) {
+  try {
+    // Получаем список друзей автора поста
+    const friendsResult = await executeQuery(
+      `SELECT DISTINCT 
+        CASE 
+          WHEN user_id = ? THEN friend_id 
+          ELSE user_id 
+        END as friend_id
+       FROM friends 
+       WHERE user_id = ? OR friend_id = ?`,
+      [authorId, authorId, authorId]
+    );
+
+    if (!friendsResult.success) {
+      console.error('Ошибка получения списка друзей для уведомления об удалении поста');
+      return;
+    }
+
+    const friends = friendsResult.data;
+    console.log(`🗑️ Отправка уведомления об удалении поста ${friends.length} друзьям`);
+
+    // Собираем всех получателей: друзья + сам автор
+    const recipients = new Set();
+    
+    // Добавляем друзей
+    friends.forEach(friend => {
+      recipients.add(friend.friend_id);
+    });
+    
+    // Добавляем самого автора (чтобы пост удалился из его ленты и стены)
+    recipients.add(authorId);
+
+    // Отправляем уведомление каждому получателю
+    recipients.forEach(recipientId => {
+      const ws = clients.get(recipientId);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'post_deleted',
+          postId
+        }));
+        console.log(`✅ Уведомление об удалении поста отправлено пользователю ${recipientId}`);
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об удалении поста:', error);
+  }
+}

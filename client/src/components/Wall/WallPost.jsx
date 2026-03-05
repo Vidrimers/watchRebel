@@ -615,28 +615,66 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         );
 
       case 'review':
+        // Парсим контент отзыва - первая строка это название фильма
+        const reviewLines = post.content ? post.content.split('\n') : [];
+        const reviewMovieTitle = reviewLines[0] || '';
+        const reviewText = reviewLines.slice(1).join('\n').trim() || '';
+        
         return (
-          <div className={styles.reviewContent}>
-            <p className={styles.actionText}>
-              ✍️ Написал{isOwnProfile ? '' : 'а'} отзыв
-            </p>
-            {post.tmdbId && (
-              <div 
-                className={styles.mediaInfo}
-                onClick={handleMediaClick}
-              >
-                <div className={styles.mediaDetails}>
-                  <h4 className={styles.mediaTitle}>
-                    {post.mediaType === 'movie' ? 'Фильм' : 'Сериал'} (ID: {post.tmdbId})
-                  </h4>
+          <div 
+            className={styles.reviewContent}
+            onClick={() => {
+              if (!isModal && post.tmdbId && post.mediaType) {
+                navigate(`/media/${post.mediaType}/${post.tmdbId}?reviewPost=${post.id}`);
+              }
+            }}
+            style={{ cursor: isModal ? 'default' : 'pointer' }}
+          >
+            {post.posterPath && (
+              <div className={styles.mediaPoster}>
+                <img 
+                  src={
+                    post.posterPath.startsWith('/uploads/') 
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.posterPath}`
+                      : `https://image.tmdb.org/t/p/w185${post.posterPath}`
+                  }
+                  alt="Постер"
+                  className={styles.posterImage}
+                />
+              </div>
+            )}
+            <div className={styles.mediaTextContent}>
+              <h4 className={styles.movieTitle}>
+                {reviewMovieTitle}
+              </h4>
+              {reviewText && (
+                <div className={styles.reviewTextContent}>
+                  <LinkifiedText text={reviewText} />
                 </div>
+              )}
+              {/* Отображение рейтинга если есть */}
+              {post.rating && (
+                <div className={styles.postRating}>
+                  <span className={styles.ratingStars}>★</span>
+                  <span className={styles.ratingNumber}>{post.rating}/10</span>
+                </div>
+              )}
+              <div className={styles.mediaBottomRow}>
+                {post.tmdbId && (
+                  <div className={styles.mediaTypeLabel}>
+                    {post.mediaType === 'movie' ? (
+                      <>
+                        <Icon name="movies" size="small" /> Фильм
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="tv" size="small" /> Сериал
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-            {post.content && (
-              <div className={styles.reviewText}>
-                <LinkifiedText text={cleanContent(post.content)} />
-              </div>
-            )}
+            </div>
           </div>
         );
 

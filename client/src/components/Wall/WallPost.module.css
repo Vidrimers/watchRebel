@@ -404,7 +404,57 @@
   color: var(--text-primary, #1f2937);
 }
 
-/* Отзыв */
+/* Пост с отзывом */
+.reviewContent {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  cursor: pointer;
+  padding: 20px;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.reviewContent:hover {
+  background: var(--bg-hover, #f3f4f6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.reviewContent:hover .posterImage {
+  transform: scale(1.05);
+}
+
+.reviewTextContent {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--bg-primary, #fff);
+  border-left: 3px solid var(--primary-color, #6366f1);
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.reviewTextContent p {
+  margin: 0;
+  color: var(--text-primary, #1f2937);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Темная тема для отзыва */
+[data-theme="dark"] .reviewTextContent,
+[data-theme="die-my-darling"] .reviewTextContent,
+[data-theme="cyberpunk"] .reviewTextContent,
+[data-theme="dark-neon-obsidian"] .reviewTextContent {
+  background: var(--bg-secondary, #2c2c2c);
+  border-color: var(--primary-color, #6366f1);
+}
+
+/* Старый стиль reviewText (оставляем для совместимости) */
 .reviewText {
   margin-top: 12px;
   padding: 12px;
