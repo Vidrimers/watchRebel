@@ -561,3 +561,272 @@
   border-radius: 20px;
   white-space: nowrap;
 }
+
+/* ========================================
+   АДАПТИВНОСТЬ
+   ======================================== */
+
+/* Планшеты */
+@media (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+  }
+
+  .messagesContainer {
+    padding: 0.75rem;
+  }
+
+  .message {
+    max-width: 75%;
+  }
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .headerName {
+    font-size: 1.1rem;
+  }
+
+  .headerAvatarImage,
+  .headerAvatarPlaceholder {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .messagesContainer {
+    padding: 0.5rem;
+  }
+
+  .message {
+    max-width: 85%;
+  }
+
+  .messageAvatarImage,
+  .messageAvatarPlaceholder {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .messageBubble {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.875rem;
+  }
+
+  .messageText {
+    font-size: 0.875rem;
+  }
+
+  .messageTime {
+    font-size: 0.7rem;
+  }
+
+  .deleteButton {
+    font-size: 1.1rem;
+  }
+
+  .inputForm {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 1.25rem;
+  }
+
+  .sendButton,
+  .attachButton {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .scrollDownButton {
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+    bottom: 0.75rem;
+    right: 0.75rem;
+  }
+
+  /* Превью файлов */
+  .filesPreview {
+    gap: 0.375rem;
+    padding: 0.375rem;
+  }
+
+  .filePreviewItem {
+    max-width: 80px;
+    padding: 0.375rem;
+  }
+
+  .filePreviewImage {
+    width: 64px;
+    height: 64px;
+  }
+
+  .filePreviewIcon {
+    font-size: 1.5rem;
+  }
+
+  .filePreviewName {
+    font-size: 0.7rem;
+  }
+
+  /* Вложения */
+  .attachmentImage {
+    max-width: 250px;
+    max-height: 250px;
+  }
+
+  .attachmentFile {
+    padding: 0.375rem;
+  }
+
+  .attachmentIcon {
+    font-size: 1.25rem;
+  }
+
+  .attachmentName {
+    font-size: 0.8125rem;
+  }
+
+  /* Модалка изображений */
+  .imageModal {
+    padding: 1rem;
+  }
+
+  .imageModalImage {
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+
+  .imageModalClose {
+    top: -35px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.75rem;
+  }
+
+  .imageModalPrev,
+  .imageModalNext {
+    width: 44px;
+    height: 44px;
+    font-size: 1.75rem;
+  }
+
+  .imageModalPrev {
+    left: -50px;
+  }
+
+  .imageModalNext {
+    right: -50px;
+  }
+
+  .imageModalInfo {
+    bottom: -45px;
+  }
+
+  .imageModalCounter,
+  .imageModalDimensions {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Маленькие мобильные */
+@media (max-width: 480px) {
+  .header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .headerName {
+    font-size: 1rem;
+  }
+
+  .headerAvatarImage,
+  .headerAvatarPlaceholder {
+    width: 32px;
+    height: 32px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .messageAvatarImage,
+  .messageAvatarPlaceholder {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .messageBubble {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .messageText {
+    font-size: 0.8125rem;
+  }
+
+  .inputForm {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .input {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8125rem;
+  }
+
+  .sendButton,
+  .attachButton {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .scrollDownButton {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+  }
+
+  .attachmentImage {
+    max-width: 200px;
+    max-height: 200px;
+  }
+
+  /* Модалка на маленьких экранах */
+  .imageModalPrev,
+  .imageModalNext {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .imageModalPrev {
+    left: 5px;
+  }
+
+  .imageModalNext {
+    right: 5px;
+  }
+
+  .imageModalClose {
+    top: 10px;
+    right: 10px;
+  }
+
+  .imageModalInfo {
+    flex-direction: column;
+    gap: 0.25rem;
+    bottom: 10px;
+  }
+}

@@ -100,6 +100,14 @@ router.get('/:userId', async (req, res) => {
           order: img.order
         })) : [];
 
+        // Получаем общее количество комментариев (включая ответы)
+        const commentsCountResult = await executeQuery(
+          'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ?',
+          [post.id]
+        );
+
+        const commentsCount = commentsCountResult.success ? commentsCountResult.data[0].total : 0;
+
         // Парсим image_urls для объявлений (JSON массив)
         let imageUrls = [];
         if (post.image_urls) {
@@ -126,6 +134,7 @@ router.get('/:userId', async (req, res) => {
           createdAt: post.created_at,
           editedAt: post.edited_at,
           isPinned, // Добавляем флаг закрепленного поста
+          commentsCount, // Общее количество комментариев (включая ответы)
           author: {
             id: post.author_id,
             displayName: post.author_display_name,
@@ -1553,6 +1562,14 @@ router.get('/:postId/comments', optionalAuth, async (req, res) => {
 
     const total = countResult.success ? countResult.data[0].total : 0;
 
+    // Получаем общее количество ВСЕХ комментариев (включая ответы)
+    const totalWithRepliesResult = await executeQuery(
+      'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ?',
+      [postId]
+    );
+
+    const totalWithReplies = totalWithRepliesResult.success ? totalWithRepliesResult.data[0].total : 0;
+
     // Определяем ORDER BY в зависимости от sortBy
     let orderByClause;
     switch (sortBy) {
@@ -1645,7 +1662,8 @@ router.get('/:postId/comments', optionalAuth, async (req, res) => {
 
     res.json({
       comments: commentsWithLikes,
-      total,
+      total, // Количество комментариев первого уровня (для пагинации)
+      totalWithReplies, // Общее количество всех комментариев (включая ответы)
       hasMore,
       limit,
       offset,

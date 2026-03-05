@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import WallPost from './WallPost';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './WallPostModal.module.css';
 
 /**
@@ -14,6 +15,65 @@ const WallPostModal = ({ postId, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const modalRef = useRef(null);
+
+  // WebSocket обработчик для обновления поста в реальном времени
+  const handleWebSocketMessage = useCallback((data) => {
+    // Обновление поста (реакция или комментарий)
+    if (data.type === 'feed_post_update' && post) {
+      const { postId, updateType, data: updateData } = data;
+      
+      // Проверяем, что это наш пост
+      if (postId === post.id) {
+        if (updateType === 'comment') {
+          // Увеличиваем счётчик комментариев
+          setPost(prevPost => ({
+            ...prevPost,
+            commentsCount: (prevPost.commentsCount || 0) + 1
+          }));
+        } else if (updateType === 'reaction') {
+          // Обновляем реакции
+          setPost(prevPost => {
+            const existingReactionIndex = prevPost.reactions?.findIndex(
+              r => r.userId === updateData.userId
+            );
+            
+            const updatedReactions = prevPost.reactions ? [...prevPost.reactions] : [];
+            
+            if (existingReactionIndex >= 0) {
+              // Обновляем существующую реакцию
+              updatedReactions[existingReactionIndex] = {
+                id: updateData.reactionId,
+                userId: updateData.userId,
+                emoji: updateData.emoji,
+                user: updateData.user
+              };
+            } else {
+              // Добавляем новую реакцию
+              updatedReactions.push({
+                id: updateData.reactionId,
+                userId: updateData.userId,
+                emoji: updateData.emoji,
+                user: updateData.user
+              });
+            }
+            
+            return { ...prevPost, reactions: updatedReactions };
+          });
+        }
+      }
+    }
+  }, [post]);
+
+  // Подключаем WebSocket обработчик
+  useEffect(() => {
+    if (isOpen && post) {
+      addMessageHandler(handleWebSocketMessage);
+      
+      return () => {
+        removeMessageHandler(handleWebSocketMessage);
+      };
+    }
+  }, [isOpen, post, handleWebSocketMessage]);
 
   useEffect(() => {
     if (isOpen && postId) {

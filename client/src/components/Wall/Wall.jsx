@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchWall, loadMoreWall, createPost } from '../../store/slices/wallSlice';
+import { fetchWall, loadMoreWall, createPost, incrementCommentsCount } from '../../store/slices/wallSlice';
 import WallPost from './WallPost';
 import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './Wall.module.css';
 import axios from 'axios';
 
@@ -30,6 +31,31 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
     }
   }, [dispatch, userId]);
+
+  // WebSocket обработчик для обновления постов в реальном времени
+  const handleWebSocketMessage = useCallback((data) => {
+    // Обновление поста (реакция или комментарий)
+    if (data.type === 'feed_post_update') {
+      const { postId, updateType } = data;
+      
+      // Проверяем, есть ли этот пост на текущей стене
+      const postExists = posts.some(post => post.id === postId);
+      
+      if (postExists && updateType === 'comment') {
+        // Увеличиваем счётчик комментариев для этого поста
+        dispatch(incrementCommentsCount({ postId }));
+      }
+    }
+  }, [posts, dispatch]);
+
+  // Подключаем WebSocket обработчик
+  useEffect(() => {
+    addMessageHandler(handleWebSocketMessage);
+    
+    return () => {
+      removeMessageHandler(handleWebSocketMessage);
+    };
+  }, [handleWebSocketMessage]);
 
   // Обработчик загрузки ещё постов
   const handleLoadMore = () => {

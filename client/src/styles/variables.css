@@ -72,3 +72,99 @@
   --avatar-xl: 96px;
   --avatar-2xl: 128px;
 }
+
+/* ========================================
+   АДАПТИВНЫЕ CSS ПЕРЕМЕННЫЕ
+   ======================================== */
+
+/* Планшеты и небольшие десктопы (до 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    /* Уменьшаем отступы */
+    --spacing-lg: 20px;
+    --spacing-xl: 28px;
+    --spacing-2xl: 40px;
+
+    /* Уменьшаем размеры шрифтов */
+    --font-size-2xl: 22px;
+    --font-size-3xl: 28px;
+    --font-size-4xl: 32px;
+
+    /* Уменьшаем максимальные ширины */
+    --max-width-wall: 1100px;
+    --max-width-content: 1000px;
+  }
+}
+
+/* Мобильные устройства (до 768px) */
+@media (max-width: 768px) {
+  :root {
+    /* Компактные отступы для мобильных */
+    --spacing-sm: 6px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+
+    /* Меньшие радиусы скругления */
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+
+    /* Адаптивные размеры шрифтов */
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-2xl: 20px;
+    --font-size-3xl: 24px;
+    --font-size-4xl: 28px;
+
+    /* Меньшие аватары на мобильных */
+    --avatar-md: 40px;
+    --avatar-lg: 56px;
+    --avatar-xl: 80px;
+    --avatar-2xl: 100px;
+
+    /* Убираем ограничения ширины на мобильных */
+    --max-width-wall: 100%;
+    --max-width-sidebar: 100%;
+    --max-width-content: 100%;
+  }
+}
+
+/* Маленькие мобильные устройства (до 480px) */
+@media (max-width: 480px) {
+  :root {
+    /* Минимальные отступы */
+    --spacing-xs: 3px;
+    --spacing-sm: 5px;
+    --spacing-md: 10px;
+    --spacing-lg: 14px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 28px;
+
+    /* Минимальные радиусы */
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 10px;
+
+    /* Компактные шрифты */
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-base: 13px;
+    --font-size-lg: 15px;
+    --font-size-xl: 17px;
+    --font-size-2xl: 18px;
+    --font-size-3xl: 22px;
+    --font-size-4xl: 26px;
+
+    /* Компактные аватары */
+    --avatar-xs: 20px;
+    --avatar-sm: 28px;
+    --avatar-md: 36px;
+    --avatar-lg: 48px;
+    --avatar-xl: 64px;
+    --avatar-2xl: 80px;
+  }
+}

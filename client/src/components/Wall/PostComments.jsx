@@ -14,20 +14,25 @@ import styles from './PostComments.module.css';
  * @param {boolean} isOpen - Открыта ли форма комментирования
  * @param {Function} onClose - Callback для закрытия формы
  * @param {Function} onCommentAdded - Callback при добавлении комментария
+ * @param {number} externalCommentsCount - Внешний счётчик комментариев (из WebSocket)
  */
-const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
+const PostComments = ({ postId, isOpen, onClose, onCommentAdded, externalCommentsCount }) => {
   const currentUser = useAppSelector((state) => state.auth.user);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(0); // Количество комментариев первого уровня (для пагинации)
+  const [totalWithReplies, setTotalWithReplies] = useState(0); // Общее количество всех комментариев (для отображения)
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [sortBy, setSortBy] = useState('default');
+
+  // Используем внешний счётчик если он передан, иначе локальный
+  const displayCommentsCount = externalCommentsCount !== undefined ? externalCommentsCount : totalWithReplies;
 
   // Функция склонения слова "комментарий"
   const getCommentsText = (count) => {
@@ -89,6 +94,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       }
 
       setTotal(response.data.total);
+      setTotalWithReplies(response.data.totalWithReplies || response.data.total); // Fallback на total если totalWithReplies отсутствует
       setHasMore(response.data.hasMore);
     } catch (error) {
       // Если пост не найден (404) - не показываем ошибку, просто не загружаем комментарии
@@ -113,7 +119,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
 
   // Перезагрузка комментариев при изменении сортировки
   useEffect(() => {
-    if (total > 0) {
+    if (totalWithReplies > 0) {
       loadComments(true);
     }
   }, [sortBy]);
@@ -333,7 +339,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
   };
 
   // Показываем компонент если форма открыта ИЛИ есть комментарии
-  if (!isOpen && total === 0) {
+  if (!isOpen && displayCommentsCount === 0) {
     return null;
   }
 
@@ -472,10 +478,10 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       )}
 
       {/* Счетчик комментариев и сортировка */}
-      {total > 0 && (
+      {displayCommentsCount > 0 && (
         <div className={styles.commentsHeader}>
           <span className={styles.commentsCount}>
-            <Icon name="message" size="small" /> {total} {getCommentsText(total)}
+            <Icon name="message" size="small" /> {displayCommentsCount} {getCommentsText(displayCommentsCount)}
           </span>
           
           <div className={styles.sortWrapper} ref={sortDropdownRef}>
@@ -554,7 +560,7 @@ const PostComments = ({ postId, isOpen, onClose, onCommentAdded }) => {
       )}
 
       {/* Список комментариев */}
-      {total > 0 && (
+      {totalWithReplies > 0 && (
         <div className={styles.commentsList}>
           {comments.map((comment) => (
             <PostComment

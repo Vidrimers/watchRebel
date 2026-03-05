@@ -69,6 +69,7 @@ const FeedPage = () => {
               return { ...post, reactions: updatedReactions };
             } else if (updateType === 'comment') {
               // Увеличиваем счетчик комментариев
+              console.log(`📊 FeedPage: Получено WebSocket событие comment для поста ${postId}, старый count: ${post.commentsCount || 0}`);
               return { 
                 ...post, 
                 commentsCount: (post.commentsCount || 0) + 1 

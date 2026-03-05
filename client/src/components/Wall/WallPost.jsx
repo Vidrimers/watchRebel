@@ -87,28 +87,37 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
     }));
   };
 
-  // Загрузка количества комментариев (не для объявлений)
+  // Загрузка и синхронизация количества комментариев (не для объявлений)
   useEffect(() => {
-    // Пропускаем загрузку для объявлений
+    // Пропускаем для объявлений
     if (isAnnouncement) return;
 
-    const loadCommentsCount = async () => {
-      try {
-        const response = await api.get(`/wall/${post.id}/comments`, {
-          params: { limit: 1, offset: 0 }
-        });
-        setCommentsCount(response.data.total || 0);
-      } catch (error) {
-        console.error('Ошибка загрузки количества комментариев:', error);
-      }
-    };
+    // Если commentsCount есть в post (пришёл с сервера или обновлён через WebSocket)
+    if (post.commentsCount !== undefined) {
+      console.log(`📊 WallPost ${post.id}: Обновление commentsCount с ${commentsCount} на ${post.commentsCount}`);
+      setCommentsCount(post.commentsCount);
+    } else {
+      // Иначе загружаем с сервера (для старых постов или при ошибке)
+      const loadCommentsCount = async () => {
+        try {
+          const response = await api.get(`/wall/${post.id}/comments`, {
+            params: { limit: 1, offset: 0 }
+          });
+          console.log(`📊 WallPost ${post.id}: Загружен commentsCount с сервера: ${response.data.totalWithReplies || 0}`);
+          setCommentsCount(response.data.totalWithReplies || 0);
+        } catch (error) {
+          console.error('Ошибка загрузки количества комментариев:', error);
+        }
+      };
 
-    loadCommentsCount();
-  }, [post.id, isAnnouncement]);
+      loadCommentsCount();
+    }
+  }, [post.id, post.commentsCount, isAnnouncement]);
 
   // Обработка добавления комментария
   const handleCommentAdded = () => {
-    setCommentsCount(prev => prev + 1);
+    // Обновление теперь идёт через WebSocket → Redux → useEffect
+    // Ничего не делаем здесь, всё обновится автоматически
   };
 
   // Обработка добавления реакции
@@ -891,6 +900,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           isOpen={showComments}
           onClose={() => setShowComments(false)}
           onCommentAdded={handleCommentAdded}
+          externalCommentsCount={commentsCount}
         />
       )}
     </div>

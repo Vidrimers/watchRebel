@@ -100,6 +100,13 @@ const wallSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    // Обновление счётчика комментариев для конкретного поста
+    incrementCommentsCount: (state, action) => {
+      const post = state.posts.find(p => p.id === action.payload.postId);
+      if (post) {
+        post.commentsCount = (post.commentsCount || 0) + 1;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -214,5 +221,5 @@ const wallSlice = createSlice({
   }
 });
 
-export const { clearError } = wallSlice.actions;
+export const { clearError, incrementCommentsCount } = wallSlice.actions;
 export default wallSlice.reducer;

@@ -172,6 +172,14 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           order: img.order
         })) : [];
 
+        // Получаем общее количество комментариев (включая ответы)
+        const commentsCountResult = await executeQuery(
+          'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ?',
+          [post.id]
+        );
+
+        const commentsCount = commentsCountResult.success ? commentsCountResult.data[0].total : 0;
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -183,6 +191,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           listId: post.list_id,
           createdAt: post.created_at,
           editedAt: post.edited_at,
+          commentsCount, // Общее количество комментариев (включая ответы)
           author: {
             id: post.author_id,
             displayName: post.author_display_name,

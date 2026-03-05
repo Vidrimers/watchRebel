@@ -204,9 +204,28 @@ export async function notifyFeedPostUpdate(postId, updateType, data) {
 
     const friends = friendsResult.data;
 
-    // Отправляем уведомление каждому другу
+    // Собираем всех получателей: друзья + автор поста + владелец стены + автор комментария
+    const recipients = new Set();
+    
+    // Добавляем друзей
     friends.forEach(friend => {
-      const ws = clients.get(friend.friend_id);
+      recipients.add(friend.friend_id);
+    });
+    
+    // Добавляем автора поста
+    recipients.add(post.user_id);
+    
+    // Добавляем владельца стены
+    recipients.add(post.wall_owner_id);
+    
+    // Добавляем автора комментария/реакции (если есть в data)
+    if (data.userId) {
+      recipients.add(data.userId);
+    }
+
+    // Отправляем уведомление каждому получателю
+    recipients.forEach(recipientId => {
+      const ws = clients.get(recipientId);
       if (ws && ws.readyState === 1) {
         ws.send(JSON.stringify({
           type: 'feed_post_update',
