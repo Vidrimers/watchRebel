@@ -1545,9 +1545,9 @@ router.get('/:postId/comments', optionalAuth, async (req, res) => {
       });
     }
 
-    // Получаем общее количество ВСЕХ комментариев (включая ответы)
+    // Получаем общее количество комментариев ПЕРВОГО УРОВНЯ (без ответов)
     const countResult = await executeQuery(
-      'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ?',
+      'SELECT COUNT(*) as total FROM post_comments WHERE post_id = ? AND parent_comment_id IS NULL',
       [postId]
     );
 
