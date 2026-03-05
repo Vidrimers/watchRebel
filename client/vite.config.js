@@ -32,6 +32,11 @@ export default defineConfig({
       '/webhook': {
         target: 'http://localhost:1313',
         changeOrigin: true
+      },
+      '/ws': {
+        target: 'ws://localhost:1313',
+        ws: true,
+        changeOrigin: true
       }
     }
   },
