@@ -189,14 +189,30 @@
 .commentImage {
   margin-top: 8px;
   margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .commentImageImg {
-  max-width: 100%;
-  max-height: 400px;
+  width: 100%;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s;
+  display: block;
+}
+
+/* Горизонтальное изображение */
+.commentImage.landscape .commentImageImg {
+  max-height: 250px;
+  object-fit: cover;
+}
+
+/* Вертикальное изображение */
+.commentImage.portrait .commentImageImg {
+  max-height: 300px;
+  object-fit: contain;
+  background: var(--bg-secondary, #f9fafb);
 }
 
 .commentImageImg:hover {

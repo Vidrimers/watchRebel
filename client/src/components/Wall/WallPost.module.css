@@ -837,14 +837,28 @@
 
 .announcementImage img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
   display: block;
 }
 
-/* Для одного изображения - больше высота */
-.announcementImages:has(.announcementImage:only-child) .announcementImage img {
-  height: 400px;
+/* Одиночное изображение - адаптивная высота */
+.announcementImageSingle img {
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  background: var(--bg-secondary, #f9fafb);
+}
+
+/* Горизонтальные изображения в галерее */
+.announcementImageLandscape img {
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Вертикальные изображения в галерее */
+.announcementImagePortrait img {
+  height: 350px;
+  object-fit: contain;
+  background: var(--bg-secondary, #f9fafb);
 }
 
 /* Адаптивность для мобильных */
@@ -853,12 +867,16 @@
     grid-template-columns: 1fr !important;
   }
   
-  .announcementImage img {
-    height: 250px;
+  .announcementImageSingle img {
+    max-height: 400px;
   }
   
-  .announcementImages:has(.announcementImage:only-child) .announcementImage img {
-    height: 300px;
+  .announcementImageLandscape img {
+    height: 150px;
+  }
+  
+  .announcementImagePortrait img {
+    height: 250px;
   }
 }
 

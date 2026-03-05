@@ -422,6 +422,13 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
     return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
   };
 
+  // Обработчик загрузки изображения комментария для определения ориентации
+  const handleCommentImageLoad = (event) => {
+    const img = event.target;
+    const isPortrait = img.naturalHeight > img.naturalWidth;
+    setCommentImageOrientation(isPortrait ? 'portrait' : 'landscape');
+  };
+
   const paddingLeft = 0; // Убираем динамические отступы
 
   // Переход на страницу пользователя
@@ -436,6 +443,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
   const [parentTooltipPosition, setParentTooltipPosition] = useState({ x: 0, y: 0 });
   const [parentComment, setParentComment] = useState(null);
   const [loadingParentComment, setLoadingParentComment] = useState(false);
+  const [commentImageOrientation, setCommentImageOrientation] = useState('landscape');
   const parentNameRef = useRef(null);
   const parentTooltipTimeoutRef = useRef(null);
   const hideParentTooltipTimeoutRef = useRef(null);
@@ -609,7 +617,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
               
               {/* Изображение комментария */}
               {!isDeleted && !isServerDeleted && comment.imageUrl && (
-                <div className={styles.commentImage}>
+                <div className={`${styles.commentImage} ${styles[commentImageOrientation]}`}>
                   <img 
                     src={comment.imageUrl.startsWith('http') 
                       ? comment.imageUrl 
@@ -618,6 +626,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
                     alt="Изображение комментария"
                     className={styles.commentImageImg}
                     onClick={() => setShowImageModal(true)}
+                    onLoad={handleCommentImageLoad}
                   />
                 </div>
               )}

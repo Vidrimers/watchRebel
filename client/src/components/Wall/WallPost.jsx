@@ -44,6 +44,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(0);
+  const [announcementImageOrientations, setAnnouncementImageOrientations] = useState({});
 
   // Функция склонения слова "комментарий"
   const getCommentsText = (count) => {
@@ -69,6 +70,16 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
   const handleImageClick = (index) => {
     setGalleryStartIndex(index);
     setShowGallery(true);
+  };
+
+  // Обработчик загрузки изображения объявления для определения ориентации
+  const handleAnnouncementImageLoad = (index, event) => {
+    const img = event.target;
+    const isPortrait = img.naturalHeight > img.naturalWidth;
+    setAnnouncementImageOrientations(prev => ({
+      ...prev,
+      [index]: isPortrait ? 'portrait' : 'landscape'
+    }));
   };
 
   // Загрузка количества комментариев
@@ -426,18 +437,27 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, isFeedView = false, is
             {/* Галерея изображений объявления */}
             {post.imageUrls && post.imageUrls.length > 0 && (
               <div className={styles.announcementImages}>
-                {post.imageUrls.map((imageUrl, index) => (
-                  <div 
-                    key={index} 
-                    className={styles.announcementImage}
-                    onClick={() => handleImageClick(index)}
-                  >
-                    <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
-                      alt={`Изображение ${index + 1}`} 
-                    />
-                  </div>
-                ))}
+                {post.imageUrls.map((imageUrl, index) => {
+                  const orientation = announcementImageOrientations[index] || 'landscape';
+                  const imageCount = post.imageUrls.length;
+                  const orientationClass = imageCount === 1 
+                    ? styles.announcementImageSingle 
+                    : (orientation === 'portrait' ? styles.announcementImagePortrait : styles.announcementImageLandscape);
+
+                  return (
+                    <div 
+                      key={index} 
+                      className={`${styles.announcementImage} ${orientationClass}`}
+                      onClick={() => handleImageClick(index)}
+                    >
+                      <img 
+                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
+                        alt={`Изображение ${index + 1}`}
+                        onLoad={(e) => handleAnnouncementImageLoad(index, e)}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
