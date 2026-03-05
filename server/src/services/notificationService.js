@@ -911,3 +911,118 @@ export default {
   notifyPostCommentReply,
   notifyCommentLike
 };
+
+/**
+ * Отправить уведомления друзьям о новом отзыве
+ * @param {string} authorId - ID автора отзыва
+ * @param {number} tmdbId - ID фильма/сериала в TMDb
+ * @param {string} mediaType - Тип медиа ('movie' | 'tv')
+ * @param {string} mediaTitle - Название фильма/сериала
+ * @param {string} postId - ID поста с отзывом
+ * @returns {Promise<Object>} - Результат отправки уведомлений
+ */
+export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, mediaTitle, postId) {
+  try {
+    // Получаем информацию об авторе
+    const authorResult = await executeQuery(
+      'SELECT id, display_name, telegram_username FROM users WHERE id = ?',
+      [authorId]
+    );
+
+    if (!authorResult.success || authorResult.data.length === 0) {
+      console.error('Автор отзыва не найден');
+      return { success: false, error: 'Автор не найден' };
+    }
+
+    const author = authorResult.data[0];
+    const authorName = author.display_name || author.telegram_username || 'Пользователь';
+
+    // Получаем список друзей автора
+    const friendsResult = await executeQuery(
+      `SELECT DISTINCT 
+        CASE 
+          WHEN user_id = ? THEN friend_id 
+          ELSE user_id 
+        END as friend_id
+       FROM friends 
+       WHERE user_id = ? OR friend_id = ?`,
+      [authorId, authorId, authorId]
+    );
+
+    if (!friendsResult.success) {
+      console.error('Ошибка получения списка друзей:', friendsResult.error);
+      return { success: false, error: friendsResult.error };
+    }
+
+    if (friendsResult.data.length === 0) {
+      console.log('У пользователя нет друзей для уведомления');
+      return { success: true, message: 'Нет друзей для уведомления' };
+    }
+
+    const friends = friendsResult.data;
+    console.log(`📢 Отправка уведомлений о новом отзыве ${friends.length} друзьям`);
+
+    // Отправляем уведомления каждому другу
+    const notifications = [];
+    
+    for (const friend of friends) {
+      const friendId = friend.friend_id;
+
+      // Проверяем настройки уведомлений друга
+      const isEnabled = await checkNotificationEnabled(friendId, 'friend_posted_review');
+      
+      if (!isEnabled) {
+        console.log(`⏭️ Пропускаем уведомление для ${friendId} (отключено в настройках)`);
+        continue;
+      }
+
+      // Создаем уведомление на сайте
+      const content = `${authorName} написал отзыв на "${mediaTitle}"`;
+      
+      const notificationResult = await createNotification(
+        friendId,
+        'friend_posted_review',
+        content,
+        authorId,
+        postId
+      );
+
+      if (notificationResult.success) {
+        notifications.push(notificationResult.notification);
+
+        // Отправляем WebSocket уведомление
+        const { notifyUser } = await import('./websocketService.js');
+        notifyUser(friendId, {
+          type: 'friend_posted_review',
+          notification: notificationResult.notification
+        }).catch(err => {
+          console.error('Ошибка отправки WebSocket уведомления:', err);
+        });
+
+        // Отправляем уведомление в Telegram
+        try {
+          const { sendTelegramNotification } = await import('../../telegram-bot/src/index.js');
+          
+          const telegramMessage = `📝 ${authorName} написал отзыв на "${mediaTitle}"\n\n` +
+            `Посмотреть отзыв: ${process.env.PUBLIC_URL}/media/${mediaType}/${tmdbId}/review/${postId}`;
+
+          await sendTelegramNotification(friendId, telegramMessage);
+        } catch (error) {
+          console.error('Ошибка отправки Telegram уведомления:', error);
+        }
+      }
+    }
+
+    console.log(`✅ Отправлено ${notifications.length} уведомлений о новом отзыве`);
+
+    return {
+      success: true,
+      notifications,
+      count: notifications.length
+    };
+
+  } catch (error) {
+    console.error('Ошибка отправки уведомлений о новом отзыве:', error);
+    return { success: false, error: error.message };
+  }
+}
