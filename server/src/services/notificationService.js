@@ -1070,6 +1070,123 @@ export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, medi
 }
 
 /**
+ * Отправить уведомление админу о новом багрепорте
+ * @param {string} bugReportId - ID багрепорта
+ * @param {string} bugReportTitle - Заголовок багрепорта
+ * @param {string} authorId - ID автора багрепорта
+ * @returns {Promise<Object>} - Результат отправки уведомления
+ */
+export async function notifyAdminNewBugReport(bugReportId, bugReportTitle, authorId) {
+  try {
+    console.log(`🔔 [notifyAdminNewBugReport] СТАРТ. BugReportId: ${bugReportId}, AuthorId: ${authorId}`);
+
+    // Получаем ID админа из переменных окружения
+    const adminId = process.env.TELEGRAM_ADMIN_ID;
+    
+    if (!adminId) {
+      console.error('❌ [notifyAdminNewBugReport] TELEGRAM_ADMIN_ID не найден в переменных окружения');
+      return { success: false, error: 'Admin ID not configured' };
+    }
+
+    // Проверяем, что админ существует в таблице users
+    const adminCheckResult = await executeQuery(
+      'SELECT id, is_admin FROM users WHERE id = ?',
+      [adminId]
+    );
+
+    const adminExistsInDb = adminCheckResult.success && adminCheckResult.data.length > 0;
+
+    if (!adminExistsInDb) {
+      console.warn(`⚠️ [notifyAdminNewBugReport] Админ ${adminId} не найден в таблице users, отправляем только Telegram уведомление`);
+    }
+
+    // Получаем информацию об авторе багрепорта для Telegram
+    const authorResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [authorId]
+    );
+
+    const authorName = authorResult.success && authorResult.data.length > 0 
+      ? authorResult.data[0].display_name 
+      : 'Пользователь';
+
+    // Создаем уведомление на сайте только если админ существует в БД
+    let notificationResult = null;
+    if (adminExistsInDb) {
+      // Проверяем, что автор существует в таблице users (для relatedUserId)
+      const authorCheckResult = await executeQuery(
+        'SELECT id FROM users WHERE id = ?',
+        [authorId]
+      );
+
+      const authorExistsInDb = authorCheckResult.success && authorCheckResult.data.length > 0;
+
+      // В content сохраняем шаблон без имени, имя будет подставляться динамически
+      const content = authorExistsInDb 
+        ? `отправил багрепорт: "${bugReportTitle}"`
+        : `Новый багрепорт: "${bugReportTitle}"`;
+      
+      console.log(`📝 [notifyAdminNewBugReport] Создаем уведомление`);
+
+      notificationResult = await createNotification(
+        adminId,
+        'new_bug_report',
+        content,
+        authorExistsInDb ? authorId : null, // relatedUserId только если автор существует
+        null // related_post_id должен быть null, т.к. bugReportId не из таблицы wall_posts
+      );
+
+      if (!notificationResult.success) {
+        console.error(`❌ [notifyAdminNewBugReport] Не удалось создать уведомление:`, notificationResult.error);
+        // Не возвращаем ошибку, продолжаем отправку в Telegram
+      } else {
+        console.log(`✅ [notifyAdminNewBugReport] Уведомление создано`);
+
+        // Отправляем WebSocket уведомление
+        try {
+          const ws = clients.get(adminId);
+          if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({
+              type: 'notification',
+              notification: notificationResult.notification
+            }));
+            console.log(`✅ [notifyAdminNewBugReport] WebSocket уведомление отправлено`);
+          } else {
+            console.log(`⚠️ [notifyAdminNewBugReport] WebSocket не подключен для админа ${adminId}`);
+          }
+        } catch (err) {
+          console.error(`❌ [notifyAdminNewBugReport] Ошибка отправки WebSocket уведомления:`, err);
+        }
+      }
+    }
+
+    // Отправляем уведомление в Telegram
+    try {
+      const telegramMessage = `🐛 <b>Новый багрепорт!</b>\n\n` +
+        `<b>От:</b> ${authorName}\n` +
+        `<b>Заголовок:</b> ${bugReportTitle}\n\n` +
+        `Посмотреть: ${process.env.PUBLIC_URL}/admin/bug-reports`;
+
+      await sendTelegramNotification(adminId, telegramMessage);
+      console.log(`✅ [notifyAdminNewBugReport] Telegram уведомление отправлено`);
+    } catch (error) {
+      console.error(`❌ [notifyAdminNewBugReport] Ошибка отправки Telegram уведомления:`, error.message);
+    }
+
+    console.log(`✅ [notifyAdminNewBugReport] ЗАВЕРШЕНО`);
+
+    return {
+      success: true,
+      notification: notificationResult.notification
+    };
+
+  } catch (error) {
+    console.error('Ошибка отправки уведомления админу о новом багрепорте:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Отправить уведомление пользователю об изменении статуса багрепорта
  * @param {string} userId - ID пользователя, который создал багрепорт
  * @param {string} bugReportTitle - Заголовок багрепорта
@@ -1100,7 +1217,7 @@ export async function notifyBugReportStatusChanged(userId, bugReportTitle, newSt
       'bug_report_status_changed',
       content,
       null,
-      bugReportId
+      null  // related_post_id должен быть null, т.к. это багрепорт, а не пост
     );
 
     if (!notificationResult.success) {

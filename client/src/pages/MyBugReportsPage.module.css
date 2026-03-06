@@ -2,6 +2,32 @@
   width: 100%;
 }
 
+/* Кнопка "Назад" */
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  transform: translateX(-2px);
+}
+
+.backButton:active {
+  transform: translateX(-4px);
+}
+
 .pageHeader {
   margin-bottom: 32px;
   padding-bottom: 20px;
@@ -365,4 +391,15 @@
   .imagesGallery {
     grid-template-columns: 1fr;
   }
+}
+
+/* Темная тема */
+:global(.dark) .backButton {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .backButton:hover {
+  background: var(--bg-tertiary-dark, #3a3a3a);
+  border-color: var(--accent-primary-dark, #818cf8);
 }

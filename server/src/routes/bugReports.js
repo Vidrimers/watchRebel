@@ -119,6 +119,12 @@ router.post('/', authenticateToken, async (req, res) => {
     const bugReport = bugReportResult.data[0];
     const bugReportImages = imagesResult.success ? imagesResult.data : [];
 
+    // Отправляем уведомление админу о новом багрепорте
+    const { notifyAdminNewBugReport } = await import('../services/notificationService.js');
+    notifyAdminNewBugReport(bugReportId, bugReport.title, userId).catch(err => {
+      console.error('Ошибка отправки уведомления админу о новом багрепорте:', err);
+    });
+
     res.status(201).json({
       bugReport: {
         id: bugReport.id,
@@ -129,8 +135,8 @@ router.post('/', authenticateToken, async (req, res) => {
         description: bugReport.description,
         status: bugReport.status,
         images: bugReportImages,
-        createdAt: bugReport.created_at,
-        updatedAt: bugReport.updated_at
+        created_at: bugReport.created_at,
+        updated_at: bugReport.updated_at
       },
       message: 'Багрепорт успешно создан!'
     });
@@ -186,13 +192,13 @@ router.get('/', authenticateToken, async (req, res) => {
           description: report.description,
           status: report.status,
           images: imagesResult.success ? imagesResult.data : [],
-          createdAt: report.created_at,
-          updatedAt: report.updated_at
+          created_at: report.created_at,
+          updated_at: report.updated_at
         };
       })
     );
 
-    res.json(bugReports);
+    res.json({ bugReports });
 
   } catch (error) {
     console.error('Ошибка получения багрепортов:', error);
@@ -210,7 +216,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const isAdmin = req.user.is_admin;
+    const isAdmin = req.user.isAdmin || req.user.is_admin;
     const bugReportId = req.params.id;
 
     // Получаем багрепорт
@@ -261,8 +267,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
       description: bugReport.description,
       status: bugReport.status,
       images: imagesResult.success ? imagesResult.data : [],
-      createdAt: bugReport.created_at,
-      updatedAt: bugReport.updated_at
+      created_at: bugReport.created_at,
+      updated_at: bugReport.updated_at
     });
 
   } catch (error) {
@@ -319,13 +325,13 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
           description: report.description,
           status: report.status,
           images: imagesResult.success ? imagesResult.data : [],
-          createdAt: report.created_at,
-          updatedAt: report.updated_at
+          created_at: report.created_at,
+          updated_at: report.updated_at
         };
       })
     );
 
-    res.json(bugReports);
+    res.json({ bugReports });
 
   } catch (error) {
     console.error('Ошибка получения багрепортов:', error);
@@ -454,6 +460,67 @@ router.put('/admin/:id/status', authenticateToken, requireAdmin, async (req, res
 
   } catch (error) {
     console.error('Ошибка обновления статуса багрепорта:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/bug-reports/admin/:id
+ * Удалить багрепорт (только для админа)
+ */
+router.delete('/admin/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const bugReportId = req.params.id;
+
+    // Проверяем существование багрепорта
+    const bugReportResult = await executeQuery(
+      `SELECT * FROM bug_reports WHERE id = ?`,
+      [bugReportId]
+    );
+
+    if (!bugReportResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка проверки багрепорта',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    if (bugReportResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Багрепорт не найден',
+        code: 'NOT_FOUND' 
+      });
+    }
+
+    // Удаляем изображения багрепорта
+    await executeQuery(
+      `DELETE FROM bug_report_images WHERE bug_report_id = ?`,
+      [bugReportId]
+    );
+
+    // Удаляем сам багрепорт
+    const deleteResult = await executeQuery(
+      `DELETE FROM bug_reports WHERE id = ?`,
+      [bugReportId]
+    );
+
+    if (!deleteResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка удаления багрепорта',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      id: bugReportId,
+      message: 'Багрепорт успешно удален'
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления багрепорта:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 

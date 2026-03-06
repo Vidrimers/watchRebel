@@ -66,7 +66,7 @@ export const fetchBugReportDetails = createAsyncThunk(
   async (reportId, { rejectWithValue }) => {
     try {
       const response = await api.get(`/bug-reports/${reportId}`);
-      return response.data.bugReport;
+      return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -92,7 +92,7 @@ export const fetchBugReportStats = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/bug-reports/admin/stats');
-      return response.data.stats;
+      return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -106,6 +106,19 @@ export const updateBugReportStatus = createAsyncThunk(
     try {
       const response = await api.put(`/bug-reports/admin/${reportId}/status`, { status });
       return { reportId, status };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Удалить багрепорт (для админа)
+export const deleteBugReport = createAsyncThunk(
+  'bugReports/deleteBugReport',
+  async (reportId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/bug-reports/admin/${reportId}`);
+      return reportId;
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -190,6 +203,10 @@ const bugReportsSlice = createSlice({
       })
       .addCase(createBugReport.fulfilled, (state, action) => {
         state.createLoading = false;
+        // Проверяем, что myReports инициализирован
+        if (!state.myReports) {
+          state.myReports = [];
+        }
         state.myReports.unshift(action.payload);
       })
       .addCase(createBugReport.rejected, (state, action) => {
@@ -266,6 +283,29 @@ const bugReportsSlice = createSlice({
         }
       })
       .addCase(updateBugReportStatus.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.updateError = action.payload;
+      });
+
+    // Удалить багрепорт (админ)
+    builder
+      .addCase(deleteBugReport.pending, (state) => {
+        state.updateLoading = true;
+        state.updateError = null;
+      })
+      .addCase(deleteBugReport.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        const reportId = action.payload;
+        
+        // Удаляем из списка всех багрепортов
+        state.allReports = state.allReports.filter(r => r.id !== reportId);
+        
+        // Закрываем модальное окно если был открыт удаленный багрепорт
+        if (state.selectedReport && state.selectedReport.id === reportId) {
+          state.selectedReport = null;
+        }
+      })
+      .addCase(deleteBugReport.rejected, (state, action) => {
         state.updateLoading = false;
         state.updateError = action.payload;
       });

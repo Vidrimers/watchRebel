@@ -4,6 +4,7 @@ import Icon from '../Common/Icon';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert.jsx';
 import useConfirm from '../../hooks/useConfirm.jsx';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './AdminPanel.module.css';
 
 /**
@@ -29,15 +30,31 @@ const AdminPanel = () => {
   useEffect(() => {
     loadContacts();
     loadBugReportsStats();
+
+    // Обработчик WebSocket сообщений для обновления счетчика багрепортов
+    const handleWebSocketMessage = (data) => {
+      // Если пришло уведомление о новом багрепорте - обновляем статистику
+      if (data.type === 'notification' && data.notification?.type === 'new_bug_report') {
+        loadBugReportsStats();
+      }
+    };
+
+    // Подписываемся на WebSocket сообщения
+    addMessageHandler(handleWebSocketMessage);
+
+    // Очищаем при размонтировании
+    return () => {
+      removeMessageHandler(handleWebSocketMessage);
+    };
   }, []);
 
   // Загрузка статистики багрепортов
   const loadBugReportsStats = async () => {
     try {
       const response = await api.get('/bug-reports/admin/stats');
-      setNewBugReportsCount(response.data.stats?.new || 0);
+      setNewBugReportsCount(response.data?.new || 0);
     } catch (err) {
-      console.error('Ошибка загрузки статистики багрепортов:', err);
+      // Ошибка загрузки статистики
     }
   };
 
@@ -70,7 +87,6 @@ const AdminPanel = () => {
       setContactTelegram(telegram);
       setContactText(text);
     } catch (err) {
-      console.error('Ошибка загрузки контактов:', err);
       setContactEmail('admin@watchrebel.com');
       setContactTelegram('@watchrebel_admin');
       setContactText('Для размещения рекламы свяжитесь с нами:');
@@ -95,7 +111,6 @@ const AdminPanel = () => {
         type: 'success'
       });
     } catch (err) {
-      console.error('Ошибка сохранения контактов:', err);
       await showAlert({
         title: 'Ошибка',
         message: 'Не удалось сохранить контакты',
@@ -125,7 +140,6 @@ const AdminPanel = () => {
         message: 'Не удалось создать бэкап',
         type: 'error'
       });
-      console.error(err);
     }
   };
 

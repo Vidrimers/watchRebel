@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchAllBugReports, fetchBugReportStats, fetchBugReportDetails, updateBugReportStatus, clearSelectedReport } from '../../store/slices/bugReportsSlice';
+import { fetchAllBugReports, fetchBugReportStats, fetchBugReportDetails, updateBugReportStatus, deleteBugReport, clearSelectedReport } from '../../store/slices/bugReportsSlice';
 import useAlert from '../../hooks/useAlert';
+import useConfirm from '../../hooks/useConfirm';
 import styles from './BugReportsManager.module.css';
 
 /**
@@ -12,6 +13,7 @@ import styles from './BugReportsManager.module.css';
 const BugReportsManager = () => {
   const dispatch = useAppDispatch();
   const { alertDialog, showAlert } = useAlert();
+  const { confirmDialog, showConfirm } = useConfirm();
   const { allReports, allReportsLoading, allReportsError, stats, selectedReport, updateLoading } = useAppSelector((state) => state.bugReports);
   
   const [activeFilter, setActiveFilter] = useState('all');
@@ -111,7 +113,6 @@ const BugReportsManager = () => {
         type: 'success'
       });
     } catch (err) {
-      console.error('Ошибка обновления статуса:', err);
       await showAlert({
         title: 'Ошибка',
         message: err.message || 'Не удалось обновить статус',
@@ -120,9 +121,43 @@ const BugReportsManager = () => {
     }
   };
 
+  // Удаление багрепорта
+  const handleDeleteReport = async () => {
+    if (!selectedReport) return;
+
+    const confirmed = await showConfirm({
+      title: 'Удалить багрепорт?',
+      message: `Вы уверены, что хотите удалить багрепорт "${selectedReport.title}"? Это действие нельзя отменить.`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await dispatch(deleteBugReport(selectedReport.id)).unwrap();
+      
+      // Перезагружаем статистику
+      dispatch(fetchBugReportStats());
+      
+      await showAlert({
+        title: 'Успешно',
+        message: 'Багрепорт удалён',
+        type: 'success'
+      });
+    } catch (err) {
+      await showAlert({
+        title: 'Ошибка',
+        message: err.message || 'Не удалось удалить багрепорт',
+        type: 'error'
+      });
+    }
+  };
+
   return (
     <>
       {alertDialog}
+      {confirmDialog}
       <div className={styles.bugReportsManager}>
         <div className={styles.header}>
           <h3 className={styles.title}>Управление багрепортами</h3>
@@ -193,7 +228,7 @@ const BugReportsManager = () => {
                   <div className={styles.reportInfo}>
                     <h4 className={styles.reportTitle}>{report.title}</h4>
                     <p className={styles.reportAuthor}>
-                      Автор: {report.user?.displayName || 'Неизвестно'}
+                      Автор: {report.userName || 'Неизвестно'}
                     </p>
                   </div>
                   <span className={`${styles.statusBadge} ${getStatusClass(report.status)}`}>
@@ -215,20 +250,31 @@ const BugReportsManager = () => {
           <div className={styles.detailsModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.detailsHeader}>
               <h2>{selectedReport.title}</h2>
-              <button
-                className={styles.closeButton}
-                onClick={handleCloseDetails}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
+              <div className={styles.headerButtons}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={handleDeleteReport}
+                  disabled={updateLoading}
+                  aria-label="Удалить багрепорт"
+                  title="Удалить багрепорт"
+                >
+                  🗑️
+                </button>
+                <button
+                  className={styles.closeButton}
+                  onClick={handleCloseDetails}
+                  aria-label="Закрыть"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.detailsContent}>
               <div className={styles.detailsSection}>
                 <span className={styles.detailsLabel}>Автор:</span>
                 <p className={styles.detailsText}>
-                  {selectedReport.user?.displayName || 'Неизвестно'}
+                  {selectedReport.userName || 'Неизвестно'}
                 </p>
               </div>
 
@@ -256,13 +302,13 @@ const BugReportsManager = () => {
                     {selectedReport.images.map((image, index) => (
                       <a
                         key={index}
-                        href={`/${image.image_path}`}
+                        href={image.image_path}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.imageLink}
                       >
                         <img
-                          src={`/${image.image_path}`}
+                          src={image.image_path}
                           alt={`Скриншот ${index + 1}`}
                           className={styles.galleryImage}
                         />

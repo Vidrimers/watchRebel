@@ -85,6 +85,20 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
     e.preventDefault();
     e.stopPropagation();
     
+    // Для уведомлений об изменении статуса багрепорта переходим на страницу "Мои багрепорты"
+    if (notification.type === 'bug_report_status_changed') {
+      window.location.href = '/my-bug-reports';
+      onClose();
+      return;
+    }
+
+    // Для уведомлений о новом багрепорте (для админа) переходим на страницу управления багрепортами
+    if (notification.type === 'new_bug_report') {
+      window.location.href = '/admin/bug-reports';
+      onClose();
+      return;
+    }
+
     // Проверяем, что relatedPostId это UUID (формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     const isValidPostId = notification.relatedPostId && 
                           notification.relatedPostId.includes('-') && 
@@ -154,7 +168,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
       
       // Если первое слово начинается с заглавной буквы и не является служебным словом
       // то это скорее всего старое имя пользователя
-      const serviceWords = ['хочет', 'принял', 'лайкнул', 'добавил', 'оценил', 'написал', 'отреагировал', 'зарегистрировался'];
+      const serviceWords = ['хочет', 'принял', 'лайкнул', 'добавил', 'оценил', 'написал', 'отреагировал', 'зарегистрировался', 'отправил'];
       
       if (firstWord && firstWord[0] === firstWord[0].toUpperCase() && !serviceWords.includes(firstWord.toLowerCase())) {
         // Это старый формат с именем - заменяем первое слово на актуальное имя
@@ -199,6 +213,10 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
         return 'user';
       case 'message':
         return 'message';
+      case 'bug_report_status_changed':
+        return 'bug';
+      case 'new_bug_report':
+        return 'bug';
       default:
         return 'bell';
     }

@@ -4,6 +4,7 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { fetchMyBugReports, fetchBugReportDetails, clearSelectedReport } from '../store/slices/bugReportsSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import Icon from '../components/Common/Icon';
 import styles from './MyBugReportsPage.module.css';
 
 /**
@@ -90,6 +91,14 @@ const MyBugReportsPage = () => {
   return (
     <UserPageLayout user={user}>
       <div className={styles.bugReportsPage}>
+        <button 
+          onClick={() => navigate('/settings')}
+          className={styles.backButton}
+        >
+          <Icon name="arrow-left" size="medium" />
+          <span>Назад</span>
+        </button>
+
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Мои багрепорты</h1>
           <p className={styles.pageDescription}>
@@ -201,13 +210,13 @@ const MyBugReportsPage = () => {
                     {selectedReport.images.map((image, index) => (
                       <a
                         key={index}
-                        href={`/${image.image_path}`}
+                        href={image.image_path}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.imageLink}
                       >
                         <img
-                          src={`/${image.image_path}`}
+                          src={image.image_path}
                           alt={`Скриншот ${index + 1}`}
                           className={styles.galleryImage}
                         />
