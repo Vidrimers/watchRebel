@@ -6,7 +6,7 @@ import styles from './ReactionTooltip.module.css';
  * Кастомный tooltip для отображения пользователей, поставивших реакцию
  * Показывает аватарки и имена, позволяет перейти на профиль
  */
-const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave }) => {
+const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave, className }) => {
   const navigate = useNavigate();
 
   const handleUserClick = (userId, e) => {
@@ -16,7 +16,7 @@ const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave }) => {
 
   return (
     <div 
-      className={styles.tooltip}
+      className={`${styles.tooltip} ${className || ''}`}
       style={{
         left: position?.x || 0,
         top: position?.y || 0

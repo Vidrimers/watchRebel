@@ -64,3 +64,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Темная тема */
+[data-theme="dark"] .tooltip,
+[data-theme="die-my-darling"] .tooltip,
+[data-theme="cyberpunk"] .tooltip,
+[data-theme="dark-neon-obsidian"] .tooltip {
+  background: var(--bg-secondary, #2c2c2c);
+  border-color: var(--border-color, #444);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .userItem:hover,
+[data-theme="die-my-darling"] .userItem:hover,
+[data-theme="cyberpunk"] .userItem:hover,
+[data-theme="dark-neon-obsidian"] .userItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .userName,
+[data-theme="die-my-darling"] .userName,
+[data-theme="cyberpunk"] .userName,
+[data-theme="dark-neon-obsidian"] .userName {
+  color: var(--text-primary, #e5e7eb);
+}

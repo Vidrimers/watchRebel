@@ -71,6 +71,40 @@
   opacity: 0.8;
 }
 
+/* TMDb секция */
+.tmdbInfo {
+  margin-top: 15px;
+}
+
+.tmdbLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--border-color);
+}
+
+.tmdbLink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tmdbLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.tmdbLink span {
+  font-size: 16px;
+  font-weight: 500;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .content {
@@ -87,6 +121,19 @@
 
   .section p,
   .featureList li {
+    font-size: 14px;
+  }
+
+  .tmdbLink {
+    padding: 10px 16px;
+  }
+
+  .tmdbLogo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tmdbLink span {
     font-size: 14px;
   }
 }

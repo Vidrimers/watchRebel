@@ -181,6 +181,29 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
       return { success: true, skipped: true, reason: 'disabled_in_settings' };
     }
 
+    // Получаем информацию о посте
+    const postResult = await executeQuery(
+      'SELECT post_type, content, tmdb_id, media_type FROM wall_posts WHERE id = ?',
+      [postId]
+    );
+
+    let postInfo = '';
+    if (postResult.success && postResult.data.length > 0) {
+      const post = postResult.data[0];
+      
+      // Если это отзыв, извлекаем название фильма из content (первая строка)
+      if (post.post_type === 'review' && post.content) {
+        const lines = post.content.split('\n');
+        const mediaTitle = lines[0] || '';
+        const mediaTypeText = post.media_type === 'movie' ? 'фильме' : 'сериале';
+        postInfo = ` на ваш отзыв о ${mediaTypeText} "${mediaTitle}"`;
+      } else {
+        postInfo = ' на вашу запись';
+      }
+    } else {
+      postInfo = ' на вашу запись';
+    }
+
     let content;
     let telegramMessage;
 
@@ -201,8 +224,8 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
 
       const reactorName = userResult.data[0].display_name;
       
-      // В БД сохраняем шаблон с эмодзи, имя будет подставляться динамически
-      content = `отреагировал на вашу запись: ${emoji}`;
+      // В БД сохраняем шаблон с эмодзи и информацией о посте
+      content = `отреагировал${postInfo}: ${emoji}`;
       
       // Для Telegram используем актуальное имя
       telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${reactorName} ${content}`;

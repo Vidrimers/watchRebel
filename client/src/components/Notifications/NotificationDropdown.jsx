@@ -97,9 +97,19 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
         const response = await api.get(`/wall/post/${notification.relatedPostId}`);
         const post = response.data;
         
-        // Если это отзыв - переходим на страницу медиа с параметром reviewPost
+        // Если это отзыв
         if (post.postType === 'review' && post.tmdbId && post.mediaType) {
-          window.location.href = `/media/${post.mediaType}/${post.tmdbId}?reviewPost=${notification.relatedPostId}`;
+          // Если текущий пользователь - автор отзыва, переходим без параметра reviewPost
+          const currentUserId = notification.userId; // ID получателя уведомления
+          const isAuthor = post.userId === currentUserId;
+          
+          if (isAuthor) {
+            // Автор переходит на страницу редактирования
+            window.location.href = `/media/${post.mediaType}/${post.tmdbId}`;
+          } else {
+            // Другие пользователи переходят на просмотр отзыва
+            window.location.href = `/media/${post.mediaType}/${post.tmdbId}?reviewPost=${notification.relatedPostId}`;
+          }
           onClose();
           return;
         }

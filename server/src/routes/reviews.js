@@ -316,6 +316,31 @@ router.get('/user/:userId/media/:tmdbId', async (req, res) => {
 
     const review = reviewResult.data[0];
 
+    // Получаем реакции на отзыв
+    const reactionsResult = await executeQuery(
+      `SELECT 
+        r.id,
+        r.user_id as userId,
+        r.emoji,
+        u.display_name,
+        u.avatar_url
+       FROM reactions r
+       LEFT JOIN users u ON r.user_id = u.id
+       WHERE r.post_id = ?
+       ORDER BY r.created_at ASC`,
+      [review.id]
+    );
+
+    const reactions = reactionsResult.success ? reactionsResult.data.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      emoji: r.emoji,
+      user: {
+        displayName: r.display_name,
+        avatarUrl: r.avatar_url
+      }
+    })) : [];
+
     res.json({
       id: review.id,
       userId: review.user_id,
@@ -327,6 +352,7 @@ router.get('/user/:userId/media/:tmdbId', async (req, res) => {
       rating: review.rating,
       createdAt: review.created_at,
       editedAt: review.edited_at,
+      reactions: reactions,
       author: {
         id: review.author_id,
         displayName: review.author_display_name,
@@ -663,6 +689,31 @@ router.get('/post/:postId', async (req, res) => {
 
     const review = reviewResult.data[0];
 
+    // Получаем реакции на отзыв
+    const reactionsResult = await executeQuery(
+      `SELECT 
+        r.id,
+        r.user_id as userId,
+        r.emoji,
+        u.display_name,
+        u.avatar_url
+       FROM reactions r
+       LEFT JOIN users u ON r.user_id = u.id
+       WHERE r.post_id = ?
+       ORDER BY r.created_at ASC`,
+      [review.id]
+    );
+
+    const reactions = reactionsResult.success ? reactionsResult.data.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      emoji: r.emoji,
+      user: {
+        displayName: r.display_name,
+        avatarUrl: r.avatar_url
+      }
+    })) : [];
+
     // Парсим content: первая строка - название фильма, остальное - текст отзыва
     const lines = review.content ? review.content.split('\n') : [];
     const mediaTitle = lines[0] || '';
@@ -674,6 +725,7 @@ router.get('/post/:postId', async (req, res) => {
       rating: review.rating,
       createdAt: review.created_at,
       editedAt: review.edited_at,
+      reactions: reactions,
       author: {
         userId: review.author_id,
         displayName: review.author_display_name,

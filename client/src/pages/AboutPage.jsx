@@ -40,15 +40,30 @@ const AboutPage = () => {
           <h2>Технологии</h2>
           <p>
             Проект построен на современном стеке технологий: React, Redux Toolkit, 
-            Node.js, Express, SQLite. Данные о фильмах и сериалах получаем из TMDb API.
+            Node.js, Express, SQLite.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2>Контакты</h2>
+          <h2>Источник данных</h2>
           <p>
-            По вопросам сотрудничества и рекламы обращайтесь к администратору проекта.
+            Данные о фильмах и сериалах получаем из TMDb API.
           </p>
+          <div className={styles.tmdbInfo}>
+            <a 
+              href="https://www.themoviedb.org/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={styles.tmdbLink}
+            >
+              <img 
+                src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg"
+                alt="TMDb Logo"
+                className={styles.tmdbLogo}
+              />
+              <span>The Movie Database (TMDb)</span>
+            </a>
+          </div>
         </section>
 
         <div className={styles.backLink}>

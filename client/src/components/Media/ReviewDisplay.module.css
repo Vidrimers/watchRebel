@@ -136,7 +136,9 @@
 /* Действия */
 .actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
 .goToMediaButton {
@@ -232,8 +234,136 @@
     max-height: 300px;
   }
 
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .reactionsContainer {
+    justify-content: center;
+  }
+
   .goToMediaButton {
     padding: 10px 20px;
     font-size: 14px;
+    width: 100%;
   }
+}
+
+/* Контейнер реакций */
+.reactionsContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.reactionsList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reactionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  color: var(--text-primary, #1f2937);
+}
+
+.reactionBadge:hover {
+  background: rgba(99, 102, 241, 0.1);
+  transform: scale(1.05);
+}
+
+.reactionBadge.userReaction {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color, #6366f1);
+  border-width: 2px;
+  font-weight: 600;
+}
+
+/* Кнопка добавления реакции */
+.addReactionContainer {
+  position: relative;
+}
+
+.addReactionButton {
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary, #6b7280);
+}
+
+.addReactionButton:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-color, #6366f1);
+}
+
+/* Темная тема для реакций */
+[data-theme="dark"] .reactionBadge,
+[data-theme="die-my-darling"] .reactionBadge,
+[data-theme="cyberpunk"] .reactionBadge,
+[data-theme="dark-neon-obsidian"] .reactionBadge {
+  background: transparent;
+  color: var(--text-primary, #e5e7eb);
+}
+
+[data-theme="dark"] .reactionBadge:hover,
+[data-theme="die-my-darling"] .reactionBadge:hover,
+[data-theme="cyberpunk"] .reactionBadge:hover,
+[data-theme="dark-neon-obsidian"] .reactionBadge:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .reactionBadge.userReaction,
+[data-theme="die-my-darling"] .reactionBadge.userReaction,
+[data-theme="cyberpunk"] .reactionBadge.userReaction,
+[data-theme="dark-neon-obsidian"] .reactionBadge.userReaction {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .addReactionButton,
+[data-theme="die-my-darling"] .addReactionButton,
+[data-theme="cyberpunk"] .addReactionButton,
+[data-theme="dark-neon-obsidian"] .addReactionButton {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme="dark"] .addReactionButton:hover,
+[data-theme="die-my-darling"] .addReactionButton:hover,
+[data-theme="cyberpunk"] .addReactionButton:hover,
+[data-theme="dark-neon-obsidian"] .addReactionButton:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-color, #6366f1);
+}
+
+/* Стили для tooltip реакций */
+.reviewTooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.reviewTooltip .userName {
+  color: #e5e7eb !important;
+}
+
+.reviewTooltip .userItem:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
