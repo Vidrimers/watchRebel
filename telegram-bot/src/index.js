@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSession } from './sessionService.js';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -414,7 +415,7 @@ bot.on('callback_query', async (query) => {
 async function handleFeedAction(chatId, userId, token) {
   try {
     // Получаем ленту активности через API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const response = await fetch(`${apiUrl}/api/feed/${userId}`, {
       method: 'GET',
       headers: {
@@ -628,7 +629,7 @@ async function handleInviteAction(chatId, userId, token) {
     console.log(`📝 Запрос реферальной ссылки для пользователя ${userId}`);
     
     // Получаем реферальный код через API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const url = `${apiUrl}/api/users/${userId}/referral-code`;
     console.log(`📡 Отправка запроса к: ${url}`);
     
@@ -706,7 +707,7 @@ async function handleMessagesAction(chatId, userId, token) {
     console.log(`📝 Запрос диалогов для пользователя ${userId}`);
     
     // Получаем список диалогов через API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const url = `${apiUrl}/api/messages/conversations`;
     console.log(`📡 Отправка запроса к: ${url}`);
     
@@ -847,7 +848,7 @@ async function handleReplyMessageAction(chatId, userId, receiverId, userFrom) {
     
     // Получаем информацию о получателе
     const session = await createSession(userId, userFrom);
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     
     const response = await fetch(`${apiUrl}/api/users/${receiverId}`, {
       method: 'GET',
@@ -941,7 +942,7 @@ async function handleNotificationSettingsMenu(chatId, userId, userFrom, messageI
     
     // Создаем сессию для авторизации
     const session = await createSession(userId, userFrom);
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     
     // Получаем текущие настройки уведомлений
     const response = await fetch(`${apiUrl}/api/users/${userId}/notification-settings`, {
@@ -1068,7 +1069,7 @@ async function handleToggleNotification(chatId, userId, callbackData, userFrom, 
     
     // Создаем сессию для авторизации
     const session = await createSession(userId, userFrom);
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     
     // Получаем текущие настройки
     const getResponse = await fetch(`${apiUrl}/api/users/${userId}/notification-settings`, {
@@ -1157,7 +1158,7 @@ async function handleNameChange(chatId, userId, newName, userFrom) {
     const session = await createSession(userId, userFrom);
     
     // Отправляем PUT запрос к API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const response = await fetch(`${apiUrl}/api/users/${userId}`, {
       method: 'PUT',
       headers: {
@@ -1234,7 +1235,7 @@ async function handleStatusChange(chatId, userId, newStatus, userFrom) {
     const session = await createSession(userId, userFrom);
     
     // Отправляем PUT запрос к API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const response = await fetch(`${apiUrl}/api/users/${userId}`, {
       method: 'PUT',
       headers: {
@@ -1322,7 +1323,7 @@ async function handleSendMessageReply(chatId, userId, messageText, stateData) {
     const session = await createSession(userId, stateData.userFrom);
     
     // Отправляем POST запрос к API
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const response = await fetch(`${apiUrl}/api/messages`, {
       method: 'POST',
       headers: {
@@ -1650,67 +1651,79 @@ async function submitBugReport(chatId, userId, data, userFrom) {
 
     // Создаем сессию для авторизации
     const session = await createSession(userId, userFrom);
-    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
 
     // Загружаем изображения если есть
     let imagePaths = [];
     if (data.images && data.images.length > 0) {
+      console.log(`📸 Начинаем загрузку ${data.images.length} изображений`);
       const FormData = (await import('form-data')).default;
       const formData = new FormData();
 
       for (const fileId of data.images) {
         try {
+          console.log(`📥 Загружаем файл ${fileId} из Telegram`);
           // Получаем файл из Telegram
           const file = await bot.getFile(fileId);
           const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+          console.log(`🔗 URL файла: ${fileUrl}`);
           
-          // Скачиваем файл
-          const fileResponse = await fetch(fileUrl);
-          const fileBuffer = await fileResponse.arrayBuffer();
+          // Скачиваем файл через axios
+          const fileResponse = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+          console.log(`✅ Файл скачан, размер: ${fileResponse.data.byteLength} байт`);
           
           // Добавляем в FormData
-          formData.append('images', Buffer.from(fileBuffer), {
-            filename: `image_${Date.now()}.jpg`,
+          formData.append('images', Buffer.from(fileResponse.data), {
+            filename: `image_${Date.now()}_${fileId.slice(-8)}.jpg`,
             contentType: 'image/jpeg'
           });
         } catch (err) {
-          console.error('Ошибка загрузки изображения:', err);
+          console.error('❌ Ошибка загрузки изображения:', err);
         }
       }
 
-      // Отправляем изображения
-      const uploadResponse = await fetch(`${apiUrl}/api/bug-reports/upload-images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.token}`,
-          ...formData.getHeaders()
-        },
-        body: formData
-      });
+      // Отправляем изображения через axios
+      try {
+        console.log(`📤 Отправляем изображения на сервер: ${apiUrl}/api/bug-reports/upload-images`);
+        const uploadResponse = await axios.post(
+          `${apiUrl}/api/bug-reports/upload-images`,
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.token}`,
+              ...formData.getHeaders()
+            }
+          }
+        );
 
-      if (uploadResponse.ok) {
-        const uploadData = await uploadResponse.json();
-        imagePaths = uploadData.images;
+        console.log(`📡 Ответ сервера: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        imagePaths = uploadResponse.data.images;
+        console.log(`✅ Изображения загружены: ${JSON.stringify(imagePaths)}`);
+      } catch (err) {
+        console.error(`❌ Ошибка загрузки изображений на сервер:`, err.response?.data || err.message);
       }
     }
 
     // Создаем багрепорт
-    const response = await fetch(`${apiUrl}/api/bug-reports`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    console.log(`📝 Создаем багрепорт с ${imagePaths.length} изображениями`);
+    const response = await axios.post(
+      `${apiUrl}/api/bug-reports`,
+      {
         title: data.title,
         description: data.description,
         images: imagePaths
-      })
-    });
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${session.token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`API вернул ошибку: ${response.status}`);
-    }
+    console.log(`📡 Ответ создания багрепорта: ${response.status} ${response.statusText}`);
+    const bugReportData = response.data;
+    console.log(`✅ Багрепорт создан: ${JSON.stringify(bugReportData)}`);
 
     // Очищаем состояние
     clearUserState(userId);
@@ -1718,9 +1731,10 @@ async function submitBugReport(chatId, userId, data, userFrom) {
     await bot.sendMessage(
       chatId,
       '✅ <b>Багрепорт успешно отправлен!</b>\n\n' +
-      'Спасибо за обратную связь! 🙏\n\n' +
-      'Мы рассмотрим вашу проблему и уведомим вас об изменении статуса.\n\n' +
-      'Вы можете посмотреть свои багрепорты на сайте.',
+      `📋 <b>Ваш багрепорт:</b>\n<i>"${data.title}"</i>\n\n` +
+      '🆕 <b>Статус:</b> Новый\n\n' +
+      'Спасибо за обратную связь! 🙏\n' +
+      'Мы рассмотрим вашу проблему и уведомим вас об изменении статуса.',
       {
         parse_mode: 'HTML',
         reply_markup: {

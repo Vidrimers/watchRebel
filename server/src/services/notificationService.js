@@ -1162,10 +1162,11 @@ export async function notifyAdminNewBugReport(bugReportId, bugReportTitle, autho
 
     // Отправляем уведомление в Telegram
     try {
-      const telegramMessage = `🐛 <b>Новый багрепорт!</b>\n\n` +
-        `<b>От:</b> ${authorName}\n` +
-        `<b>Заголовок:</b> ${bugReportTitle}\n\n` +
-        `Посмотреть: ${process.env.PUBLIC_URL}/admin/bug-reports`;
+      const telegramMessage = 
+        `🐛 <b>Новый багрепорт!</b>\n\n` +
+        `👤 <b>От:</b> ${authorName}\n` +
+        `📋 <b>Заголовок:</b>\n<i>"${bugReportTitle}"</i>\n\n` +
+        `👉 <a href="${process.env.PUBLIC_URL}/admin/bug-reports">Посмотреть все багрепорты</a>`;
 
       await sendTelegramNotification(adminId, telegramMessage);
       console.log(`✅ [notifyAdminNewBugReport] Telegram уведомление отправлено`);
@@ -1245,10 +1246,11 @@ export async function notifyBugReportStatusChanged(userId, bugReportTitle, newSt
 
     // Отправляем уведомление в Telegram
     try {
-      const telegramMessage = `${statusInfo.emoji} Статус вашего багрепорта изменён\n\n` +
-        `Багрепорт: "${bugReportTitle}"\n` +
-        `Новый статус: ${statusInfo.text}\n\n` +
-        `Посмотреть: ${process.env.PUBLIC_URL}/my-bug-reports`;
+      const telegramMessage = 
+        `${statusInfo.emoji} <b>Статус вашего багрепорта изменён</b>\n\n` +
+        `📋 <b>Багрепорт:</b>\n<i>"${bugReportTitle}"</i>\n\n` +
+        `${statusInfo.emoji} <b>Новый статус:</b> ${statusInfo.text}\n\n` +
+        `👉 <a href="${process.env.PUBLIC_URL}/my-bug-reports">Посмотреть все багрепорты</a>`;
 
       await sendTelegramNotification(userId, telegramMessage);
       console.log(`✅ [notifyBugReportStatusChanged] Telegram уведомление отправлено`);
