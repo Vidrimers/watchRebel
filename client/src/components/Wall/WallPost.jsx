@@ -48,6 +48,75 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const [showGallery, setShowGallery] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  
+  // Состояние для загрузки названия медиа из TMDb (если не загрузилось при создании поста)
+  const [mediaTitle, setMediaTitle] = useState(null);
+  const [mediaOriginalTitle, setMediaOriginalTitle] = useState(null);
+  const [mediaPosterPath, setMediaPosterPath] = useState(null);
+  const [isLoadingMediaTitle, setIsLoadingMediaTitle] = useState(false);
+
+  // Загружаем название и постер медиа из TMDb, если в content "контент #ID" или posterPath пустой
+  useEffect(() => {
+    const loadMediaDetails = async () => {
+      // Проверяем только для media_added постов
+      if (post.postType !== 'media_added' || !post.tmdbId || !post.mediaType) {
+        return;
+      }
+
+      // Проверяем, нужно ли загружать данные
+      const contentLines = post.content ? post.content.split('\n') : [];
+      const currentTitle = contentLines[0] || '';
+      
+      // Загружаем если: название содержит "контент #" ИЛИ posterPath пустой
+      const needsTitle = !currentTitle || currentTitle.startsWith('контент #');
+      const needsPoster = !post.posterPath;
+      
+      if (!needsTitle && !needsPoster) {
+        return; // Все данные уже есть
+      }
+
+      // Загружаем данные из TMDb
+      setIsLoadingMediaTitle(true);
+      try {
+        const response = await api.get(`/media/${post.mediaType}/${post.tmdbId}`);
+        const details = response.data;
+        
+        if (post.mediaType === 'movie') {
+          if (needsTitle) {
+            setMediaTitle(details.title);
+            setMediaOriginalTitle(details.original_title);
+          }
+        } else {
+          if (needsTitle) {
+            setMediaTitle(details.name);
+            setMediaOriginalTitle(details.original_name);
+          }
+        }
+        
+        if (needsPoster && details.poster_path) {
+          setMediaPosterPath(details.poster_path);
+        }
+        
+        console.log(`✅ Загружены данные из TMDb для поста ${post.id}:`, {
+          title: details.title || details.name,
+          originalTitle: details.original_title || details.original_name,
+          posterPath: details.poster_path,
+          needsTitle,
+          needsPoster
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки данных медиа:', error);
+        // Оставляем дефолтное значение для названия
+        if (needsTitle) {
+          setMediaTitle(`контент #${post.tmdbId}`);
+        }
+      } finally {
+        setIsLoadingMediaTitle(false);
+      }
+    };
+
+    loadMediaDetails();
+  }, [post.postType, post.tmdbId, post.mediaType, post.content, post.posterPath, post.id]);
   const [commentsCount, setCommentsCount] = useState(0);
   const [announcementImageOrientations, setAnnouncementImageOrientations] = useState({});
 
@@ -491,17 +560,24 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
       case 'media_added':
         // Разбиваем content на название фильма, текст о списке и оригинальное название
         const contentLines = post.content ? post.content.split('\n') : [];
-        const movieTitle = contentLines[0] || '';
+        const contentMovieTitle = contentLines[0] || '';
         const listText = contentLines[1] || 'Добавил в список';
-        const originalTitle = contentLines[2] || ''; // Оригинальное название (если есть)
+        const contentOriginalTitle = contentLines[2] || ''; // Оригинальное название (если есть)
+        
+        // Используем загруженное название из TMDb, если оно есть, иначе из content
+        const displayTitle = mediaTitle || contentMovieTitle || `контент #${post.tmdbId}`;
+        const displayOriginalTitle = mediaOriginalTitle || contentOriginalTitle;
         
         console.log('🎬 Парсинг media_added поста:', {
           postId: post.id,
           contentLines,
-          movieTitle,
+          contentMovieTitle,
+          mediaTitle,
+          displayTitle,
           listText,
-          originalTitle,
-          shouldShowOriginal: originalTitle && originalTitle !== movieTitle
+          displayOriginalTitle,
+          shouldShowOriginal: displayOriginalTitle && displayOriginalTitle !== displayTitle,
+          isLoadingMediaTitle
         });
         
         // Извлекаем название списка из текста
@@ -513,12 +589,14 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
             className={styles.mediaAddedContent}
             onClick={handleMediaClick}
           >
-            {post.posterPath && (
+            {(post.posterPath || mediaPosterPath) && (
               <div className={styles.mediaPoster}>
                 <img 
                   src={
-                    post.posterPath.startsWith('/uploads/') 
+                    post.posterPath?.startsWith('/uploads/') 
                       ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.posterPath}`
+                      : mediaPosterPath
+                      ? `https://image.tmdb.org/t/p/w185${mediaPosterPath}`
                       : `https://image.tmdb.org/t/p/w185${post.posterPath}`
                   }
                   alt="Постер"
@@ -528,9 +606,9 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
             )}
             <div className={styles.mediaTextContent}>
               <h4 className={styles.movieTitle}>
-                {movieTitle}
-                {originalTitle && originalTitle !== movieTitle && (
-                  <span className={styles.originalTitle}>{originalTitle}</span>
+                {isLoadingMediaTitle ? 'Загрузка...' : displayTitle}
+                {displayOriginalTitle && displayOriginalTitle !== displayTitle && (
+                  <span className={styles.originalTitle}>{displayOriginalTitle}</span>
                 )}
               </h4>
               <p className={styles.mediaAddedText}>
