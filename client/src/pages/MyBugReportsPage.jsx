@@ -138,7 +138,9 @@ const MyBugReportsPage = () => {
 
         {!myReportsLoading && !myReportsError && safeReports.length === 0 && (
           <div className={styles.emptyState}>
-            <span className={styles.emptyIcon}>🐛</span>
+            <div className={styles.emptyIcon}>
+              <Icon name="bug" size={48} />
+            </div>
             <p className={styles.emptyTitle}>У вас пока нет багрепортов</p>
             <p className={styles.emptyHint}>
               Если вы обнаружите проблему, используйте кнопку в футере для отправки багрепорта
