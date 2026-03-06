@@ -137,11 +137,13 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
         
         // Иначе открываем модалку с постом
         setSelectedPostId(notification.relatedPostId);
+        onClose();
         return;
       } catch (err) {
         console.error('Ошибка загрузки поста:', err);
         // Если не удалось загрузить пост, просто открываем модалку
         setSelectedPostId(notification.relatedPostId);
+        onClose();
         return;
       }
     } 
@@ -154,10 +156,16 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
 
   // Формирование текста уведомления с актуальным именем пользователя
   const formatNotificationText = (notification) => {
+    const content = notification.content;
+    
+    // Если это самолайк - возвращаем как есть, без добавления имени
+    if (content.startsWith('Самолайк')) {
+      return content;
+    }
+    
     // Если есть связанный пользователь
     if (notification.relatedUser && notification.relatedUser.displayName) {
       const userName = notification.relatedUser.displayName;
-      const content = notification.content;
       
       // Проверяем, начинается ли content с какого-то имени (старый формат)
       // Если да - заменяем старое имя на актуальное
@@ -181,7 +189,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
     }
     
     // Иначе возвращаем content как есть (для системных уведомлений без relatedUser)
-    return notification.content;
+    return content;
   };
 
   // Форматирование даты

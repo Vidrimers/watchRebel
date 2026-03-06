@@ -124,7 +124,6 @@
 .statusSection {
   width: 100%;
   cursor: pointer;
-  border-radius: 6px;
   overflow: hidden;
   transition: all 0.3s ease;
   max-height: 100px;
@@ -189,11 +188,6 @@
 
 .navItem {
   margin: 0;
-  border-bottom: 1px solid var(--border-color, #f0f0f0);
-}
-
-.navItem:last-child {
-  border-bottom: none;
 }
 
 .navLink {

@@ -3,6 +3,7 @@ import styles from './AdminModerationPanel.module.css';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert.jsx';
 import useConfirm from '../../hooks/useConfirm.jsx';
+import Icon from '../Common/Icon.jsx';
 
 /**
  * Компонент панели модерации для администратора

@@ -109,10 +109,16 @@ const NotificationList = () => {
 
   // Формирование текста уведомления с актуальным именем пользователя
   const formatNotificationText = (notification) => {
+    const content = notification.content;
+    
+    // Если это самолайк - возвращаем как есть, без добавления имени
+    if (content.startsWith('Самолайк')) {
+      return content;
+    }
+    
     // Если есть связанный пользователь
     if (notification.relatedUser && notification.relatedUser.displayName) {
       const userName = notification.relatedUser.displayName;
-      const content = notification.content;
       
       // Проверяем, начинается ли content с какого-то имени (старый формат)
       // Если да - заменяем старое имя на актуальное
@@ -136,7 +142,7 @@ const NotificationList = () => {
     }
     
     // Иначе возвращаем content как есть (для системных уведомлений без relatedUser)
-    return notification.content;
+    return content;
   };
 
   // Обработчик пометки всех как прочитанные
