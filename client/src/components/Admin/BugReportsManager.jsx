@@ -26,6 +26,24 @@ const BugReportsManager = () => {
     dispatch(fetchBugReportStats());
   }, [dispatch]);
 
+  // Автоматический выбор фильтра по умолчанию на основе статистики
+  useEffect(() => {
+    if (stats) {
+      // Если есть новые багрепорты - показываем их
+      if (stats.new > 0) {
+        setActiveFilter('new');
+      }
+      // Если новых нет, но есть в работе - показываем их
+      else if (stats.in_progress > 0) {
+        setActiveFilter('in_progress');
+      }
+      // Иначе показываем все
+      else {
+        setActiveFilter('all');
+      }
+    }
+  }, [stats]);
+
   // Безопасные значения с дефолтами
   const safeReports = allReports || [];
   const safeStats = stats || { new: 0, in_progress: 0, resolved: 0, rejected: 0 };
