@@ -495,6 +495,8 @@ router.delete('/admin/:id', authenticateToken, requireAdmin, async (req, res) =>
       });
     }
 
+    const bugReport = bugReportResult.data[0];
+
     // Удаляем изображения багрепорта
     await executeQuery(
       `DELETE FROM bug_report_images WHERE bug_report_id = ?`,
@@ -513,6 +515,12 @@ router.delete('/admin/:id', authenticateToken, requireAdmin, async (req, res) =>
         code: 'DATABASE_ERROR' 
       });
     }
+
+    // Отправляем уведомление пользователю об удалении багрепорта
+    const { notifyBugReportDeleted } = await import('../services/notificationService.js');
+    notifyBugReportDeleted(bugReport.user_id, bugReport.title, bugReportId).catch(err => {
+      console.error('Ошибка отправки уведомления об удалении багрепорта:', err);
+    });
 
     res.json({
       id: bugReportId,

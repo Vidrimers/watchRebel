@@ -177,6 +177,21 @@ const bugReportsSlice = createSlice({
     clearSelectedReport: (state) => {
       state.selectedReport = null;
       state.selectedReportError = null;
+    },
+    // Обработка удаления багрепорта через WebSocket
+    handleBugReportDeleted: (state, action) => {
+      const reportId = action.payload;
+      
+      // Удаляем из списка своих багрепортов
+      state.myReports = state.myReports.filter(r => r.id !== reportId);
+      
+      // Удаляем из списка всех багрепортов (если админ)
+      state.allReports = state.allReports.filter(r => r.id !== reportId);
+      
+      // Закрываем модальное окно если был открыт удаленный багрепорт
+      if (state.selectedReport && state.selectedReport.id === reportId) {
+        state.selectedReport = null;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -312,6 +327,6 @@ const bugReportsSlice = createSlice({
   }
 });
 
-export const { clearErrors, clearSelectedReport } = bugReportsSlice.actions;
+export const { clearErrors, clearSelectedReport, handleBugReportDeleted } = bugReportsSlice.actions;
 
 export default bugReportsSlice.reducer;

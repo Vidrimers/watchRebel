@@ -4,6 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchAllBugReports, fetchBugReportStats, fetchBugReportDetails, updateBugReportStatus, deleteBugReport, clearSelectedReport } from '../../store/slices/bugReportsSlice';
 import useAlert from '../../hooks/useAlert';
 import useConfirm from '../../hooks/useConfirm';
+import Icon from '../Common/Icon';
 import styles from './BugReportsManager.module.css';
 
 /**
@@ -258,7 +259,7 @@ const BugReportsManager = () => {
                   aria-label="Удалить багрепорт"
                   title="Удалить багрепорт"
                 >
-                  🗑️
+                  <Icon name="delete" size="medium" />
                 </button>
                 <button
                   className={styles.closeButton}

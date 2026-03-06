@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { fetchMyBugReports, fetchBugReportDetails, clearSelectedReport } from '../store/slices/bugReportsSlice';
+import { fetchMyBugReports, fetchBugReportDetails, clearSelectedReport, handleBugReportDeleted } from '../store/slices/bugReportsSlice';
+import { addMessageHandler, removeMessageHandler } from '../services/websocket';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import Icon from '../components/Common/Icon';
 import styles from './MyBugReportsPage.module.css';
@@ -29,6 +30,23 @@ const MyBugReportsPage = () => {
 
     dispatch(fetchMyBugReports());
   }, [isAuthenticated, navigate, dispatch]);
+
+  // Обработка WebSocket сообщений
+  useEffect(() => {
+    const handleWebSocketMessage = (data) => {
+      // Обработка удаления багрепорта
+      if (data.type === 'bug_report_deleted') {
+        console.log('📨 Получено уведомление об удалении багрепорта:', data.bugReportId);
+        dispatch(handleBugReportDeleted(data.bugReportId));
+      }
+    };
+
+    addMessageHandler(handleWebSocketMessage);
+
+    return () => {
+      removeMessageHandler(handleWebSocketMessage);
+    };
+  }, [dispatch]);
 
   // Получение класса статуса для цветовой индикации
   const getStatusClass = (status) => {

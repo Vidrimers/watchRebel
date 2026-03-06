@@ -1270,3 +1270,84 @@ export async function notifyBugReportStatusChanged(userId, bugReportTitle, newSt
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Отправить уведомление пользователю об удалении багрепорта
+ * @param {string} userId - ID пользователя, который создал багрепорт
+ * @param {string} bugReportTitle - Заголовок багрепорта
+ * @param {string} bugReportId - ID багрепорта
+ * @returns {Promise<Object>} - Результат отправки уведомления
+ */
+export async function notifyBugReportDeleted(userId, bugReportTitle, bugReportId) {
+  try {
+    console.log(`🔔 [notifyBugReportDeleted] СТАРТ. UserId: ${userId}, BugReportId: ${bugReportId}`);
+
+    // Создаем уведомление на сайте
+    const content = `Ваш багрепорт "${bugReportTitle}" был удалён администратором`;
+    console.log(`📝 [notifyBugReportDeleted] Создаем уведомление: "${content}"`);
+
+    const notificationResult = await createNotification(
+      userId,
+      'bug_report_deleted',
+      content,
+      null,
+      null
+    );
+
+    if (!notificationResult.success) {
+      console.error(`❌ [notifyBugReportDeleted] Не удалось создать уведомление:`, notificationResult.error);
+      return { success: false, error: notificationResult.error };
+    }
+
+    console.log(`✅ [notifyBugReportDeleted] Уведомление создано`);
+
+    // Отправляем WebSocket уведомление
+    try {
+      const ws = clients.get(userId);
+      if (ws && ws.readyState === 1) {
+        // Отправляем уведомление о новом уведомлении
+        ws.send(JSON.stringify({
+          type: 'notification',
+          notification: notificationResult.notification
+        }));
+        
+        // Отправляем событие об удалении багрепорта для обновления списка
+        ws.send(JSON.stringify({
+          type: 'bug_report_deleted',
+          bugReportId: bugReportId
+        }));
+        
+        console.log(`✅ [notifyBugReportDeleted] WebSocket уведомления отправлены`);
+      } else {
+        console.log(`⚠️ [notifyBugReportDeleted] WebSocket не подключен для пользователя ${userId}`);
+      }
+    } catch (err) {
+      console.error(`❌ [notifyBugReportDeleted] Ошибка отправки WebSocket уведомления:`, err);
+    }
+
+    // Отправляем уведомление в Telegram
+    try {
+      const telegramMessage = 
+        `🗑️ <b>Ваш багрепорт был удалён</b>\n\n` +
+        `📋 <b>Багрепорт:</b>\n<i>"${bugReportTitle}"</i>\n\n` +
+        `Багрепорт был удалён администратором.\n\n` +
+        `👉 <a href="${process.env.PUBLIC_URL}/my-bug-reports">Посмотреть все багрепорты</a>`;
+
+      await sendTelegramNotification(userId, telegramMessage);
+      console.log(`✅ [notifyBugReportDeleted] Telegram уведомление отправлено`);
+    } catch (error) {
+      console.error(`❌ [notifyBugReportDeleted] Ошибка отправки Telegram уведомления:`, error.message);
+    }
+
+    console.log(`✅ [notifyBugReportDeleted] ЗАВЕРШЕНО`);
+
+    return {
+      success: true,
+      notification: notificationResult.notification
+    };
+
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об удалении багрепорта:', error);
+    return { success: false, error: error.message };
+  }
+}
