@@ -292,6 +292,29 @@
     <line x1="6.5" y1="5" x2="6.5" y2="9"/>
   </symbol>
 
+  <!-- Bug / Багрепорт -->
+  <symbol id="icon-bug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Усики -->
+    <path d="M8 2L6 6"/>
+    <path d="M16 2L18 6"/>
+    <!-- Голова -->
+    <circle cx="12" cy="7" r="2"/>
+    <!-- Тело (овал) -->
+    <ellipse cx="12" cy="14.5" rx="5" ry="6.5"/>
+    <!-- Полоски на теле -->
+    <path d="M7.5 11h9"/>
+    <path d="M7.5 14.5h9"/>
+    <path d="M7.5 18h9"/>
+    <!-- Лапки слева (3 штуки) -->
+    <path d="M7 11L4 9"/>
+    <path d="M7 14.5L3 14.5"/>
+    <path d="M7 18L4 20"/>
+    <!-- Лапки справа (3 штуки) -->
+    <path d="M17 11L20 9"/>
+    <path d="M17 14.5L21 14.5"/>
+    <path d="M17 18L20 20"/>
+  </symbol>
+
 </svg>
 
 <!--

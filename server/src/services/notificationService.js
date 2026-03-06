@@ -1068,3 +1068,86 @@ export async function notifyFriendPostedReview(authorId, tmdbId, mediaType, medi
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Отправить уведомление пользователю об изменении статуса багрепорта
+ * @param {string} userId - ID пользователя, который создал багрепорт
+ * @param {string} bugReportTitle - Заголовок багрепорта
+ * @param {string} newStatus - Новый статус ('new' | 'in_progress' | 'resolved' | 'rejected')
+ * @param {string} bugReportId - ID багрепорта
+ * @returns {Promise<Object>} - Результат отправки уведомления
+ */
+export async function notifyBugReportStatusChanged(userId, bugReportTitle, newStatus, bugReportId) {
+  try {
+    console.log(`🔔 [notifyBugReportStatusChanged] СТАРТ. UserId: ${userId}, Status: ${newStatus}, BugReportId: ${bugReportId}`);
+
+    // Маппинг статусов на русский язык и эмодзи
+    const statusMap = {
+      'new': { text: 'Новый', emoji: '🆕' },
+      'in_progress': { text: 'В работе', emoji: '⚙️' },
+      'resolved': { text: 'Решено', emoji: '✅' },
+      'rejected': { text: 'Отклонено', emoji: '❌' }
+    };
+
+    const statusInfo = statusMap[newStatus] || { text: newStatus, emoji: '📝' };
+
+    // Создаем уведомление на сайте
+    const content = `Статус вашего багрепорта "${bugReportTitle}" изменён на: ${statusInfo.text}`;
+    console.log(`📝 [notifyBugReportStatusChanged] Создаем уведомление: "${content}"`);
+
+    const notificationResult = await createNotification(
+      userId,
+      'bug_report_status_changed',
+      content,
+      null,
+      bugReportId
+    );
+
+    if (!notificationResult.success) {
+      console.error(`❌ [notifyBugReportStatusChanged] Не удалось создать уведомление:`, notificationResult.error);
+      return { success: false, error: notificationResult.error };
+    }
+
+    console.log(`✅ [notifyBugReportStatusChanged] Уведомление создано`);
+
+    // Отправляем WebSocket уведомление
+    try {
+      const ws = clients.get(userId);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'notification',
+          notification: notificationResult.notification
+        }));
+        console.log(`✅ [notifyBugReportStatusChanged] WebSocket уведомление отправлено`);
+      } else {
+        console.log(`⚠️ [notifyBugReportStatusChanged] WebSocket не подключен для пользователя ${userId}`);
+      }
+    } catch (err) {
+      console.error(`❌ [notifyBugReportStatusChanged] Ошибка отправки WebSocket уведомления:`, err);
+    }
+
+    // Отправляем уведомление в Telegram
+    try {
+      const telegramMessage = `${statusInfo.emoji} Статус вашего багрепорта изменён\n\n` +
+        `Багрепорт: "${bugReportTitle}"\n` +
+        `Новый статус: ${statusInfo.text}\n\n` +
+        `Посмотреть: ${process.env.PUBLIC_URL}/my-bug-reports`;
+
+      await sendTelegramNotification(userId, telegramMessage);
+      console.log(`✅ [notifyBugReportStatusChanged] Telegram уведомление отправлено`);
+    } catch (error) {
+      console.error(`❌ [notifyBugReportStatusChanged] Ошибка отправки Telegram уведомления:`, error.message);
+    }
+
+    console.log(`✅ [notifyBugReportStatusChanged] ЗАВЕРШЕНО`);
+
+    return {
+      success: true,
+      notification: notificationResult.notification
+    };
+
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об изменении статуса багрепорта:', error);
+    return { success: false, error: error.message };
+  }
+}

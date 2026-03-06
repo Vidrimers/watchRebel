@@ -23,9 +23,23 @@ const AdminPanel = () => {
   const [contactText, setContactText] = useState('');
   const [contactsSaving, setContactsSaving] = useState(false);
 
+  // Состояние для багрепортов
+  const [newBugReportsCount, setNewBugReportsCount] = useState(0);
+
   useEffect(() => {
     loadContacts();
+    loadBugReportsStats();
   }, []);
+
+  // Загрузка статистики багрепортов
+  const loadBugReportsStats = async () => {
+    try {
+      const response = await api.get('/bug-reports/admin/stats');
+      setNewBugReportsCount(response.data.stats?.new || 0);
+    } catch (err) {
+      console.error('Ошибка загрузки статистики багрепортов:', err);
+    }
+  };
 
   const loadContacts = async () => {
     try {
@@ -137,6 +151,15 @@ const AdminPanel = () => {
             className={styles.btnNavigation}
           >
             <Icon name="announcement" size="small" /> Объявления
+          </button>
+          <button
+            onClick={() => navigate('/admin/bug-reports')}
+            className={styles.btnNavigation}
+          >
+            <Icon name="bug" size="small" /> Багрепорты
+            {newBugReportsCount > 0 && (
+              <span className={styles.badge}>{newBugReportsCount}</span>
+            )}
           </button>
         </div>
       </div>

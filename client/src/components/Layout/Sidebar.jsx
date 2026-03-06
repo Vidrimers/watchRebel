@@ -232,6 +232,11 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
               <Icon name="watchlist" size="medium" /> {!narrow && !isSearchPage && 'Хочу посмотреть'}
             </a>
           </li>
+          <li className={styles.navItem}>
+            <a href="/my-bug-reports" className={styles.navLink} title="Мои багрепорты" onClick={handleLinkClick}>
+              <Icon name="bug" size="medium" /> {!narrow && !isSearchPage && 'Мои багрепорты'}
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>

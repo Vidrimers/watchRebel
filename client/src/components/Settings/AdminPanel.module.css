@@ -289,12 +289,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .btnNavigation:hover {
   background: var(--accent-primary-hover, #4f46e5);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Badge для количества новых элементов */
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--error-color, #ef4444);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Адаптивность для кнопок навигации */

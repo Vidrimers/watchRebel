@@ -1,0 +1,368 @@
+.bugReportsPage {
+  width: 100%;
+}
+
+.pageHeader {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.pageDescription {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Состояния загрузки и ошибок */
+.loadingContainer,
+.errorMessage {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.loadingContainer {
+  color: var(--text-secondary);
+}
+
+.errorMessage {
+  color: var(--error-color);
+  background: var(--error-bg);
+  border: 1px solid var(--error-color);
+}
+
+/* Пустое состояние */
+.emptyState {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.emptyTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.emptyHint {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Список багрепортов */
+.reportsList {
+  display: grid;
+  gap: 16px;
+}
+
+.reportCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reportCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-primary);
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.reportTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.statusBadge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Цветовая индикация статусов */
+.statusNew {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.statusInProgress {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.statusResolved {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.statusRejected {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.reportDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.reportFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.reportDate,
+.reportImages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Модальное окно детального просмотра */
+.detailsOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.detailsModal {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.detailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+}
+
+.detailsHeader h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  font-size: 32px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.closeButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.detailsContent {
+  padding: 24px;
+}
+
+.detailsStatus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detailsSection {
+  margin-bottom: 20px;
+}
+
+.detailsSection:last-child {
+  margin-bottom: 0;
+}
+
+.detailsLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detailsText {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Галерея изображений */
+.imagesGallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.imageLink {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.imageLink:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-primary);
+}
+
+.galleryImage {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .pageDescription {
+    font-size: 14px;
+  }
+
+  .reportCard {
+    padding: 16px;
+  }
+
+  .reportHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reportTitle {
+    font-size: 16px;
+  }
+
+  .reportFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .detailsModal {
+    max-height: 95vh;
+  }
+
+  .detailsHeader {
+    padding: 20px 20px 12px;
+  }
+
+  .detailsHeader h2 {
+    font-size: 20px;
+  }
+
+  .detailsContent {
+    padding: 20px;
+  }
+
+  .imagesGallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 20px;
+  }
+
+  .reportCard {
+    padding: 12px;
+  }
+
+  .reportTitle {
+    font-size: 15px;
+  }
+
+  .statusBadge {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .detailsHeader h2 {
+    font-size: 18px;
+  }
+
+  .imagesGallery {
+    grid-template-columns: 1fr;
+  }
+}

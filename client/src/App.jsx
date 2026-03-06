@@ -33,6 +33,8 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const AdvertisingContactsPage = lazy(() => import('./pages/AdvertisingContactsPage'));
 const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
 const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
+const MyBugReportsPage = lazy(() => import('./pages/MyBugReportsPage'));
+const BugReportsAdminPage = lazy(() => import('./pages/BugReportsAdminPage'));
 
 // Компонент загрузки для Suspense
 function LoadingFallback() {
@@ -251,6 +253,26 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AnnouncementsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница управления багрепортами (только для админа) */}
+              <Route 
+                path="/admin/bug-reports" 
+                element={
+                  <ProtectedRoute>
+                    <BugReportsAdminPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница "Мои багрепорты" */}
+              <Route 
+                path="/my-bug-reports" 
+                element={
+                  <ProtectedRoute>
+                    <MyBugReportsPage />
                   </ProtectedRoute>
                 } 
               />

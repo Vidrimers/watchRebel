@@ -11,6 +11,7 @@ const avatarsDir = path.join(__dirname, '../../uploads/avatars');
 const announcementsDir = path.join(__dirname, '../../uploads/announcements');
 const messagesDir = path.join(__dirname, '../../uploads/messages');
 const imagesDir = path.join(__dirname, '../../uploads/images');
+const bugReportsDir = path.join(__dirname, '../../uploads/bug-reports');
 
 if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir, { recursive: true });
@@ -23,6 +24,9 @@ if (!fs.existsSync(messagesDir)) {
 }
 if (!fs.existsSync(imagesDir)) {
   fs.mkdirSync(imagesDir, { recursive: true });
+}
+if (!fs.existsSync(bugReportsDir)) {
+  fs.mkdirSync(bugReportsDir, { recursive: true });
 }
 
 // Настройка хранилища для аватаров
@@ -143,5 +147,31 @@ const uploadCommentImage = multer({
   }
 });
 
-export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage };
+// Настройка хранилища для изображений багрепортов
+const bugReportStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, bugReportsDir);
+  },
+  filename: (req, file, cb) => {
+    // Генерируем уникальное имя файла: userId_timestamp_random.ext
+    const userId = req.user.id;
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    const ext = path.extname(file.originalname);
+    const filename = `${userId}_${timestamp}_${random}${ext}`;
+    cb(null, filename);
+  }
+});
+
+// Настройка multer для изображений багрепортов (до 5 изображений, 5MB каждое)
+const uploadBugReportImages = multer({
+  storage: bugReportStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // Максимум 5MB
+    files: 5 // Максимум 5 изображений
+  }
+});
+
+export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage, uploadBugReportImages };
 export default uploadAvatar;

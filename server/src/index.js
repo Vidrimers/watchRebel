@@ -42,6 +42,7 @@ import settingsRoutes from './routes/settings.js';
 import imagesRoutes from './routes/images.js';
 import friendRequestsRoutes from './routes/friendRequests.js';
 import reviewsRoutes from './routes/reviews.js';
+import bugReportsRoutes from './routes/bugReports.js';
 import logger, { httpLogger, cleanOldLogs } from './utils/logger.js';
 import { initWebSocket } from './services/websocketService.js';
 import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
@@ -122,6 +123,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/friend-requests', friendRequestsRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/bug-reports', bugReportsRoutes);
 app.use('/webhook', webhookRoutes);
 
 // Базовый route для проверки

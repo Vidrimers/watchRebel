@@ -210,6 +210,9 @@ bot.onText(/\/menu/, async (msg) => {
         { text: '👥 Пригласить друга', callback_data: 'menu_invite' }
       ],
       [
+        { text: '🐛 Багрепорты и предложения', callback_data: 'menu_bug_report' }
+      ],
+      [
         { text: '⚙️ Настройки', callback_data: 'menu_settings' }
       ],
       [
@@ -317,6 +320,14 @@ bot.on('message', async (msg) => {
   else if (userState && userState.state === 'awaiting_message_reply') {
     await handleSendMessageReply(chatId, userId, msg.text, userState.data);
   }
+  // Если пользователь в состоянии создания багрепорта - ожидание заголовка
+  else if (userState && userState.state === 'awaiting_bug_report_title') {
+    await handleBugReportTitle(chatId, userId, msg.text, userState.data);
+  }
+  // Если пользователь в состоянии создания багрепорта - ожидание описания
+  else if (userState && userState.state === 'awaiting_bug_report_description') {
+    await handleBugReportDescription(chatId, userId, msg.text, userState.data);
+  }
 });
 
 /**
@@ -334,7 +345,44 @@ bot.on('callback_query', async (query) => {
     console.log(`📥 Callback: ${data} от пользователя ${userId}`);
 
     // Обрабатываем различные действия меню
-    if (data.startsWith('menu_')) {
+    if (data === 'show_menu') {
+      // Показываем главное меню
+      await bot.sendMessage(
+        chatId,
+        '<b>📱 Главное меню</b>\n\nВыберите действие:',
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '🎬 Мои фильмы', callback_data: 'menu_movies' },
+                { text: '📺 Мои сериалы', callback_data: 'menu_tv' }
+              ],
+              [
+                { text: '⭐ Хочу посмотреть', callback_data: 'menu_watchlist' },
+                { text: '📰 Лента', callback_data: 'menu_feed' }
+              ],
+              [
+                { text: '💬 Сообщения', callback_data: 'menu_messages' },
+                { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+              ],
+              [
+                { text: '👤 Мой профиль', callback_data: 'menu_profile' }
+              ],
+              [
+                { text: '👥 Пригласить друга', callback_data: 'menu_invite' }
+              ],
+              [
+                { text: '🐛 Багрепорты и предложения', callback_data: 'menu_bug_report' }
+              ],
+              [
+                { text: '⚙️ Настройки', callback_data: 'menu_settings' }
+              ]
+            ]
+          }
+        }
+      );
+    } else if (data.startsWith('menu_')) {
       await handleMenuAction(chatId, userId, data, query.from);
     } else if (data.startsWith('settings_')) {
       await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
@@ -344,6 +392,9 @@ bot.on('callback_query', async (query) => {
       // Обработка кнопки "Ответить" на сообщение
       const receiverId = data.replace('reply_message_', '');
       await handleReplyMessageAction(chatId, userId, receiverId, query.from);
+    } else if (data.startsWith('bug_report_')) {
+      // Обработка действий багрепорта
+      await handleBugReportAction(chatId, userId, data, query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -524,6 +575,13 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
         [{ text: '✏️ Сменить имя', callback_data: 'settings_change_name' }],
         [{ text: '💬 Изменить статус', callback_data: 'settings_change_status' }],
         [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings?session=${session.token}` }]
+      ]
+    },
+    'menu_bug_report': {
+      text: '🐛 <b>Багрепорты и предложения</b>\n\nВыберите действие:',
+      buttons: [
+        [{ text: '📝 Создать багрепорт', callback_data: 'bug_report_create' }],
+        [{ text: '📋 Мои багрепорты', url: `${publicUrl}/my-bug-reports?session=${session.token}` }]
       ]
     }
   };
@@ -1416,6 +1474,283 @@ bot.on('polling_error', (error) => {
 bot.on('webhook_error', (error) => {
   console.error('❌ Ошибка webhook:', error.message);
 });
+
+/**
+ * Обработчик фото для багрепортов
+ */
+bot.on('photo', async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id.toString();
+  const userState = getUserState(userId);
+
+  // Если пользователь в состоянии добавления изображений к багрепорту
+  if (userState && userState.state === 'awaiting_bug_report_images') {
+    await handleBugReportImage(chatId, userId, msg.photo, userState.data);
+  }
+});
+
+/**
+ * Обработка действий багрепорта
+ */
+async function handleBugReportAction(chatId, userId, action, userFrom) {
+  if (action === 'bug_report_create') {
+    // Начинаем процесс создания багрепорта
+    setUserState(userId, 'awaiting_bug_report_title', { userFrom });
+    
+    await bot.sendMessage(
+      chatId,
+      '🐛 <b>Создание багрепорта</b>\n\n' +
+      'Шаг 1/3: Введите заголовок проблемы\n\n' +
+      'Кратко опишите суть проблемы (до 200 символов)\n\n' +
+      'Используйте /cancel для отмены',
+      { parse_mode: 'HTML' }
+    );
+  } else if (action === 'bug_report_skip_images') {
+    // Пропускаем изображения и отправляем багрепорт
+    const userState = getUserState(userId);
+    if (userState && userState.data) {
+      await submitBugReport(chatId, userId, userState.data, userFrom);
+    }
+  } else if (action === 'bug_report_submit') {
+    // Отправляем багрепорт с изображениями
+    const userState = getUserState(userId);
+    if (userState && userState.data) {
+      await submitBugReport(chatId, userId, userState.data, userFrom);
+    }
+  }
+}
+
+/**
+ * Обработка заголовка багрепорта
+ */
+async function handleBugReportTitle(chatId, userId, title, data) {
+  if (title.length > 200) {
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Заголовок слишком длинный. Максимум 200 символов.\n\nПопробуйте еще раз:',
+      { parse_mode: 'HTML' }
+    );
+    return;
+  }
+
+  // Сохраняем заголовок и переходим к описанию
+  setUserState(userId, 'awaiting_bug_report_description', {
+    ...data,
+    title: title.trim()
+  });
+
+  await bot.sendMessage(
+    chatId,
+    '✅ Заголовок сохранен!\n\n' +
+    '🐛 <b>Создание багрепорта</b>\n\n' +
+    'Шаг 2/3: Введите подробное описание проблемы\n\n' +
+    'Опишите:\n' +
+    '• Что произошло\n' +
+    '• Что вы ожидали\n' +
+    '• Шаги для воспроизведения\n\n' +
+    'Максимум 2000 символов\n\n' +
+    'Используйте /cancel для отмены',
+    { parse_mode: 'HTML' }
+  );
+}
+
+/**
+ * Обработка описания багрепорта
+ */
+async function handleBugReportDescription(chatId, userId, description, data) {
+  if (description.length > 2000) {
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Описание слишком длинное. Максимум 2000 символов.\n\nПопробуйте еще раз:',
+      { parse_mode: 'HTML' }
+    );
+    return;
+  }
+
+  // Сохраняем описание и переходим к изображениям
+  setUserState(userId, 'awaiting_bug_report_images', {
+    ...data,
+    description: description.trim(),
+    images: []
+  });
+
+  await bot.sendMessage(
+    chatId,
+    '✅ Описание сохранено!\n\n' +
+    '🐛 <b>Создание багрепорта</b>\n\n' +
+    'Шаг 3/3: Прикрепите изображения (опционально)\n\n' +
+    'Отправьте до 5 изображений со скриншотами проблемы.\n' +
+    'Можно отправлять по одному или несколько сразу.\n\n' +
+    'Когда закончите, нажмите кнопку ниже:',
+    {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '⏭️ Пропустить изображения', callback_data: 'bug_report_skip_images' }],
+          [{ text: '✅ Отправить багрепорт', callback_data: 'bug_report_submit' }]
+        ]
+      }
+    }
+  );
+}
+
+/**
+ * Обработка изображения для багрепорта
+ */
+async function handleBugReportImage(chatId, userId, photos, data) {
+  const userState = getUserState(userId);
+  if (!userState || !userState.data) return;
+
+  const images = userState.data.images || [];
+
+  // Проверяем лимит
+  if (images.length >= 5) {
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Достигнут лимит изображений (максимум 5).\n\n' +
+      'Нажмите кнопку "Отправить багрепорт" для завершения.',
+      { parse_mode: 'HTML' }
+    );
+    return;
+  }
+
+  // Берем фото наилучшего качества
+  const photo = photos[photos.length - 1];
+  images.push(photo.file_id);
+
+  // Обновляем состояние
+  setUserState(userId, 'awaiting_bug_report_images', {
+    ...userState.data,
+    images
+  });
+
+  await bot.sendMessage(
+    chatId,
+    `✅ Изображение ${images.length}/5 добавлено!\n\n` +
+    (images.length < 5 
+      ? 'Можете отправить еще изображения или нажать кнопку для завершения.'
+      : 'Достигнут лимит. Нажмите кнопку "Отправить багрепорт".'),
+    {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '✅ Отправить багрепорт', callback_data: 'bug_report_submit' }]
+        ]
+      }
+    }
+  );
+}
+
+/**
+ * Отправка багрепорта на сервер
+ */
+async function submitBugReport(chatId, userId, data, userFrom) {
+  try {
+    await bot.sendMessage(chatId, '⏳ Отправка багрепорта...', { parse_mode: 'HTML' });
+
+    // Создаем сессию для авторизации
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.API_URL || 'http://localhost:1313';
+
+    // Загружаем изображения если есть
+    let imagePaths = [];
+    if (data.images && data.images.length > 0) {
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+
+      for (const fileId of data.images) {
+        try {
+          // Получаем файл из Telegram
+          const file = await bot.getFile(fileId);
+          const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+          
+          // Скачиваем файл
+          const fileResponse = await fetch(fileUrl);
+          const fileBuffer = await fileResponse.arrayBuffer();
+          
+          // Добавляем в FormData
+          formData.append('images', Buffer.from(fileBuffer), {
+            filename: `image_${Date.now()}.jpg`,
+            contentType: 'image/jpeg'
+          });
+        } catch (err) {
+          console.error('Ошибка загрузки изображения:', err);
+        }
+      }
+
+      // Отправляем изображения
+      const uploadResponse = await fetch(`${apiUrl}/api/bug-reports/upload-images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.token}`,
+          ...formData.getHeaders()
+        },
+        body: formData
+      });
+
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        imagePaths = uploadData.images;
+      }
+    }
+
+    // Создаем багрепорт
+    const response = await fetch(`${apiUrl}/api/bug-reports`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: data.title,
+        description: data.description,
+        images: imagePaths
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    // Очищаем состояние
+    clearUserState(userId);
+
+    await bot.sendMessage(
+      chatId,
+      '✅ <b>Багрепорт успешно отправлен!</b>\n\n' +
+      'Спасибо за обратную связь! 🙏\n\n' +
+      'Мы рассмотрим вашу проблему и уведомим вас об изменении статуса.\n\n' +
+      'Вы можете посмотреть свои багрепорты на сайте.',
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📋 Мои багрепорты', url: `${publicUrl}/my-bug-reports?session=${session.token}` }],
+            [{ text: '📱 Главное меню', callback_data: 'show_menu' }]
+          ]
+        }
+      }
+    );
+
+  } catch (error) {
+    console.error('Ошибка отправки багрепорта:', error);
+    clearUserState(userId);
+    
+    await bot.sendMessage(
+      chatId,
+      '❌ <b>Ошибка отправки багрепорта</b>\n\n' +
+      'Произошла ошибка при отправке. Попробуйте позже или создайте багрепорт на сайте.',
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🌐 Открыть сайт', url: `${publicUrl}` }]
+          ]
+        }
+      }
+    );
+  }
+}
 
 // Настройка команд при запуске
 setupCommands();
