@@ -16,6 +16,9 @@ const MyBugReportsPage = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { myReports, myReportsLoading, myReportsError, selectedReport, selectedReportLoading } = useAppSelector((state) => state.bugReports);
 
+  // Безопасное значение для myReports
+  const safeReports = myReports || [];
+
   // Загрузка багрепортов
   useEffect(() => {
     if (!isAuthenticated) {
@@ -106,7 +109,7 @@ const MyBugReportsPage = () => {
           </div>
         )}
 
-        {!myReportsLoading && !myReportsError && myReports.length === 0 && (
+        {!myReportsLoading && !myReportsError && safeReports.length === 0 && (
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon}>🐛</span>
             <p className={styles.emptyTitle}>У вас пока нет багрепортов</p>
@@ -116,9 +119,9 @@ const MyBugReportsPage = () => {
           </div>
         )}
 
-        {!myReportsLoading && !myReportsError && myReports.length > 0 && (
+        {!myReportsLoading && !myReportsError && safeReports.length > 0 && (
           <div className={styles.reportsList}>
-            {myReports.map((report) => (
+            {safeReports.map((report) => (
               <div
                 key={report.id}
                 className={styles.reportCard}

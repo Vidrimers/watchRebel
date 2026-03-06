@@ -23,10 +23,14 @@ const BugReportsManager = () => {
     dispatch(fetchBugReportStats());
   }, [dispatch]);
 
+  // Безопасные значения с дефолтами
+  const safeReports = allReports || [];
+  const safeStats = stats || { new: 0, in_progress: 0, resolved: 0, rejected: 0 };
+
   // Фильтрация багрепортов
   const filteredReports = activeFilter === 'all'
-    ? allReports
-    : allReports.filter(report => report.status === activeFilter);
+    ? safeReports
+    : safeReports.filter(report => report.status === activeFilter);
 
   // Получение класса статуса
   const getStatusClass = (status) => {
@@ -130,31 +134,31 @@ const BugReportsManager = () => {
             className={`${styles.filterButton} ${activeFilter === 'all' ? styles.active : ''}`}
             onClick={() => setActiveFilter('all')}
           >
-            Все ({allReports.length})
+            Все ({safeReports.length})
           </button>
           <button
             className={`${styles.filterButton} ${activeFilter === 'new' ? styles.active : ''}`}
             onClick={() => setActiveFilter('new')}
           >
-            Новые ({stats.new})
+            Новые ({safeStats.new})
           </button>
           <button
             className={`${styles.filterButton} ${activeFilter === 'in_progress' ? styles.active : ''}`}
             onClick={() => setActiveFilter('in_progress')}
           >
-            В работе ({stats.in_progress})
+            В работе ({safeStats.in_progress})
           </button>
           <button
             className={`${styles.filterButton} ${activeFilter === 'resolved' ? styles.active : ''}`}
             onClick={() => setActiveFilter('resolved')}
           >
-            Решено ({stats.resolved})
+            Решено ({safeStats.resolved})
           </button>
           <button
             className={`${styles.filterButton} ${activeFilter === 'rejected' ? styles.active : ''}`}
             onClick={() => setActiveFilter('rejected')}
           >
-            Отклонено ({stats.rejected})
+            Отклонено ({safeStats.rejected})
           </button>
         </div>
 

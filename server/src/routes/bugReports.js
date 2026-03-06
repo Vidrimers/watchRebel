@@ -120,16 +120,18 @@ router.post('/', authenticateToken, async (req, res) => {
     const bugReportImages = imagesResult.success ? imagesResult.data : [];
 
     res.status(201).json({
-      id: bugReport.id,
-      userId: bugReport.user_id,
-      userName: bugReport.user_name,
-      userAvatar: bugReport.user_avatar,
-      title: bugReport.title,
-      description: bugReport.description,
-      status: bugReport.status,
-      images: bugReportImages,
-      createdAt: bugReport.created_at,
-      updatedAt: bugReport.updated_at,
+      bugReport: {
+        id: bugReport.id,
+        userId: bugReport.user_id,
+        userName: bugReport.user_name,
+        userAvatar: bugReport.user_avatar,
+        title: bugReport.title,
+        description: bugReport.description,
+        status: bugReport.status,
+        images: bugReportImages,
+        createdAt: bugReport.created_at,
+        updatedAt: bugReport.updated_at
+      },
       message: 'Багрепорт успешно создан!'
     });
 

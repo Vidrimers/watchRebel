@@ -292,6 +292,19 @@ const SettingsPage = () => {
               </button>
             </div>
 
+            {/* Кнопка для перехода к багрепортам */}
+            <div className={styles.settingsCard}>
+              <h3 className={styles.cardTitle}>Мои багрепорты</h3>
+              <button 
+                onClick={() => navigate('/my-bug-reports')}
+                className={styles.settingsNavigationButton}
+              >
+                <Icon name="bug" size="medium" />
+                <span>Просмотр моих багрепортов</span>
+                <Icon name="chevron-right" size="small" />
+              </button>
+            </div>
+
             {/* Карточка с выходом */}
             <div className={styles.settingsCard}>
               <h3 className={styles.cardTitle}>Сессия</h3>
