@@ -9,18 +9,25 @@ const router = express.Router();
 
 /**
  * GET /api/watchlist
- * Получить список "Хочу посмотреть" текущего пользователя
+ * Получить список "Хочу посмотреть"
  * 
  * Query params:
+ * - userId: string (опционально, для получения watchlist другого пользователя)
  * - mediaType: 'movie' | 'tv' (опционально, для фильтрации по типу)
+ * 
+ * Если userId не указан - возвращается watchlist текущего пользователя
+ * Если userId указан - возвращается публичный watchlist этого пользователя
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { mediaType } = req.query;
+    const currentUserId = req.user.id;
+    const { userId, mediaType } = req.query;
+
+    // Определяем, чей watchlist запрашивается
+    const targetUserId = userId || currentUserId;
 
     let query = 'SELECT * FROM watchlist WHERE user_id = ?';
-    const params = [userId];
+    const params = [targetUserId];
 
     if (mediaType && (mediaType === 'movie' || mediaType === 'tv')) {
       query += ' AND media_type = ?';

@@ -10,18 +10,25 @@ const router = express.Router();
 
 /**
  * GET /api/lists
- * Получить все пользовательские списки текущего пользователя
+ * Получить все пользовательские списки
  * 
  * Query params:
+ * - userId: string (опционально, для получения списков другого пользователя)
  * - mediaType: 'movie' | 'tv' (опционально, для фильтрации по типу)
+ * 
+ * Если userId не указан - возвращаются списки текущего пользователя
+ * Если userId указан - возвращаются публичные списки этого пользователя
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { mediaType } = req.query;
+    const currentUserId = req.user.id;
+    const { userId, mediaType } = req.query;
+
+    // Определяем, чьи списки запрашиваются
+    const targetUserId = userId || currentUserId;
 
     let query = 'SELECT * FROM custom_lists WHERE user_id = ?';
-    const params = [userId];
+    const params = [targetUserId];
 
     if (mediaType && (mediaType === 'movie' || mediaType === 'tv')) {
       query += ' AND media_type = ?';

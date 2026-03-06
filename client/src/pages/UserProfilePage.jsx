@@ -382,7 +382,7 @@ const UserProfilePage = () => {
                   
                   <button 
                     className={`${styles.actionButton} ${styles.iconButton}`}
-                    onClick={handleComingSoon}
+                    onClick={() => navigate(`/user/${userId}/lists/movies`)}
                     aria-label="Фильмы"
                     title="Фильмы"
                   >
@@ -391,7 +391,7 @@ const UserProfilePage = () => {
                   
                   <button 
                     className={`${styles.actionButton} ${styles.iconButton}`}
-                    onClick={handleComingSoon}
+                    onClick={() => navigate(`/user/${userId}/lists/tv`)}
                     aria-label="Сериалы"
                     title="Сериалы"
                   >
@@ -400,7 +400,7 @@ const UserProfilePage = () => {
                   
                   <button 
                     className={`${styles.actionButton} ${styles.iconButton}`}
-                    onClick={handleComingSoon}
+                    onClick={() => navigate(`/user/${userId}/watchlist`)}
                     aria-label="Хочу посмотреть"
                     title="Хочу посмотреть"
                   >

@@ -23,6 +23,32 @@ export const fetchLists = createAsyncThunk(
   }
 );
 
+// Получить списки другого пользователя
+export const fetchUserLists = createAsyncThunk(
+  'lists/fetchUserLists',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/lists?userId=${userId}`);
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Получить watchlist другого пользователя
+export const fetchUserWatchlist = createAsyncThunk(
+  'lists/fetchUserWatchlist',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/watchlist?userId=${userId}`);
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 export const createList = createAsyncThunk(
   'lists/createList',
   async ({ name, mediaType }, { rejectWithValue }) => {
@@ -199,6 +225,8 @@ const listsSlice = createSlice({
   initialState: {
     customLists: [],
     watchlist: [],
+    userLists: [], // Списки другого пользователя
+    userWatchlist: [], // Watchlist другого пользователя
     episodeProgress: {}, // { seriesId: [progress items] }
     ratings: {}, // { tmdbId: rating }
     loading: false,
@@ -222,6 +250,34 @@ const listsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchLists.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch User Lists
+      .addCase(fetchUserLists.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserLists.fulfilled, (state, action) => {
+        state.userLists = action.payload;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(fetchUserLists.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch User Watchlist
+      .addCase(fetchUserWatchlist.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserWatchlist.fulfilled, (state, action) => {
+        state.userWatchlist = action.payload;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(fetchUserWatchlist.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

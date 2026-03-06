@@ -1,0 +1,41 @@
+.toggleContainer {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.toggleButton {
+  padding: 10px 20px;
+  border: 2px solid var(--border-color);
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background-color: var(--background-hover);
+  border-color: var(--accent-color);
+}
+
+.toggleButton.active {
+  background-color: var(--accent-color);
+  color: var(--text-on-accent);
+  border-color: var(--accent-color);
+}
+
+.toggleButton:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .toggleButton {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}

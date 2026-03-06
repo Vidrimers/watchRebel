@@ -15,6 +15,8 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const PublicCatalogPage = lazy(() => import('./pages/PublicCatalogPage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const UserListsPage = lazy(() => import('./pages/UserListsPage'));
+const UserWatchlistPage = lazy(() => import('./pages/UserWatchlistPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const MediaDetailPage = lazy(() => import('./pages/MediaDetailPage'));
 const ListsPage = lazy(() => import('./pages/ListsPage'));
@@ -113,6 +115,26 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UserProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница списков другого пользователя */}
+              <Route 
+                path="/user/:userId/lists/:mediaType" 
+                element={
+                  <ProtectedRoute>
+                    <UserListsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница watchlist другого пользователя */}
+              <Route 
+                path="/user/:userId/watchlist" 
+                element={
+                  <ProtectedRoute>
+                    <UserWatchlistPage />
                   </ProtectedRoute>
                 } 
               />
