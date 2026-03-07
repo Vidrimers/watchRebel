@@ -71,7 +71,7 @@
 }
 
 .sidebar.compactSearch .navigation {
-  padding: 10px 5px;
+  padding: 8px 0;
 }
 
 .sidebar.compactSearch .navList {
@@ -106,10 +106,7 @@
   transition: box-shadow 0.2s;
   position: relative; /* Для absolute позиционирования кнопки уведомлений */
   overflow: visible; /* Чтобы dropdown не обрезался */
-}
-
-.userInfoLink:hover .userInfo {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin: 0 5px;
 }
 
 .userName {
@@ -173,8 +170,10 @@
 .navigation {
   background: var(--bg-secondary, #ffffff);
   border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 0 5px;
 }
 
 .navList {
@@ -190,18 +189,27 @@
   margin: 0;
 }
 
+.navItem:first-child .navLink {
+  padding-top: 20px;
+}
+
+.navItem:last-child .navLink {
+  padding-bottom: 20px;
+}
+
 .navLink {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 12px 31px;
   text-decoration: none;
   color: var(--text-primary, #333);
   font-size: 15px;
   transition: background-color 0.2s, color 0.2s;
+  width: 100%;
 }
 
-.navLink:hover {
+.navItem:hover .navLink {
   background-color: var(--bg-hover, #f5f5f5);
   color: var(--accent-color, #6366f1);
 }
