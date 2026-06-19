@@ -130,11 +130,14 @@
   margin-bottom: 20px;
 }
 
+.personalNoteSection {
+  margin-bottom: 20px;
+}
+
 .personalNoteBlock {
   padding: 14px 16px;
   background: var(--bg-secondary, #f3f4f6);
   border-radius: 10px;
-  margin-bottom: 20px;
   border-left: 3px solid var(--accent-primary, #6366f1);
 }
 
@@ -145,10 +148,22 @@
   margin-bottom: 8px;
 }
 
+.noteTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .noteLabel {
   font-size: 13px;
   font-weight: 600;
   color: var(--accent-primary, #6366f1);
+}
+
+.notePrivateHint {
+  font-size: 11px;
+  color: var(--text-tertiary, #999);
+  font-style: italic;
 }
 
 .noteEditBtn {

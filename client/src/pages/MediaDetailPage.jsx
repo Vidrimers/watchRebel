@@ -410,9 +410,12 @@ const MediaDetailPage = () => {
 
             {/* Моя заметка */}
             {currentList && existingNote && !showListSelector && !isEditingNote && (
-              <div className={styles.personalNoteBlock}>
+              <div className={styles.personalNoteSection}>
                 <div className={styles.noteHeader}>
-                  <span className={styles.noteLabel}>Моя заметка</span>
+                  <div className={styles.noteTitleGroup}>
+                    <span className={styles.noteLabel}>Моя заметка</span>
+                    <span className={styles.notePrivateHint}>видно только вам</span>
+                  </div>
                   <div className={styles.noteActions}>
                     <button 
                       className={styles.noteEditBtn}
@@ -432,45 +435,52 @@ const MediaDetailPage = () => {
                     </button>
                   </div>
                 </div>
-                <p className={styles.noteText}>{existingNote}</p>
+                <div className={styles.personalNoteBlock}>
+                  <p className={styles.noteText}>{existingNote}</p>
+                </div>
               </div>
             )}
 
             {/* Редактирование заметки */}
             {currentList && isEditingNote && (
-              <div className={styles.personalNoteBlock}>
+              <div className={styles.personalNoteSection}>
                 <div className={styles.noteHeader}>
-                  <span className={styles.noteLabel}>Редактирование заметки</span>
+                  <div className={styles.noteTitleGroup}>
+                    <span className={styles.noteLabel}>Редактирование заметки</span>
+                    <span className={styles.notePrivateHint}>видно только вам</span>
+                  </div>
                 </div>
-                <textarea
-                  className={styles.noteTextarea}
-                  value={editingNoteText}
-                  onChange={(e) => setEditingNoteText(e.target.value)}
-                  placeholder="Ссылки, комментарии..."
-                  rows={3}
-                  maxLength={500}
-                  autoFocus
-                />
-                <div className={styles.noteEditActions}>
-                  <span className={styles.noteCount}>{editingNoteText.length}/500</span>
-                  <div className={styles.noteEditButtons}>
-                    <button 
-                      className={styles.noteCancelBtn}
-                      onClick={() => {
-                        setIsEditingNote(false);
-                        setEditingNoteText('');
-                      }}
-                      disabled={savingNote}
-                    >
-                      Отмена
-                    </button>
-                    <button 
-                      className={styles.noteSaveBtn}
-                      onClick={handleSaveNote}
-                      disabled={savingNote}
-                    >
-                      {savingNote ? 'Сохранение...' : 'Сохранить'}
-                    </button>
+                <div className={styles.personalNoteBlock}>
+                  <textarea
+                    className={styles.noteTextarea}
+                    value={editingNoteText}
+                    onChange={(e) => setEditingNoteText(e.target.value)}
+                    placeholder="Ссылки, комментарии..."
+                    rows={3}
+                    maxLength={500}
+                    autoFocus
+                  />
+                  <div className={styles.noteEditActions}>
+                    <span className={styles.noteCount}>{editingNoteText.length}/500</span>
+                    <div className={styles.noteEditButtons}>
+                      <button 
+                        className={styles.noteCancelBtn}
+                        onClick={() => {
+                          setIsEditingNote(false);
+                          setEditingNoteText('');
+                        }}
+                        disabled={savingNote}
+                      >
+                        Отмена
+                      </button>
+                      <button 
+                        className={styles.noteSaveBtn}
+                        onClick={handleSaveNote}
+                        disabled={savingNote}
+                      >
+                        {savingNote ? 'Сохранение...' : 'Сохранить'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
