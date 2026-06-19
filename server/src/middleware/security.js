@@ -114,6 +114,7 @@ export function configureCORS() {
     'http://localhost:1313', // Когда фронтенд отдается с бэкенда
     'http://localhost:5173', // Vite dev server
     'https://watchrebel.ru',
+    'https://www.watchrebel.ru',
     'https://dev.watchrebel.ru'
   ];
 
