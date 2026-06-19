@@ -109,6 +109,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const user = userResult.data[0];
 
+    // Подсчитываем количество постов
+    const postsCountResult = await executeQuery(
+      'SELECT COUNT(*) as count FROM wall_posts WHERE user_id = ?',
+      [id]
+    );
+    const postsCount = postsCountResult.success ? postsCountResult.data[0].count : 0;
+
     // Проверяем, заблокирован ли этот пользователь текущим пользователем
     let isBlockedByMe = false;
     let hasBlockedMe = false;
@@ -162,7 +169,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
       hasDiscordLinked: Boolean(user.discord_id),
       emailVerified: Boolean(user.email_verified),
       createdAt: user.created_at,
-      isBlockedByMe: isBlockedByMe
+      isBlockedByMe: isBlockedByMe,
+      postsCount: postsCount
     });
 
   } catch (error) {

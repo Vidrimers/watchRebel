@@ -368,6 +368,10 @@ const UserProfilePage = () => {
                 <p className={styles.userStatus}>{profileUser.userStatus}</p>
               )}
               
+              {profileUser.postsCount > 0 && (
+                <p className={styles.postsCount}>Постов: {profileUser.postsCount}</p>
+              )}
+              
               {/* Кнопка отправить сообщение */}
               {!isBlocked && (
                 <div className={styles.profileActions}>
