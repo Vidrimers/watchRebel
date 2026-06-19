@@ -117,7 +117,6 @@
 .reviewContent {
   padding: 14px 16px;
   background: var(--bg-secondary, #f3f4f6);
-  border-radius: 10px;
   border-left: 3px solid var(--accent-primary, #6366f1);
   white-space: pre-wrap;
   word-wrap: break-word;
