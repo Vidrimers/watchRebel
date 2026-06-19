@@ -36,7 +36,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const filteredPosts = activeFilter === 'all' 
     ? posts 
     : activeFilter === 'rating_review'
-      ? posts.filter(p => p.postType === 'rating' || p.postType === 'review')
+      ? posts.filter(p => p.postType === 'rating' || p.postType === 'review' || p.rating != null)
       : posts.filter(p => p.postType === activeFilter);
 
   // Загрузка постов при монтировании компонента
