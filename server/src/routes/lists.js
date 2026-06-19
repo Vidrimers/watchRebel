@@ -79,7 +79,8 @@ router.get('/', authenticateToken, async (req, res) => {
                   posterPath: mediaDetails.poster_path,
                   releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
                   voteAverage: mediaDetails.vote_average || 0,
-                  overview: mediaDetails.overview
+                  overview: mediaDetails.overview,
+                  personalNote: item.personal_note || null
                 };
               } catch (error) {
                 console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
@@ -93,7 +94,8 @@ router.get('/', authenticateToken, async (req, res) => {
                   posterPath: null,
                   releaseDate: null,
                   voteAverage: 0,
-                  overview: null
+                  overview: null,
+                  personalNote: item.personal_note || null
                 };
               }
             })
