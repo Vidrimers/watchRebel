@@ -458,7 +458,7 @@ const MediaDetailPage = () => {
               <div className={styles.personalNoteSection}>
                 <div className={styles.noteHeader}>
                   <div className={styles.noteTitleGroup}>
-                    <span className={styles.noteLabel}>Редактирование заметки</span>
+                    <span className={styles.noteLabel}>{existingNote ? 'Редактирование заметки' : 'Добавить заметку'}</span>
                     <span className={styles.notePrivateHint}>видно только вам</span>
                   </div>
                 </div>
