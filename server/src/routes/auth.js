@@ -1976,4 +1976,222 @@ router.delete('/unlink-discord', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/auth/link-email
+ * Привязка email к аккаунту
+ * Отправляет код подтверждения на указанный email
+ */
+router.post('/link-email', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ 
+        error: 'Email обязателен',
+        code: 'EMAIL_REQUIRED' 
+      });
+    }
+
+    // Валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        error: 'Некорректный формат email',
+        code: 'INVALID_EMAIL' 
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    // Проверяем, не привязан ли уже этот email к другому пользователю
+    const existingCheck = await executeQuery(
+      'SELECT id FROM users WHERE email = ? AND id != ?',
+      [normalizedEmail, userId]
+    );
+
+    if (existingCheck.success && existingCheck.data.length > 0) {
+      return res.status(400).json({ 
+        error: 'Этот email уже привязан к другому аккаунту',
+        code: 'EMAIL_ALREADY_LINKED' 
+      });
+    }
+
+    // Генерируем код подтверждения (6 цифр)
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 минут
+
+    // Сохраняем код в БД (используем таблицу email_verification_tokens)
+    await executeQuery(
+      'DELETE FROM email_verification_tokens WHERE user_id = ?',
+      [userId]
+    );
+
+    await executeQuery(
+      'INSERT INTO email_verification_tokens (id, user_id, token, email, expires_at, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+      [uuidv4(), userId, verificationCode, normalizedEmail, expiresAt.toISOString()]
+    );
+
+    // Получаем имя пользователя
+    const userResult = await executeQuery('SELECT display_name FROM users WHERE id = ?', [userId]);
+    const displayName = userResult.data?.[0]?.display_name || 'Пользователь';
+
+    // Отправляем email с кодом
+    const { sendLinkVerificationEmail } = await import('../services/emailService.js');
+    const result = await sendLinkVerificationEmail(normalizedEmail, displayName, verificationCode);
+
+    if (!result.success) {
+      return res.status(500).json({ 
+        error: 'Не удалось отправить письмо. Попробуйте позже.',
+        code: 'EMAIL_SEND_FAILED' 
+      });
+    }
+
+    res.json({
+      message: 'Код подтверждения отправлен на ' + normalizedEmail
+    });
+
+  } catch (error) {
+    console.error('Ошибка привязки email:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/auth/link-email/verify
+ * Подтверждение привязки email через код
+ */
+router.post('/link-email/verify', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ 
+        error: 'Код подтверждения обязателен',
+        code: 'CODE_REQUIRED' 
+      });
+    }
+
+    // Ищем токен в БД
+    const tokenResult = await executeQuery(
+      'SELECT * FROM email_verification_tokens WHERE user_id = ? AND token = ?',
+      [userId, code]
+    );
+
+    if (!tokenResult.success || tokenResult.data.length === 0) {
+      return res.status(400).json({ 
+        error: 'Неверный код подтверждения',
+        code: 'INVALID_CODE' 
+      });
+    }
+
+    const tokenData = tokenResult.data[0];
+
+    // Проверяем срок действия
+    if (new Date(tokenData.expires_at) < new Date()) {
+      return res.status(400).json({ 
+        error: 'Срок действия кода истёк. Запросите новый.',
+        code: 'CODE_EXPIRED' 
+      });
+    }
+
+    // Привязываем email
+    const updateResult = await executeQuery(
+      'UPDATE users SET email = ?, email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [tokenData.email, userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка привязки email',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    // Удаляем использованный токен
+    await executeQuery(
+      'DELETE FROM email_verification_tokens WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({
+      message: 'Email успешно привязан',
+      email: tokenData.email
+    });
+
+  } catch (error) {
+    console.error('Ошибка подтверждения email:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/auth/unlink-email
+ * Отвязка email от аккаунта
+ */
+router.delete('/unlink-email', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Получаем информацию о пользователе
+    const userResult = await executeQuery(
+      'SELECT auth_method, google_id, discord_id, telegram_username, password_hash FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!userResult.success || userResult.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+    const user = userResult.data[0];
+
+    // Проверяем, есть ли другие способы входа
+    const hasOtherMethods = user.telegram_username || user.google_id || user.discord_id || user.password_hash;
+
+    if (!hasOtherMethods) {
+      return res.status(400).json({ 
+        error: 'Нельзя отвязать email, так как это единственный способ входа. Сначала привяжите другой способ.',
+        code: 'LAST_AUTH_METHOD' 
+      });
+    }
+
+    // Отвязываем email
+    const updateResult = await executeQuery(
+      `UPDATE users 
+       SET email = NULL, email_verified = 0, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка отвязки email',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Email успешно отвязан'
+    });
+
+  } catch (error) {
+    console.error('Ошибка отвязки email:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
 export default router;

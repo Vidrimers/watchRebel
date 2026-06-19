@@ -284,6 +284,81 @@ export async function sendPasswordResetEmail(email, displayName, resetToken) {
   }
 }
 
+/**
+ * Отправить код подтверждения для привязки email
+ * @param {string} email - Email получателя
+ * @param {string} displayName - Имя пользователя
+ * @param {string} code - Код подтверждения (6 цифр)
+ */
+export async function sendLinkVerificationEmail(email, displayName, code) {
+  const transport = initTransporter();
+  
+  if (!transport) {
+    console.warn('⚠️ Email транспорт не инициализирован. Письмо не отправлено.');
+    return { success: false, error: 'Email транспорт не настроен' };
+  }
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to: email,
+    subject: 'Код подтверждения email — watchRebel',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .code { font-size: 36px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; background: white; border-radius: 8px; margin: 20px 0; color: #667eea; }
+          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🎬 watchRebel</h1>
+          <p>Социальная сеть для любителей кино и сериалов</p>
+        </div>
+        <div class="content">
+          <h2>Привет, ${displayName}!</h2>
+          <p>Вы запросили привязку email к аккаунту на watchRebel.</p>
+          <p>Ваш код подтверждения:</p>
+          <div class="code">${code}</div>
+          <p><strong>Важно:</strong> Код действителен в течение 15 минут.</p>
+          <p>Если вы не запрашивали привязку email, просто проигнорируйте это письмо.</p>
+        </div>
+        <div class="footer">
+          <p>© 2024 watchRebel. Все права защищены.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      Привет, ${displayName}!
+      
+      Вы запросили привязку email к аккаунту на watchRebel.
+      
+      Ваш код подтверждения: ${code}
+      
+      Код действителен в течение 15 минут.
+      
+      Если вы не запрашивали привязку email, просто проигнорируйте это письмо.
+      
+      © 2024 watchRebel
+    `,
+  };
+
+  try {
+    const info = await transport.sendMail(mailOptions);
+    console.log('✅ Код подтверждения email отправлен:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Ошибка отправки кода подтверждения:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetEmail,

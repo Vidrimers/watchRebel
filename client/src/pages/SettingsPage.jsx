@@ -10,6 +10,7 @@ import AvatarUpload from '../components/Settings/AvatarUpload';
 import TelegramConnectionBlock from '../components/Settings/TelegramConnectionBlock';
 import GoogleConnectionBlock from '../components/Settings/GoogleConnectionBlock';
 import DiscordConnectionBlock from '../components/Settings/DiscordConnectionBlock';
+import EmailConnectionBlock from '../components/Settings/EmailConnectionBlock';
 import NotificationSettings from '../components/Settings/NotificationSettings';
 import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm.jsx';
@@ -358,6 +359,9 @@ const SettingsPage = () => {
               
               <h2 className={styles.screenTitle}>Связанные аккаунты</h2>
               
+              {/* Блок управления Email */}
+              <EmailConnectionBlock />
+
               {/* Блок управления Telegram */}
               <TelegramConnectionBlock />
 

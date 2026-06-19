@@ -108,6 +108,54 @@
   cursor: not-allowed;
 }
 
+.input {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-secondary, #666);
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--border-color, #e0e0e0);
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Темная тема */
 :global(.dark) .settingsCard {
   background: var(--card-background-dark, #2a2a2a);
@@ -139,4 +187,23 @@
 
 :global(.dark) .linkButton:hover:not(:disabled) {
   background: var(--primary-color-hover-dark, #a5b4fc);
+}
+
+:global(.dark) .input {
+  background: var(--input-background-dark, #333);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .input:focus {
+  border-color: var(--primary-color-dark, #818cf8);
+}
+
+:global(.dark) .cancelButton {
+  background: var(--bg-tertiary-dark, #444);
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .cancelButton:hover:not(:disabled) {
+  background: var(--border-color-dark, #555);
 }
