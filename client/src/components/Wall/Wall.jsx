@@ -23,7 +23,20 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
   const fileInputRef = useRef(null);
+
+  const filters = [
+    { key: 'all', label: 'Все' },
+    { key: 'text', label: 'Текстовые' },
+    { key: 'rating', label: 'Оценки' },
+    { key: 'review', label: 'Отзывы' },
+    { key: 'media_added', label: 'Медиа' }
+  ];
+
+  const filteredPosts = activeFilter === 'all' 
+    ? posts 
+    : posts.filter(p => p.postType === activeFilter);
 
   // Загрузка постов при монтировании компонента
   useEffect(() => {
@@ -422,8 +435,22 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       )}
 
       {/* Список постов */}
+      {posts.length > 0 && (
+        <div className={styles.filterBar}>
+          {filters.map(f => (
+            <button
+              key={f.key}
+              className={`${styles.filterButton} ${activeFilter === f.key ? styles.filterActive : ''}`}
+              onClick={() => setActiveFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className={styles.postsList}>
-        {posts.length === 0 ? (
+        {filteredPosts.length === 0 ? (
           <div className={styles.emptyState}>
             <p>Пока нет записей на стене</p>
             {isOwnProfile && (
@@ -434,7 +461,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
           </div>
         ) : (
           <>
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <WallPost 
                 key={post.id} 
                 post={post}
