@@ -11,6 +11,26 @@
   margin-bottom: 2rem;
 }
 
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.backButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 .loading,
 .error,
 .empty {

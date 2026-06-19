@@ -226,6 +226,16 @@ const FriendsPage = () => {
               {isOwnProfile ? 'Мои друзья' : `Друзья`}
             </h1>
             
+            {!isOwnProfile && (
+              <button 
+                className={styles.backButton}
+                onClick={() => navigate(`/user/${routeUserId}`)}
+              >
+                <Icon name="arrow-left" size="medium" />
+                <span>Назад</span>
+              </button>
+            )}
+            
             {/* Вкладки */}
             <div className={styles.tabs}>
               <button
