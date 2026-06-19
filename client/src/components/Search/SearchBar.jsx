@@ -162,7 +162,7 @@ const SearchBar = () => {
                         <img
                           src={
                             result.data.avatarUrl?.startsWith('/uploads/')
-                              ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${result.data.avatarUrl}`
+                              ? `${import.meta.env.VITE_API_URL || ''}${result.data.avatarUrl}`
                               : result.data.avatarUrl || '/default-avatar.png'
                           }
                           alt={result.data.displayName}

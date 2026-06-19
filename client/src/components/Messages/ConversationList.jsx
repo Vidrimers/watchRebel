@@ -187,7 +187,7 @@ const ConversationList = ({ onSelectConversation }) => {
                           <img 
                             src={
                               friend.avatarUrl.startsWith('/uploads/')
-                                ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${friend.avatarUrl}`
+                                ? `${import.meta.env.VITE_API_URL || ''}${friend.avatarUrl}`
                                 : friend.avatarUrl
                             }
                             alt={friend.displayName}
@@ -242,7 +242,7 @@ const ConversationList = ({ onSelectConversation }) => {
                 <img 
                   src={
                     conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                      ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
                       : conversation.otherUser.avatarUrl
                   }
                   alt={conversation.otherUser.displayName}
@@ -323,7 +323,7 @@ const ConversationList = ({ onSelectConversation }) => {
                         <img 
                           src={
                             friend.avatarUrl.startsWith('/uploads/')
-                              ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${friend.avatarUrl}`
+                              ? `${import.meta.env.VITE_API_URL || ''}${friend.avatarUrl}`
                               : friend.avatarUrl
                           }
                           alt={friend.displayName}

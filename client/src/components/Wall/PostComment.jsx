@@ -533,7 +533,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
             <img 
               src={comment.author.avatarUrl.startsWith('http') 
                 ? comment.author.avatarUrl 
-                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.author.avatarUrl}`
+                : `${import.meta.env.VITE_API_URL || ''}${comment.author.avatarUrl}`
               }
               alt={comment.author.displayName}
               className={styles.avatarImage}
@@ -621,7 +621,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
                   <img 
                     src={comment.imageUrl.startsWith('http') 
                       ? comment.imageUrl 
-                      : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.imageUrl}`
+                      : `${import.meta.env.VITE_API_URL || ''}${comment.imageUrl}`
                     }
                     alt="Изображение комментария"
                     className={styles.commentImageImg}
@@ -638,7 +638,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
             <ImageModal
               imageUrl={comment.imageUrl.startsWith('http') 
                 ? comment.imageUrl 
-                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.imageUrl}`
+                : `${import.meta.env.VITE_API_URL || ''}${comment.imageUrl}`
               }
               alt="Изображение комментария"
               isOpen={showImageModal}

@@ -77,7 +77,7 @@ const AvatarUpload = ({ user }) => {
     if (user.avatarUrl) {
       // Если аватарка загружена на сервер
       if (user.avatarUrl.startsWith('/uploads/')) {
-        return `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`;
+        return `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`;
       }
       // Если аватарка из Telegram
       return user.avatarUrl;

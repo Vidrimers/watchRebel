@@ -55,7 +55,7 @@ const PostImageGrid = ({ images, onImageClick }) => {
             onClick={() => onImageClick(index)}
           >
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${image.url}`}
+              src={`${import.meta.env.VITE_API_URL || ''}${image.url}`}
               alt={`Изображение ${index + 1}`}
               className={styles.image}
               onLoad={(e) => handleImageLoad(image.id, e)}

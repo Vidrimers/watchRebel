@@ -73,7 +73,7 @@ const ListDetailPage = () => {
                 <img 
                   src={list.owner.avatarUrl.startsWith('http') 
                     ? list.owner.avatarUrl 
-                    : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${list.owner.avatarUrl}`
+                    : `${import.meta.env.VITE_API_URL || ''}${list.owner.avatarUrl}`
                   }
                   alt={list.owner.displayName}
                   className={styles.ownerAvatar}

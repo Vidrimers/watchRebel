@@ -263,7 +263,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
         formData.append('postId', postId);
 
         const token = localStorage.getItem('authToken');
-        const uploadResponse = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}/api/wall/images`, formData, {
+        const uploadResponse = await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/wall/images`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`

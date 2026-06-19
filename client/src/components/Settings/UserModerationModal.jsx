@@ -295,7 +295,7 @@ function UserModerationModal({ user, onClose, onUpdate }) {
             <img
               src={
                 user.avatarUrl?.startsWith('/uploads/')
-                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`
+                  ? `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`
                   : user.avatarUrl || '/default-avatar.png'
               }
               alt={user.displayName}

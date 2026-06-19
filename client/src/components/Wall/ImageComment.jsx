@@ -122,7 +122,7 @@ const ImageComment = ({ comment, onReply, onEdit, onDelete, onRestore, isDeleted
         <div className={styles.avatar}>
           {comment.author.avatarUrl ? (
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${comment.author.avatarUrl}`}
+              src={`${import.meta.env.VITE_API_URL || ''}${comment.author.avatarUrl}`}
               alt={comment.author.displayName}
             />
           ) : (

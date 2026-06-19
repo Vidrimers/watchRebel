@@ -16,7 +16,7 @@ const UserAvatar = ({ user, size = 'medium', className = '', showBanIndicator = 
     
     // Если аватарка загружена на сервер (начинается с /uploads/)
     if (user.avatarUrl.startsWith('/uploads/')) {
-      return `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`;
+      return `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`;
     }
     
     // Если аватарка из Telegram или другой внешний URL

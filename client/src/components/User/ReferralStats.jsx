@@ -131,7 +131,7 @@ const ReferralStats = ({ userId }) => {
                       <img 
                         src={
                           referral.avatarUrl.startsWith('/uploads/')
-                            ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${referral.avatarUrl}`
+                            ? `${import.meta.env.VITE_API_URL || ''}${referral.avatarUrl}`
                             : referral.avatarUrl
                         } 
                         alt={referral.displayName} 

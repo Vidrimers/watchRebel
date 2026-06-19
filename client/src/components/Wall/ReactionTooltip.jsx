@@ -36,7 +36,7 @@ const ReactionTooltip = ({ users, position, onMouseEnter, onMouseLeave, classNam
                 <img 
                   src={user.avatarUrl.startsWith('http') 
                     ? user.avatarUrl 
-                    : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`
+                    : `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`
                   }
                   alt={user.name}
                   onError={(e) => {

@@ -208,7 +208,7 @@ const ReviewDisplay = ({ review, media, onGoToMediaPage }) => {
               src={
                 review.author.avatarUrl.startsWith('http') 
                   ? review.author.avatarUrl 
-                  : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${review.author.avatarUrl}`
+                  : `${import.meta.env.VITE_API_URL || ''}${review.author.avatarUrl}`
               }
               alt={review.author.displayName}
               className={styles.authorAvatar}

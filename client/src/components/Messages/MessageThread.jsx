@@ -312,7 +312,7 @@ const MessageThread = ({ conversation }) => {
                 <img 
                   src={
                     conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                      ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
                       : conversation.otherUser.avatarUrl
                   }
                   alt={conversation.otherUser.displayName}
@@ -354,7 +354,7 @@ const MessageThread = ({ conversation }) => {
             <img 
               src={
                 conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                  ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
                   : conversation.otherUser.avatarUrl
               }
               alt={conversation.otherUser.displayName}
@@ -410,7 +410,7 @@ const MessageThread = ({ conversation }) => {
                             <img 
                               src={
                                 user.avatarUrl.startsWith('/uploads/')
-                                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${user.avatarUrl}`
+                                  ? `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`
                                   : user.avatarUrl
                               }
                               alt={user.displayName}
@@ -438,7 +438,7 @@ const MessageThread = ({ conversation }) => {
                             <img 
                               src={
                                 conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${conversation.otherUser.avatarUrl}`
+                                  ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
                                   : conversation.otherUser.avatarUrl
                               }
                               alt={conversation.otherUser.displayName}
@@ -475,14 +475,14 @@ const MessageThread = ({ conversation }) => {
                             <div key={attIndex} className={styles.attachment}>
                               {attachment.mimetype.startsWith('image/') ? (
                                 <img
-                                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${attachment.path}`}
+                                  src={`${import.meta.env.VITE_API_URL || ''}${attachment.path}`}
                                   alt={attachment.originalName}
                                   className={styles.attachmentImage}
                                   onClick={() => handleImageClick(message.attachments, attIndex)}
                                 />
                               ) : (
                                 <a
-                                  href={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${attachment.path}`}
+                                  href={`${import.meta.env.VITE_API_URL || ''}${attachment.path}`}
                                   download={attachment.originalName}
                                   className={styles.attachmentFile}
                                 >
@@ -632,7 +632,7 @@ const MessageThread = ({ conversation }) => {
             )}
             
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${modalImages[currentImageIndex]?.path}`}
+              src={`${import.meta.env.VITE_API_URL || ''}${modalImages[currentImageIndex]?.path}`}
               alt={modalImages[currentImageIndex]?.originalName}
               className={styles.imageModalImage}
               onLoad={handleImageLoad}

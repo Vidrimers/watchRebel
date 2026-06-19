@@ -259,7 +259,7 @@ const FeedPage = () => {
                             <img 
                               src={post.author.avatarUrl.startsWith('http') 
                                 ? post.author.avatarUrl 
-                                : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.author.avatarUrl}`
+                                : `${import.meta.env.VITE_API_URL || ''}${post.author.avatarUrl}`
                               }
                               alt={post.author.displayName}
                               className={styles.authorAvatar}
@@ -302,7 +302,7 @@ const FeedPage = () => {
                                   <img 
                                     src={post.wallOwner.avatarUrl.startsWith('http') 
                                       ? post.wallOwner.avatarUrl 
-                                      : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.wallOwner.avatarUrl}`
+                                      : `${import.meta.env.VITE_API_URL || ''}${post.wallOwner.avatarUrl}`
                                     }
                                     alt={post.wallOwner.displayName}
                                     className={styles.authorAvatar}

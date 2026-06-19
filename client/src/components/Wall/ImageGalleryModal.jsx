@@ -25,7 +25,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose, hideCommen
   const currentUser = useSelector((state) => state.auth.user);
   const commentsListRef = useRef(null); // Ссылка на список комментариев для сохранения скролла
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1313';
+  const API_URL = import.meta.env.VITE_API_URL || '';
 
   // Обновляем индекс при изменении startIndex
   useEffect(() => {
@@ -239,10 +239,10 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose, hideCommen
       });
     };
     
-    img.src = `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${currentImage.url}`;
+    img.src = `${import.meta.env.VITE_API_URL || ''}${currentImage.url}`;
 
     // Получаем размер файла
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${currentImage.url}`)
+    fetch(`${import.meta.env.VITE_API_URL || ''}${currentImage.url}`)
       .then(response => {
         const size = response.headers.get('content-length');
         if (size) {
@@ -372,7 +372,7 @@ const ImageGalleryModal = ({ images, startIndex = 0, isOpen, onClose, hideCommen
             {/* Изображение */}
             <div className={styles.imageContainer}>
               <img
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${currentImage.url}`}
+                src={`${import.meta.env.VITE_API_URL || ''}${currentImage.url}`}
                 alt={`Изображение ${currentIndex + 1}`}
                 className={styles.image}
               />

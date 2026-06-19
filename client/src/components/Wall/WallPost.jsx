@@ -493,7 +493,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                     onClick={() => handleImageClick(index)}
                   >
                     <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${imageUrl}`} 
+                      src={`${import.meta.env.VITE_API_URL || ''}${imageUrl}`} 
                       alt={`Изображение ${index + 1}`}
                       onLoad={(e) => handleAnnouncementImageLoad(index, e)}
                     />
@@ -594,7 +594,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 <img 
                   src={
                     post.posterPath?.startsWith('/uploads/') 
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.posterPath}`
+                      ? `${import.meta.env.VITE_API_URL || ''}${post.posterPath}`
                       : mediaPosterPath
                       ? `https://image.tmdb.org/t/p/w185${mediaPosterPath}`
                       : `https://image.tmdb.org/t/p/w185${post.posterPath}`
@@ -721,7 +721,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 <img 
                   src={
                     post.posterPath.startsWith('/uploads/') 
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.posterPath}`
+                      ? `${import.meta.env.VITE_API_URL || ''}${post.posterPath}`
                       : `https://image.tmdb.org/t/p/w185${post.posterPath}`
                   }
                   alt="Постер"
@@ -824,7 +824,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                     <img 
                       src={post.author.avatarUrl.startsWith('http') 
                         ? post.author.avatarUrl 
-                        : `${import.meta.env.VITE_API_URL || 'http://localhost:1313'}${post.author.avatarUrl}`
+                        : `${import.meta.env.VITE_API_URL || ''}${post.author.avatarUrl}`
                       }
                       alt={post.author.displayName}
                       className={styles.authorAvatar}
