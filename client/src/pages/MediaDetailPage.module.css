@@ -166,6 +166,98 @@
   color: var(--accent-primary, #6366f1);
 }
 
+.noteActions {
+  display: flex;
+  gap: 4px;
+}
+
+.noteDeleteBtn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--color-error, #dc3545);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.noteDeleteBtn:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.noteTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #333);
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+.noteTextarea:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+}
+
+.noteEditActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.noteCount {
+  font-size: 11px;
+  color: var(--text-tertiary, #999);
+}
+
+.noteEditButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.noteCancelBtn {
+  padding: 6px 12px;
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.noteCancelBtn:hover:not(:disabled) {
+  background: var(--bg-hover, #e5e7eb);
+}
+
+.noteSaveBtn {
+  padding: 6px 12px;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.noteSaveBtn:hover:not(:disabled) {
+  background: var(--accent-primary-active, #4f46e5);
+}
+
+.noteSaveBtn:disabled,
+.noteCancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .noteText {
   margin: 0;
   font-size: 14px;

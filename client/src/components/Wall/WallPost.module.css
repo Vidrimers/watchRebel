@@ -356,6 +356,7 @@
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 6px;
+  width: fit-content;
 }
 
 .noteIndicator:hover {

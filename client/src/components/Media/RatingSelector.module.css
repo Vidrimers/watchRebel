@@ -4,9 +4,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background-color: var(--card-background, #fff);
+  background-color: var(--bg-secondary, #fff);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 /* Метка рейтинга */
@@ -20,12 +20,12 @@
 /* Предупреждающее сообщение */
 .warningMessage {
   font-size: 13px;
-  color: var(--warning-color, #ff9800);
+  color: var(--color-warning, #ff9800);
   text-align: center;
   padding: 8px 12px;
-  background-color: rgba(255, 152, 0, 0.1);
+  background-color: var(--color-warning-bg, rgba(255, 152, 0, 0.1));
   border-radius: 6px;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  border: 1px solid var(--color-warning-border, rgba(255, 152, 0, 0.3));
 }
 
 /* Контейнер кнопок рейтинга */
@@ -41,7 +41,7 @@
   width: 40px;
   height: 40px;
   border: 2px solid var(--border-color, #ddd);
-  background-color: var(--button-background, #fff);
+  background-color: var(--bg-primary, #fff);
   color: var(--text-secondary, #666);
   border-radius: 50%;
   font-size: 16px;
@@ -55,22 +55,22 @@
 
 .ratingButton:hover:not(:disabled) {
   transform: scale(1.1);
-  border-color: var(--primary-color, #007bff);
-  background-color: var(--primary-light, #e7f3ff);
+  border-color: var(--accent-primary, #007bff);
+  background-color: var(--accent-primary-bg, #e7f3ff);
 }
 
 /* Активная кнопка (при наведении или выбранная) */
 .ratingButton.active {
-  background-color: var(--primary-color, #007bff);
+  background-color: var(--accent-primary, #007bff);
   color: white;
-  border-color: var(--primary-color, #007bff);
+  border-color: var(--accent-primary, #007bff);
 }
 
 /* Выбранная кнопка (текущий рейтинг) */
 .ratingButton.selected {
-  background-color: var(--success-color, #28a745);
+  background-color: var(--color-success, #28a745);
   color: white;
-  border-color: var(--success-color, #28a745);
+  border-color: var(--color-success, #28a745);
   font-weight: 700;
 }
 
@@ -112,26 +112,5 @@
     width: 36px;
     height: 36px;
     font-size: 14px;
-  }
-}
-
-/* Темная тема */
-@media (prefers-color-scheme: dark) {
-  .ratingSelector {
-    background-color: var(--card-background-dark, #2a2a2a);
-  }
-
-  .ratingLabel {
-    color: var(--text-primary-dark, #e0e0e0);
-  }
-
-  .ratingButton {
-    border-color: var(--border-color-dark, #444);
-    background-color: var(--button-background-dark, #333);
-    color: var(--text-secondary-dark, #ccc);
-  }
-
-  .ratingButton:hover:not(:disabled) {
-    background-color: var(--primary-light-dark, #1a4d7a);
   }
 }

@@ -45,7 +45,9 @@ const MediaDetailPage = () => {
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
   const [personalNote, setPersonalNote] = useState('');
-  const [noteModalItem, setNoteModalItem] = useState(null);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [editingNoteText, setEditingNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -225,6 +227,50 @@ const MediaDetailPage = () => {
     }
   };
 
+  // Сохранение заметки
+  const handleSaveNote = async () => {
+    if (!currentList || !currentListItem) return;
+    try {
+      setSavingNote(true);
+      await api.put(`/lists/${currentList.id}/items/${currentListItem.id}/note`, {
+        personalNote: editingNoteText.trim() || null
+      });
+      dispatch(fetchLists());
+      setIsEditingNote(false);
+      setEditingNoteText('');
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось сохранить заметку',
+        type: 'error'
+      });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  // Удаление заметки
+  const handleDeleteNote = async () => {
+    if (!currentList || !currentListItem) return;
+    try {
+      setSavingNote(true);
+      await api.put(`/lists/${currentList.id}/items/${currentListItem.id}/note`, {
+        personalNote: null
+      });
+      dispatch(fetchLists());
+      setIsEditingNote(false);
+      setEditingNoteText('');
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось удалить заметку',
+        type: 'error'
+      });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   if (mediaLoading || !selectedMedia) {
     return (
       <div className={styles.loading}>
@@ -363,18 +409,70 @@ const MediaDetailPage = () => {
             </div>
 
             {/* Моя заметка */}
-            {currentList && existingNote && !showListSelector && (
+            {currentList && existingNote && !showListSelector && !isEditingNote && (
               <div className={styles.personalNoteBlock}>
                 <div className={styles.noteHeader}>
                   <span className={styles.noteLabel}>Моя заметка</span>
-                  <button 
-                    className={styles.noteEditBtn}
-                    onClick={() => setNoteModalItem(currentListItem)}
-                  >
-                    Редактировать
-                  </button>
+                  <div className={styles.noteActions}>
+                    <button 
+                      className={styles.noteEditBtn}
+                      onClick={() => {
+                        setEditingNoteText(existingNote);
+                        setIsEditingNote(true);
+                      }}
+                    >
+                      Редактировать
+                    </button>
+                    <button 
+                      className={styles.noteDeleteBtn}
+                      onClick={handleDeleteNote}
+                      disabled={savingNote}
+                    >
+                      Удалить
+                    </button>
+                  </div>
                 </div>
                 <p className={styles.noteText}>{existingNote}</p>
+              </div>
+            )}
+
+            {/* Редактирование заметки */}
+            {currentList && isEditingNote && (
+              <div className={styles.personalNoteBlock}>
+                <div className={styles.noteHeader}>
+                  <span className={styles.noteLabel}>Редактирование заметки</span>
+                </div>
+                <textarea
+                  className={styles.noteTextarea}
+                  value={editingNoteText}
+                  onChange={(e) => setEditingNoteText(e.target.value)}
+                  placeholder="Ссылки, комментарии..."
+                  rows={3}
+                  maxLength={500}
+                  autoFocus
+                />
+                <div className={styles.noteEditActions}>
+                  <span className={styles.noteCount}>{editingNoteText.length}/500</span>
+                  <div className={styles.noteEditButtons}>
+                    <button 
+                      className={styles.noteCancelBtn}
+                      onClick={() => {
+                        setIsEditingNote(false);
+                        setEditingNoteText('');
+                      }}
+                      disabled={savingNote}
+                    >
+                      Отмена
+                    </button>
+                    <button 
+                      className={styles.noteSaveBtn}
+                      onClick={handleSaveNote}
+                      disabled={savingNote}
+                    >
+                      {savingNote ? 'Сохранение...' : 'Сохранить'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -627,19 +725,6 @@ const MediaDetailPage = () => {
         )}
       </div>
     </div>
-
-    {/* Модалка редактирования заметки */}
-    {noteModalItem && (
-      <NoteModal
-        item={noteModalItem}
-        listId={currentList?.id}
-        onClose={() => setNoteModalItem(null)}
-        onUpdate={() => {
-          dispatch(fetchLists());
-          setNoteModalItem(null);
-        }}
-      />
-    )}
     </>
   );
 };
