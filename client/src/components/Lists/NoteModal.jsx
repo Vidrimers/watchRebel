@@ -20,12 +20,6 @@ const NoteModal = ({ item, listId, onClose, onUpdate }) => {
         personalNote: note.trim() || null
       });
 
-      await showAlert({
-        title: 'Успешно',
-        message: note.trim() ? 'Заметка сохранена' : 'Заметка удалена',
-        type: 'success'
-      });
-
       if (onUpdate) onUpdate(note.trim() || null);
       onClose();
     } catch (error) {
@@ -44,12 +38,6 @@ const NoteModal = ({ item, listId, onClose, onUpdate }) => {
       setLoading(true);
       await api.put(`/lists/${listId}/items/${item.id}/note`, {
         personalNote: null
-      });
-
-      await showAlert({
-        title: 'Успешно',
-        message: 'Заметка удалена',
-        type: 'success'
       });
 
       if (onUpdate) onUpdate(null);
