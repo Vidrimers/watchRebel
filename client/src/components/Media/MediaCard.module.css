@@ -129,6 +129,9 @@
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 6px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .noteIndicator:hover {
