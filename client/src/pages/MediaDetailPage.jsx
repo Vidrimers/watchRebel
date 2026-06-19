@@ -269,6 +269,12 @@ const MediaDetailPage = () => {
     )
   );
 
+  // Находим текущий элемент и его заметку
+  const currentListItem = currentList?.items?.find(
+    item => item.tmdbId === parseInt(mediaId) && item.mediaType === (selectedMedia.media_type || mediaType)
+  );
+  const existingNote = currentListItem?.personalNote || '';
+
   return (
     <>
       {alertDialog}
@@ -353,6 +359,22 @@ const MediaDetailPage = () => {
                 {isInWatchlist ? '✓ Хочу посмотреть' : '+ Хочу посмотреть'}
               </button>
             </div>
+
+            {/* Моя заметка */}
+            {currentList && existingNote && !showListSelector && (
+              <div className={styles.personalNoteBlock}>
+                <div className={styles.noteHeader}>
+                  <span className={styles.noteLabel}>Моя заметка</span>
+                  <button 
+                    className={styles.noteEditBtn}
+                    onClick={() => setShowListSelector(true)}
+                  >
+                    Редактировать
+                  </button>
+                </div>
+                <p className={styles.noteText}>{existingNote}</p>
+              </div>
+            )}
 
             {/* Селектор списка */}
             {showListSelector && (
