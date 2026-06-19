@@ -353,15 +353,13 @@ const ListsPage = () => {
                           progress={episodeProgress[item.tmdbId]?.[episodeProgress[item.tmdbId].length - 1]}
                         />
                         <div className={styles.itemActions}>
-                          {item.personalNote && (
-                            <button
-                              className={styles.noteIcon}
-                              onClick={() => setNoteModalItem(item)}
-                              title="Посмотреть заметку"
-                            >
-                              <Icon name="edit" size="small" />
-                            </button>
-                          )}
+                          <button
+                            className={styles.noteIcon}
+                            onClick={() => setNoteModalItem(item)}
+                            title={item.personalNote ? "Посмотреть заметку" : "Добавить заметку"}
+                          >
+                            <Icon name="edit" size="small" />
+                          </button>
                           <button
                             className={styles.moveButton}
                             onClick={() => handleOpenMoveDialog(item)}
