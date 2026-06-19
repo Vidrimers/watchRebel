@@ -454,15 +454,8 @@ const ListsPage = () => {
           item={noteModalItem}
           listId={selectedList?.id}
           onClose={() => setNoteModalItem(null)}
-          onUpdate={(newNote) => {
-            if (selectedList) {
-              setSelectedList({
-                ...selectedList,
-                items: selectedList.items.map(i =>
-                  i.id === noteModalItem.id ? { ...i, personalNote: newNote } : i
-                )
-              });
-            }
+          onUpdate={() => {
+            dispatch(fetchLists());
             setNoteModalItem(null);
           }}
         />
