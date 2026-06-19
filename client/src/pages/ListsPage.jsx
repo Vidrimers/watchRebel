@@ -355,7 +355,7 @@ const ListsPage = () => {
                         />
                         <div className={styles.itemActions}>
                           <button
-                            className={styles.noteIcon}
+                            className={item.personalNote ? styles.noteIconActive : styles.noteIcon}
                             onClick={() => setNoteModalItem(item)}
                             title={item.personalNote ? "Посмотреть заметку" : "Добавить заметку"}
                           >

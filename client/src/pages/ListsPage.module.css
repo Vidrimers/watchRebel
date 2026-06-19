@@ -269,7 +269,30 @@
 .noteIcon {
   flex: 1;
   padding: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.noteIcon:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.noteIconActive {
+  flex: 1;
+  padding: 8px;
+  border: none;
   border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
@@ -280,9 +303,10 @@
   min-width: 0;
   background: rgba(251, 191, 36, 0.1);
   color: var(--warning-color, #f59e0b);
+  border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
-.noteIcon:hover {
+.noteIconActive:hover {
   background: rgba(251, 191, 36, 0.2);
   border-color: var(--warning-color, #f59e0b);
 }
