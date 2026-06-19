@@ -498,6 +498,21 @@ const MediaDetailPage = () => {
               </div>
             )}
 
+            {/* Кнопка добавления заметки */}
+            {currentList && !existingNote && !isEditingNote && !showListSelector && (
+              <div className={styles.personalNoteSection}>
+                <button 
+                  className={styles.addNoteBtn}
+                  onClick={() => {
+                    setEditingNoteText('');
+                    setIsEditingNote(true);
+                  }}
+                >
+                  + Добавить заметку
+                </button>
+              </div>
+            )}
+
             {/* Селектор списка */}
             {showListSelector && (
               <div className={styles.selector}>
