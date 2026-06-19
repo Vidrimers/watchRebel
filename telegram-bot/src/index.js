@@ -9,7 +9,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Загрузка переменных окружения из корневой директории
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+const isProd = process.env.NODE_ENV === 'production';
+const envFile = isProd ? '.env.production' : '.env';
+dotenv.config({ path: path.join(__dirname, '../../', envFile) });
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
