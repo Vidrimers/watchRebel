@@ -254,70 +254,78 @@
 
 /* Обертка для карточки с кнопками действий */
 .mediaCardWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  position: relative;
   height: 100%;
 }
 
-/* Кнопки действий под карточкой */
+/* Кнопки действий поверх постера */
 .itemActions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   gap: 6px;
+  padding: 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.mediaCardWrapper:hover .itemActions {
+  opacity: 1;
 }
 
 .noteIcon {
   flex: 1;
-  padding: 8px;
+  padding: 6px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 4px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(4px);
 }
 
 .noteIcon:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .noteIconActive {
   flex: 1;
-  padding: 8px;
+  padding: 6px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 4px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
-  background: rgba(251, 191, 36, 0.1);
-  color: var(--warning-color, #f59e0b);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: rgba(251, 191, 36, 0.8);
+  color: white;
+  backdrop-filter: blur(4px);
 }
 
 .noteIconActive:hover {
-  background: rgba(251, 191, 36, 0.2);
-  border-color: var(--warning-color, #f59e0b);
+  background: rgba(251, 191, 36, 1);
 }
 
 .moveButton,
 .deleteButton {
   flex: 1;
-  padding: 8px;
+  padding: 6px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 4px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -327,17 +335,13 @@
 }
 
 .moveButton {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(4px);
 }
 
 .moveButton:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .deleteButton {
