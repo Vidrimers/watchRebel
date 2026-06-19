@@ -11,7 +11,8 @@ const MediaCard = ({
   showProgress = false, 
   progress = null,
   onAddToList, 
-  onRate 
+  onRate,
+  onNoteClick
 }) => {
   const navigate = useNavigate();
 
@@ -72,8 +73,17 @@ const MediaCard = ({
           )}
         </div>
 
-        {media.personalNote && (
-          <p className={styles.personalNote}>{media.personalNote}</p>
+        {media.personalNote && onNoteClick && (
+          <span 
+            className={styles.noteIndicator}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNoteClick(media);
+            }}
+            title="Нажмите, чтобы посмотреть заметку"
+          >
+            ✏️
+          </span>
         )}
       </div>
 

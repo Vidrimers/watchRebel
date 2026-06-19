@@ -351,6 +351,7 @@ const ListsPage = () => {
                           media={item}
                           showProgress={item.mediaType === 'tv'}
                           progress={episodeProgress[item.tmdbId]?.[episodeProgress[item.tmdbId].length - 1]}
+                          onNoteClick={(media) => setNoteModalItem(media)}
                         />
                         <div className={styles.itemActions}>
                           <button
