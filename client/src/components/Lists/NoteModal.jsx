@@ -7,7 +7,7 @@ import styles from './NoteModal.module.css';
 /**
  * Модалка для просмотра/редактирования/удаления персональной заметки
  */
-const NoteModal = ({ item, listId, onClose, onUpdate }) => {
+const NoteModal = ({ item, listId, onClose, onUpdate, readOnly = false }) => {
   const { alertDialog, showAlert } = useAlert();
   const [note, setNote] = useState(item.personalNote || '');
   const [isEditing, setIsEditing] = useState(!item.personalNote);
@@ -92,7 +92,14 @@ const NoteModal = ({ item, listId, onClose, onUpdate }) => {
           </div>
 
           <div className={styles.actions}>
-            {isEditing ? (
+            {readOnly ? (
+              <button
+                className={styles.closeActionBtn}
+                onClick={onClose}
+              >
+                Закрыть
+              </button>
+            ) : isEditing ? (
               <>
                 <button
                   className={styles.cancelBtn}
