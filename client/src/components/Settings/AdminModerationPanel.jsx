@@ -205,8 +205,9 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
           className={styles.dropdownToggle}
           onClick={() => setIsOpen(!isOpen)}
           disabled={loading}
+          title="Модерация"
         >
-          ⚙️ {isOpen ? '▲' : '▼'}
+          <Icon name="settings" size={18} />
         </button>
         
         {isOpen && (
@@ -216,7 +217,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
               onClick={openPostBanModal}
               disabled={loading}
             >
-              🚫 Запретить посты
+              <Icon name="block" size={16} /> Запретить посты
             </button>
             
             <button 
@@ -224,7 +225,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
               onClick={openPermanentBanModal}
               disabled={loading}
             >
-              ⛔ Забанить навсегда
+              <Icon name="ban" size={16} /> Забанить навсегда
             </button>
             
             <button 
@@ -232,7 +233,7 @@ function AdminModerationPanel({ userId, isAdmin, onModerationAction }) {
               onClick={handleUnban}
               disabled={loading}
             >
-              ✅ Разбанить
+              <Icon name="check" size={16} /> Разбанить
             </button>
           </div>
         )}
