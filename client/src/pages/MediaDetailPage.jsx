@@ -18,6 +18,7 @@ import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../
 import Icon from '../components/Common/Icon';
 import NoteModal from '../components/Lists/NoteModal';
 import useAlert from '../hooks/useAlert.jsx';
+import useConfirm from '../hooks/useConfirm.jsx';
 import api from '../services/api';
 import styles from './MediaDetailPage.module.css';
 
@@ -33,6 +34,7 @@ const MediaDetailPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { alertDialog, showAlert } = useAlert();
+  const { confirmDialog, showConfirm } = useConfirm();
 
   const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
   const { customLists, episodeProgress, ratings, watchlist } = useAppSelector((state) => state.lists);
@@ -252,6 +254,16 @@ const MediaDetailPage = () => {
   // Удаление заметки
   const handleDeleteNote = async () => {
     if (!currentList || !currentListItem) return;
+
+    const confirmed = await showConfirm({
+      title: 'Удалить заметку',
+      message: 'Вы уверены, что хотите удалить заметку?',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+    if (!confirmed) return;
+
     try {
       setSavingNote(true);
       await api.put(`/lists/${currentList.id}/items/${currentListItem.id}/note`, {
@@ -735,6 +747,7 @@ const MediaDetailPage = () => {
         )}
       </div>
     </div>
+    {confirmDialog}
     </>
   );
 };

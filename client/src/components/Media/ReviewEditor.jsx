@@ -5,6 +5,7 @@ import { createReview, updateReview, deleteReview } from '../../store/slices/rev
 import { addReaction } from '../../store/slices/wallSlice';
 import ReactionPicker from '../Wall/ReactionPicker';
 import ReactionTooltip from '../Wall/ReactionTooltip';
+import useConfirm from '../../hooks/useConfirm';
 import api from '../../services/api';
 import styles from './ReviewEditor.module.css';
 
@@ -22,6 +23,7 @@ const ReviewEditor = ({
 }) => {
   const dispatch = useDispatch();
   const currentUser = useAppSelector((state) => state.auth.user);
+  const { confirmDialog, showConfirm } = useConfirm();
   const [isEditing, setIsEditing] = useState(false);
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -157,7 +159,13 @@ const ReviewEditor = ({
   const handleDelete = async () => {
     if (!existingReview) return;
 
-    const confirmed = window.confirm('Вы уверены, что хотите удалить отзыв?');
+    const confirmed = await showConfirm({
+      title: 'Удалить отзыв',
+      message: 'Вы уверены, что хотите удалить отзыв?',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
     if (!confirmed) return;
 
     setIsSubmitting(true);
@@ -326,6 +334,7 @@ const ReviewEditor = ({
     const reviewTextOnly = lines.slice(1).join('\n').trim();
     
     return (
+      <>
       <div className={styles.reviewDisplay}>
         <div className={styles.reviewHeader}>
           <span className={styles.reviewTitle}>Ваш отзыв</span>
@@ -409,17 +418,9 @@ const ReviewEditor = ({
             </div>
           </div>
         )}
-
-        {tooltipData && (
-          <ReactionTooltip
-            users={tooltipData.users}
-            position={tooltipData.position}
-            onMouseEnter={handleTooltipMouseEnter}
-            onMouseLeave={handleTooltipMouseLeave}
-            className={styles.reviewTooltip}
-          />
-        )}
       </div>
+      {confirmDialog}
+      </>
     );
   }
 
@@ -509,6 +510,7 @@ const ReviewEditor = ({
           {error}
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 };
