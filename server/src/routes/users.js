@@ -109,9 +109,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const user = userResult.data[0];
 
-    // Подсчитываем количество постов
+    // Подсчитываем количество постов на стене пользователя
     const postsCountResult = await executeQuery(
-      'SELECT COUNT(*) as count FROM wall_posts WHERE user_id = ?',
+      'SELECT COUNT(*) as count FROM wall_posts WHERE wall_owner_id = ?',
       [id]
     );
     const postsCount = postsCountResult.success ? postsCountResult.data[0].count : 0;
