@@ -20,9 +20,12 @@
 
 .dropdownToggle:hover:not(:disabled) {
   background: var(--accent-primary);
-  color: white;
   border-color: var(--accent-primary);
   transform: scale(1.05);
+}
+
+.dropdownToggle:hover:not(:disabled) :global(svg) {
+  color: white;
 }
 
 .dropdownToggle:disabled {
