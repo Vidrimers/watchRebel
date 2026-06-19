@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import ReferralStats from '../components/User/ReferralStats';
@@ -26,6 +26,7 @@ const FriendsPage = () => {
   const [activeTab, setActiveTab] = useState('friends');
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
+  const navigate = useNavigate();
 
   const isOwnProfile = !routeUserId || routeUserId === user?.id;
   const targetUserId = routeUserId || user?.id;
