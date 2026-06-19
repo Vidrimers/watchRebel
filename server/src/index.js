@@ -7,7 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ВАЖНО: Загрузка переменных окружения ПЕРЕД всеми остальными импортами
-const envPath = path.join(__dirname, '../../.env');
+const isProd = process.env.NODE_ENV === 'production';
+const envFile = isProd ? '.env.production' : '.env';
+const envPath = path.join(__dirname, '../../', envFile);
 console.log('📁 Загрузка .env из:', envPath);
 const envResult = dotenv.config({ path: envPath });
 
