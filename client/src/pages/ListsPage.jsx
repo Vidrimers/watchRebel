@@ -8,6 +8,7 @@ import CustomListManager from '../components/Lists/CustomListManager';
 import MediaCard from '../components/Media/MediaCard';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
 import Icon from '../components/Common/Icon';
+import NoteModal from '../components/Lists/NoteModal';
 import useAlert from '../hooks/useAlert';
 import styles from './ListsPage.module.css';
 
@@ -41,6 +42,7 @@ const ListsPage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [targetListId, setTargetListId] = useState('');
+  const [noteModalItem, setNoteModalItem] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -351,6 +353,15 @@ const ListsPage = () => {
                           progress={episodeProgress[item.tmdbId]?.[episodeProgress[item.tmdbId].length - 1]}
                         />
                         <div className={styles.itemActions}>
+                          {item.personalNote && (
+                            <button
+                              className={styles.noteIcon}
+                              onClick={() => setNoteModalItem(item)}
+                              title="Посмотреть заметку"
+                            >
+                              <Icon name="edit" size="small" />
+                            </button>
+                          )}
                           <button
                             className={styles.moveButton}
                             onClick={() => handleOpenMoveDialog(item)}
@@ -438,6 +449,26 @@ const ListsPage = () => {
         cancelText="Отмена"
         confirmButtonStyle="danger"
       />
+
+      {/* Модалка заметки */}
+      {noteModalItem && (
+        <NoteModal
+          item={noteModalItem}
+          listId={selectedList?.id}
+          onClose={() => setNoteModalItem(null)}
+          onUpdate={(newNote) => {
+            if (selectedList) {
+              setSelectedList({
+                ...selectedList,
+                items: selectedList.items.map(i =>
+                  i.id === noteModalItem.id ? { ...i, personalNote: newNote } : i
+                )
+              });
+            }
+            setNoteModalItem(null);
+          }}
+        />
+      )}
     </UserPageLayout>
   );
 };

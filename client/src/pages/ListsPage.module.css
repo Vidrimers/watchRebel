@@ -266,6 +266,26 @@
   gap: 6px;
 }
 
+.noteIcon {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-color, #6366f1);
+}
+
+.noteIcon:hover {
+  background: rgba(99, 102, 241, 0.2);
+}
+
 .moveButton,
 .deleteButton {
   flex: 1;
