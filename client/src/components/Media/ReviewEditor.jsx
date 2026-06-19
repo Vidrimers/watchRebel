@@ -328,21 +328,21 @@ const ReviewEditor = ({
     return (
       <div className={styles.reviewDisplay}>
         <div className={styles.reviewHeader}>
-          <h3 className={styles.reviewTitle}>Ваш отзыв</h3>
+          <span className={styles.reviewTitle}>Ваш отзыв</span>
           <div className={styles.reviewActions}>
             <button
               className={styles.editButton}
               onClick={() => setIsEditing(true)}
               disabled={isSubmitting}
             >
-              ✏️ Изменить
+              Редактировать
             </button>
             <button
               className={styles.deleteButton}
               onClick={handleDelete}
               disabled={isSubmitting}
             >
-              🗑️ Удалить
+              Удалить
             </button>
           </div>
         </div>
@@ -353,18 +353,16 @@ const ReviewEditor = ({
 
         {existingReview.editedAt && (
           <div className={styles.editedLabel}>
-            Отредактировано {new Date(existingReview.editedAt).toLocaleDateString('ru-RU')}
+            (изменено)
           </div>
         )}
 
         {/* Реакции */}
         {currentUser && (
           <div className={styles.reactionsContainer}>
-            {/* Отображение существующих реакций */}
             {reactionsList.length > 0 && (
               <div className={styles.reactionsList}>
                 {reactionsList.map((reaction) => {
-                  // Проверяем, есть ли реакция текущего пользователя с таким эмоджи
                   const isUserReaction = currentUser && reaction.users.some(u => u.id === currentUser.id);
                   
                   return (
@@ -382,7 +380,6 @@ const ReviewEditor = ({
               </div>
             )}
 
-            {/* Кнопка добавления реакции */}
             <div className={styles.addReactionContainer}>
               <button
                 className={styles.addReactionButton}
@@ -403,7 +400,6 @@ const ReviewEditor = ({
                 </svg>
               </button>
 
-              {/* Picker реакций */}
               {showReactionPicker && (
                 <ReactionPicker
                   onSelect={handleAddReaction}
@@ -414,7 +410,6 @@ const ReviewEditor = ({
           </div>
         )}
 
-        {/* Tooltip с пользователями */}
         {tooltipData && (
           <ReactionTooltip
             users={tooltipData.users}
@@ -462,11 +457,11 @@ const ReviewEditor = ({
 
   // Режим редактирования
   return (
-    <div className={styles.reviewEditor}>
-      <div className={styles.editorHeader}>
-        <h3 className={styles.editorTitle}>
-          {existingReview ? 'Редактировать отзыв' : 'Написать отзыв'}
-        </h3>
+    <div className={styles.reviewEditBlock}>
+      <div className={styles.reviewHeader}>
+        <span className={styles.reviewTitle}>
+          {existingReview ? 'Редактирование отзыва' : 'Написать отзыв'}
+        </span>
       </div>
 
       <textarea
@@ -476,34 +471,35 @@ const ReviewEditor = ({
         placeholder="Поделитесь своими впечатлениями о фильме/сериале..."
         disabled={isSubmitting}
         maxLength={maxChars}
+        autoFocus
       />
 
-      <div className={styles.editorFooter}>
-        <div className={styles.charCounter}>
+      <div className={styles.reviewEditFooter}>
+        <div className={styles.reviewCharCounter}>
           <span className={!isValidLength ? styles.invalid : ''}>
             {charCount} / {maxChars}
           </span>
-          {charCount < minChars && (
-            <span className={styles.minCharsHint}>
-              (минимум {minChars} символов)
+          {charCount < minChars && charCount > 0 && (
+            <span className={styles.reviewMinHint}>
+              (минимум {minChars})
             </span>
           )}
         </div>
 
-        <div className={styles.editorActions}>
+        <div className={styles.reviewEditActions}>
           <button
-            className={styles.cancelButton}
+            className={styles.reviewCancelButton}
             onClick={handleCancel}
             disabled={isSubmitting}
           >
             Отмена
           </button>
           <button
-            className={styles.publishButton}
+            className={styles.reviewSaveButton}
             onClick={handlePublish}
             disabled={isSubmitting || !isValidLength}
           >
-            {isSubmitting ? 'Публикация...' : 'Опубликовать'}
+            {isSubmitting ? 'Сохранение...' : 'Сохранить'}
           </button>
         </div>
       </div>
