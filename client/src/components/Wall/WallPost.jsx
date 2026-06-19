@@ -48,6 +48,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const [showGallery, setShowGallery] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
   
   // Состояние для загрузки названия медиа из TMDb (если не загрузилось при создании поста)
   const [mediaTitle, setMediaTitle] = useState(null);
@@ -634,6 +635,20 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                   <span className={styles.ratingAuthor}>(оценка пользователя {post.author?.displayName || 'неизвестно'})</span>
                 </div>
               )}
+              {/* Индикатор персональной заметки */}
+              {post.personalNote && (
+                <div 
+                  className={styles.noteIndicator}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowNoteModal(true);
+                  }}
+                  title="Нажмите, чтобы посмотреть заметку"
+                >
+                  <Icon name="edit" size="small" />
+                  <span className={styles.noteIndicatorText}>Моя заметка</span>
+                </div>
+              )}
               <div className={styles.mediaBottomRow}>
                 {post.tmdbId && (
                   <div className={styles.mediaTypeLabel}>
@@ -998,6 +1013,23 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           mediaTitle={post.content?.split('\n')[0]}
           onClose={() => setShowAddToListModal(false)}
         />
+      )}
+
+      {/* Модалка персональной заметки */}
+      {showNoteModal && post.personalNote && (
+        <div className={styles.noteModalBackdrop} onClick={() => setShowNoteModal(false)}>
+          <div className={styles.noteModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.noteModalHeader}>
+              <h3>Моя заметка</h3>
+              <button className={styles.noteModalClose} onClick={() => setShowNoteModal(false)}>
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+            <div className={styles.noteModalContent}>
+              <p>{post.personalNote}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Галерея изображений */}

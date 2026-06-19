@@ -198,6 +198,24 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           }
         }
 
+        // Для постов media_added получаем персональную заметку владельца стены
+        let personalNote = null;
+        if (post.post_type === 'media_added' && post.tmdb_id && userId === post.owner_id) {
+          const noteResult = await executeQuery(
+            `SELECT li.personal_note 
+             FROM list_items li
+             JOIN custom_lists cl ON li.list_id = cl.id
+             WHERE cl.user_id = ? AND li.tmdb_id = ? AND li.media_type = ?
+             AND li.personal_note IS NOT NULL AND li.personal_note != ''
+             LIMIT 1`,
+            [post.owner_id, post.tmdb_id, post.media_type]
+          );
+          
+          if (noteResult.success && noteResult.data.length > 0) {
+            personalNote = noteResult.data[0].personal_note;
+          }
+        }
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -212,6 +230,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           editedAt: post.edited_at,
           commentsCount, // Общее количество комментариев (включая ответы)
           userListName, // Название списка текущего пользователя (если медиа в его списке)
+          personalNote, // Персональная заметка владельца стены (только для владельца)
           author: {
             id: post.author_id,
             displayName: post.author_display_name,

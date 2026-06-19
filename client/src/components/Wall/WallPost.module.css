@@ -342,6 +342,88 @@
   width: fit-content;
 }
 
+.noteIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--warning-color, #f59e0b);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+
+.noteIndicator:hover {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: var(--warning-color, #f59e0b);
+}
+
+.noteIndicatorText {
+  font-size: 12px;
+}
+
+.noteModalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.noteModal {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.noteModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.noteModalHeader h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.noteModalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.noteModalClose:hover {
+  color: var(--text-primary, #111827);
+}
+
+.noteModalContent {
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .mediaInfo {
   display: flex;
   gap: 12px;

@@ -16,6 +16,7 @@ import { fetchUserReview, fetchReviewByPost } from '../store/slices/reviewsSlice
 import { fetchWall } from '../store/slices/wallSlice';
 import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../components/Media';
 import Icon from '../components/Common/Icon';
+import NoteModal from '../components/Lists/NoteModal';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
 import styles from './MediaDetailPage.module.css';
@@ -44,6 +45,7 @@ const MediaDetailPage = () => {
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
   const [personalNote, setPersonalNote] = useState('');
+  const [noteModalItem, setNoteModalItem] = useState(null);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -367,7 +369,7 @@ const MediaDetailPage = () => {
                   <span className={styles.noteLabel}>Моя заметка</span>
                   <button 
                     className={styles.noteEditBtn}
-                    onClick={() => setShowListSelector(true)}
+                    onClick={() => setNoteModalItem(currentListItem)}
                   >
                     Редактировать
                   </button>
@@ -535,7 +537,6 @@ const MediaDetailPage = () => {
                 }}
               />
             )}
-            />
           </div>
         </div>
 
@@ -626,6 +627,19 @@ const MediaDetailPage = () => {
         )}
       </div>
     </div>
+
+    {/* Модалка редактирования заметки */}
+    {noteModalItem && (
+      <NoteModal
+        item={noteModalItem}
+        listId={currentList?.id}
+        onClose={() => setNoteModalItem(null)}
+        onUpdate={() => {
+          dispatch(fetchLists());
+          setNoteModalItem(null);
+        }}
+      />
+    )}
     </>
   );
 };
