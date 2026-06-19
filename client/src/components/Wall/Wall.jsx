@@ -29,14 +29,15 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const filters = [
     { key: 'all', label: 'Все' },
     { key: 'text', label: 'Текстовые' },
-    { key: 'rating', label: 'Оценки' },
-    { key: 'review', label: 'Отзывы' },
+    { key: 'rating_review', label: 'Оценки/отзывы' },
     { key: 'media_added', label: 'Медиа' }
   ];
 
   const filteredPosts = activeFilter === 'all' 
     ? posts 
-    : posts.filter(p => p.postType === activeFilter);
+    : activeFilter === 'rating_review'
+      ? posts.filter(p => p.postType === 'rating' || p.postType === 'review')
+      : posts.filter(p => p.postType === activeFilter);
 
   // Загрузка постов при монтировании компонента
   useEffect(() => {
