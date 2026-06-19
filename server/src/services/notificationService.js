@@ -212,7 +212,7 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
       content = `Самолайк активирован ${emoji}`;
       telegramMessage = `😎 <b>Самолайк активирован!</b>\n\n${content}`;
     } else {
-      // Получаем информацию о пользователе для Telegram (актуальное имя на момент отправки)
+      // Получаем информацию о пользователе
       const userResult = await executeQuery(
         'SELECT display_name FROM users WHERE id = ?',
         [reactorId]
@@ -224,11 +224,11 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
 
       const reactorName = userResult.data[0].display_name;
       
-      // В БД сохраняем шаблон с эмодзи и информацией о посте
-      content = `отреагировал${postInfo}: ${emoji}`;
+      // Сохраняем имя в content, чтобы оно осталось даже если пользователь удалится
+      content = `${reactorName} отреагировал${postInfo}: ${emoji}`;
       
-      // Для Telegram используем актуальное имя
-      telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${reactorName} ${content}`;
+      // Для Telegram используем то же имя
+      telegramMessage = `🔔 <b>Новая реакция!</b>\n\n${content}`;
     }
 
     // Создаем уведомление в базе данных
@@ -302,25 +302,25 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo, post
         notificationType = 'friend_added_to_list'; // Дефолт
     }
 
-    // Формируем шаблон уведомления без имени (имя будет подставляться динамически)
-    let contentTemplate = '';
+    // Формируем content с именем пользователя
+    let content = '';
     let telegramContent = '';
     switch (actionType) {
       case 'added_to_list':
-        contentTemplate = `добавил "${mediaInfo.title}" в свой список`;
-        telegramContent = `${friendName} ${contentTemplate}`;
+        content = `${friendName} добавил "${mediaInfo.title}" в свой список`;
+        telegramContent = content;
         break;
       case 'rated':
-        contentTemplate = `оценил "${mediaInfo.title}" на ${mediaInfo.rating}/10`;
-        telegramContent = `${friendName} ${contentTemplate}`;
+        content = `${friendName} оценил "${mediaInfo.title}" на ${mediaInfo.rating}/10`;
+        telegramContent = content;
         break;
       case 'reviewed':
-        contentTemplate = `написал отзыв на "${mediaInfo.title}"`;
-        telegramContent = `${friendName} ${contentTemplate}`;
+        content = `${friendName} написал отзыв на "${mediaInfo.title}"`;
+        telegramContent = content;
         break;
       default:
-        contentTemplate = `совершил действие с "${mediaInfo.title}"`;
-        telegramContent = `${friendName} ${contentTemplate}`;
+        content = `${friendName} совершил действие с "${mediaInfo.title}"`;
+        telegramContent = content;
     }
 
     // Создаем уведомления для всех друзей
@@ -337,11 +337,11 @@ export async function notifyFriendActivity(friendId, actionType, mediaInfo, post
         continue;
       }
 
-      // Создаем уведомление в базе данных с шаблоном
+      // Создаем уведомление в базе данных с именем
       const notificationResult = await createNotification(
         userId,
         'friend_activity',
-        contentTemplate,
+        content,
         friendId,
         postId  // Передаем postId если есть
       );

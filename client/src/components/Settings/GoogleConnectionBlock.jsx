@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import Icon from '../Common/Icon';
 import useConfirm from '../../hooks/useConfirm.jsx';
@@ -15,9 +16,37 @@ const GoogleConnectionBlock = () => {
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Проверяем, привязан ли Google (по наличию google_id в user)
   const isGoogleLinked = Boolean(user?.googleId || user?.hasGoogleLinked);
+
+  // Обработка редиректа после привязки Google
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'google_linked') {
+      showAlert({
+        title: 'Успешно',
+        message: 'Google аккаунт успешно привязан!',
+        type: 'success'
+      });
+      setSearchParams({}, { replace: true });
+    } else if (error) {
+      const errorMessages = {
+        'session_expired': 'Сессия истекла. Войдите заново.',
+        'google_already_linked': 'Этот Google аккаунт уже привязан к другому пользователю.',
+        'google_auth_failed': 'Не удалось авторизоваться через Google.'
+      };
+      showAlert({
+        title: 'Ошибка',
+        message: errorMessages[error] || 'Произошла ошибка при привязке Google.',
+        type: 'error'
+      });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, showAlert]);
 
   const handleUnlinkGoogle = async () => {
     const confirmed = await showConfirm({
@@ -57,6 +86,10 @@ const GoogleConnectionBlock = () => {
   const handleLinkGoogle = () => {
     // Сохраняем текущий URL для возврата после OAuth
     sessionStorage.setItem('oauth_return_url', window.location.pathname);
+    
+    // Передаём токен текущего пользователя через cookie для привязки
+    const token = localStorage.getItem('authToken');
+    document.cookie = `link_token=${token}; path=/; max-age=300; SameSite=Lax`;
     
     // Редирект на Google OAuth с параметром link=true
     window.location.href = '/api/auth/google?link=true';

@@ -1494,15 +1494,23 @@ router.post('/reset-password', async (req, res) => {
 /**
  * GET /api/auth/google
  * Инициация Google OAuth авторизации
+ * Поддерживает ?link=true для привязки к текущему аккаунту
  */
-router.get('/google', passport.authenticate('google', { 
-  scope: ['profile', 'email'],
-  session: false 
-}));
+router.get('/google', (req, res, next) => {
+  const isLink = req.query.link === 'true';
+  const state = isLink ? 'link' : undefined;
+  
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    session: false,
+    state
+  })(req, res, next);
+});
 
 /**
  * GET /api/auth/google/callback
  * Обработка ответа от Google OAuth
+ * Поддерживает link=true для привязки к текущему аккаунту
  */
 router.get('/google/callback', 
   passport.authenticate('google', { 
@@ -1512,16 +1520,104 @@ router.get('/google/callback',
   async (req, res) => {
     try {
       const user = req.user;
+      const frontendUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
 
       if (!user) {
-        return res.redirect(`${process.env.PUBLIC_URL || 'http://localhost:3000'}/login?error=no_user`);
+        return res.redirect(`${frontendUrl}/login?error=no_user`);
       }
 
+      // Проверяем, это привязка или обычный вход
+      // Токен текущего пользователя передаётся через cookie
+      const linkToken = req.cookies?.link_token;
+      const isLink = req.query.state === 'link' || req.query.link === 'true';
+
+      if (isLink && linkToken) {
+        // Режим привязки: привязываем Google к текущему залогиненному пользователю
+        const sessionCheck = await executeQuery(
+          'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')',
+          [linkToken]
+        );
+
+        if (!sessionCheck.success || sessionCheck.data.length === 0) {
+          res.clearCookie('link_token');
+          return res.redirect(`${frontendUrl}/settings?error=session_expired`);
+        }
+
+        const currentUserId = sessionCheck.data[0].user_id;
+        const googleId = user.google_id || user.id;
+
+        // Проверяем, не привязан ли этот Google к другому пользователю
+        const conflictCheck = await executeQuery(
+          'SELECT id FROM users WHERE google_id = ? AND id != ?',
+          [googleId, currentUserId]
+        );
+
+        if (conflictCheck.success && conflictCheck.data.length > 0) {
+          res.clearCookie('link_token');
+          return res.redirect(`${frontendUrl}/settings?error=google_already_linked`);
+        }
+
+        // Привязываем Google к текущему пользователю
+        await executeQuery(
+          'UPDATE users SET google_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [googleId, currentUserId]
+        );
+
+        console.log(`✅ Google аккаунт привязан к пользователю ${currentUserId}`);
+        res.clearCookie('link_token');
+        return res.redirect(`${frontendUrl}/settings?success=google_linked`);
+      }
+
+      // Проверяем, это привязка или обычный вход
+      let state = {};
+      try {
+        if (req.query.state) {
+          state = JSON.parse(Buffer.from(req.query.state, 'base64').toString());
+        }
+      } catch (e) {
+        // Игнорируем ошибку парсинга state
+      }
+
+      if (state.link && state.token) {
+        // Режим привязки: привязываем Google к текущему залогиненному пользователю
+        const sessionCheck = await executeQuery(
+          'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')',
+          [state.token]
+        );
+
+        if (!sessionCheck.success || sessionCheck.data.length === 0) {
+          return res.redirect(`${frontendUrl}/settings?error=session_expired`);
+        }
+
+        const currentUserId = sessionCheck.data[0].user_id;
+        const googleId = user.google_id || user.id;
+
+        // Проверяем, не привязан ли этот Google к другому пользователю
+        const conflictCheck = await executeQuery(
+          'SELECT id FROM users WHERE google_id = ? AND id != ?',
+          [googleId, currentUserId]
+        );
+
+        if (conflictCheck.success && conflictCheck.data.length > 0) {
+          return res.redirect(`${frontendUrl}/settings?error=google_already_linked`);
+        }
+
+        // Привязываем Google к текущему пользователю
+        await executeQuery(
+          'UPDATE users SET google_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [googleId, currentUserId]
+        );
+
+        console.log(`✅ Google аккаунт привязан к пользователю ${currentUserId}`);
+        return res.redirect(`${frontendUrl}/settings?success=google_linked`);
+      }
+
+      // Обычный вход через Google
       // Создаем новую сессию
       const sessionId = uuidv4();
       const token = uuidv4();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // Сессия на 30 дней
+      expiresAt.setDate(expiresAt.getDate() + 30);
 
       const sessionResult = await executeQuery(
         `INSERT INTO sessions (id, user_id, token, expires_at)
@@ -1531,13 +1627,12 @@ router.get('/google/callback',
 
       if (!sessionResult.success) {
         console.error('Ошибка создания сессии:', sessionResult.error);
-        return res.redirect(`${process.env.PUBLIC_URL || 'http://localhost:3000'}/login?error=session_error`);
+        return res.redirect(`${frontendUrl}/login?error=session_error`);
       }
 
       console.log(`✅ Сессия создана для пользователя ${user.display_name} через Google OAuth`);
 
-      // Редирект на главную страницу с токеном
-      const redirectUrl = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/?token=${token}`;
+      const redirectUrl = `${frontendUrl}/?token=${token}`;
       res.redirect(redirectUrl);
 
     } catch (error) {

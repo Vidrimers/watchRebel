@@ -32,6 +32,7 @@ const SearchPage = () => {
   const [sentRequests, setSentRequests] = useState([]); // ID пользователей, которым отправлены запросы
   
   const query = searchParams.get('q') || '';
+  const tabParam = searchParams.get('tab') || ''; // Параметр вкладки из URL
   const [searchInput, setSearchInput] = useState(query);
   const [activeFilter, setActiveFilter] = useState('all'); // all, users, movies, tv
   const [activeMenu, setActiveMenu] = useState(null);
@@ -84,6 +85,17 @@ const SearchPage = () => {
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
+
+  // Устанавливаем активный фильтр на основе параметра tab из URL
+  useEffect(() => {
+    if (tabParam === 'users') {
+      setActiveFilter('users');
+    } else if (tabParam === 'movies') {
+      setActiveFilter('movies');
+    } else if (tabParam === 'tv') {
+      setActiveFilter('tv');
+    }
+  }, [tabParam]);
 
   // Выполняем поиск при загрузке страницы или изменении query или фильтра
   useEffect(() => {

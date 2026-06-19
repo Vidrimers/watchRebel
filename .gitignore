@@ -19,6 +19,7 @@ succes-api/
 
 package-lock.json
 .env
+.env.production
 .env copy
 * copy*.js
 *-copy*.js
@@ -41,3 +42,5 @@ server/scripts/migrate-*.js
 scripts/migrate-*.js
 cloudflared-tunnel*
 Порядок
+start-tuna.sh
+devandtun.sh

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { login } from '../store/slices/authSlice';
+import { checkSession } from '../store/slices/authSlice';
 import api from '../services/api';
 import styles from './LoginEmailPage.module.css';
 
@@ -77,13 +77,13 @@ function LoginEmailPage() {
       console.log('Вход успешен:', response.data);
 
       // Сохраняем токен
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('authToken', response.data.token);
 
-      // Обновляем Redux store
-      dispatch(login(response.data));
+      // Проверяем сессию (обновляет Redux store)
+      await dispatch(checkSession()).unwrap();
 
       // Перенаправляем на главную страницу
-      navigate('/feed');
+      navigate('/', { replace: true });
 
     } catch (error) {
       console.error('Ошибка входа:', error);

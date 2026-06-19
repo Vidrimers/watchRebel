@@ -237,7 +237,7 @@ const FeedPage = () => {
             <p className={styles.emptyHint}>
               Добавьте друзей, чтобы видеть их активность здесь
             </p>
-            <a href="/friends" className={styles.findFriendsButton}>
+            <a href="/search?tab=users" className={styles.findFriendsButton}>
               Найти друзей
             </a>
           </div>

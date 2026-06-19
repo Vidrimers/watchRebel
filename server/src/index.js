@@ -24,6 +24,7 @@ if (envResult.error) {
 import express from 'express';
 import cors from 'cors';
 import passport from 'passport';
+import cookieParser from 'cookie-parser';
 import { configurePassport } from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
@@ -87,8 +88,9 @@ app.use(cors(corsOptions));
 app.use(secureSessionMiddleware);
 
 // Middleware
-app.use(express.json({ limit: '10mb' })); // Ограничение размера JSON
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(express.json({ limit: '10mb' })); // Ограничение размера JSON
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(cookieParser());
 
 // Инициализация Passport
 configurePassport();

@@ -107,42 +107,10 @@ const NotificationList = () => {
     }
   };
 
-  // Формирование текста уведомления с актуальным именем пользователя
+  // Формирование текста уведомления
   const formatNotificationText = (notification) => {
-    const content = notification.content;
-    
-    // Если это самолайк - возвращаем как есть, без добавления имени
-    if (content.startsWith('Самолайк')) {
-      return content;
-    }
-    
-    // Если есть связанный пользователь
-    if (notification.relatedUser && notification.relatedUser.displayName) {
-      const userName = notification.relatedUser.displayName;
-      
-      // Проверяем, начинается ли content с какого-то имени (старый формат)
-      // Если да - заменяем старое имя на актуальное
-      // Если нет - добавляем имя в начало (новый формат)
-      
-      // Ищем первое слово в content (это может быть старое имя)
-      const firstWord = content.split(' ')[0];
-      
-      // Если первое слово начинается с заглавной буквы и не является служебным словом
-      // то это скорее всего старое имя пользователя
-      const serviceWords = ['хочет', 'принял', 'лайкнул', 'добавил', 'оценил', 'написал', 'отреагировал', 'зарегистрировался', 'отправил'];
-      
-      if (firstWord && firstWord[0] === firstWord[0].toUpperCase() && !serviceWords.includes(firstWord.toLowerCase())) {
-        // Это старый формат с именем - заменяем первое слово на актуальное имя
-        const contentWithoutOldName = content.split(' ').slice(1).join(' ');
-        return `${userName} ${contentWithoutOldName}`;
-      } else {
-        // Это новый формат без имени - добавляем имя
-        return `${userName} ${content}`;
-      }
-    }
-    
-    // Иначе возвращаем content как есть (для системных уведомлений без relatedUser)
-    return content;
+    // Просто возвращаем content как есть - имена уже сохранены в БД
+    return notification.content;
   };
 
   // Обработчик пометки всех как прочитанные
