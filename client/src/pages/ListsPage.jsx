@@ -43,7 +43,6 @@ const ListsPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [targetListId, setTargetListId] = useState('');
   const [noteModalItem, setNoteModalItem] = useState(null);
-  const [noteViewModalItem, setNoteViewModalItem] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -352,7 +351,6 @@ const ListsPage = () => {
                           media={item}
                           showProgress={item.mediaType === 'tv'}
                           progress={episodeProgress[item.tmdbId]?.[episodeProgress[item.tmdbId].length - 1]}
-                          onNoteClick={(media) => setNoteViewModalItem(media)}
                         />
                         <div className={styles.itemActions}>
                           <button
@@ -460,16 +458,6 @@ const ListsPage = () => {
             dispatch(fetchLists());
             setNoteModalItem(null);
           }}
-        />
-      )}
-
-      {/* Модалка заметки (просмотр) */}
-      {noteViewModalItem && (
-        <NoteModal
-          item={noteViewModalItem}
-          listId={selectedList?.id}
-          onClose={() => setNoteViewModalItem(null)}
-          readOnly
         />
       )}
     </UserPageLayout>

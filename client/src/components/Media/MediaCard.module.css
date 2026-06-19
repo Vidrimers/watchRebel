@@ -117,26 +117,19 @@
 }
 
 .noteIndicator {
-  display: inline-flex;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  background: rgba(251, 191, 36, 0.1);
-  color: var(--warning-color, #f59e0b);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(251, 191, 36, 0.85);
+  color: white;
   border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 6px;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.noteIndicator:hover {
-  background: rgba(251, 191, 36, 0.2);
-  border-color: var(--warning-color, #f59e0b);
+  font-size: 14px;
+  z-index: 5;
 }
 
 .actions {
