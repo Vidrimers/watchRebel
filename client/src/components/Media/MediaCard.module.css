@@ -123,12 +123,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(251, 191, 36, 0.85);
+  width: 20px;
+  height: 20px;
+  background: rgba(251, 191, 36, 0.7);
   color: white;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 12px;
   z-index: 5;
 }
 
