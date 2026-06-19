@@ -12,13 +12,12 @@
 
 /* Кнопка "Добавить отзыв" */
 .addReviewButton {
-  padding: 10px 20px;
-  background-color: var(--accent-primary, #6366f1);
-  color: white;
-  border: none;
+  padding: 8px 16px;
+  background: none;
+  border: 1px dashed var(--border-color, #ddd);
   border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -27,7 +26,9 @@
 }
 
 .addReviewButton:hover:not(:disabled) {
-  background-color: var(--accent-primary-active, #4f46e5);
+  border-color: var(--accent-primary, #6366f1);
+  color: var(--accent-primary, #6366f1);
+  background: rgba(99, 102, 241, 0.05);
 }
 
 .addReviewButton.disabled {
