@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { fetchLists, removeFromList, moveToList } from '../store/slices/listsSlice';
+import { fetchLists, removeFromList, moveToList, updateListItemNote } from '../store/slices/listsSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import CustomListManager from '../components/Lists/CustomListManager';
 import MediaCard from '../components/Media/MediaCard';
@@ -454,8 +454,13 @@ const ListsPage = () => {
           item={noteModalItem}
           listId={selectedList?.id}
           onClose={() => setNoteModalItem(null)}
-          onUpdate={() => {
-            dispatch(fetchLists());
+          onUpdate={(personalNote) => {
+            dispatch(updateListItemNote({
+              listId: selectedList?.id,
+              tmdbId: noteModalItem.tmdbId,
+              mediaType: noteModalItem.mediaType,
+              personalNote
+            }));
             setNoteModalItem(null);
           }}
         />

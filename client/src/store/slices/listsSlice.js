@@ -235,6 +235,16 @@ const listsSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    updateListItemNote: (state, action) => {
+      const { listId, tmdbId, mediaType, personalNote } = action.payload;
+      const list = state.customLists.find(l => l.id === listId);
+      if (list && list.items) {
+        const item = list.items.find(i => i.tmdbId === tmdbId && i.mediaType === mediaType);
+        if (item) {
+          item.personalNote = personalNote;
+        }
+      }
     }
   },
   extraReducers: (builder) => {
@@ -502,5 +512,5 @@ const listsSlice = createSlice({
   }
 });
 
-export const { clearError } = listsSlice.actions;
+export const { clearError, updateListItemNote } = listsSlice.actions;
 export default listsSlice.reducer;
