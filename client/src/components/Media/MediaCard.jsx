@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icon from '../Common/Icon';
 import styles from './MediaCard.module.css';
 
 /**
@@ -73,7 +74,9 @@ const MediaCard = ({
         </div>
 
         {media.personalNote && (
-          <span className={styles.noteIndicator}>✏️</span>
+          <span className={styles.noteIndicator}>
+            <Icon name="edit" size={12} />
+          </span>
         )}
       </div>
 
