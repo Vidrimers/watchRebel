@@ -66,6 +66,9 @@ export function configureHelmet() {
       }
     },
     
+    // Убираем Cross-Origin-Opener-Policy чтобы Telegram Login Widget и Google OAuth работали
+    crossOriginOpenerPolicy: false,
+    
     // X-DNS-Prefetch-Control
     dnsPrefetchControl: {
       allow: false
