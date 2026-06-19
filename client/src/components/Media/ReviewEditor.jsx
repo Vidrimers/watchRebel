@@ -433,7 +433,7 @@ const ReviewEditor = ({
           disabled
           title="Добавьте в список, чтобы написать отзыв"
         >
-          📝 Добавить отзыв
+          + Добавить отзыв
         </button>
         <div className={styles.warningMessage}>
           Добавьте фильм в список, чтобы написать отзыв
@@ -450,7 +450,7 @@ const ReviewEditor = ({
           className={styles.addReviewButton}
           onClick={() => setIsEditing(true)}
         >
-          📝 Добавить отзыв
+          + Добавить отзыв
         </button>
       </div>
     );
