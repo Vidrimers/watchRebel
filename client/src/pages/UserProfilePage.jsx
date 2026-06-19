@@ -371,6 +371,15 @@ const UserProfilePage = () => {
               {profileUser.postsCount > 0 && (
                 <p className={styles.postsCount}>Постов: {profileUser.postsCount}</p>
               )}
+
+              {profileUser.friendsCount > 0 && (
+                <button 
+                  className={styles.friendsLink}
+                  onClick={() => navigate(`/user/${userId}/friends`)}
+                >
+                  Друзей: {profileUser.friendsCount}
+                </button>
+              )}
               
               {/* Кнопка отправить сообщение */}
               {!isBlocked && (

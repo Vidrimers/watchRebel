@@ -239,6 +239,16 @@ function App() {
                 } 
               />
 
+              {/* Страница друзей другого пользователя */}
+              <Route 
+                path="/user/:userId/friends" 
+                element={
+                  <ProtectedRoute>
+                    <FriendsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Страница ленты друзей */}
               <Route 
                 path="/feed" 

@@ -116,6 +116,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
     );
     const postsCount = postsCountResult.success ? postsCountResult.data[0].count : 0;
 
+    // Подсчитываем количество друзей
+    const friendsCountResult = await executeQuery(
+      'SELECT COUNT(*) as count FROM friends WHERE user_id = ?',
+      [id]
+    );
+    const friendsCount = friendsCountResult.success ? friendsCountResult.data[0].count : 0;
+
     // Проверяем, заблокирован ли этот пользователь текущим пользователем
     let isBlockedByMe = false;
     let hasBlockedMe = false;
@@ -170,7 +177,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
       emailVerified: Boolean(user.email_verified),
       createdAt: user.created_at,
       isBlockedByMe: isBlockedByMe,
-      postsCount: postsCount
+      postsCount: postsCount,
+      friendsCount: friendsCount
     });
 
   } catch (error) {

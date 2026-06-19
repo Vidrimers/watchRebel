@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import ReferralStats from '../components/User/ReferralStats';
@@ -16,15 +16,19 @@ import styles from './FriendsPage.module.css';
  */
 const FriendsPage = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const { userId: routeUserId } = useParams();
   const location = useLocation();
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReferrals, setShowReferrals] = useState(false);
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends' или 'requests'
+  const [activeTab, setActiveTab] = useState('friends');
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
+
+  const isOwnProfile = !routeUserId || routeUserId === user?.id;
+  const targetUserId = routeUserId || user?.id;
 
   // Проверяем query параметр при загрузке
   useEffect(() => {
@@ -36,17 +40,19 @@ const FriendsPage = () => {
   }, [location.search]);
 
   useEffect(() => {
-    if (user) {
+    if (targetUserId) {
       loadFriends();
-      loadFriendRequests();
+      if (isOwnProfile) {
+        loadFriendRequests();
+      }
     }
-  }, [user]);
+  }, [targetUserId]);
 
   const loadFriends = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/users/${user.id}/friends`);
+      const response = await api.get(`/users/${targetUserId}/friends`);
       setFriends(response.data);
     } catch (err) {
       console.error('Ошибка загрузки друзей:', err);
@@ -216,7 +222,9 @@ const FriendsPage = () => {
       <div className={styles.container}>
         {!showReferrals ? (
           <>
-            <h1 className={styles.title}>Мои друзья</h1>
+            <h1 className={styles.title}>
+              {isOwnProfile ? 'Мои друзья' : `Друзья`}
+            </h1>
             
             {/* Вкладки */}
             <div className={styles.tabs}>
@@ -226,22 +234,26 @@ const FriendsPage = () => {
               >
                 Друзья ({friends.length})
               </button>
-              <button
-                className={`${styles.tab} ${activeTab === 'requests' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('requests')}
-              >
-                Запросы в друзья ({friendRequests.length})
-              </button>
+              {isOwnProfile && (
+                <button
+                  className={`${styles.tab} ${activeTab === 'requests' ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab('requests')}
+                >
+                  Запросы в друзья ({friendRequests.length})
+                </button>
+              )}
             </div>
             
-            {/* Кнопка для открытия списка рефералов */}
-            <div className={styles.referralCard} onClick={() => setShowReferrals(true)}>
-              <div className={styles.referralCardContent}>
-                <Icon name="friends" size="medium" />
-                <span>Приглашенные друзья</span>
+            {/* Кнопка для открытия списка рефералов (только для своих друзей) */}
+            {isOwnProfile && (
+              <div className={styles.referralCard} onClick={() => setShowReferrals(true)}>
+                <div className={styles.referralCardContent}>
+                  <Icon name="friends" size="medium" />
+                  <span>Приглашенные друзья</span>
+                </div>
+                <Icon name="chevron-right" size="small" />
               </div>
-              <Icon name="chevron-right" size="small" />
-            </div>
+            )}
             
             {/* Контент вкладок */}
             {activeTab === 'friends' ? (

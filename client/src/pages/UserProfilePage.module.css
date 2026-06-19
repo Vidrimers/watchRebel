@@ -46,6 +46,22 @@
   margin: 4px 0 0 0;
 }
 
+.friendsLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary-color, #6366f1);
+  margin: 4px 0 0 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.friendsLink:hover {
+  text-decoration: underline;
+}
+
 .profileActions {
   display: flex;
   gap: 12px;
