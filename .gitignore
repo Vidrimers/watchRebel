@@ -2,6 +2,7 @@
 
 node_modules/
 dist/
+tasks/
 temp/
 .vscode/
 .DS_Store
@@ -43,3 +44,5 @@ cloudflared-tunnel*
 Порядок
 start-tuna.sh
 devandtun.sh
+tasks.md
+Багрепорты.txt
