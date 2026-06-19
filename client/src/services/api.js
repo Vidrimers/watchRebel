@@ -83,14 +83,17 @@ apiClient.interceptors.response.use(
       const { status, data } = error.response;
       const message = data?.message || data?.error || 'Произошла ошибка на сервере';
       
-      console.error('[API] Ошибка от сервера:', {
-        status,
-        statusText: error.response.statusText,
-        url: error.config?.url,
-        method: error.config?.method?.toUpperCase(),
-        message,
-        data
-      });
+      // 404 — это не ошибка (например, отзыв не найден), просто пробрасываем дальше
+      if (status !== 404) {
+        console.error('[API] Ошибка от сервера:', {
+          status,
+          statusText: error.response.statusText,
+          url: error.config?.url,
+          method: error.config?.method?.toUpperCase(),
+          message,
+          data
+        });
+      }
       
       // Если 401 - токен невалиден, очищаем localStorage
       if (status === 401) {
