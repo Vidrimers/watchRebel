@@ -23,13 +23,13 @@ if (!token) {
   process.exit(1);
 }
 
-// Создание бота с polling для development, webhook для production
+// Создание бота с polling
 // Но не запускаем автоматически если это тестовая среда
 const bot = process.env.NODE_ENV === 'test' 
   ? null 
   : new TelegramBot(token, { 
-      polling: !isProduction,
-      webHook: false // Webhook настраивается отдельно через setWebhook
+      polling: true,
+      webHook: false
     });
 
 // Система состояний пользователей для отслеживания процессов (например, смена имени)
