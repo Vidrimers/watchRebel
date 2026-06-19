@@ -19,6 +19,7 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [personalNote, setPersonalNote] = useState('');
 
   // Загружаем списки пользователя
   useEffect(() => {
@@ -48,7 +49,8 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
       
       await api.post(`/lists/${listId}/items`, {
         tmdbId,
-        mediaType
+        mediaType,
+        personalNote: personalNote.trim() || null
       });
 
       setSuccess(`Добавлено в список!`);
@@ -131,6 +133,19 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
               {mediaTitle}
             </p>
           )}
+
+          <div className={styles.noteSection}>
+            <label className={styles.noteLabel}>Заметка (необязательно)</label>
+            <textarea
+              className={styles.noteInput}
+              placeholder="Ссылки, комментарии..."
+              value={personalNote}
+              onChange={(e) => setPersonalNote(e.target.value)}
+              rows={2}
+              maxLength={500}
+            />
+            <span className={styles.noteCount}>{personalNote.length}/500</span>
+          </div>
 
           {loading && <p className={styles.loading}>Загрузка списков...</p>}
 

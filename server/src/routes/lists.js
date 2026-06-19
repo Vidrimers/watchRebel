@@ -155,6 +155,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const list = listResult.data[0];
 
+    // Проверяем, является ли текущий пользователь владельцем списка
+    const isOwner = list.user_id === req.user.id;
+
     // Получаем элементы списка
     const itemsResult = await executeQuery(
       'SELECT * FROM list_items WHERE list_id = ? ORDER BY added_at DESC',
@@ -185,7 +188,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
               posterPath: mediaDetails.poster_path,
               releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
               voteAverage: mediaDetails.vote_average || 0,
-              overview: mediaDetails.overview
+              overview: mediaDetails.overview,
+              personalNote: isOwner ? item.personal_note : null
             };
           } catch (error) {
             console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
@@ -199,7 +203,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
               posterPath: null,
               releaseDate: null,
               voteAverage: 0,
-              overview: null
+              overview: null,
+              personalNote: isOwner ? item.personal_note : null
             };
           }
         })
@@ -478,7 +483,7 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
   try {
     const listId = req.params.id;
     const userId = req.user.id;
-    const { tmdbId, mediaType } = req.body;
+    const { tmdbId, mediaType, personalNote } = req.body;
 
     // Валидация входных данных
     if (!tmdbId || typeof tmdbId !== 'number') {
@@ -575,8 +580,8 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
     const itemId = uuidv4();
 
     const insertResult = await executeQuery(
-      'INSERT INTO list_items (id, list_id, tmdb_id, media_type) VALUES (?, ?, ?, ?)',
-      [itemId, listId, tmdbId, mediaType]
+      'INSERT INTO list_items (id, list_id, tmdb_id, media_type, personal_note) VALUES (?, ?, ?, ?, ?)',
+      [itemId, listId, tmdbId, mediaType, personalNote || null]
     );
 
     if (!insertResult.success) {
@@ -817,6 +822,69 @@ router.delete('/:id/items/:itemId', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка удаления элемента из списка:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * PUT /api/lists/:listId/items/:itemId/note
+ * Обновить персональную заметку к элементу списка
+ */
+router.put('/:listId/items/:itemId/note', authenticateToken, async (req, res) => {
+  try {
+    const { listId, itemId } = req.params;
+    const userId = req.user.id;
+    const { personalNote } = req.body;
+
+    // Проверяем существование списка и права доступа
+    const listCheck = await executeQuery(
+      'SELECT * FROM custom_lists WHERE id = ? AND user_id = ?',
+      [listId, userId]
+    );
+
+    if (!listCheck.success || listCheck.data.length === 0) {
+      return res.status(403).json({ 
+        error: 'Нет прав на редактирование этого списка',
+        code: 'FORBIDDEN' 
+      });
+    }
+
+    // Проверяем существование элемента
+    const itemCheck = await executeQuery(
+      'SELECT * FROM list_items WHERE id = ? AND list_id = ?',
+      [itemId, listId]
+    );
+
+    if (!itemCheck.success || itemCheck.data.length === 0) {
+      return res.status(404).json({ 
+        error: 'Элемент не найден в списке',
+        code: 'ITEM_NOT_FOUND' 
+      });
+    }
+
+    // Обновляем заметку
+    const updateResult = await executeQuery(
+      'UPDATE list_items SET personal_note = ? WHERE id = ?',
+      [personalNote || null, itemId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({ 
+        error: 'Ошибка обновления заметки',
+        code: 'DATABASE_ERROR' 
+      });
+    }
+
+    res.json({
+      message: 'Заметка обновлена',
+      personalNote: personalNote || null
+    });
+
+  } catch (error) {
+    console.error('Ошибка обновления заметки:', error);
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
@@ -1416,7 +1484,8 @@ router.get('/:id/items', authenticateToken, async (req, res) => {
             posterPath: mediaDetails.poster_path,
             releaseDate: mediaDetails.release_date || mediaDetails.first_air_date,
             voteAverage: mediaDetails.vote_average || 0,
-            overview: mediaDetails.overview
+            overview: mediaDetails.overview,
+            personalNote: item.personal_note || null
           };
         } catch (error) {
           console.error(`Ошибка получения деталей для ${item.media_type} ${item.tmdb_id}:`, error);
@@ -1431,7 +1500,8 @@ router.get('/:id/items', authenticateToken, async (req, res) => {
             posterPath: null,
             releaseDate: null,
             voteAverage: 0,
-            overview: null
+            overview: null,
+            personalNote: item.personal_note || null
           };
         }
       })

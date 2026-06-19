@@ -71,6 +71,10 @@ const MediaCard = ({
             </>
           )}
         </div>
+
+        {media.personalNote && (
+          <p className={styles.personalNote}>{media.personalNote}</p>
+        )}
       </div>
 
       {/* Кнопки действий (опционально) */}
