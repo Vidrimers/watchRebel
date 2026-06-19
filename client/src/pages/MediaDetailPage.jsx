@@ -43,6 +43,7 @@ const MediaDetailPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [personalNote, setPersonalNote] = useState('');
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -83,12 +84,14 @@ const MediaDetailPage = () => {
         listId: selectedListId,
         media: {
           tmdbId: selectedMedia.id,
-          mediaType: selectedMedia.media_type || mediaType
+          mediaType: selectedMedia.media_type || mediaType,
+          personalNote: personalNote.trim() || null
         }
       })).unwrap();
       
       setShowListSelector(false);
       setSelectedListId('');
+      setPersonalNote('');
       await showAlert({
         title: 'Успешно!',
         message: 'Контент добавлен в список',
@@ -131,7 +134,8 @@ const MediaDetailPage = () => {
         listId: newList.id,
         media: {
           tmdbId: selectedMedia.id,
-          mediaType: selectedMedia.media_type || mediaType
+          mediaType: selectedMedia.media_type || mediaType,
+          personalNote: personalNote.trim() || null
         }
       })).unwrap();
       
@@ -141,6 +145,7 @@ const MediaDetailPage = () => {
       setNewListName('');
       setShowCreateForm(false);
       setShowListSelector(false);
+      setPersonalNote('');
       
       await showAlert({
         title: 'Успешно!',
@@ -374,6 +379,17 @@ const MediaDetailPage = () => {
                       >
                         Добавить
                       </button>
+                    </div>
+                    <div className={styles.noteInputWrapper}>
+                      <textarea
+                        className={styles.noteInput}
+                        placeholder="Заметка (необязательно)..."
+                        value={personalNote}
+                        onChange={(e) => setPersonalNote(e.target.value)}
+                        rows={2}
+                        maxLength={500}
+                      />
+                      <span className={styles.noteCount}>{personalNote.length}/500</span>
                     </div>
                     <button 
                       className={styles.createListButton}
