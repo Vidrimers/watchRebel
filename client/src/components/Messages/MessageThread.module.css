@@ -133,8 +133,8 @@
   position: absolute;
   bottom: 1rem;
   right: 1rem;
-  width: 48px;
-  height: 48px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   background: var(--accent-primary, #6366f1);
   color: white;
@@ -212,6 +212,8 @@
 
 .messageAvatar {
   flex-shrink: 0;
+  text-decoration: none;
+  display: flex;
 }
 
 .messageAvatarImage {
@@ -322,7 +324,11 @@
 
 .input:focus {
   outline: none;
-  border-color: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary);
+}
+
+.input::placeholder {
+  color: var(--text-secondary, #999);
 }
 
 .input:disabled {

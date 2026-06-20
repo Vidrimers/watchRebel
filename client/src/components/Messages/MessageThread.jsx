@@ -141,7 +141,7 @@ const MessageThread = ({ conversation }) => {
     }
 
     // Показываем/скрываем кнопку скролла вниз
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 300;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
     setShowScrollButton(!isNearBottom);
   };
 
@@ -377,6 +377,7 @@ const MessageThread = ({ conversation }) => {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.headerAvatar}
+            onClick={(e) => e.stopPropagation()}
           >
             {conversation.otherUser.avatarUrl ? (
               <>
@@ -545,33 +546,41 @@ const MessageThread = ({ conversation }) => {
                           </div>
                         )
                       ) : (
-                        conversation.otherUser.avatarUrl ? (
-                          <>
-                            <img 
-                              src={
-                                conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                                  ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                                  : conversation.otherUser.avatarUrl
-                              }
-                              alt={conversation.otherUser.displayName}
-                              className={styles.messageAvatarImage}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                            <div 
-                              className={styles.messageAvatarPlaceholder}
-                              style={{ display: 'none' }}
-                            >
+                        <a 
+                          href={`/user/${conversation.otherUser.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.messageAvatar}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {conversation.otherUser.avatarUrl ? (
+                            <>
+                              <img 
+                                src={
+                                  conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                                    ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
+                                    : conversation.otherUser.avatarUrl
+                                }
+                                alt={conversation.otherUser.displayName}
+                                className={styles.messageAvatarImage}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div 
+                                className={styles.messageAvatarPlaceholder}
+                                style={{ display: 'none' }}
+                              >
+                                {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                              </div>
+                            </>
+                          ) : (
+                            <div className={styles.messageAvatarPlaceholder}>
                               {conversation.otherUser.displayName.charAt(0).toUpperCase()}
                             </div>
-                          </>
-                        ) : (
-                          <div className={styles.messageAvatarPlaceholder}>
-                            {conversation.otherUser.displayName.charAt(0).toUpperCase()}
-                          </div>
-                        )
+                          )}
+                        </a>
                       )}
                     </div>
                     
