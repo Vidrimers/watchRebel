@@ -2,6 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import mediaCacheService from '../services/mediaCacheService.js';
 
 const router = express.Router();
 
@@ -103,15 +104,7 @@ router.post('/', authenticateToken, async (req, res) => {
     // Если данных нет в списке, пытаемся получить из TMDb
     if (!title || !posterPath) {
       try {
-        const tmdbServiceModule = await import('../services/tmdbService.js');
-        const tmdbService = tmdbServiceModule.default;
-        
-        let mediaDetails;
-        if (mediaType === 'movie') {
-          mediaDetails = await tmdbService.getMovieDetails(tmdbId);
-        } else {
-          mediaDetails = await tmdbService.getTVDetails(tmdbId);
-        }
+        const mediaDetails = await mediaCacheService.getOrFetch(tmdbId, mediaType);
 
         if (mediaDetails) {
           title = mediaDetails.title || mediaDetails.name;
@@ -464,15 +457,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     // Если все еще нет названия, пытаемся получить из TMDb
     if (!title) {
       try {
-        const tmdbServiceModule = await import('../services/tmdbService.js');
-        const tmdbService = tmdbServiceModule.default;
-        
-        let mediaDetails;
-        if (existingReview.media_type === 'movie') {
-          mediaDetails = await tmdbService.getMovieDetails(existingReview.tmdb_id);
-        } else {
-          mediaDetails = await tmdbService.getTVDetails(existingReview.tmdb_id);
-        }
+        const mediaDetails = await mediaCacheService.getOrFetch(existingReview.tmdb_id, existingReview.media_type);
 
         if (mediaDetails) {
           title = mediaDetails.title || mediaDetails.name;

@@ -5,6 +5,7 @@ import PDFDocument from 'pdfkit';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { notifyFriendActivity } from '../services/notificationService.js';
+import mediaCacheService from '../services/mediaCacheService.js';
 
 const router = express.Router();
 
@@ -47,7 +48,6 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     // Для каждого списка получаем его элементы
-    const tmdbService = (await import('../services/tmdbService.js')).default;
     
     const listsWithItems = await Promise.all(
       listsResult.data.map(async (list) => {
@@ -58,16 +58,11 @@ router.get('/', authenticateToken, async (req, res) => {
 
         let items = [];
         if (itemsResult.success) {
-          // Обогащаем данные информацией из TMDb
+          // Обогащаем данные из кэша
           items = await Promise.all(
             itemsResult.data.map(async (item) => {
               try {
-                let mediaDetails;
-                if (item.media_type === 'movie') {
-                  mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
-                } else {
-                  mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
-                }
+                const mediaDetails = await mediaCacheService.getOrFetch(item.tmdb_id, item.media_type);
 
                 return {
                   id: item.id,
@@ -168,17 +163,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     let items = [];
     if (itemsResult.success) {
-      const tmdbService = (await import('../services/tmdbService.js')).default;
-      
       items = await Promise.all(
         itemsResult.data.map(async (item) => {
           try {
-            let mediaDetails;
-            if (item.media_type === 'movie') {
-              mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
-            } else {
-              mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
-            }
+            const mediaDetails = await mediaCacheService.getOrFetch(item.tmdb_id, item.media_type);
 
             return {
               id: item.id,
@@ -635,24 +623,17 @@ router.post('/:id/items', authenticateToken, async (req, res) => {
     let localPosterPath = null;
     let originalTitle = ''; // Инициализируем оригинальное название
     try {
-      const tmdbService = (await import('../services/tmdbService.js')).default;
       const { downloadImage } = await import('../utils/imageDownloader.js');
       
-      let mediaDetails;
+      const mediaDetails = await mediaCacheService.getOrFetch(tmdbId, mediaType);
       if (mediaType === 'movie') {
-        mediaDetails = await tmdbService.getMovieDetails(tmdbId);
         mediaTitle = mediaDetails.title;
         posterPath = mediaDetails.poster_path;
-        originalTitle = mediaDetails.original_title || ''; // Получаем оригинальное название для фильма
-        console.log(`✅ Получено название фильма из TMDb: "${mediaTitle}"`);
-        console.log(`✅ Оригинальное название фильма: "${originalTitle}"`);
+        originalTitle = mediaDetails.original_title || '';
       } else {
-        mediaDetails = await tmdbService.getTVDetails(tmdbId);
         mediaTitle = mediaDetails.name;
         posterPath = mediaDetails.poster_path;
-        originalTitle = mediaDetails.original_name || ''; // Получаем оригинальное название для сериала
-        console.log(`✅ Получено название сериала из TMDb: "${mediaTitle}"`);
-        console.log(`✅ Оригинальное название сериала: "${originalTitle}"`);
+        originalTitle = mediaDetails.original_name || '';
       }
 
       // Скачиваем постер на сервер
@@ -980,7 +961,7 @@ router.get('/export', authenticateToken, async (req, res) => {
     // Кэш для TMDb запросов (чтобы не запрашивать один и тот же фильм дважды)
     const tmdbCache = new Map();
 
-    // Функция для получения деталей с кэшированием
+    // Функция для получения деталей из кэша
     const getMediaDetails = async (tmdbId, mediaType) => {
       const cacheKey = `${mediaType}_${tmdbId}`;
       
@@ -989,12 +970,7 @@ router.get('/export', authenticateToken, async (req, res) => {
       }
 
       try {
-        let mediaDetails;
-        if (mediaType === 'movie') {
-          mediaDetails = await tmdbService.getMovieDetails(tmdbId);
-        } else {
-          mediaDetails = await tmdbService.getTVDetails(tmdbId);
-        }
+        const mediaDetails = await mediaCacheService.getOrFetch(tmdbId, mediaType);
         
         tmdbCache.set(cacheKey, mediaDetails);
         return mediaDetails;
@@ -1461,19 +1437,11 @@ router.get('/:id/items', authenticateToken, async (req, res) => {
       });
     }
 
-    // Импортируем tmdbService для получения деталей медиа
-    const tmdbService = (await import('../services/tmdbService.js')).default;
-
-    // Обогащаем данные информацией из TMDb
+    // Обогащаем данные из кэша
     const enrichedItems = await Promise.all(
       itemsResult.data.map(async (item) => {
         try {
-          let mediaDetails;
-          if (item.media_type === 'movie') {
-            mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
-          } else {
-            mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
-          }
+          const mediaDetails = await mediaCacheService.getOrFetch(item.tmdb_id, item.media_type);
 
           return {
             id: item.id,

@@ -4,6 +4,7 @@ import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import mediaCacheService from '../services/mediaCacheService.js';
 
 const router = express.Router();
 
@@ -45,19 +46,11 @@ router.get('/', authenticateToken, async (req, res) => {
       });
     }
 
-    // Импортируем tmdbService для получения деталей медиа
-    const tmdbService = (await import('../services/tmdbService.js')).default;
-
-    // Обогащаем данные информацией из TMDb
+    // Обогащаем данные из кэша
     const enrichedItems = await Promise.all(
       watchlistResult.data.map(async (item) => {
         try {
-          let mediaDetails;
-          if (item.media_type === 'movie') {
-            mediaDetails = await tmdbService.getMovieDetails(item.tmdb_id);
-          } else {
-            mediaDetails = await tmdbService.getTVDetails(item.tmdb_id);
-          }
+          const mediaDetails = await mediaCacheService.getOrFetch(item.tmdb_id, item.media_type);
 
           return {
             id: item.id,
@@ -265,8 +258,6 @@ router.get('/export', authenticateToken, async (req, res) => {
       ? userResult.data[0].display_name 
       : 'Пользователь';
 
-    const tmdbService = (await import('../services/tmdbService.js')).default;
-
     // Собираем данные для экспорта
     const exportData = {
       exportDate: new Date().toISOString(),
@@ -274,10 +265,10 @@ router.get('/export', authenticateToken, async (req, res) => {
       watchlist: []
     };
 
-    // Кэш для TMDb запросов
+    // Кэш для запросов
     const tmdbCache = new Map();
 
-    // Функция для получения деталей с кэшированием
+    // Функция для получения деталей из кэша
     const getMediaDetails = async (tmdbId, mediaType) => {
       const cacheKey = `${mediaType}_${tmdbId}`;
       
@@ -286,12 +277,7 @@ router.get('/export', authenticateToken, async (req, res) => {
       }
 
       try {
-        let mediaDetails;
-        if (mediaType === 'movie') {
-          mediaDetails = await tmdbService.getMovieDetails(tmdbId);
-        } else {
-          mediaDetails = await tmdbService.getTVDetails(tmdbId);
-        }
+        const mediaDetails = await mediaCacheService.getOrFetch(tmdbId, mediaType);
         
         tmdbCache.set(cacheKey, mediaDetails);
         return mediaDetails;
