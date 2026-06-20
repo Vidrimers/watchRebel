@@ -200,7 +200,9 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
       attachments: m.attachments ? JSON.parse(m.attachments) : null,
-      createdAt: m.created_at ? m.created_at + 'Z' : null, // Добавляем Z для UTC
+      location: m.location ? JSON.parse(m.location) : null,
+      suggestedMedia: m.suggested_media ? JSON.parse(m.suggested_media) : null,
+      createdAt: m.created_at ? m.created_at + 'Z' : null,
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
@@ -235,7 +237,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
  */
 router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10), async (req, res) => {
   try {
-    const { receiverId, content, sentViaBot } = req.body;
+    const { receiverId, content, sentViaBot, location, suggestedMedia } = req.body;
     const senderId = req.user.id;
     const files = req.files || [];
 
@@ -247,8 +249,8 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       });
     }
 
-    // Проверяем что есть либо текст, либо файлы
-    if ((!content || content.trim().length === 0) && files.length === 0) {
+    // Проверяем что есть либо текст, либо файлы, либо локация, либо предложение медиа
+    if ((!content || content.trim().length === 0) && files.length === 0 && !location && !suggestedMedia) {
       return res.status(400).json({ 
         error: 'Сообщение не может быть пустым',
         code: 'EMPTY_MESSAGE' 
@@ -337,10 +339,12 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
     // Создаем сообщение
     const messageId = uuidv4();
+    const locationJson = location ? JSON.stringify(location) : null;
+    const suggestedMediaJson = suggestedMedia ? JSON.stringify(suggestedMedia) : null;
     const createMessageResult = await executeQuery(
-      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?, ?, datetime('now'))`,
-      [messageId, conversationId, senderId, receiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments]
+      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now'))`,
+      [messageId, conversationId, senderId, receiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments, locationJson, suggestedMediaJson]
     );
 
     if (!createMessageResult.success) {

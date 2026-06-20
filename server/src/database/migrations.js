@@ -306,6 +306,10 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
+      -- Добавляем колонки для геометки и предложений медиа
+      ALTER TABLE messages ADD COLUMN location TEXT;
+      ALTER TABLE messages ADD COLUMN suggested_media TEXT;
+
       -- Таблица настроек уведомлений
       CREATE TABLE IF NOT EXISTS notification_settings (
         id TEXT PRIMARY KEY,

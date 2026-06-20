@@ -40,11 +40,17 @@ export const fetchMessages = createAsyncThunk(
 // Отправить новое сообщение
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ receiverId, content, files = [] }, { rejectWithValue }) => {
+  async ({ receiverId, content, files = [], location = null, suggestedMedia = null }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append('receiverId', receiverId);
       formData.append('content', content || '');
+      if (location) {
+        formData.append('location', JSON.stringify(location));
+      }
+      if (suggestedMedia) {
+        formData.append('suggestedMedia', JSON.stringify(suggestedMedia));
+      }
       
       // Добавляем файлы
       files.forEach(file => {
