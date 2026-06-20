@@ -53,15 +53,17 @@ const MessageThread = ({ conversation }) => {
   }, [conversation, dispatch]);
 
   // Скролл вниз при загрузке сообщений в новом диалоге
+  const prevConversationRef = useRef(null);
   useEffect(() => {
-    if (messages.length > 0 && conversation?.id) {
-      // Несколько попыток чтобы DOM успел отрисоваться
-      const timer1 = setTimeout(() => scrollToBottom(), 50);
-      const timer2 = setTimeout(() => scrollToBottom(), 200);
-      const timer3 = setTimeout(() => scrollToBottom(), 500);
-      return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+    if (conversation?.id && conversation.id !== prevConversationRef.current) {
+      prevConversationRef.current = conversation.id;
+      // Ждём загрузки сообщений и рендера DOM
+      const t1 = setTimeout(() => scrollToBottom(), 100);
+      const t2 = setTimeout(() => scrollToBottom(), 300);
+      const t3 = setTimeout(() => scrollToBottom(), 600);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
-  }, [conversation?.id]); // Только при смене диалога
+  }, [conversation?.id, messages.length]);
 
   // Подключаем обработчик WebSocket сообщений
   useEffect(() => {
@@ -195,16 +197,23 @@ const MessageThread = ({ conversation }) => {
   };
 
   const scrollToBottom = () => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
+    const endRef = messagesEndRef.current;
+    if (!endRef) return;
     
     setShowScrollButton(false);
+    
+    const container = messagesContainerRef.current;
+    if (!container) return;
     
     const start = container.scrollTop;
     const end = container.scrollHeight - container.clientHeight;
     const distance = end - start;
     
-    if (distance <= 0) return;
+    // Если уже внизу — ничего не делаем
+    if (distance <= 5) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
     
     const duration = 600;
     let startTime = null;
