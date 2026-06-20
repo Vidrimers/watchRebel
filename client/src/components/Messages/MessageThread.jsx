@@ -54,15 +54,25 @@ const MessageThread = ({ conversation }) => {
 
   // Скролл вниз при загрузке сообщений в новом диалоге
   const prevConversationRef = useRef(null);
+  const prevMessagesLenRef = useRef(0);
   useEffect(() => {
-    if (conversation?.id && conversation.id !== prevConversationRef.current) {
-      prevConversationRef.current = conversation.id;
-      // Ждём загрузки сообщений и рендера DOM
+    // При смене диалога — сбрасываем счётчик
+    if (conversation?.id !== prevConversationRef.current) {
+      prevConversationRef.current = conversation?.id;
+      prevMessagesLenRef.current = 0;
+      return;
+    }
+    
+    // Скроллим когда сообщения впервые загрузились (было 0, стало >0)
+    if (messages.length > 0 && prevMessagesLenRef.current === 0) {
+      prevMessagesLenRef.current = messages.length;
       const t1 = setTimeout(() => scrollToBottom(), 100);
-      const t2 = setTimeout(() => scrollToBottom(), 300);
-      const t3 = setTimeout(() => scrollToBottom(), 600);
+      const t2 = setTimeout(() => scrollToBottom(), 400);
+      const t3 = setTimeout(() => scrollToBottom(), 800);
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
+    
+    prevMessagesLenRef.current = messages.length;
   }, [conversation?.id, messages.length]);
 
   // Подключаем обработчик WebSocket сообщений
