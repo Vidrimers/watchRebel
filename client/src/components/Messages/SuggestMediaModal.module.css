@@ -98,6 +98,23 @@
   font-size: 14px;
 }
 
+.searchInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--bg-secondary, #f9fafb);
+  color: var(--text-primary, #333);
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+}
+
 .listGrid {
   display: flex;
   flex-direction: column;

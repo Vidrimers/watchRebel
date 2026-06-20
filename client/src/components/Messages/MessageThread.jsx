@@ -201,7 +201,7 @@ const MessageThread = ({ conversation, onClose }) => {
     try {
       await dispatch(sendMessage({
         receiverId: conversation.otherUser.id,
-        content: '',
+        content: `📍 ${data.latitude}, ${data.longitude}`,
         files: [],
         location: { lat: data.latitude, lng: data.longitude }
       }));
@@ -215,7 +215,7 @@ const MessageThread = ({ conversation, onClose }) => {
     try {
       await dispatch(sendMessage({
         receiverId: conversation.otherUser.id,
-        content: '',
+        content: `🎬 ${data.title}`,
         files: [],
         suggestedMedia: {
           tmdbId: data.tmdbId,

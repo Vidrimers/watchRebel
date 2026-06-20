@@ -10,19 +10,26 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
   const { customLists } = useAppSelector((state) => state.lists);
   const [selectedList, setSelectedList] = useState(null);
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     dispatch(fetchLists());
   }, [dispatch]);
 
-  const lists = customLists.filter(list => list.mediaType === mediaType);
-  const watchlist = customLists.find(list => list.name === 'Хочу посмотреть' && list.mediaType === mediaType);
-  const allLists = watchlist 
-    ? [watchlist, ...lists.filter(l => l.id !== watchlist.id)]
-    : lists;
+  const allLists = customLists.filter(list => list.mediaType === mediaType);
+  const watchlist = allLists.find(list => list.name === 'Хочу посмотреть');
+  const sortedLists = watchlist 
+    ? [watchlist, ...allLists.filter(l => l.id !== watchlist.id)]
+    : allLists;
+
+  const filteredLists = sortedLists.filter(list => 
+    !searchQuery || list.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const listItems = selectedList 
-    ? (selectedList.items || [])
+    ? (selectedList.items || []).filter(item => 
+        !searchQuery || (item.title || `Контент #${item.tmdbId}`).toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : [];
 
   const handleSend = () => {
@@ -52,12 +59,19 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
 
         {!selectedList ? (
           <div className={styles.section}>
-            <p className={styles.sectionLabel}>Выберите список</p>
-            {allLists.length === 0 ? (
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Поиск по спискам..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
+            {filteredLists.length === 0 ? (
               <p className={styles.empty}>Нет списков</p>
             ) : (
               <div className={styles.listGrid}>
-                {allLists.map((list) => (
+                {filteredLists.map((list) => (
                   <button
                     key={list.id}
                     className={styles.listCard}
@@ -73,11 +87,20 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
         ) : (
           <div className={styles.section}>
             <div className={styles.breadcrumb}>
-              <button className={styles.backBtn} onClick={() => { setSelectedList(null); setSelectedMedia(null); }}>
+              <button className={styles.backBtn} onClick={() => { setSelectedList(null); setSelectedMedia(null); setSearchQuery(''); }}>
                 ← Назад
               </button>
               <span className={styles.breadcrumbText}>{selectedList.name}</span>
             </div>
+
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder={`Поиск в ${selectedList.name}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
             
             {listItems.length === 0 ? (
               <p className={styles.empty}>Список пуст</p>
