@@ -211,8 +211,8 @@
 
 .dangerWarning {
   color: var(--error-color, #ef4444);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.4;
   margin: 0 0 16px 0;
   padding: 12px;
   background: rgba(239, 68, 68, 0.1);
