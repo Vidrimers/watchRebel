@@ -691,6 +691,35 @@ const MediaDetailPage = () => {
           </div>
         </div>
 
+        {/* Трейлеры */}
+        {selectedMedia.videos?.results?.length > 0 && (() => {
+          const trailers = selectedMedia.videos.results.filter(v => 
+            v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
+          ).slice(0, 3);
+          if (trailers.length === 0) return null;
+          return (
+            <div className={styles.trailersSection}>
+              <h2 className={styles.sectionTitle}>Трейлеры</h2>
+              <div className={styles.trailersGrid}>
+                {trailers.map((trailer) => (
+                  <div key={trailer.id} className={styles.trailerCard}>
+                    <div className={styles.trailerEmbed}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${trailer.key}`}
+                        title={trailer.name}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className={styles.trailerIframe}
+                      />
+                    </div>
+                    <p className={styles.trailerName}>{trailer.name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Актёры и съёмочная группа */}
         {selectedMedia.credits && (
           <div className={styles.creditsSection}>
