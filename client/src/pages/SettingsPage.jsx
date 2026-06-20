@@ -233,96 +233,99 @@ const SettingsPage = () => {
               <AvatarUpload user={user} />
             </div>
 
-            {/* Карточка с темой */}
-            <ThemeDropdown />
+            {/* Карточки в два столбца */}
+            <div className={styles.cardsGrid}>
+              {/* Карточка с темой */}
+              <ThemeDropdown />
 
-            {/* Карточка с приватностью стены */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Приватность стены</h3>
-              <p className={styles.cardDescription}>
-                Выберите, кто может писать на вашей стене
-              </p>
-              <select 
-                className={styles.privacySelect}
-                value={user.wallPrivacy || 'all'}
-                onChange={async (e) => {
-                  try {
-                    await dispatch(updateProfile({ 
-                      userId: user.id, 
-                      wallPrivacy: e.target.value 
-                    })).unwrap();
-                  } catch (error) {
-                    console.error('Ошибка обновления приватности:', error);
-                    await showAlert({
-                      title: 'Ошибка',
-                      message: 'Не удалось обновить настройки приватности',
-                      type: 'error'
-                    });
-                  }
-                }}
-              >
-                <option value="all">Все</option>
-                <option value="friends">Только друзья</option>
-                <option value="none">Никто</option>
-              </select>
-            </div>
+              {/* Карточка с приватностью стены */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Приватность стены</h3>
+                <p className={styles.cardDescription}>
+                  Выберите, кто может писать на вашей стене
+                </p>
+                <select 
+                  className={styles.privacySelect}
+                  value={user.wallPrivacy || 'all'}
+                  onChange={async (e) => {
+                    try {
+                      await dispatch(updateProfile({ 
+                        userId: user.id, 
+                        wallPrivacy: e.target.value 
+                      })).unwrap();
+                    } catch (error) {
+                      console.error('Ошибка обновления приватности:', error);
+                      await showAlert({
+                        title: 'Ошибка',
+                        message: 'Не удалось обновить настройки приватности',
+                        type: 'error'
+                      });
+                    }
+                  }}
+                >
+                  <option value="all">Все</option>
+                  <option value="friends">Только друзья</option>
+                  <option value="none">Никто</option>
+                </select>
+              </div>
 
-            {/* Кнопка для открытия настроек уведомлений */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Уведомления</h3>
-              <button 
-                onClick={() => setShowNotificationSettings(true)}
-                className={styles.notificationSettingsButton}
-              >
-                <Icon name="bell" size="medium" />
-                <span>Уведомления в Telegram</span>
-                <Icon name="chevron-right" size="small" />
-              </button>
-            </div>
+              {/* Кнопка для открытия настроек уведомлений */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Уведомления</h3>
+                <button 
+                  onClick={() => setShowNotificationSettings(true)}
+                  className={styles.notificationSettingsButton}
+                >
+                  <Icon name="bell" size="medium" />
+                  <span>Уведомления в Telegram</span>
+                  <Icon name="chevron-right" size="small" />
+                </button>
+              </div>
 
-            {/* Кнопка для открытия настроек связанных аккаунтов */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Связанные аккаунты</h3>
-              <button 
-                onClick={() => setShowAccountsSettings(true)}
-                className={styles.settingsNavigationButton}
-              >
-                <Icon name="link" size="medium" />
-                <span>Управление аккаунтами</span>
-                <Icon name="chevron-right" size="small" />
-              </button>
-            </div>
+              {/* Кнопка для открытия настроек связанных аккаунтов */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Связанные аккаунты</h3>
+                <button 
+                  onClick={() => setShowAccountsSettings(true)}
+                  className={styles.settingsNavigationButton}
+                >
+                  <Icon name="link" size="medium" />
+                  <span>Управление аккаунтами</span>
+                  <Icon name="chevron-right" size="small" />
+                </button>
+              </div>
 
-            {/* Кнопка для перехода к багрепортам */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Мои багрепорты</h3>
-              <button 
-                onClick={() => navigate('/my-bug-reports')}
-                className={styles.settingsNavigationButton}
-              >
-                <Icon name="bug" size="medium" />
-                <span>Просмотр моих багрепортов</span>
-                <Icon name="chevron-right" size="small" />
-              </button>
-            </div>
+              {/* Кнопка для перехода к багрепортам */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Мои багрепорты</h3>
+                <button 
+                  onClick={() => navigate('/my-bug-reports')}
+                  className={styles.settingsNavigationButton}
+                >
+                  <Icon name="bug" size="medium" />
+                  <span>Просмотр моих багрепортов</span>
+                  <Icon name="chevron-right" size="small" />
+                </button>
+              </div>
 
-            {/* Карточка с выходом */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Сессия</h3>
-              <button onClick={handleLogout} className={styles.logoutButton}>
-                Выйти из аккаунта
-              </button>
-            </div>
+              {/* Карточка с выходом */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Сессия</h3>
+                <button onClick={handleLogout} className={styles.logoutButton}>
+                  Выйти из аккаунта
+                </button>
+              </div>
 
-            {/* Карточка с удалением аккаунта */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
-              <p className={styles.dangerWarning}>
-                ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
-              </p>
-              <button onClick={handleDeleteAccount} className={styles.deleteButton}>
-                <Icon name="delete" size="small" /> Удалить аккаунт
-              </button>
+              {/* Карточка с удалением аккаунта */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Удаление аккаунта</h3>
+                <p className={styles.dangerWarning}>
+                  ⚠️ Внимание! Удаление аккаунта необратимо. Все ваши данные (списки, оценки, посты, сообщения) будут безвозвратно удалены.
+                </p>
+                <button onClick={handleDeleteAccount} className={styles.deleteButton}>
+                  <Icon name="delete" size="small" /> Удалить аккаунт
+                </button>
+              </div>
             </div>
 
             {/* Админ-панель (только для админа) */}

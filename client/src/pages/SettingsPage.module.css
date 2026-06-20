@@ -29,6 +29,23 @@
   margin-bottom: 20px;
 }
 
+/* Сетка карточек в два столбца */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.cardsGrid .settingsCard {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .cardTitle {
   font-size: 18px;
   font-weight: 600;
