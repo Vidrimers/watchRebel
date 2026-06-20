@@ -66,10 +66,8 @@ const MessageThread = ({ conversation, onClose }) => {
     // Скроллим когда сообщения впервые загрузились (было 0, стало >0)
     if (messages.length > 0 && prevMessagesLenRef.current === 0) {
       prevMessagesLenRef.current = messages.length;
-      const t1 = setTimeout(() => scrollToBottom(), 100);
-      const t2 = setTimeout(() => scrollToBottom(), 400);
-      const t3 = setTimeout(() => scrollToBottom(), 800);
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+      // Мгновенный скролл — без анимации
+      scrollToBottom(false);
     }
     
     prevMessagesLenRef.current = messages.length;
@@ -112,11 +110,11 @@ const MessageThread = ({ conversation, onClose }) => {
         const isMyMessage = currentLastMessage?.senderId === user?.id;
         
         if (isMyMessage) {
-          // Если я отправил - всегда скроллим
-          scrollToBottom();
+          // Если я отправил - всегда скроллим мгновенно
+          scrollToBottom(false);
         } else if (isNearBottom) {
-          // Если пришло от другого и я внизу - скроллим
-          scrollToBottom();
+          // Если пришло от другого и я внизу - скроллим мгновенно
+          scrollToBottom(false);
         } else {
           // Если пришло от другого и я НЕ внизу - показываем кнопку
           setShowScrollButton(true);
@@ -217,20 +215,22 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
-  const scrollToBottom = () => {
-    const endRef = messagesEndRef.current;
-    if (!endRef) return;
-    
-    setShowScrollButton(false);
-    
+  const scrollToBottom = (animated = false) => {
     const container = messagesContainerRef.current;
     if (!container) return;
     
-    const start = container.scrollTop;
+    setShowScrollButton(false);
+    
     const end = container.scrollHeight - container.clientHeight;
+    
+    if (!animated) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    
+    const start = container.scrollTop;
     const distance = end - start;
     
-    // Если уже внизу — ничего не делаем
     if (distance <= 5) {
       container.scrollTop = container.scrollHeight;
       return;
@@ -707,11 +707,11 @@ const MessageThread = ({ conversation, onClose }) => {
             <div ref={messagesEndRef} />
             {/* Кнопка скролла вниз — внутри messagesList */}
             {showScrollButton && (
-              <button 
-                className={styles.scrollDownButton}
-                onClick={scrollToBottom}
-                title="К новым сообщениям"
-              >
+            <button 
+              className={styles.scrollDownButton}
+              onClick={() => scrollToBottom(true)}
+              title="К новым сообщениям"
+            >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M19 12l-7 7-7-7"/>
                 </svg>
