@@ -170,14 +170,24 @@ const PersonPage = () => {
         </div>
       </div>
 
-      {/* Фильмография (Актёрские роли) */}
+      {/* Известные работы (топ-10) */}
       {castCredits.length > 0 && (
+        <div className={styles.creditsSection}>
+          <h2>Известные работы</h2>
+          <div className={styles.creditsGrid}>
+            {castCredits.slice(0, 10).map(renderCreditCard)}
+          </div>
+        </div>
+      )}
+
+      {/* Полная фильмография */}
+      {castCredits.length > 10 && (
         <div className={styles.creditsSection}>
           <h2>Фильмография ({castCredits.length})</h2>
           <div className={styles.creditsGrid}>
             {displayedCast.map(renderCreditCard)}
           </div>
-          {castCredits.length > 10 && !showAllCredits && (
+          {!showAllCredits && (
             <button className={styles.showAllBtn} onClick={() => setShowAllCredits(true)}>
               Показать все ({castCredits.length})
             </button>
