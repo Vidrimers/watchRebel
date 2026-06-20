@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import useConfirm from '../../hooks/useConfirm';
+import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
+import ReportModal from '../Common/ReportModal';
+import api from '../../services/api';
 import styles from './MessageThread.module.css';
 
 /**
@@ -13,9 +17,14 @@ import styles from './MessageThread.module.css';
  */
 const MessageThread = ({ conversation }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
   const { confirmDialog, showConfirm } = useConfirm();
+  const { alertDialog, showAlert } = useAlert();
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const menuRef = useRef(null);
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -98,6 +107,19 @@ const MessageThread = ({ conversation }) => {
     }
   }, [messages.length, user?.id]); // Убрал messages и lastMessageId из зависимостей
 
+  // Закрытие меню при клике вне
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
   // Обработчик скролла для определения когда загружать старые сообщения
   const handleScroll = (e) => {
     const container = e.target;
@@ -126,6 +148,35 @@ const MessageThread = ({ conversation }) => {
       const newScrollHeight = container.scrollHeight;
       container.scrollTop = newScrollHeight - previousScrollHeight;
     }, 0);
+  };
+
+  // Блокировка пользователя
+  const handleBlockUser = async () => {
+    setShowMenu(false);
+    const confirmed = await showConfirm({
+      title: 'Заблокировать пользователя?',
+      message: `Вы уверены, что хотите заблокировать ${conversation.otherUser.displayName}? Вы не будете видеть его сообщения.`,
+      confirmText: 'Заблокировать',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+    if (!confirmed) return;
+
+    try {
+      await api.post(`/users/${conversation.otherUser.id}/block`);
+      await showAlert({
+        title: 'Пользователь заблокирован',
+        message: `${conversation.otherUser.displayName} заблокирован`,
+        type: 'success'
+      });
+      navigate('/messages');
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Не удалось заблокировать пользователя',
+        type: 'error'
+      });
+    }
   };
 
   const scrollToBottom = () => {
@@ -346,6 +397,7 @@ const MessageThread = ({ conversation }) => {
   return (
     <>
       {confirmDialog}
+      {alertDialog}
       <div className={styles.container}>
       {/* Шапка с информацией о собеседнике */}
       <div className={styles.header}>
@@ -373,6 +425,42 @@ const MessageThread = ({ conversation }) => {
           </div>
         </div>
         <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
+        <div className={styles.headerMenuContainer} ref={menuRef}>
+          <button 
+            className={styles.headerMenuBtn}
+            onClick={() => setShowMenu(!showMenu)}
+          >
+            <Icon name="close" size="small" />
+          </button>
+          {showMenu && (
+            <div className={styles.headerDropdown}>
+              <button 
+                className={styles.dropdownItem}
+                onClick={() => {
+                  setShowMenu(false);
+                  navigate(`/user/${conversation.otherUser.id}`);
+                }}
+              >
+                <Icon name="friends" size="small" /> Профиль
+              </button>
+              <button 
+                className={styles.dropdownItem}
+                onClick={handleBlockUser}
+              >
+                <Icon name="close" size="small" /> Заблокировать
+              </button>
+              <button 
+                className={styles.dropdownItem}
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowReportModal(true);
+                }}
+              >
+                <Icon name="bug" size="small" /> Пожаловаться
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Список сообщений */}
@@ -655,6 +743,13 @@ const MessageThread = ({ conversation }) => {
         </div>
       )}
       </div>
+      {showReportModal && (
+        <ReportModal
+          reportedUserId={conversation.otherUser.id}
+          reportedUserName={conversation.otherUser.displayName}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </>
   );
 };
