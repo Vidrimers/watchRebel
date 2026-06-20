@@ -6,6 +6,7 @@ import useAlert from '../hooks/useAlert';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import Icon from '../components/Common/Icon';
+import ReportModal from '../components/Common/ReportModal';
 import { AdminModerationPanel } from '../components/Settings';
 import { Wall } from '../components/Wall';
 import api from '../services/api';
@@ -27,6 +28,7 @@ const UserProfilePage = () => {
   const [isFriend, setIsFriend] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false); // Пользователь заблокировал меня
 
@@ -339,6 +341,13 @@ const UserProfilePage = () => {
     <UserPageLayout user={currentUser}>
       {confirmDialog}
       {alertDialog}
+      {showReportModal && (
+        <ReportModal
+          reportedUserId={userId}
+          reportedUserName={profileUser.displayName || profileUser.username}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
       <div className={styles.profileContainer}>
         {/* Заголовок профиля (только для чужих профилей) */}
         {!isOwnProfile && (
@@ -481,6 +490,12 @@ const UserProfilePage = () => {
                       🚫 Заблокировать
                     </button>
                   )}
+                  <button 
+                    className={styles.menuItem}
+                    onClick={() => setShowReportModal(true)}
+                  >
+                    ⚠️ Пожаловаться
+                  </button>
                 </div>
               )}
             </div>

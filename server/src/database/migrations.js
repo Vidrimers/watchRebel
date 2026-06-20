@@ -324,6 +324,24 @@ export async function runMigrations() {
 
       -- Индекс для быстрого поиска настроек по user_id
       CREATE INDEX IF NOT EXISTS idx_notification_settings_user ON notification_settings(user_id);
+
+      -- Таблица жалоб
+      CREATE TABLE IF NOT EXISTS reports (
+        id TEXT PRIMARY KEY,
+        reporter_id TEXT NOT NULL,
+        reported_user_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        reviewed_at DATETIME,
+        reviewed_by TEXT,
+        FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+      CREATE INDEX IF NOT EXISTS idx_reports_reported_user ON reports(reported_user_id);
     `;
 
     db.exec(migrations, (err) => {

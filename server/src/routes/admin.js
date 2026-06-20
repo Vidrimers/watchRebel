@@ -1246,3 +1246,96 @@ router.get('/database/stats', async (req, res) => {
 });
 
 export default router;
+
+// ==========================================
+// Жалобы
+// ==========================================
+
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * GET /api/admin/reports
+ * Получить список всех жалоб
+ */
+router.get('/reports', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = `
+      SELECT r.*, 
+        reporter.display_name as reporter_name, reporter.avatar_url as reporter_avatar,
+        reported.display_name as reported_name, reported.avatar_url as reported_avatar
+      FROM reports r
+      LEFT JOIN users reporter ON r.reporter_id = reporter.id
+      LEFT JOIN users reported ON r.reported_user_id = reported.id
+    `;
+    const params = [];
+
+    if (status && ['pending', 'reviewed', 'dismissed'].includes(status)) {
+      query += ' WHERE r.status = ?';
+      params.push(status);
+    }
+
+    query += ' ORDER BY r.created_at DESC';
+
+    const result = await executeQuery(query, params);
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения жалоб' });
+    }
+
+    res.json({ reports: result.data });
+  } catch (error) {
+    console.error('Ошибка получения жалоб:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/reports/unread-count
+ * Получить количество непрочитанных жалоб
+ */
+router.get('/reports/unread-count', async (req, res) => {
+  try {
+    const result = await executeQuery(
+      "SELECT COUNT(*) as count FROM reports WHERE status = 'pending'"
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения количества' });
+    }
+
+    res.json({ count: result.data[0].count });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/reports/:id
+ * Обновить статус жалобы
+ */
+router.put('/reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['reviewed', 'dismissed'].includes(status)) {
+      return res.status(400).json({ error: 'Неверный статус' });
+    }
+
+    const result = await executeQuery(
+      'UPDATE reports SET status = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?',
+      [status, new Date().toISOString(), req.user.id, id]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка обновления жалобы' });
+    }
+
+    res.json({ message: 'Статус жалобы обновлён' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});

@@ -27,9 +27,13 @@ const AdminPanel = () => {
   // Состояние для багрепортов
   const [newBugReportsCount, setNewBugReportsCount] = useState(0);
 
+  // Состояние для жалоб
+  const [newReportsCount, setNewReportsCount] = useState(0);
+
   useEffect(() => {
     loadContacts();
     loadBugReportsStats();
+    loadReportsStats();
 
     // Обработчик WebSocket сообщений для обновления счетчика багрепортов
     const handleWebSocketMessage = (data) => {
@@ -53,6 +57,16 @@ const AdminPanel = () => {
     try {
       const response = await api.get('/bug-reports/admin/stats');
       setNewBugReportsCount(response.data?.new || 0);
+    } catch (err) {
+      // Ошибка загрузки статистики
+    }
+  };
+
+  // Загрузка статистики жалоб
+  const loadReportsStats = async () => {
+    try {
+      const response = await api.get('/admin/reports/unread-count');
+      setNewReportsCount(response.data?.count || 0);
     } catch (err) {
       // Ошибка загрузки статистики
     }
@@ -163,6 +177,15 @@ const AdminPanel = () => {
             className={styles.btnNavigation}
           >
             <Icon name="refresh" size="small" /> База данных
+          </button>
+          <button
+            onClick={() => navigate('/admin/reports')}
+            className={styles.btnNavigation}
+          >
+            <Icon name="bug" size="small" /> Жалобы
+            {newReportsCount > 0 && (
+              <span className={styles.badge}>{newReportsCount}</span>
+            )}
           </button>
         </div>
       </div>
