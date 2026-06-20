@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createList, deleteList, renameList } from '../../store/slices/listsSlice';
 import useConfirm from '../../hooks/useConfirm.jsx';
+import Icon from '../Common/Icon';
 import styles from './CustomListManager.module.css';
 
 /**
@@ -192,7 +193,7 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
                       }}
                       title="Переименовать список"
                     >
-                      ✏️
+                      <Icon name="edit" size="small" />
                     </button>
                     <button
                       className={styles.deleteButton}
@@ -202,7 +203,7 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
                       }}
                       title="Удалить список"
                     >
-                      ×
+                      <Icon name="delete" size="small" />
                     </button>
                   </div>
                 </div>
