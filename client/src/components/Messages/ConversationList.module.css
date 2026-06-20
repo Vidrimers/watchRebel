@@ -97,9 +97,8 @@
 }
 
 .item.active {
-  background: var(--accent-primary, #6366f1);
-  background: linear-gradient(90deg, var(--accent-primary, #6366f1) 0%, rgba(99, 102, 241, 0.1) 100%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--bg-hover, #f3f4f6);
+  border-left: 3px solid var(--accent-primary, #6366f1);
 }
 
 .avatar {
