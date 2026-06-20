@@ -14,6 +14,25 @@ import LocationModal from './LocationModal';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
 
+const parseLocation = (loc) => {
+  if (!loc) return null;
+  if (typeof loc === 'string') {
+    try { loc = JSON.parse(loc); } catch { return null; }
+  }
+  if (loc.lat !== undefined && loc.lng !== undefined) return loc;
+  if (loc.latitude !== undefined && loc.longitude !== undefined) return { lat: loc.latitude, lng: loc.longitude };
+  return null;
+};
+
+const parseSuggestedMedia = (sm) => {
+  if (!sm) return null;
+  if (typeof sm === 'string') {
+    try { sm = JSON.parse(sm); } catch { return null; }
+  }
+  if (sm.tmdbId !== undefined) return sm;
+  return null;
+};
+
 /**
  * Окно переписки
  * Отображает сообщения в выбранном диалоге и позволяет отправлять новые
@@ -723,57 +742,65 @@ const MessageThread = ({ conversation, onClose }) => {
                       )}
                       
                       {/* Геометка */}
-                      {message.location && (
-                        <div className={styles.locationCard}>
-                          <iframe
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${message.location.lng-0.01},${message.location.lat-0.01},${message.location.lng+0.01},${message.location.lat+0.01}&layer=mapnik&marker=${message.location.lat},${message.location.lng}`}
-                            className={styles.locationMap}
-                            loading="lazy"
-                            title="Карта"
-                          />
-                          <a 
-                            href={`https://www.openstreetmap.org/?mlat=${message.location.lat}&mlon=${message.location.lng}#map=15/${message.location.lat}/${message.location.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.locationLink}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Открыть на карте →
-                          </a>
-                        </div>
-                      )}
+                      {(() => {
+                        const loc = parseLocation(message.location);
+                        if (!loc) return null;
+                        return (
+                          <div className={styles.locationCard}>
+                            <iframe
+                              src={`https://www.openstreetmap.org/export/embed.html?bbox=${loc.lng-0.01},${loc.lat-0.01},${loc.lng+0.01},${loc.lat+0.01}&layer=mapnik&marker=${loc.lat},${loc.lng}`}
+                              className={styles.locationMap}
+                              loading="lazy"
+                              title="Карта"
+                            />
+                            <a 
+                              href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=15/${loc.lat}/${loc.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.locationLink}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Открыть на карте →
+                            </a>
+                          </div>
+                        );
+                      })()}
 
                       {/* Предложенный фильм/сериал */}
-                      {message.suggestedMedia && (
-                        <a 
-                          href={`/media/${message.suggestedMedia.mediaType}/${message.suggestedMedia.tmdbId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.suggestedMediaCard}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {message.suggestedMedia.posterPath ? (
-                            <img 
-                              src={`https://image.tmdb.org/t/p/w92${message.suggestedMedia.posterPath}`}
-                              alt={message.suggestedMedia.title}
-                              className={styles.suggestedMediaPoster}
-                            />
-                          ) : (
-                            <div className={styles.suggestedMediaPlaceholder}>🎬</div>
-                          )}
-                          <div className={styles.suggestedMediaInfo}>
-                            <span className={styles.suggestedMediaTitle}>{message.suggestedMedia.title}</span>
-                            <div className={styles.suggestedMediaMeta}>
-                              <span className={styles.suggestedMediaType}>
-                                {message.suggestedMedia.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
-                              </span>
-                              {message.suggestedMedia.voteAverage > 0 && (
-                                <span className={styles.suggestedMediaRating}>★ {message.suggestedMedia.voteAverage.toFixed(1)}</span>
-                              )}
+                      {(() => {
+                        const sm = parseSuggestedMedia(message.suggestedMedia);
+                        if (!sm) return null;
+                        return (
+                          <a 
+                            href={`/media/${sm.mediaType}/${sm.tmdbId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.suggestedMediaCard}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {sm.posterPath ? (
+                              <img 
+                                src={`https://image.tmdb.org/t/p/w92${sm.posterPath}`}
+                                alt={sm.title}
+                                className={styles.suggestedMediaPoster}
+                              />
+                            ) : (
+                              <div className={styles.suggestedMediaPlaceholder}>🎬</div>
+                            )}
+                            <div className={styles.suggestedMediaInfo}>
+                              <span className={styles.suggestedMediaTitle}>{sm.title}</span>
+                              <div className={styles.suggestedMediaMeta}>
+                                <span className={styles.suggestedMediaType}>
+                                  {sm.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                                </span>
+                                {sm.voteAverage > 0 && (
+                                  <span className={styles.suggestedMediaRating}>★ {sm.voteAverage.toFixed(1)}</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </a>
-                      )}
+                          </a>
+                        );
+                      })()}
                       
                       {/* Вложения */}
                       {message.attachments && message.attachments.length > 0 && (
