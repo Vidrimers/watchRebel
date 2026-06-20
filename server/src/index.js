@@ -53,6 +53,7 @@ import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
 import { startTokenCleanupScheduler } from './middleware/tokenCleanup.js';
 import { runMigrations } from './database/migrations.js';
 import { addWallPrivacyMigration } from './database/migrations/add_wall_privacy.js';
+import { getMediaDatabase } from './database/mediaDb.js';
 import { 
   configureHelmet, 
   configureCORS, 
@@ -200,6 +201,14 @@ if (process.env.NODE_ENV !== 'test') {
       }
     } else {
       logger.error('Ошибка выполнения миграций:', result.error);
+    }
+
+    // Инициализация media.db (кэш фильмов)
+    try {
+      getMediaDatabase();
+      logger.info('media.db инициализирована');
+    } catch (err) {
+      logger.error('Ошибка инициализации media.db:', err);
     }
   }).catch(err => {
     logger.error('Критическая ошибка при выполнении миграций:', err);

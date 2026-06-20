@@ -1,5 +1,8 @@
 import express from 'express';
 import tmdbService from '../services/tmdbService.js';
+import mediaCacheService from '../services/mediaCacheService.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { executeQuery } from '../database/db.js';
 
 const router = express.Router();
 
@@ -244,17 +247,12 @@ router.get('/search', async (req, res) => {
 
 /**
  * GET /api/media/:type/:id
- * Получение детальной информации о фильме или сериале
- * 
- * Params:
- * - type: 'movie' | 'tv' (обязательно)
- * - id: number (обязательно) - TMDb ID контента
+ * Получение детальной информации о фильме или сериале (с кэшированием)
  */
 router.get('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
 
-    // Валидация типа
     if (type !== 'movie' && type !== 'tv') {
       return res.status(400).json({ 
         error: 'Тип должен быть movie или tv',
@@ -262,7 +260,6 @@ router.get('/:type/:id', async (req, res) => {
       });
     }
 
-    // Валидация ID
     const tmdbId = parseInt(id);
     if (isNaN(tmdbId) || tmdbId <= 0) {
       return res.status(400).json({ 
@@ -271,10 +268,20 @@ router.get('/:type/:id', async (req, res) => {
       });
     }
 
-    // Инициализируем TMDb сервис
+    // Cache-through: сначала кэш, потом TMDb
+    const cached = await mediaCacheService.getCachedMedia(tmdbId, type);
+    if (cached) {
+      if (cached.poster_path) {
+        cached.poster_url = tmdbService.buildImageUrl(cached.poster_path, 'w500');
+      }
+      if (cached.backdrop_path) {
+        cached.backdrop_url = tmdbService.buildImageUrl(cached.backdrop_path, 'w1280');
+      }
+      return res.json(cached);
+    }
+
     await tmdbService.initialize();
 
-    // Получаем детали в зависимости от типа
     let details;
     if (type === 'movie') {
       details = await tmdbService.getMovieDetails(tmdbId);
@@ -282,7 +289,9 @@ router.get('/:type/:id', async (req, res) => {
       details = await tmdbService.getTVDetails(tmdbId);
     }
 
-    // Добавляем построенные URL для изображений
+    // Сохраняем в кэш
+    await mediaCacheService.saveToCache(details, type);
+
     if (details.poster_path) {
       details.poster_url = tmdbService.buildImageUrl(details.poster_path, 'w500');
       details.poster_url_original = tmdbService.buildImageUrl(details.poster_path, 'original');
@@ -298,7 +307,6 @@ router.get('/:type/:id', async (req, res) => {
   } catch (error) {
     console.error('Ошибка получения деталей контента:', error);
     
-    // Обрабатываем специфичные ошибки TMDb
     if (error.message.includes('не найден')) {
       return res.status(404).json({ 
         error: 'Контент не найден',
@@ -392,6 +400,87 @@ router.get('/:type/:id/images', async (req, res) => {
       message: error.message,
       code: 'IMAGES_ERROR' 
     });
+  }
+});
+
+/**
+ * GET /api/media/cache/stats
+ * Статистика кэша
+ */
+router.get('/cache/stats', authenticateToken, async (req, res) => {
+  try {
+    const stats = await mediaCacheService.getCacheStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Ошибка статистики кэша:', error);
+    res.status(500).json({ error: 'Ошибка получения статистики' });
+  }
+});
+
+/**
+ * POST /api/media/cache/refresh/:tmdbId
+ * Принудительно обновить кэш (admin)
+ */
+router.post('/cache/refresh/:tmdbId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const tmdbId = parseInt(req.params.tmdbId);
+    const { mediaType = 'movie' } = req.body;
+    const data = await mediaCacheService.refreshCache(tmdbId, mediaType);
+    if (!data) return res.status(404).json({ error: 'Медиа не найдено' });
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Ошибка обновления кэша:', error);
+    res.status(500).json({ error: 'Ошибка обновления кэша' });
+  }
+});
+
+/**
+ * POST /api/media/cache/migrate
+ * Миграция существующих фильмов в кэш (admin)
+ */
+router.post('/cache/migrate', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const listItems = await executeQuery('SELECT DISTINCT tmdb_id, media_type FROM list_items');
+    const wallPosts = await executeQuery('SELECT DISTINCT tmdb_id, media_type FROM wall_posts WHERE tmdb_id IS NOT NULL');
+    const watchlistItems = await executeQuery('SELECT DISTINCT tmdb_id, media_type FROM watchlist');
+
+    const allItems = new Map();
+    const addItems = (result) => {
+      if (result.success) {
+        result.data.forEach(item => {
+          if (item.tmdb_id && !allItems.has(`${item.tmdb_id}_${item.media_type}`)) {
+            allItems.set(`${item.tmdb_id}_${item.media_type}`, {
+              tmdbId: item.tmdb_id,
+              mediaType: item.media_type
+            });
+          }
+        });
+      }
+    };
+
+    addItems(listItems);
+    addItems(wallPosts);
+    addItems(watchlistItems);
+
+    let cached = 0, skipped = 0, errors = 0;
+
+    for (const [, item] of allItems) {
+      const existing = await mediaCacheService.getCachedMedia(item.tmdbId, item.mediaType);
+      if (existing) { skipped++; continue; }
+      try {
+        await mediaCacheService.getOrFetch(item.tmdbId, item.mediaType);
+        cached++;
+        await new Promise(r => setTimeout(r, 30));
+      } catch (error) {
+        console.error(`Ошибка кэширования ${item.mediaType}/${item.tmdbId}:`, error.message);
+        errors++;
+      }
+    }
+
+    res.json({ success: true, total: allItems.size, cached, skipped, errors });
+  } catch (error) {
+    console.error('Ошибка миграции кэша:', error);
+    res.status(500).json({ error: 'Ошибка миграции' });
   }
 });
 
