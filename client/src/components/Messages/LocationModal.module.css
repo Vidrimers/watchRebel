@@ -1,0 +1,151 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary, #999);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.closeBtn:hover {
+  color: var(--text-primary, #333);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.locationBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-secondary, #f3f4f6);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.locationBtn:hover:not(:disabled) {
+  background: var(--bg-hover, #e5e7eb);
+}
+
+.locationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inputGroup label {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+}
+
+.inputGroup input {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-secondary, #f9fafb);
+  color: var(--text-primary, #333);
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.cancelBtn,
+.sendBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #666);
+}
+
+.cancelBtn:hover {
+  background: var(--bg-hover, #e5e7eb);
+}
+
+.sendBtn {
+  background: var(--accent-primary, #6366f1);
+  color: white;
+}
+
+.sendBtn:hover:not(:disabled) {
+  background: var(--accent-primary-active, #4f46e5);
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

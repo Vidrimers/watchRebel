@@ -9,6 +9,8 @@ import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
 import ReportModal from '../Common/ReportModal';
 import AttachmentDropdown from './AttachmentDropdown';
+import SuggestMediaModal from './SuggestMediaModal';
+import LocationModal from './LocationModal';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
 
@@ -27,6 +29,9 @@ const MessageThread = ({ conversation, onClose }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [attachType, setAttachType] = useState('file');
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestMediaType, setSuggestMediaType] = useState('movie');
   const attachFileInputRef = useRef(null);
   const attachImageInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -191,6 +196,35 @@ const MessageThread = ({ conversation, onClose }) => {
     }, 0);
   };
 
+  // Отправка геометки
+  const handleSendLocation = async (data) => {
+    try {
+      const content = `📍 Геолокация: ${data.latitude}, ${data.longitude}`;
+      await dispatch(sendMessage({
+        receiverId: conversation.otherUser.id,
+        content,
+        files: []
+      }));
+    } catch (error) {
+      console.error('Ошибка отправки:', error);
+    }
+  };
+
+  // Отправка предложенного медиа
+  const handleSendSuggestedMedia = async (data) => {
+    try {
+      const content = `🎬 ${data.title}`;
+      await dispatch(sendMessage({
+        receiverId: conversation.otherUser.id,
+        content,
+        files: [],
+        suggestedMedia: data
+      }));
+    } catch (error) {
+      console.error('Ошибка отправки:', error);
+    }
+  };
+
   // Блокировка пользователя
   // Обработка выбора типа вложения
   const handleAttachmentSelect = (type) => {
@@ -203,6 +237,17 @@ const MessageThread = ({ conversation, onClose }) => {
         break;
       case 'image':
         attachImageInputRef.current?.click();
+        break;
+      case 'location':
+        setShowLocationModal(true);
+        break;
+      case 'suggest_movie':
+        setShowSuggestModal(true);
+        setSuggestMediaType('movie');
+        break;
+      case 'suggest_series':
+        setShowSuggestModal(true);
+        setSuggestMediaType('tv');
         break;
     }
   };
@@ -894,6 +939,20 @@ const MessageThread = ({ conversation, onClose }) => {
           reportedUserId={conversation.otherUser.id}
           reportedUserName={conversation.otherUser.displayName}
           onClose={() => setShowReportModal(false)}
+        />
+      )}
+      {showSuggestModal && (
+        <SuggestMediaModal
+          mediaType={suggestMediaType}
+          conversationId={conversation.id}
+          onSend={handleSendSuggestedMedia}
+          onClose={() => setShowSuggestModal(false)}
+        />
+      )}
+      {showLocationModal && (
+        <LocationModal
+          onSend={handleSendLocation}
+          onClose={() => setShowLocationModal(false)}
         />
       )}
     </>
