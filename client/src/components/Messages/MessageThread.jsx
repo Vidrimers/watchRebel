@@ -204,15 +204,6 @@ const MessageThread = ({ conversation, onClose }) => {
       case 'image':
         attachImageInputRef.current?.click();
         break;
-      case 'location':
-        alert('Геометка будет доступна позже');
-        break;
-      case 'suggest_movie':
-        alert('Предложение фильма будет доступно позже');
-        break;
-      case 'suggest_series':
-        alert('Предложение сериала будет доступно позже');
-        break;
     }
   };
 

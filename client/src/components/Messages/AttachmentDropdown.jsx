@@ -22,20 +22,12 @@ const AttachmentDropdown = ({ onSelect, onClose }) => {
         <span>Файл</span>
       </button>
       <button className={styles.item} onClick={() => onSelect('image')}>
-        <Icon name="media" size="small" />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
         <span>Изображение</span>
-      </button>
-      <button className={styles.item} onClick={() => onSelect('location')}>
-        <Icon name="search" size="small" />
-        <span>Геометка</span>
-      </button>
-      <button className={styles.item} onClick={() => onSelect('suggest_movie')}>
-        <Icon name="movies" size="small" />
-        <span>Предложить фильм</span>
-      </button>
-      <button className={styles.item} onClick={() => onSelect('suggest_series')}>
-        <Icon name="tv" size="small" />
-        <span>Предложить сериал</span>
       </button>
     </div>
   );
