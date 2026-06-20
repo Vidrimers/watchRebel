@@ -75,7 +75,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
        LEFT JOIN users author ON wp.user_id = author.id
        LEFT JOIN users owner ON wp.wall_owner_id = owner.id
        WHERE wp.wall_owner_id IN (${placeholders})
-         AND wp.post_type IN ('text', 'status_update', 'media_added', 'review', 'rating')
+          AND wp.post_type IN ('text', 'status_update', 'media_added', 'media_shared', 'review', 'rating')
          AND (wp.content IS NULL OR wp.content NOT LIKE '📢 Объявление администратора:%')
        ORDER BY wp.created_at DESC
        LIMIT ? OFFSET ?`,

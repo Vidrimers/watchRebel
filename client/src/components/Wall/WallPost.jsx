@@ -67,8 +67,9 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
       const contentLines = post.content ? post.content.split('\n') : [];
       const currentTitle = contentLines[0] || '';
       
-      // Загружаем если: название содержит "контент #" ИЛИ posterPath пустой
-      const needsTitle = !currentTitle || currentTitle.startsWith('контент #');
+      // Для media_shared всегда загружаем название (content не содержит название)
+      // Для media_added загружаем если название содержит "контент #" или posterPath пустой
+      const needsTitle = post.postType === 'media_shared' || !currentTitle || currentTitle.startsWith('контент #');
       const needsPoster = !post.posterPath;
       
       if (!needsTitle && !needsPoster) {
