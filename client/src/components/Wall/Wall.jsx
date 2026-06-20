@@ -8,6 +8,7 @@ import useAlert from '../../hooks/useAlert';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import styles from './Wall.module.css';
 import axios from 'axios';
+import SuggestMediaModal from '../Messages/SuggestMediaModal';
 
 /**
  * Компонент стены активности пользователя
@@ -24,7 +25,11 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const [imagePreviews, setImagePreviews] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestMediaType, setSuggestMediaType] = useState('movie');
   const fileInputRef = useRef(null);
+  const attachDropdownRef = useRef(null);
 
   const filters = [
     { key: 'all', label: 'Все' },
@@ -110,6 +115,19 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     };
   }, [handleWebSocketMessage]);
 
+  // Закрытие dropdown по клику снаружи
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (attachDropdownRef.current && !attachDropdownRef.current.contains(e.target)) {
+        setShowAttachDropdown(false);
+      }
+    };
+    if (showAttachDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAttachDropdown]);
+
   // Обработчик загрузки ещё постов
   const handleLoadMore = () => {
     if (!loading && hasMore && userId) {
@@ -129,6 +147,49 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     addImages(files);
+  };
+
+  // Обработка выбора из dropdown
+  const handleAttachSelect = (type) => {
+    setShowAttachDropdown(false);
+    switch (type) {
+      case 'image':
+        fileInputRef.current?.click();
+        break;
+      case 'suggest_movie':
+        setSuggestMediaType('movie');
+        setShowSuggestModal(true);
+        break;
+      case 'suggest_series':
+        setSuggestMediaType('tv');
+        setShowSuggestModal(true);
+        break;
+    }
+  };
+
+  // Обработка отправки предложенного медиа
+  const handleSuggestMedia = async (data) => {
+    try {
+      await dispatch(createPost({
+        postType: 'media_shared',
+        content: `Рекомендую к просмотру!`,
+        tmdbId: data.tmdbId,
+        mediaType: data.mediaType,
+        posterPath: data.posterPath
+      })).unwrap();
+      
+      await showAlert({
+        title: 'Опубликовано!',
+        message: 'Пост добавлен на стену',
+        type: 'success'
+      });
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось опубликовать',
+        type: 'error'
+      });
+    }
   };
 
   // Добавление изображений
@@ -405,14 +466,36 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
-              <button
-                type="button"
-                className={styles.attachButton}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isCreating || selectedImages.length >= 10}
-              >
-                <Icon name="paperclip" size="small" />
-              </button>
+              <div className={styles.attachWrapper} ref={attachDropdownRef}>
+                <button
+                  type="button"
+                  className={styles.attachButton}
+                  onClick={() => setShowAttachDropdown(!showAttachDropdown)}
+                  disabled={isCreating}
+                >
+                  <Icon name="paperclip" size="small" />
+                </button>
+                {showAttachDropdown && (
+                  <div className={styles.attachDropdown}>
+                    <button className={styles.dropdownItem} onClick={() => handleAttachSelect('image')}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Изображение</span>
+                    </button>
+                    <button className={styles.dropdownItem} onClick={() => handleAttachSelect('suggest_movie')}>
+                      <Icon name="movies" size="small" />
+                      <span>Предложить фильм</span>
+                    </button>
+                    <button className={styles.dropdownItem} onClick={() => handleAttachSelect('suggest_series')}>
+                      <Icon name="tv" size="small" />
+                      <span>Предложить сериал</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <button 
                 type="submit" 
                 className={styles.submitButton}
@@ -494,6 +577,14 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
           </>
         )}
       </div>
+
+      {showSuggestModal && (
+        <SuggestMediaModal
+          mediaType={suggestMediaType}
+          onSend={handleSuggestMedia}
+          onClose={() => setShowSuggestModal(false)}
+        />
+      )}
     </div>
   );
 };
