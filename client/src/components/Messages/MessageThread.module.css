@@ -421,6 +421,15 @@
 }
 
 .attachButton:hover {
+  background: var(--hover-bg);
+  transform: scale(1.05);
+}
+
+.attachContainer {
+  position: relative;
+}
+
+.attachButton:hover {
   background: var(--bg-hover, #f3f4f6);
   transform: scale(1.05);
 }

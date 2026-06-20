@@ -8,6 +8,7 @@ import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
 import ReportModal from '../Common/ReportModal';
+import AttachmentDropdown from './AttachmentDropdown';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
 
@@ -24,6 +25,10 @@ const MessageThread = ({ conversation, onClose }) => {
   const { alertDialog, showAlert } = useAlert();
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+  const [attachType, setAttachType] = useState('file');
+  const attachFileInputRef = useRef(null);
+  const attachImageInputRef = useRef(null);
   const menuRef = useRef(null);
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
@@ -187,6 +192,30 @@ const MessageThread = ({ conversation, onClose }) => {
   };
 
   // Блокировка пользователя
+  // Обработка выбора типа вложения
+  const handleAttachmentSelect = (type) => {
+    setShowAttachDropdown(false);
+    setAttachType(type);
+    
+    switch (type) {
+      case 'file':
+        attachFileInputRef.current?.click();
+        break;
+      case 'image':
+        attachImageInputRef.current?.click();
+        break;
+      case 'location':
+        alert('Геометка будет доступна позже');
+        break;
+      case 'suggest_movie':
+        alert('Предложение фильма будет доступно позже');
+        break;
+      case 'suggest_series':
+        alert('Предложение сериала будет доступно позже');
+        break;
+    }
+  };
+
   const handleBlockUser = async () => {
     setShowMenu(false);
     const confirmed = await showConfirm({
@@ -755,20 +784,36 @@ const MessageThread = ({ conversation, onClose }) => {
           <div className={styles.inputRow}>
             <input
               type="file"
-              ref={fileInputRef}
+              ref={attachFileInputRef}
               onChange={handleFileSelect}
               multiple
               accept="*/*"
               style={{ display: 'none' }}
             />
-            <button
-              type="button"
-              className={styles.attachButton}
-              onClick={() => fileInputRef.current?.click()}
-              title="Прикрепить файл"
-            >
-              <Icon name="paperclip" size="medium" />
-            </button>
+            <input
+              type="file"
+              ref={attachImageInputRef}
+              onChange={handleFileSelect}
+              multiple
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
+            <div className={styles.attachContainer}>
+              <button
+                type="button"
+                className={styles.attachButton}
+                onClick={() => setShowAttachDropdown(!showAttachDropdown)}
+                title="Прикрепить"
+              >
+                <Icon name="paperclip" size="medium" />
+              </button>
+              {showAttachDropdown && (
+                <AttachmentDropdown
+                  onSelect={handleAttachmentSelect}
+                  onClose={() => setShowAttachDropdown(false)}
+                />
+              )}
+            </div>
             <div className={styles.inputFieldWrapper}>
               <textarea
                 className={styles.input}
