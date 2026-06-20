@@ -59,8 +59,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   // Загружаем название и постер медиа из TMDb, если в content "контент #ID" или posterPath пустой
   useEffect(() => {
     const loadMediaDetails = async () => {
-      // Проверяем только для media_added постов
-      if (post.postType !== 'media_added' || !post.tmdbId || !post.mediaType) {
+      if (!['media_added', 'media_shared'].includes(post.postType) || !post.tmdbId || !post.mediaType) {
         return;
       }
 
@@ -716,6 +715,25 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
               <p className={styles.mediaAddedText}>
                 {post.content || 'Рекомендую к просмотру!'}
               </p>
+              {post.rating && (
+                <div className={styles.postRating}>
+                  <span className={styles.ratingStars}>★</span>
+                  <span className={styles.ratingNumber}>{post.rating}/10</span>
+                </div>
+              )}
+              {post.personalNote && (
+                <div 
+                  className={styles.noteIndicator}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowNoteModal(true);
+                  }}
+                  title="Нажмите, чтобы посмотреть заметку"
+                >
+                  <Icon name="edit" size="small" />
+                  <span className={styles.noteIndicatorText}>Моя заметка</span>
+                </div>
+              )}
               <div className={styles.mediaBottomRow}>
                 {post.tmdbId && (
                   <div className={styles.mediaTypeLabel}>

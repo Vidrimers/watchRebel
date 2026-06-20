@@ -13,9 +13,10 @@ import {
   fetchRatings
 } from '../store/slices/listsSlice';
 import { fetchUserReview, fetchReviewByPost } from '../store/slices/reviewsSlice';
-import { fetchWall, createPost } from '../store/slices/wallSlice';
+import { fetchWall } from '../store/slices/wallSlice';
 import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../components/Media';
 import Icon from '../components/Common/Icon';
+import ShareModal from '../components/Common/ShareModal';
 import NoteModal from '../components/Lists/NoteModal';
 import useAlert from '../hooks/useAlert.jsx';
 import useConfirm from '../hooks/useConfirm.jsx';
@@ -50,7 +51,7 @@ const MediaDetailPage = () => {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [editingNoteText, setEditingNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -212,35 +213,6 @@ const MediaDetailPage = () => {
           : 'Не удалось добавить',
         type: 'error'
       });
-    }
-  };
-
-  // Поделиться фильмом/сериалом на стене
-  const handleShare = async () => {
-    if (!selectedMedia || sharing) return;
-    setSharing(true);
-    try {
-      await dispatch(createPost({
-        postType: 'media_shared',
-        content: `Рекомендую к просмотру!`,
-        tmdbId: selectedMedia.id,
-        mediaType: selectedMedia.media_type || mediaType,
-        posterPath: selectedMedia.poster_path
-      })).unwrap();
-
-      await showAlert({
-        title: 'Опубликовано!',
-        message: 'Пост добавлен на вашу стену',
-        type: 'success'
-      });
-    } catch (error) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось опубликовать',
-        type: 'error'
-      });
-    } finally {
-      setSharing(false);
     }
   };
 
@@ -451,10 +423,16 @@ const MediaDetailPage = () => {
 
               <button 
                 className={styles.actionButton}
-                onClick={handleShare}
-                disabled={sharing}
+                onClick={() => setShowShareModal(true)}
               >
-                {sharing ? '...' : '🔗 Поделиться'}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
+                  <circle cx="18" cy="5" r="3"/>
+                  <circle cx="6" cy="12" r="3"/>
+                  <circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                Поделиться
               </button>
             </div>
 
@@ -801,6 +779,19 @@ const MediaDetailPage = () => {
       </div>
     </div>
     {confirmDialog}
+    {showShareModal && selectedMedia && (
+      <ShareModal
+        media={{
+          id: selectedMedia.id,
+          title: selectedMedia.title || selectedMedia.name,
+          name: selectedMedia.name,
+          mediaType: selectedMedia.media_type || mediaType,
+          poster_path: selectedMedia.poster_path,
+          vote_average: selectedMedia.vote_average
+        }}
+        onClose={() => setShowShareModal(false)}
+      />
+    )}
     </>
   );
 };
