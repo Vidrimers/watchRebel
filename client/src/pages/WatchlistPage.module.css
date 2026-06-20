@@ -138,6 +138,11 @@
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
+.filterButton.active:hover {
+  background: var(--accent-primary-active, #4f46e5);
+  color: white;
+}
+
 /* Счетчик */
 .countInfo {
   margin-bottom: 20px;
