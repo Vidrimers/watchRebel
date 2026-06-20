@@ -1,26 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchLists } from '../../store/slices/listsSlice';
+import { fetchLists, fetchWatchlist } from '../../store/slices/listsSlice';
 import Icon from '../Common/Icon';
 import styles from './SuggestMediaModal.module.css';
 
 const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
   const dispatch = useAppDispatch();
-  const { customLists } = useAppSelector((state) => state.lists);
+  const { customLists, watchlist } = useAppSelector((state) => state.lists);
   const [selectedList, setSelectedList] = useState(null);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     dispatch(fetchLists());
+    dispatch(fetchWatchlist());
   }, [dispatch]);
 
   const allLists = customLists.filter(list => list.mediaType === mediaType);
-  const watchlist = allLists.find(list => list.name === 'Хочу посмотреть');
-  const sortedLists = watchlist
-    ? [watchlist, ...allLists.filter(l => l.id !== watchlist.id)]
-    : allLists;
+
+  const watchlistItems = (watchlist || []).filter(item => item.mediaType === mediaType);
+  const hasWatchlist = watchlistItems.length > 0;
+
+  const sortedLists = [
+    ...(hasWatchlist ? [{ id: '__watchlist', name: 'Хочу посмотреть', items: watchlistItems }] : []),
+    ...allLists.filter(l => l.name !== 'Хочу посмотреть')
+  ];
 
   const filteredLists = sortedLists.filter(list =>
     !searchQuery || list.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -29,7 +34,9 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
   const allItems = useMemo(() => {
     const items = [];
     const seen = new Set();
-    for (const list of allLists) {
+    const allSourceLists = [...allLists];
+    if (hasWatchlist) allSourceLists.push({ id: '__watchlist', items: watchlistItems });
+    for (const list of allSourceLists) {
       for (const item of (list.items || [])) {
         if (!seen.has(item.tmdbId)) {
           seen.add(item.tmdbId);
@@ -38,7 +45,7 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
       }
     }
     return items;
-  }, [allLists]);
+  }, [allLists, watchlistItems, hasWatchlist]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery) return [];
