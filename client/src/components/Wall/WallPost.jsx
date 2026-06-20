@@ -97,14 +97,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         if (needsPoster && details.poster_path) {
           setMediaPosterPath(details.poster_path);
         }
-        
-        console.log(`✅ Загружены данные из TMDb для поста ${post.id}:`, {
-          title: details.title || details.name,
-          originalTitle: details.original_title || details.original_name,
-          posterPath: details.poster_path,
-          needsTitle,
-          needsPoster
-        });
       } catch (error) {
         console.error('Ошибка загрузки данных медиа:', error);
         // Оставляем дефолтное значение для названия
@@ -568,18 +560,6 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         // Используем загруженное название из TMDb, если оно есть, иначе из content
         const displayTitle = mediaTitle || contentMovieTitle || `контент #${post.tmdbId}`;
         const displayOriginalTitle = mediaOriginalTitle || contentOriginalTitle;
-        
-        console.log('🎬 Парсинг media_added поста:', {
-          postId: post.id,
-          contentLines,
-          contentMovieTitle,
-          mediaTitle,
-          displayTitle,
-          listText,
-          displayOriginalTitle,
-          shouldShowOriginal: displayOriginalTitle && displayOriginalTitle !== displayTitle,
-          isLoadingMediaTitle
-        });
         
         // Извлекаем название списка из текста
         const listNameMatch = listText.match(/Добавил в список:\s*(.+)/);
