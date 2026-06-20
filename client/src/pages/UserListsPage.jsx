@@ -173,22 +173,20 @@ const UserListsPage = () => {
                   </div>
                   {list.items && list.items.length > 0 && (
                     <div className={styles.listPreview}>
-                      <div className={styles.listPreviewTrack}>
-                        {[...list.items.slice(0, 10), ...list.items.slice(0, 10)].map((item, index) => (
-                          <div key={`${item.id}-${index}`} className={styles.previewPoster}>
-                            {item.posterPath ? (
-                              <img
-                                src={`https://image.tmdb.org/t/p/w200${item.posterPath}`}
-                                alt={item.title}
-                              />
-                            ) : (
-                              <div className={styles.noPreviewPoster}>
-                                <Icon name="image" size={24} />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      {list.items.slice(0, 4).map((item) => (
+                        <div key={item.id} className={styles.previewPoster}>
+                          {item.posterPath ? (
+                            <img
+                              src={`https://image.tmdb.org/t/p/w200${item.posterPath}`}
+                              alt={item.title}
+                            />
+                          ) : (
+                            <div className={styles.noPreviewPoster}>
+                              <Icon name="image" size={24} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
