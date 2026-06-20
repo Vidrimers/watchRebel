@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 const isProd = process.env.NODE_ENV === 'production';
 const envFile = isProd ? '.env.production' : '.env';
-dotenv.config({ path: path.join(__dirname, '..', envFile) });
+dotenv.config({ path: path.join(__dirname, '../../', envFile) });
 
 import { getMediaDatabase, executeMediaQuery } from '../src/database/mediaDb.js';
 import { executeQuery } from '../src/database/db.js';
