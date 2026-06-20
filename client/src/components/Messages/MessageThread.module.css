@@ -2,7 +2,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
+  background: var(--bg-secondary, #fff);
 }
 
 .header {
@@ -10,7 +10,7 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  background: var(--card-bg);
+  background: var(--bg-secondary, #fff);
 }
 
 .headerMenuContainer {
@@ -84,7 +84,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--accent-color);
+  background: var(--accent-primary, #6366f1);
   color: white;
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--primary-color, #6366f1);
+  background: var(--accent-primary, #6366f1);
   color: white;
   border: none;
   font-size: 1.5rem;
@@ -148,7 +148,7 @@
 
 .scrollDownButton:hover {
   transform: scale(1.1);
-  background: var(--primary-dark, #4f46e5);
+  background: var(--accent-primary-active, #4f46e5);
 }
 
 .messagesList {
@@ -167,7 +167,7 @@
 .dateSeparator {
   text-align: center;
   margin: 1rem 0;
-  color: var(--text-tertiary);
+  color: var(--text-secondary, #999);
   font-size: 0.875rem;
   position: relative;
 }
@@ -221,7 +221,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent-color);
+  background: var(--accent-primary, #6366f1);
   color: white;
   display: flex;
   align-items: center;
@@ -239,7 +239,7 @@
 }
 
 .ownMessage .messageBubble {
-  background: var(--primary-color, #6366f1);
+  background: var(--accent-primary, #6366f1);
   color: white;
 }
 
@@ -299,7 +299,7 @@
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--border-color);
-  background: var(--card-bg);
+  background: var(--bg-secondary, #fff);
 }
 
 .input {
@@ -318,7 +318,7 @@
 
 .input:focus {
   outline: none;
-  border-color: var(--accent-color);
+  border-color: var(--accent-primary, #6366f1);
 }
 
 .input:disabled {
@@ -332,7 +332,7 @@
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: var(--primary-color, #6366f1);
+  background: var(--accent-primary, #6366f1);
   color: white;
   font-size: 1.25rem;
   cursor: pointer;
@@ -344,7 +344,7 @@
 
 .sendButton:hover:not(:disabled) {
   transform: scale(1.05);
-  background: var(--primary-dark, #4f46e5);
+  background: var(--accent-primary-active, #4f46e5);
 }
 
 .sendButton:disabled {
@@ -380,7 +380,7 @@
 }
 
 .attachButton:hover {
-  background: var(--hover-bg);
+  background: var(--bg-hover, #f3f4f6);
   transform: scale(1.05);
 }
 
@@ -401,7 +401,7 @@
   flex-direction: column;
   align-items: center;
   padding: 0.5rem;
-  background: var(--card-bg);
+  background: var(--bg-secondary, #fff);
   border-radius: 8px;
   border: 1px solid var(--border-color);
   max-width: 100px;
@@ -439,7 +439,7 @@
   height: 20px;
   border: none;
   border-radius: 50%;
-  background: var(--error-color, #ef4444);
+  background: var(--color-error, #ef4444);
   color: white;
   font-size: 1rem;
   cursor: pointer;
@@ -486,7 +486,7 @@
 }
 
 .attachmentFile:hover {
-  background: var(--hover-bg);
+  background: var(--bg-hover, #f3f4f6);
 }
 
 .attachmentIcon {
@@ -501,7 +501,7 @@
 
 .attachmentSize {
   font-size: 0.75rem;
-  color: var(--text-tertiary);
+  color: var(--text-secondary, #999);
 }
 
 /* Модалка для изображений */
