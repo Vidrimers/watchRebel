@@ -239,26 +239,19 @@ const ConversationList = ({ onSelectConversation }) => {
           >
             <div className={styles.avatar}>
               {conversation.otherUser.avatarUrl ? (
-                <a 
-                  href={`/user/${conversation.otherUser.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <img 
-                    src={
-                      conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                        ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                        : conversation.otherUser.avatarUrl
-                    }
-                    alt={conversation.otherUser.displayName}
-                    className={styles.avatarImage}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                </a>
+                <img 
+                  src={
+                    conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                      ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
+                      : conversation.otherUser.avatarUrl
+                  }
+                  alt={conversation.otherUser.displayName}
+                  className={styles.avatarImage}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
               ) : null}
               <div 
                 className={styles.avatarPlaceholder}
