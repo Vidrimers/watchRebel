@@ -1339,3 +1339,24 @@ router.put('/reports/:id', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+/**
+ * DELETE /api/admin/reports/:id
+ * Удалить жалобу
+ */
+router.delete('/reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await executeQuery('DELETE FROM reports WHERE id = ?', [id]);
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка удаления жалобы' });
+    }
+
+    res.json({ message: 'Жалоба удалена' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});

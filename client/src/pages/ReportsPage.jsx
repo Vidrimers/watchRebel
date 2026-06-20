@@ -83,6 +83,33 @@ const ReportsPage = () => {
     }
   };
 
+  const handleDelete = async (reportId) => {
+    const confirmed = await showConfirm({
+      title: 'Удалить жалобу',
+      message: 'Вы уверены, что хотите удалить эту жалобу? Это действие необратимо.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/admin/reports/${reportId}`);
+      await showAlert({
+        title: 'Готово',
+        message: 'Жалоба удалена',
+        type: 'success'
+      });
+      await loadReports();
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось удалить жалобу',
+        type: 'error'
+      });
+    }
+  };
+
   const filteredReports = filter === 'all'
     ? reports
     : reports.filter(r => r.status === filter);
@@ -113,20 +140,23 @@ const ReportsPage = () => {
 
       {/* Фильтры */}
       <div className={styles.filters}>
-        {['all', 'pending', 'reviewed', 'dismissed'].map((status) => (
-          <button
-            key={status}
-            className={`${styles.filterBtn} ${filter === status ? styles.active : ''}`}
-            onClick={() => setFilter(status)}
-          >
-            {status === 'all' ? 'Все' : STATUS_LABELS[status]}
-            {status === 'pending' && (
-              <span className={styles.count}>
-                {reports.filter(r => r.status === 'pending').length}
-              </span>
-            )}
-          </button>
-        ))}
+        {['all', 'pending', 'reviewed', 'dismissed'].map((status) => {
+          const count = status === 'all'
+            ? reports.length
+            : reports.filter(r => r.status === status).length;
+          return (
+            <button
+              key={status}
+              className={`${styles.filterBtn} ${filter === status ? styles.active : ''}`}
+              onClick={() => setFilter(status)}
+            >
+              {status === 'all' ? 'Все' : STATUS_LABELS[status]}
+              {count > 0 && (
+                <span className={styles.count}>{count}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
@@ -139,8 +169,9 @@ const ReportsPage = () => {
             <div key={report.id} className={styles.reportCard}>
               <div className={styles.reportHeader}>
                 <div className={styles.users}>
+                  <span className={styles.userLabel}>От:</span>
                   <span className={styles.userName}>{report.reporter_name || 'Неизвестный'}</span>
-                  <Icon name="remove" size="small" />
+                  <span className={styles.userLabel}>На:</span>
                   <span className={styles.userName}>{report.reported_name || 'Неизвестный'}</span>
                 </div>
                 <span className={`${styles.status} ${styles[STATUS_COLORS[report.status]]}`}>
@@ -176,6 +207,12 @@ const ReportsPage = () => {
                       </button>
                     </>
                   )}
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => handleDelete(report.id)}
+                  >
+                    Удалить
+                  </button>
                 </div>
               </div>
             </div>

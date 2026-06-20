@@ -492,7 +492,10 @@ const UserProfilePage = () => {
                   )}
                   <button 
                     className={styles.menuItem}
-                    onClick={() => setShowReportModal(true)}
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowReportModal(true);
+                    }}
                   >
                     ⚠️ Пожаловаться
                   </button>
