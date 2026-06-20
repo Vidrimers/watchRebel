@@ -52,6 +52,17 @@ const MessageThread = ({ conversation }) => {
     }
   }, [conversation, dispatch]);
 
+  // Скролл вниз при загрузке сообщений в новом диалоге
+  useEffect(() => {
+    if (messages.length > 0 && conversation?.id) {
+      // Небольшая задержка чтобы DOM успел отрисоваться
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [conversation?.id]); // Только при смене диалога
+
   // Подключаем обработчик WebSocket сообщений
   useEffect(() => {
     // Обработчик новых сообщений через WebSocket
@@ -128,6 +139,10 @@ const MessageThread = ({ conversation }) => {
     if (container.scrollTop === 0 && hasMoreMessages && !loadingMore) {
       loadOlderMessages();
     }
+
+    // Показываем/скрываем кнопку скролла вниз
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 300;
+    setShowScrollButton(!isNearBottom);
   };
 
   // Загрузка старых сообщений
@@ -357,7 +372,12 @@ const MessageThread = ({ conversation }) => {
         {confirmDialog}
         <div className={styles.container}>
         <div className={styles.header}>
-          <div className={styles.headerAvatar}>
+          <a 
+            href={`/user/${conversation.otherUser.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.headerAvatar}
+          >
             {conversation.otherUser.avatarUrl ? (
               <>
                 <img 
@@ -385,7 +405,7 @@ const MessageThread = ({ conversation }) => {
                 {conversation.otherUser.displayName.charAt(0).toUpperCase()}
               </div>
             )}
-          </div>
+          </a>
           <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
@@ -623,7 +643,9 @@ const MessageThread = ({ conversation }) => {
             onClick={scrollToBottom}
             title="К новым сообщениям"
           >
-            ↓
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M19 12l-7 7-7-7"/>
+            </svg>
           </button>
         )}
       </div>

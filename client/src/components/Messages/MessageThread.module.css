@@ -71,6 +71,9 @@
 
 .headerAvatar {
   margin-right: 1rem;
+  text-decoration: none;
+  display: flex;
+  cursor: pointer;
 }
 
 .headerAvatarImage {
