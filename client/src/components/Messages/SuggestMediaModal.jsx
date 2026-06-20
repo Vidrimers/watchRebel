@@ -5,31 +5,25 @@ import { fetchLists } from '../../store/slices/listsSlice';
 import Icon from '../Common/Icon';
 import styles from './SuggestMediaModal.module.css';
 
-const SuggestMediaModal = ({ mediaType, conversationId, onSend, onClose }) => {
+const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
   const dispatch = useAppDispatch();
   const { customLists } = useAppSelector((state) => state.lists);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedList, setSelectedList] = useState(null);
   const [selectedMedia, setSelectedMedia] = useState(null);
 
   useEffect(() => {
     dispatch(fetchLists());
   }, [dispatch]);
 
-  const filteredLists = customLists.filter(list => 
-    list.mediaType === mediaType && 
-    list.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const lists = customLists.filter(list => list.mediaType === mediaType);
+  const watchlist = customLists.find(list => list.name === 'Хочу посмотреть' && list.mediaType === mediaType);
+  const allLists = watchlist 
+    ? [watchlist, ...lists.filter(l => l.id !== watchlist.id)]
+    : lists;
 
-  const allItems = customLists
-    .filter(list => list.mediaType === mediaType)
-    .flatMap(list => (list.items || []).map(item => ({ ...item, listName: list.name })))
-    .filter((item, index, self) => 
-      self.findIndex(i => i.tmdbId === item.tmdbId) === index
-    )
-    .filter(item => 
-      !searchQuery || 
-      (item.title || `Контент #${item.tmdbId}`).toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const listItems = selectedList 
+    ? (selectedList.items || [])
+    : [];
 
   const handleSend = () => {
     if (selectedMedia) {
@@ -56,42 +50,61 @@ const SuggestMediaModal = ({ mediaType, conversationId, onSend, onClose }) => {
           </button>
         </div>
 
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder="Поиск по вашим спискам..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          autoFocus
-        />
-
-        <div className={styles.mediaList}>
-          {allItems.length === 0 ? (
-            <p className={styles.empty}>Нет {mediaType === 'movie' ? 'фильмов' : 'сериалов'} в списках</p>
-          ) : (
-            allItems.map((item) => (
-              <div
-                key={item.tmdbId}
-                className={`${styles.mediaItem} ${selectedMedia?.tmdbId === item.tmdbId ? styles.selected : ''}`}
-                onClick={() => setSelectedMedia(item)}
-              >
-                {item.posterPath ? (
-                  <img 
-                    src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
-                    alt={item.title}
-                    className={styles.poster}
-                  />
-                ) : (
-                  <div className={styles.posterPlaceholder}>🎬</div>
-                )}
-                <div className={styles.mediaInfo}>
-                  <span className={styles.mediaTitle}>{item.title || `Контент #${item.tmdbId}`}</span>
-                  <span className={styles.mediaListName}>{item.listName}</span>
-                </div>
+        {!selectedList ? (
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>Выберите список</p>
+            {allLists.length === 0 ? (
+              <p className={styles.empty}>Нет списков</p>
+            ) : (
+              <div className={styles.listGrid}>
+                {allLists.map((list) => (
+                  <button
+                    key={list.id}
+                    className={styles.listCard}
+                    onClick={() => setSelectedList(list)}
+                  >
+                    <span className={styles.listName}>{list.name}</span>
+                    <span className={styles.listCount}>{list.items?.length || 0}</span>
+                  </button>
+                ))}
               </div>
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div className={styles.section}>
+            <div className={styles.breadcrumb}>
+              <button className={styles.backBtn} onClick={() => { setSelectedList(null); setSelectedMedia(null); }}>
+                ← Назад
+              </button>
+              <span className={styles.breadcrumbText}>{selectedList.name}</span>
+            </div>
+            
+            {listItems.length === 0 ? (
+              <p className={styles.empty}>Список пуст</p>
+            ) : (
+              <div className={styles.mediaList}>
+                {listItems.map((item) => (
+                  <div
+                    key={item.tmdbId}
+                    className={`${styles.mediaItem} ${selectedMedia?.tmdbId === item.tmdbId ? styles.selected : ''}`}
+                    onClick={() => setSelectedMedia(item)}
+                  >
+                    {item.posterPath ? (
+                      <img 
+                        src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
+                        alt={item.title}
+                        className={styles.poster}
+                      />
+                    ) : (
+                      <div className={styles.posterPlaceholder}>🎬</div>
+                    )}
+                    <span className={styles.mediaTitle}>{item.title || `Контент #${item.tmdbId}`}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className={styles.actions}>
           <button className={styles.cancelBtn} onClick={onClose}>Отмена</button>

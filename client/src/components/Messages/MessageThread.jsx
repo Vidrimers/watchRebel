@@ -199,11 +199,11 @@ const MessageThread = ({ conversation, onClose }) => {
   // Отправка геометки
   const handleSendLocation = async (data) => {
     try {
-      const content = `📍 Геолокация: ${data.latitude}, ${data.longitude}`;
       await dispatch(sendMessage({
         receiverId: conversation.otherUser.id,
-        content,
-        files: []
+        content: '',
+        files: [],
+        location: { lat: data.latitude, lng: data.longitude }
       }));
     } catch (error) {
       console.error('Ошибка отправки:', error);
@@ -213,12 +213,16 @@ const MessageThread = ({ conversation, onClose }) => {
   // Отправка предложенного медиа
   const handleSendSuggestedMedia = async (data) => {
     try {
-      const content = `🎬 ${data.title}`;
       await dispatch(sendMessage({
         receiverId: conversation.otherUser.id,
-        content,
+        content: '',
         files: [],
-        suggestedMedia: data
+        suggestedMedia: {
+          tmdbId: data.tmdbId,
+          mediaType: data.mediaType,
+          title: data.title,
+          posterPath: data.posterPath
+        }
       }));
     } catch (error) {
       console.error('Ошибка отправки:', error);
@@ -715,6 +719,54 @@ const MessageThread = ({ conversation, onClose }) => {
                     <div className={styles.messageBubble}>
                       {message.content && (
                         <p className={styles.messageText}>{message.content}</p>
+                      )}
+                      
+                      {/* Геометка */}
+                      {message.location && (
+                        <div className={styles.locationCard}>
+                          <iframe
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${message.location.lng-0.01},${message.location.lat-0.01},${message.location.lng+0.01},${message.location.lat+0.01}&layer=mapnik&marker=${message.location.lat},${message.location.lng}`}
+                            className={styles.locationMap}
+                            loading="lazy"
+                            title="Карта"
+                          />
+                          <a 
+                            href={`https://www.openstreetmap.org/?mlat=${message.location.lat}&mlon=${message.location.lng}#map=15/${message.location.lat}/${message.location.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.locationLink}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Открыть на карте →
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Предложенный фильм/сериал */}
+                      {message.suggestedMedia && (
+                        <a 
+                          href={`/media/${message.suggestedMedia.mediaType}/${message.suggestedMedia.tmdbId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.suggestedMediaCard}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {message.suggestedMedia.posterPath ? (
+                            <img 
+                              src={`https://image.tmdb.org/t/p/w92${message.suggestedMedia.posterPath}`}
+                              alt={message.suggestedMedia.title}
+                              className={styles.suggestedMediaPoster}
+                            />
+                          ) : (
+                            <div className={styles.suggestedMediaPlaceholder}>🎬</div>
+                          )}
+                          <div className={styles.suggestedMediaInfo}>
+                            <span className={styles.suggestedMediaTitle}>{message.suggestedMedia.title}</span>
+                            <span className={styles.suggestedMediaType}>
+                              {message.suggestedMedia.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                            </span>
+                          </div>
+                        </a>
                       )}
                       
                       {/* Вложения */}
