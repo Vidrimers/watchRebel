@@ -271,6 +271,7 @@ router.get('/:type/:id', async (req, res) => {
     // Cache-through: сначала кэш, потом TMDb
     const cached = await mediaCacheService.getCachedMedia(tmdbId, type);
     if (cached) {
+      res.setHeader('X-Cache', 'HIT');
       if (cached.poster_path) {
         cached.poster_url = tmdbService.buildImageUrl(cached.poster_path, 'w500');
       }
@@ -280,6 +281,7 @@ router.get('/:type/:id', async (req, res) => {
       return res.json(cached);
     }
 
+    res.setHeader('X-Cache', 'MISS');
     await tmdbService.initialize();
 
     let details;

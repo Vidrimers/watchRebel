@@ -29,25 +29,11 @@ const apiClient = axios.create({
 // Request interceptor - добавляем токен к каждому запросу
 apiClient.interceptors.request.use(
   (config) => {
-    // Логирование исходящего запроса
-    console.log('[API] Исходящий запрос:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      params: config.params,
-      data: config.data,
-      headers: config.headers
-    });
-
     // Получаем токен из localStorage
     const token = localStorage.getItem('authToken');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('[API] Токен добавлен к запросу');
-    } else {
-      console.log('[API] Токен отсутствует');
     }
     
     return config;
@@ -61,19 +47,6 @@ apiClient.interceptors.request.use(
 // Response interceptor - обрабатываем ответы и ошибки
 apiClient.interceptors.response.use(
   (response) => {
-    // Логирование успешного ответа
-    console.log('[API] Успешный ответ:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.config.url,
-      method: response.config.method?.toUpperCase(),
-      dataType: typeof response.data,
-      isArray: Array.isArray(response.data),
-      dataLength: Array.isArray(response.data) ? response.data.length : 'не массив',
-      data: response.data
-    });
-
-    // Успешный ответ - возвращаем данные
     return response;
   },
   (error) => {

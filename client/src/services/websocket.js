@@ -12,20 +12,15 @@ let isConnecting = false;
  */
 export function connectWebSocket(token) {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-    console.log('WebSocket уже подключен или подключается');
     return;
   }
 
   if (isConnecting) {
-    console.log('WebSocket подключение уже в процессе');
     return;
   }
 
   isConnecting = true;
   
-  // Определяем WebSocket URL
-  // Если задан VITE_WS_URL - используем его
-  // Иначе используем текущий хост с протоколом wss/ws
   let wsUrl;
   if (import.meta.env.VITE_WS_URL) {
     wsUrl = import.meta.env.VITE_WS_URL;
@@ -35,16 +30,11 @@ export function connectWebSocket(token) {
     wsUrl = `${protocol}//${host}/ws`;
   }
   
-  console.log('🔌 Подключение к WebSocket:', wsUrl);
-  
   try {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('✅ WebSocket подключен');
       isConnecting = false;
-      
-      // Отправляем токен для аутентификации
       ws.send(JSON.stringify({
         type: 'auth',
         token
@@ -54,37 +44,31 @@ export function connectWebSocket(token) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 WebSocket сообщение:', data);
-
-        // Вызываем все зарегистрированные обработчики
         messageHandlers.forEach(handler => handler(data));
       } catch (error) {
-        console.error('❌ Ошибка обработки WebSocket сообщения:', error);
+        console.error('WebSocket ошибка обработки:', error);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('❌ WebSocket ошибка:', error);
+      console.error('WebSocket ошибка:', error);
       isConnecting = false;
     };
 
     ws.onclose = () => {
-      console.log('🔌 WebSocket отключен');
       isConnecting = false;
       ws = null;
 
-      // Переподключение через 3 секунды
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
       
       reconnectTimeout = setTimeout(() => {
-        console.log('🔄 Переподключение к WebSocket...');
         connectWebSocket(token);
       }, 3000);
     };
   } catch (error) {
-    console.error('❌ Ошибка создания WebSocket:', error);
+    console.error('WebSocket ошибка создания:', error);
     isConnecting = false;
   }
 }
@@ -104,7 +88,6 @@ export function disconnectWebSocket() {
   }
 
   messageHandlers = [];
-  console.log('🔌 WebSocket отключен вручную');
 }
 
 /**

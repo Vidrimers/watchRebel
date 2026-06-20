@@ -16,8 +16,6 @@ import styles from './CatalogPage.module.css';
  * Отображает контент из TMDb с возможностью фильтрации и пагинации
  */
 const CatalogPage = () => {
-  console.log('🎬 CatalogPage рендерится');
-  
   const dispatch = useAppDispatch();
   const { showAlert } = useAlert();
   const { user } = useAppSelector((state) => state.auth);
