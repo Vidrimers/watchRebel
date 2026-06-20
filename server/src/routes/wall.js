@@ -125,9 +125,9 @@ router.get('/:userId', optionalAuth, async (req, res) => {
           }
         }
 
-        // Для постов media_added получаем персональную заметку владельца стены
+        // Для постов media_added/media_shared получаем персональную заметку владельца стены
         let personalNote = null;
-        if (post.post_type === 'media_added' && post.tmdb_id && req.user && req.user.id === wallOwner.id) {
+        if (['media_added', 'media_shared'].includes(post.post_type) && post.tmdb_id && req.user && req.user.id === wallOwner.id) {
           const noteResult = await executeQuery(
             `SELECT li.personal_note 
              FROM list_items li
@@ -153,6 +153,18 @@ router.get('/:userId', optionalAuth, async (req, res) => {
           }
         }
 
+        // Для media_shared постов без рейтинга — подтягиваем оценку пользователя
+        let postRating = post.rating;
+        if (post.post_type === 'media_shared' && !postRating && post.tmdb_id) {
+          const ratingResult = await executeQuery(
+            `SELECT rating FROM ratings WHERE user_id = ? AND tmdb_id = ? AND media_type = ?`,
+            [post.user_id, post.tmdb_id, post.media_type]
+          );
+          if (ratingResult.success && ratingResult.data.length > 0) {
+            postRating = ratingResult.data[0].rating;
+          }
+        }
+
         // Определяем, является ли пост закрепленным
         const isPinned = pinnedPostId && post.id === pinnedPostId;
 
@@ -165,7 +177,7 @@ router.get('/:userId', optionalAuth, async (req, res) => {
           mediaType: post.media_type,
           posterPath: post.poster_path,
           listId: post.list_id,
-          rating: post.rating,
+          rating: postRating,
           createdAt: post.created_at,
           editedAt: post.edited_at,
           isPinned, // Добавляем флаг закрепленного поста

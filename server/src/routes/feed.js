@@ -181,9 +181,9 @@ router.get('/:userId', authenticateToken, async (req, res) => {
 
         const commentsCount = commentsCountResult.success ? commentsCountResult.data[0].total : 0;
 
-        // Для постов media_added проверяем, есть ли этот медиа в списках текущего пользователя
+        // Для постов media_added/media_shared проверяем, есть ли этот медиа в списках текущего пользователя
         let userListName = null;
-        if (post.post_type === 'media_added' && post.tmdb_id) {
+        if (['media_added', 'media_shared'].includes(post.post_type) && post.tmdb_id) {
           const userListResult = await executeQuery(
             `SELECT cl.name 
              FROM list_items li
@@ -198,9 +198,9 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           }
         }
 
-        // Для постов media_added получаем персональную заметку владельца стены
+        // Для постов media_added/media_shared получаем персональную заметку владельца стены
         let personalNote = null;
-        if (post.post_type === 'media_added' && post.tmdb_id && userId === post.owner_id) {
+        if (['media_added', 'media_shared'].includes(post.post_type) && post.tmdb_id && userId === post.owner_id) {
           const noteResult = await executeQuery(
             `SELECT li.personal_note 
              FROM list_items li
@@ -216,6 +216,18 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           }
         }
 
+        // Для media_shared постов без рейтинга — подтягиваем оценку автора
+        let postRating = post.rating;
+        if (post.post_type === 'media_shared' && !postRating && post.tmdb_id) {
+          const ratingResult = await executeQuery(
+            `SELECT rating FROM ratings WHERE user_id = ? AND tmdb_id = ? AND media_type = ?`,
+            [post.user_id, post.tmdb_id, post.media_type]
+          );
+          if (ratingResult.success && ratingResult.data.length > 0) {
+            postRating = ratingResult.data[0].rating;
+          }
+        }
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -225,7 +237,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           mediaType: post.media_type,
           posterPath: post.poster_path,
           listId: post.list_id,
-          rating: post.rating, // Оценка пользователя
+          rating: postRating, // Оценка пользователя
           createdAt: post.created_at,
           editedAt: post.edited_at,
           commentsCount, // Общее количество комментариев (включая ответы)
