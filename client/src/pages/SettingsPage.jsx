@@ -227,14 +227,14 @@ const SettingsPage = () => {
               </div>
             </div>
 
-            {/* Карточка с аватаркой */}
-            <div className={styles.settingsCard}>
-              <h3 className={styles.cardTitle}>Аватарка</h3>
-              <AvatarUpload user={user} />
-            </div>
-
             {/* Карточки в два столбца */}
             <div className={styles.cardsGrid}>
+              {/* Карточка с аватаркой */}
+              <div className={styles.settingsCard}>
+                <h3 className={styles.cardTitle}>Аватарка</h3>
+                <AvatarUpload user={user} />
+              </div>
+
               {/* Карточка с темой */}
               <ThemeDropdown />
 
