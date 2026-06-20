@@ -60,7 +60,8 @@ export function configureHelmet() {
           "https://oauth.telegram.org", // Telegram OAuth
           "https://accounts.google.com", // Google OAuth
           "https://discord.com", // Discord OAuth
-          "https://www.openstreetmap.org" // Геометка
+          "https://www.openstreetmap.org", // Геометка
+          "https://www.youtube.com" // Трейлеры
         ],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
