@@ -1066,4 +1066,183 @@ router.post('/telegram-announcement-self', async (req, res) => {
   }
 });
 
+// ==========================================
+// Управление базой данных
+// ==========================================
+
+function getDbPath() {
+  return process.env.NODE_ENV === 'test'
+    ? path.join(__dirname, '../../test-rebel.db')
+    : path.join(__dirname, '../../rebel.db');
+}
+
+function getBackupDir() {
+  return path.join(__dirname, '../../backups');
+}
+
+/**
+ * POST /api/admin/database/backup
+ * Создать резервную копию базы данных
+ */
+router.post('/database/backup', async (req, res) => {
+  try {
+    const dbPath = getDbPath();
+    const backupDir = getBackupDir();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(backupDir, `rebel-backup-${timestamp}.db`);
+
+    await fs.mkdir(backupDir, { recursive: true });
+    await fs.copyFile(dbPath, backupPath);
+
+    const stats = await fs.stat(backupPath);
+
+    res.json({
+      message: 'Резервная копия успешно создана',
+      backup: {
+        filename: path.basename(backupPath),
+        size: stats.size,
+        createdAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка создания резервной копии:', error);
+    res.status(500).json({ error: 'Ошибка создания резервной копии' });
+  }
+});
+
+/**
+ * GET /api/admin/database/backups
+ * Получить список всех резервных копий
+ */
+router.get('/database/backups', async (req, res) => {
+  try {
+    const backupDir = getBackupDir();
+
+    try {
+      await fs.access(backupDir);
+    } catch {
+      return res.json({ backups: [] });
+    }
+
+    const files = await fs.readdir(backupDir);
+    const dbFiles = files.filter(f => f.endsWith('.db'));
+
+    const backups = await Promise.all(
+      dbFiles.map(async (filename) => {
+        const filePath = path.join(backupDir, filename);
+        const stats = await fs.stat(filePath);
+        return {
+          filename,
+          size: stats.size,
+          createdAt: stats.birthtime.toISOString()
+        };
+      })
+    );
+
+    backups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ backups });
+  } catch (error) {
+    console.error('Ошибка получения списка бэкапов:', error);
+    res.status(500).json({ error: 'Ошибка получения списка резервных копий' });
+  }
+});
+
+/**
+ * POST /api/admin/database/restore
+ * Восстановить базу данных из резервной копии
+ */
+router.post('/database/restore', async (req, res) => {
+  try {
+    const { filename } = req.body;
+
+    if (!filename || !filename.match(/^rebel-backup-[\w-]+\.db$/)) {
+      return res.status(400).json({ error: 'Неверное имя файла' });
+    }
+
+    const backupDir = getBackupDir();
+    const backupPath = path.join(backupDir, filename);
+    const dbPath = getDbPath();
+
+    try {
+      await fs.access(backupPath);
+    } catch {
+      return res.status(404).json({ error: 'Резервная копия не найдена' });
+    }
+
+    const backupContent = await fs.readFile(backupPath);
+    await fs.writeFile(dbPath, backupContent);
+
+    res.json({ message: 'База данных успешно восстановлена' });
+  } catch (error) {
+    console.error('Ошибка восстановления БД:', error);
+    res.status(500).json({ error: 'Ошибка восстановления базы данных' });
+  }
+});
+
+/**
+ * DELETE /api/admin/database/backups/:filename
+ * Удалить резервную копию
+ */
+router.delete('/database/backups/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    if (!filename || !filename.match(/^rebel-backup-[\w-]+\.db$/)) {
+      return res.status(400).json({ error: 'Неверное имя файла' });
+    }
+
+    const backupDir = getBackupDir();
+    const backupPath = path.join(backupDir, filename);
+
+    try {
+      await fs.access(backupPath);
+    } catch {
+      return res.status(404).json({ error: 'Резервная копия не найдена' });
+    }
+
+    await fs.unlink(backupPath);
+
+    res.json({ message: 'Резервная копия удалена' });
+  } catch (error) {
+    console.error('Ошибка удаления бэкапа:', error);
+    res.status(500).json({ error: 'Ошибка удаления резервной копии' });
+  }
+});
+
+/**
+ * GET /api/admin/database/stats
+ * Получить статистику базы данных
+ */
+router.get('/database/stats', async (req, res) => {
+  try {
+    const dbPath = getDbPath();
+    const stats = await fs.stat(dbPath);
+
+    const tables = await executeQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+    );
+
+    const tableStats = [];
+    if (tables.success) {
+      for (const table of tables.data) {
+        const count = await executeQuery(`SELECT COUNT(*) as count FROM ${table.name}`);
+        tableStats.push({
+          name: table.name,
+          count: count.success ? count.data[0].count : 0
+        });
+      }
+    }
+
+    res.json({
+      fileSize: stats.size,
+      lastModified: stats.mtime.toISOString(),
+      tables: tableStats
+    });
+  } catch (error) {
+    console.error('Ошибка получения статистики БД:', error);
+    res.status(500).json({ error: 'Ошибка получения статистики' });
+  }
+});
+
 export default router;

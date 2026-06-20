@@ -175,6 +175,12 @@ const AdminPanel = () => {
               <span className={styles.badge}>{newBugReportsCount}</span>
             )}
           </button>
+          <button
+            onClick={() => navigate('/admin/database')}
+            className={styles.btnNavigation}
+          >
+            <Icon name="refresh" size="small" /> База данных
+          </button>
         </div>
       </div>
       {/* Контакты для рекламы */}
