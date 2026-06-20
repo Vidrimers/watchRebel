@@ -108,16 +108,37 @@
 }
 
 .listPreview {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  height: 120px;
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+.listPreviewTrack {
+  display: flex;
+  gap: 6px;
+  width: max-content;
+  animation: scrollPreviews 20s linear infinite;
+}
+
+.listPreview:hover .listPreviewTrack {
+  animation-play-state: paused;
+}
+
+@keyframes scrollPreviews {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .previewPoster {
-  aspect-ratio: 2/3;
-  border-radius: 8px;
+  width: 80px;
+  height: 120px;
+  border-radius: 6px;
   overflow: hidden;
-  background-color: var(--background-tertiary);
+  background-color: var(--bg-secondary, #f3f4f6);
+  flex-shrink: 0;
 }
 
 .previewPoster img {
