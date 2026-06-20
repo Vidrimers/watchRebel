@@ -244,19 +244,38 @@
 
 /* Превью постеров */
 .previewPosters {
-  display: flex;
-  gap: 8px;
+  position: relative;
+  overflow: hidden;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
+  height: 96px;
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+.previewPosterTrack {
+  display: flex;
+  gap: 6px;
+  width: max-content;
+  animation: scrollPreviews 20s linear infinite;
+}
+
+.previewPosters:hover .previewPosterTrack {
+  animation-play-state: paused;
+}
+
+@keyframes scrollPreviews {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .previewPoster {
   width: 60px;
   height: 90px;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary, #f3f4f6);
   flex-shrink: 0;
 }
 

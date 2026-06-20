@@ -220,17 +220,19 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
                 {/* Превью первых постеров */}
                 {list.items && list.items.length > 0 && (
                   <div className={styles.previewPosters}>
-                    {list.items.slice(0, 3).map((item, index) => (
-                      <div key={index} className={styles.previewPoster}>
-                        {item.posterPath && (
-                          <img
-                            src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
-                            alt={item.title}
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
-                    ))}
+                    <div className={styles.previewPosterTrack}>
+                      {[...list.items.slice(0, 10), ...list.items.slice(0, 10)].map((item, index) => (
+                        <div key={`${item.id}-${index}`} className={styles.previewPoster}>
+                          {item.posterPath && (
+                            <img
+                              src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
+                              alt={item.title}
+                              loading="lazy"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
