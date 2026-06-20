@@ -48,7 +48,7 @@
 }
 
 .cardTitle {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   margin: 0 0 16px 0;
   color: var(--text-primary, #333);
@@ -538,7 +538,7 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   cursor: pointer;

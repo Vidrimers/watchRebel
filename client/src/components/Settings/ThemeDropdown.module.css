@@ -33,7 +33,7 @@
   justify-content: space-between;
   transition: all 0.2s ease;
   color: var(--text-primary, #2d2d2d);
-  font-size: 1rem;
+  font-size: 14px;
 }
 
 .dropdownButton:hover {
