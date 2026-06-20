@@ -126,23 +126,6 @@ const AdminPanel = () => {
     loadContacts(); // Перезагружаем оригинальные значения
   };
 
-  const handleBackup = async () => {
-    try {
-      const response = await api.post('/admin/backup');
-      await showAlert({
-        title: 'Успешно',
-        message: `Бэкап создан: ${response.data.backupPath}`,
-        type: 'success'
-      });
-    } catch (err) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось создать бэкап',
-        type: 'error'
-      });
-    }
-  };
-
   return (
     <>
       {alertDialog}
@@ -266,13 +249,6 @@ const AdminPanel = () => {
         )}
       </div>
 
-      {/* Бэкап */}
-      <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>Резервное копирование</h4>
-        <button onClick={handleBackup} className={styles.btnPrimary}>
-          Создать бэкап базы данных
-        </button>
-      </div>
     </div>
     </>
   );
