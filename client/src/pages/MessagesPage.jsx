@@ -96,7 +96,7 @@ const MessagesPage = () => {
           <ConversationList onSelectConversation={handleSelectConversation} />
         </div>
         <div className={styles.messageThreadPanel}>
-          <MessageThread conversation={selectedConversation} />
+          <MessageThread conversation={selectedConversation} onClose={() => setSelectedConversation(null)} />
         </div>
       </div>
     </UserPageLayout>

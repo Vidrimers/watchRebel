@@ -15,7 +15,7 @@ import styles from './MessageThread.module.css';
  * Окно переписки
  * Отображает сообщения в выбранном диалоге и позволяет отправлять новые
  */
-const MessageThread = ({ conversation }) => {
+const MessageThread = ({ conversation, onClose }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
@@ -142,6 +142,17 @@ const MessageThread = ({ conversation }) => {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
+
+  // Закрытие диалога по Esc
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && conversation) {
+        onClose?.();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [conversation, onClose]);
 
   // Обработчик скролла для определения когда загружать старые сообщения
   const handleScroll = (e) => {
