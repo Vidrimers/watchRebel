@@ -13,7 +13,7 @@ import {
   fetchRatings
 } from '../store/slices/listsSlice';
 import { fetchUserReview, fetchReviewByPost } from '../store/slices/reviewsSlice';
-import { fetchWall } from '../store/slices/wallSlice';
+import { fetchWall, createPost } from '../store/slices/wallSlice';
 import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../components/Media';
 import Icon from '../components/Common/Icon';
 import NoteModal from '../components/Lists/NoteModal';
@@ -50,6 +50,7 @@ const MediaDetailPage = () => {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [editingNoteText, setEditingNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -211,6 +212,35 @@ const MediaDetailPage = () => {
           : 'Не удалось добавить',
         type: 'error'
       });
+    }
+  };
+
+  // Поделиться фильмом/сериалом на стене
+  const handleShare = async () => {
+    if (!selectedMedia || sharing) return;
+    setSharing(true);
+    try {
+      await dispatch(createPost({
+        postType: 'media_shared',
+        content: `Рекомендую к просмотру!`,
+        tmdbId: selectedMedia.id,
+        mediaType: selectedMedia.media_type || mediaType,
+        posterPath: selectedMedia.poster_path
+      })).unwrap();
+
+      await showAlert({
+        title: 'Опубликовано!',
+        message: 'Пост добавлен на вашу стену',
+        type: 'success'
+      });
+    } catch (error) {
+      await showAlert({
+        title: 'Ошибка',
+        message: 'Не удалось опубликовать',
+        type: 'error'
+      });
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -417,6 +447,14 @@ const MediaDetailPage = () => {
                 onClick={handleToggleWatchlist}
               >
                 {isInWatchlist ? '✓ Хочу посмотреть' : '+ Хочу посмотреть'}
+              </button>
+
+              <button 
+                className={styles.actionButton}
+                onClick={handleShare}
+                disabled={sharing}
+              >
+                {sharing ? '...' : '🔗 Поделиться'}
               </button>
             </div>
 

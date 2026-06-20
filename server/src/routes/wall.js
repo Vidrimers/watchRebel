@@ -353,7 +353,7 @@ router.get('/post/:postId', async (req, res) => {
 router.post('/', authenticateToken, checkPostBan, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { postType, content, tmdbId, mediaType, rating, targetUserId } = req.body;
+    const { postType, content, tmdbId, mediaType, rating, targetUserId, posterPath } = req.body;
 
     // Определяем на чьей стене публикуем
     const wallOwnerId = targetUserId || userId;
@@ -409,10 +409,10 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     }
 
     // Валидация postType
-    const validPostTypes = ['text', 'media_added', 'rating', 'review', 'status_update'];
+    const validPostTypes = ['text', 'media_added', 'media_shared', 'rating', 'review', 'status_update'];
     if (!postType || !validPostTypes.includes(postType)) {
       return res.status(400).json({ 
-        error: 'postType должен быть одним из: text, media_added, rating, review, status_update',
+        error: 'postType должен быть одним из: text, media_added, media_shared, rating, review, status_update',
         code: 'INVALID_POST_TYPE' 
       });
     }
@@ -439,7 +439,7 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     }
 
     // Валидация для постов с медиа
-    if (['media_added', 'rating', 'review'].includes(postType)) {
+    if (['media_added', 'media_shared', 'rating', 'review'].includes(postType)) {
       if (!tmdbId || typeof tmdbId !== 'number') {
         return res.status(400).json({ 
           error: 'tmdbId обязателен для постов с медиа',
@@ -478,9 +478,9 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
     //        wall_owner_id - это владелец стены (на чьей стене)
     const postId = uuidv4();
     const insertResult = await executeQuery(
-      `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, rating, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-      [postId, userId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null]
+      `INSERT INTO wall_posts (id, user_id, wall_owner_id, post_type, content, tmdb_id, media_type, rating, poster_path, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+      [postId, userId, wallOwnerId, postType, content || null, tmdbId || null, mediaType || null, rating || null, posterPath || null]
     );
 
     if (!insertResult.success) {

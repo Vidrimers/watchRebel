@@ -682,6 +682,72 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           </div>
         );
 
+      case 'media_shared':
+        const sharedDisplayTitle = mediaTitle || `контент #${post.tmdbId}`;
+        const sharedDisplayOriginalTitle = mediaOriginalTitle;
+        
+        return (
+          <div 
+            className={styles.mediaAddedContent}
+            onClick={handleMediaClick}
+          >
+            {(post.posterPath || mediaPosterPath) && (
+              <div className={styles.mediaPoster}>
+                <img 
+                  src={
+                    post.posterPath?.startsWith('/uploads/') 
+                      ? `${import.meta.env.VITE_API_URL || ''}${post.posterPath}`
+                      : mediaPosterPath
+                      ? `https://image.tmdb.org/t/p/w185${mediaPosterPath}`
+                      : `https://image.tmdb.org/t/p/w185${post.posterPath}`
+                  }
+                  alt="Постер"
+                  className={styles.posterImage}
+                />
+              </div>
+            )}
+            <div className={styles.mediaTextContent}>
+              <h4 className={styles.movieTitle}>
+                {isLoadingMediaTitle ? 'Загрузка...' : sharedDisplayTitle}
+                {sharedDisplayOriginalTitle && sharedDisplayOriginalTitle !== sharedDisplayTitle && (
+                  <span className={styles.originalTitle}>{sharedDisplayOriginalTitle}</span>
+                )}
+              </h4>
+              <p className={styles.mediaAddedText}>
+                {post.content || 'Рекомендую к просмотру!'}
+              </p>
+              <div className={styles.mediaBottomRow}>
+                {post.tmdbId && (
+                  <div className={styles.mediaTypeLabel}>
+                    {post.mediaType === 'movie' ? (
+                      <>
+                        <Icon name="movies" size="small" /> Фильм
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="tv" size="small" /> Сериал
+                      </>
+                    )}
+                  </div>
+                )}
+                {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
+                  <button
+                    className={post.userListName ? styles.inMyListButton : styles.addToMyListButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAddToListModal(true);
+                    }}
+                    title={post.userListName ? `Переместить в другой список` : 'Добавить в свой список'}
+                  >
+                    <Icon name={post.userListName ? 'check' : 'add'} size="small" />
+                    {post.userListName ? `В списке: ${post.userListName}` : 'В свой список'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
       case 'rating':
         return (
           <div className={styles.ratingContent}>

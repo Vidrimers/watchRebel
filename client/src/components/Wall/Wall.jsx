@@ -30,14 +30,16 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     { key: 'all', label: 'Все' },
     { key: 'text', label: 'Текстовые' },
     { key: 'rating_review', label: 'Оценки/отзывы' },
-    { key: 'media_added', label: 'Медиа' }
+    { key: 'media', label: 'Медиа' }
   ];
 
   const filteredPosts = activeFilter === 'all' 
     ? posts 
     : activeFilter === 'rating_review'
       ? posts.filter(p => p.postType === 'rating' || p.postType === 'review' || p.rating != null)
-      : posts.filter(p => p.postType === activeFilter);
+      : activeFilter === 'media'
+        ? posts.filter(p => p.postType === 'media_added' || p.postType === 'media_shared')
+        : posts.filter(p => p.postType === activeFilter);
 
   // Загрузка постов при монтировании компонента
   useEffect(() => {
