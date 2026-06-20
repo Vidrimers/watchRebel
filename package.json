@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Социальная сеть для любителей кино и сериалов",
   "private": true,
+  "license": "UNLICENSED",
   "workspaces": [
     "client",
     "server",
