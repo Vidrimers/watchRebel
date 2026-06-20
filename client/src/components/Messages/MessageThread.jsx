@@ -140,9 +140,9 @@ const MessageThread = ({ conversation }) => {
       loadOlderMessages();
     }
 
-    // Показываем/скрываем кнопку скролла вниз
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    setShowScrollButton(!isNearBottom);
+    // Показываем/скрываем кнопку скролла вниз — показываем почти сразу при прокрутке
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollButton(distanceFromBottom > 50);
   };
 
   // Загрузка старых сообщений
@@ -673,19 +673,20 @@ const MessageThread = ({ conversation }) => {
           </div>
         )}
         
-        {/* Кнопка скролла вниз */}
-        {showScrollButton && (
-          <button 
-            className={styles.scrollDownButton}
-            onClick={scrollToBottom}
-            title="К новым сообщениям"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M19 12l-7 7-7-7"/>
-            </svg>
-          </button>
-        )}
       </div>
+
+      {/* Кнопка скролла вниз — вне контейнера сообщений */}
+      {showScrollButton && (
+        <button 
+          className={styles.scrollDownButton}
+          onClick={scrollToBottom}
+          title="К новым сообщениям"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M19 12l-7 7-7-7"/>
+          </svg>
+        </button>
+      )}
 
       {/* Форма отправки сообщения */}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>
@@ -734,15 +735,27 @@ const MessageThread = ({ conversation }) => {
             >
               <Icon name="paperclip" size="medium" />
             </button>
-            <textarea
-              className={styles.input}
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Напишите сообщение..."
-              rows={1}
-              disabled={sendingMessage}
-            />
+            <div className={styles.inputFieldWrapper}>
+              <textarea
+                className={styles.input}
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Напишите сообщение..."
+                rows={1}
+                disabled={sendingMessage}
+              />
+              {messageText.trim() && (
+                <button
+                  type="button"
+                  className={styles.clearInputButton}
+                  onClick={() => setMessageText('')}
+                  title="Очистить"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               type="submit"
               className={styles.sendButton}
