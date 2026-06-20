@@ -266,7 +266,7 @@ const ListsPage = () => {
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
                 disabled={isExporting}
               >
-                {isExporting ? '⏳ Подготовка...' : '📥 Экспортировать'}
+                {isExporting ? '⏳ Подготовка...' : '📥 Экспорт'}
               </button>
               
               {showExportDropdown && (

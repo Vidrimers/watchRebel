@@ -15,6 +15,7 @@ logs/
 server/backups/
 server/uploads/
 succes-api/
+scripts/
 
 # ФАЙЛЫ
 
@@ -47,3 +48,4 @@ devandtun.sh
 tasks.md
 Багрепорты.txt
 watchrebel_email_setup.md
+server/src/routes/media.js.old

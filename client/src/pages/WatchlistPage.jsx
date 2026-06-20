@@ -241,7 +241,7 @@ const WatchlistPage = () => {
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
                 disabled={isExporting || filteredWatchlist.length === 0}
               >
-                {isExporting ? '⏳ Подготовка...' : '📥 Экспортировать'}
+                {isExporting ? '⏳ Подготовка...' : '📥 Экспорт'}
               </button>
               
               {showExportDropdown && (
