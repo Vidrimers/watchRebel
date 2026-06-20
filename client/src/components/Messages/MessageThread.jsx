@@ -195,8 +195,36 @@ const MessageThread = ({ conversation }) => {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
     setShowScrollButton(false);
+    
+    const start = container.scrollTop;
+    const end = container.scrollHeight - container.clientHeight;
+    const distance = end - start;
+    
+    if (distance <= 0) return;
+    
+    const duration = 600;
+    let startTime = null;
+    
+    const easeInQuad = (t) => t * t;
+    
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeInQuad(progress);
+      
+      container.scrollTop = start + distance * easedProgress;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
   };
 
   // Обработчик отправки сообщения
