@@ -28,8 +28,8 @@ class MediaCacheService {
       `INSERT OR REPLACE INTO media_cache 
         (tmdb_id, media_type, title, original_title, poster_path, backdrop_path, 
          vote_average, vote_count, overview, genres, runtime, release_date,
-         number_of_seasons, number_of_episodes, status, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+         number_of_seasons, number_of_episodes, status, credits, videos, images, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
       [
         tmdbId, mediaType,
         data.title || data.name || null,
@@ -44,7 +44,10 @@ class MediaCacheService {
         releaseDate,
         numberOfSeasons,
         numberOfEpisodes,
-        status
+        status,
+        data.credits ? JSON.stringify(data.credits) : null,
+        data.videos ? JSON.stringify(data.videos) : null,
+        data.images ? JSON.stringify(data.images) : null
       ]
     );
 
@@ -114,6 +117,18 @@ class MediaCacheService {
     if (row.genres) {
       try { genres = JSON.parse(row.genres); } catch { genres = null; }
     }
+    let credits = null;
+    if (row.credits) {
+      try { credits = JSON.parse(row.credits); } catch { credits = null; }
+    }
+    let videos = null;
+    if (row.videos) {
+      try { videos = JSON.parse(row.videos); } catch { videos = null; }
+    }
+    let images = null;
+    if (row.images) {
+      try { images = JSON.parse(row.images); } catch { images = null; }
+    }
     return {
       id: row.tmdb_id,
       title: row.title,
@@ -132,6 +147,9 @@ class MediaCacheService {
       number_of_seasons: row.number_of_seasons,
       number_of_episodes: row.number_of_episodes,
       status: row.status,
+      credits,
+      videos,
+      images,
       media_type: row.media_type
     };
   }

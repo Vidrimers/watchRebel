@@ -45,6 +45,9 @@ function initMediaCacheTable() {
       number_of_seasons INTEGER,
       number_of_episodes INTEGER,
       status TEXT,
+      credits TEXT,
+      videos TEXT,
+      images TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(tmdb_id, media_type)
@@ -52,7 +55,18 @@ function initMediaCacheTable() {
     CREATE INDEX IF NOT EXISTS idx_media_cache_tmdb ON media_cache(tmdb_id, media_type);
   `, (err) => {
     if (err) {
-      console.error('Ошибка создания media_cache таблицы:', err.message);
+      if (err.message?.includes('no such column: credits')) {
+        console.log('Обновление media_cache таблицы...');
+        db.exec(`ALTER TABLE media_cache ADD COLUMN credits TEXT`, () => {
+          db.exec(`ALTER TABLE media_cache ADD COLUMN videos TEXT`, () => {
+            db.exec(`ALTER TABLE media_cache ADD COLUMN images TEXT`, () => {
+              console.log('media_cache обновлена: добавлены credits, videos, images');
+            });
+          });
+        });
+      } else {
+        console.error('Ошибка создания media_cache таблицы:', err.message);
+      }
     } else {
       console.log('Таблица media_cache готова');
     }
