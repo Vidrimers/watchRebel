@@ -27,8 +27,7 @@
   transform: translateX(-4px);
 }
 
-.pageTitle {
-  font-size: 32px;
+.pageTitle { font-size: 22px;
   font-weight: bold;
   margin-bottom: 30px;
   color: var(--text-primary);

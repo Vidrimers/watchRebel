@@ -34,8 +34,7 @@
   border-bottom: 2px solid var(--border-color);
 }
 
-.pageTitle {
-  font-size: 32px;
+.pageTitle { font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 8px 0;

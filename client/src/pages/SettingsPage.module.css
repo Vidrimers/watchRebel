@@ -4,8 +4,7 @@
   padding: 20px;
 }
 
-.pageTitle {
-  font-size: 32px;
+.pageTitle { font-size: 22px;
   font-weight: 700;
   margin: 0 0 30px 0;
   color: var(--text-primary, #333);
