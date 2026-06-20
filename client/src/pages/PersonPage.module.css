@@ -5,17 +5,21 @@
 }
 
 .backButton {
-  background: none;
-  border: none;
-  color: var(--accent-primary, #6366f1);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 8px 0;
   margin-bottom: 20px;
+  padding: 10px 20px;
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  transition: all 0.2s ease;
 }
 
 .backButton:hover {
-  text-decoration: underline;
+  background: var(--bg-hover, #f8f9fa);
+  transform: translateX(-4px);
 }
 
 .loading, .error {
