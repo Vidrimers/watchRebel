@@ -207,3 +207,22 @@
     height: 195px;
   }
 }
+
+.showAllBtn {
+  display: block;
+  margin: 16px auto 0;
+  padding: 10px 24px;
+  background: var(--bg-secondary, #f3f4f6);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-primary, #6366f1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.showAllBtn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent-primary, #6366f1);
+}
