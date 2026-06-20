@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+const isProd = process.env.NODE_ENV === 'production';
+const envFile = isProd ? '.env.production' : '.env';
+dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
 import { getMediaDatabase, executeMediaQuery } from '../src/database/mediaDb.js';
 import { executeQuery } from '../src/database/db.js';
