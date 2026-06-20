@@ -132,12 +132,12 @@
 .filterActive {
   background: var(--accent-primary, #6366f1);
   border-color: var(--accent-primary, #6366f1);
-  color: #fff;
+  color: var(--text-primary, #fff);
 }
 
 .filterActive:hover {
   opacity: 0.9;
-  color: #fff;
+  color: var(--text-primary, #fff);
 }
 
 /* Список постов */
