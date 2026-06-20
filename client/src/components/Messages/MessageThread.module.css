@@ -578,9 +578,21 @@
   color: var(--text-primary, #333);
 }
 
+.suggestedMediaMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .suggestedMediaType {
   font-size: 12px;
   color: var(--text-secondary, #666);
+}
+
+.suggestedMediaRating {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 500;
 }
 
 /* Вложения в сообщениях */

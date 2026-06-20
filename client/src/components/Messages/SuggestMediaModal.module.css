@@ -166,6 +166,7 @@
   cursor: pointer;
   transition: background 0.15s;
   border: 1px solid transparent;
+  overflow: hidden;
 }
 
 .mediaItem:hover {
@@ -204,6 +205,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.mediaItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mediaRating {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 500;
 }
 
 .actions {

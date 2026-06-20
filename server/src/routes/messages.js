@@ -339,8 +339,10 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
     // Создаем сообщение
     const messageId = uuidv4();
-    const locationJson = location ? JSON.stringify(location) : null;
-    const suggestedMediaJson = suggestedMedia ? JSON.stringify(suggestedMedia) : null;
+    const locationParsed = typeof location === 'string' ? JSON.parse(location) : location;
+    const locationJson = locationParsed ? JSON.stringify(locationParsed) : null;
+    const suggestedMediaParsed = typeof suggestedMedia === 'string' ? JSON.parse(suggestedMedia) : suggestedMedia;
+    const suggestedMediaJson = suggestedMediaParsed ? JSON.stringify(suggestedMediaParsed) : null;
     const createMessageResult = await executeQuery(
       `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, created_at)
        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now'))`,

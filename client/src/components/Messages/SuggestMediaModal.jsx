@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchLists } from '../../store/slices/listsSlice';
@@ -18,16 +18,40 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
 
   const allLists = customLists.filter(list => list.mediaType === mediaType);
   const watchlist = allLists.find(list => list.name === 'Хочу посмотреть');
-  const sortedLists = watchlist 
+  const sortedLists = watchlist
     ? [watchlist, ...allLists.filter(l => l.id !== watchlist.id)]
     : allLists;
 
-  const filteredLists = sortedLists.filter(list => 
+  const filteredLists = sortedLists.filter(list =>
     !searchQuery || list.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const listItems = selectedList 
-    ? (selectedList.items || []).filter(item => 
+  const allItems = useMemo(() => {
+    const items = [];
+    const seen = new Set();
+    for (const list of allLists) {
+      for (const item of (list.items || [])) {
+        if (!seen.has(item.tmdbId)) {
+          seen.add(item.tmdbId);
+          items.push(item);
+        }
+      }
+    }
+    return items;
+  }, [allLists]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    const q = searchQuery.toLowerCase();
+    return allItems.filter(item =>
+      (item.title || `Контент #${item.tmdbId}`).toLowerCase().includes(q)
+    ).slice(0, 20);
+  }, [allItems, searchQuery]);
+
+  const showSearchResults = searchQuery && !selectedList;
+
+  const listItems = selectedList
+    ? (selectedList.items || []).filter(item =>
         !searchQuery || (item.title || `Контент #${item.tmdbId}`).toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
@@ -39,11 +63,36 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
         mediaType,
         tmdbId: selectedMedia.tmdbId,
         title: selectedMedia.title || `Контент #${selectedMedia.tmdbId}`,
-        posterPath: selectedMedia.posterPath
+        posterPath: selectedMedia.posterPath,
+        voteAverage: selectedMedia.voteAverage
       });
       onClose();
     }
   };
+
+  const renderMediaItem = (item) => (
+    <div
+      key={item.tmdbId}
+      className={`${styles.mediaItem} ${selectedMedia?.tmdbId === item.tmdbId ? styles.selected : ''}`}
+      onClick={() => setSelectedMedia(item)}
+    >
+      {item.posterPath ? (
+        <img
+          src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
+          alt={item.title}
+          className={styles.poster}
+        />
+      ) : (
+        <div className={styles.posterPlaceholder}>🎬</div>
+      )}
+      <div className={styles.mediaItemInfo}>
+        <span className={styles.mediaTitle}>{item.title || `Контент #${item.tmdbId}`}</span>
+        {item.voteAverage > 0 && (
+          <span className={styles.mediaRating}>★ {item.voteAverage.toFixed(1)}</span>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -62,26 +111,36 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Поиск по спискам..."
+              placeholder="Поиск по фильмам и спискам..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
             />
-            {filteredLists.length === 0 ? (
-              <p className={styles.empty}>Нет списков</p>
+            {showSearchResults ? (
+              searchResults.length === 0 ? (
+                <p className={styles.empty}>Ничего не найдено</p>
+              ) : (
+                <div className={styles.mediaList}>
+                  {searchResults.map(renderMediaItem)}
+                </div>
+              )
             ) : (
-              <div className={styles.listGrid}>
-                {filteredLists.map((list) => (
-                  <button
-                    key={list.id}
-                    className={styles.listCard}
-                    onClick={() => setSelectedList(list)}
-                  >
-                    <span className={styles.listName}>{list.name}</span>
-                    <span className={styles.listCount}>{list.items?.length || 0}</span>
-                  </button>
-                ))}
-              </div>
+              filteredLists.length === 0 ? (
+                <p className={styles.empty}>Нет списков</p>
+              ) : (
+                <div className={styles.listGrid}>
+                  {filteredLists.map((list) => (
+                    <button
+                      key={list.id}
+                      className={styles.listCard}
+                      onClick={() => setSelectedList(list)}
+                    >
+                      <span className={styles.listName}>{list.name}</span>
+                      <span className={styles.listCount}>{list.items?.length || 0}</span>
+                    </button>
+                  ))}
+                </div>
+              )
             )}
           </div>
         ) : (
@@ -101,29 +160,12 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
             />
-            
+
             {listItems.length === 0 ? (
               <p className={styles.empty}>Список пуст</p>
             ) : (
               <div className={styles.mediaList}>
-                {listItems.map((item) => (
-                  <div
-                    key={item.tmdbId}
-                    className={`${styles.mediaItem} ${selectedMedia?.tmdbId === item.tmdbId ? styles.selected : ''}`}
-                    onClick={() => setSelectedMedia(item)}
-                  >
-                    {item.posterPath ? (
-                      <img 
-                        src={`https://image.tmdb.org/t/p/w92${item.posterPath}`}
-                        alt={item.title}
-                        className={styles.poster}
-                      />
-                    ) : (
-                      <div className={styles.posterPlaceholder}>🎬</div>
-                    )}
-                    <span className={styles.mediaTitle}>{item.title || `Контент #${item.tmdbId}`}</span>
-                  </div>
-                ))}
+                {listItems.map(renderMediaItem)}
               </div>
             )}
           </div>
@@ -131,8 +173,8 @@ const SuggestMediaModal = ({ mediaType, onSend, onClose }) => {
 
         <div className={styles.actions}>
           <button className={styles.cancelBtn} onClick={onClose}>Отмена</button>
-          <button 
-            className={styles.sendBtn} 
+          <button
+            className={styles.sendBtn}
             onClick={handleSend}
             disabled={!selectedMedia}
           >

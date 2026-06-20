@@ -221,7 +221,8 @@ const MessageThread = ({ conversation, onClose }) => {
           tmdbId: data.tmdbId,
           mediaType: data.mediaType,
           title: data.title,
-          posterPath: data.posterPath
+          posterPath: data.posterPath,
+          voteAverage: data.voteAverage
         }
       }));
     } catch (error) {
@@ -762,9 +763,14 @@ const MessageThread = ({ conversation, onClose }) => {
                           )}
                           <div className={styles.suggestedMediaInfo}>
                             <span className={styles.suggestedMediaTitle}>{message.suggestedMedia.title}</span>
-                            <span className={styles.suggestedMediaType}>
-                              {message.suggestedMedia.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
-                            </span>
+                            <div className={styles.suggestedMediaMeta}>
+                              <span className={styles.suggestedMediaType}>
+                                {message.suggestedMedia.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                              </span>
+                              {message.suggestedMedia.voteAverage > 0 && (
+                                <span className={styles.suggestedMediaRating}>★ {message.suggestedMedia.voteAverage.toFixed(1)}</span>
+                              )}
+                            </div>
                           </div>
                         </a>
                       )}
