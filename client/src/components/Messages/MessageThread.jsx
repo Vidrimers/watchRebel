@@ -55,11 +55,11 @@ const MessageThread = ({ conversation }) => {
   // Скролл вниз при загрузке сообщений в новом диалоге
   useEffect(() => {
     if (messages.length > 0 && conversation?.id) {
-      // Небольшая задержка чтобы DOM успел отрисоваться
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 100);
-      return () => clearTimeout(timer);
+      // Несколько попыток чтобы DOM успел отрисоваться
+      const timer1 = setTimeout(() => scrollToBottom(), 50);
+      const timer2 = setTimeout(() => scrollToBottom(), 200);
+      const timer3 = setTimeout(() => scrollToBottom(), 500);
+      return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
     }
   }, [conversation?.id]); // Только при смене диалога
 
@@ -140,9 +140,9 @@ const MessageThread = ({ conversation }) => {
       loadOlderMessages();
     }
 
-    // Показываем/скрываем кнопку скролла вниз — показываем почти сразу при прокрутке
+    // Показываем/скрываем кнопку скролла вниз
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    setShowScrollButton(distanceFromBottom > 50);
+    setShowScrollButton(distanceFromBottom > 200);
   };
 
   // Загрузка старых сообщений
@@ -450,7 +450,12 @@ const MessageThread = ({ conversation }) => {
       <div className={styles.container}>
       {/* Шапка с информацией о собеседнике */}
       <div className={styles.header}>
-        <div className={styles.headerAvatar}>
+        <a 
+          href={`/user/${conversation.otherUser.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.headerAvatar}
+        >
           {conversation.otherUser.avatarUrl ? (
             <img 
               src={
@@ -472,7 +477,7 @@ const MessageThread = ({ conversation }) => {
           >
             {conversation.otherUser.displayName.charAt(0).toUpperCase()}
           </div>
-        </div>
+        </a>
         <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button 
@@ -670,23 +675,22 @@ const MessageThread = ({ conversation }) => {
               );
             })}
             <div ref={messagesEndRef} />
+            {/* Кнопка скролла вниз — внутри messagesList */}
+            {showScrollButton && (
+              <button 
+                className={styles.scrollDownButton}
+                onClick={scrollToBottom}
+                title="К новым сообщениям"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M19 12l-7 7-7-7"/>
+                </svg>
+              </button>
+            )}
           </div>
         )}
         
       </div>
-
-      {/* Кнопка скролла вниз — вне контейнера сообщений */}
-      {showScrollButton && (
-        <button 
-          className={styles.scrollDownButton}
-          onClick={scrollToBottom}
-          title="К новым сообщениям"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 5v14M19 12l-7 7-7-7"/>
-          </svg>
-        </button>
-      )}
 
       {/* Форма отправки сообщения */}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>

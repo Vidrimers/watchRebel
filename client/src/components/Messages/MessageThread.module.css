@@ -130,9 +130,9 @@
 }
 
 .scrollDownButton {
-  position: absolute;
-  bottom: 80px;
-  right: 20px;
+  position: sticky;
+  bottom: 16px;
+  left: calc(100% - 51px);
   width: 35px;
   height: 35px;
   border-radius: 50%;
@@ -146,6 +146,8 @@
   justify-content: center;
   z-index: 10;
   transition: transform 0.2s, opacity 0.2s;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .scrollDownButton:hover {
