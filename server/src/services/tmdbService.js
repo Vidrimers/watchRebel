@@ -275,6 +275,16 @@ class TMDbService {
     });
   }
 
+  async getPersonDetails(personId) {
+    if (!personId || typeof personId !== 'number') {
+      throw new Error('ID персоны должен быть числом');
+    }
+
+    return await this.makeRequest(`/person/${personId}`, {
+      append_to_response: 'combined_credits,images'
+    });
+  }
+
   /**
    * Получение информации о сезоне сериала
    * @param {number} tvId - ID сериала в TMDb

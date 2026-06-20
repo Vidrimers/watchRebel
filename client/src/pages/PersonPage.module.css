@@ -1,0 +1,209 @@
+.personPage {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--accent-primary, #6366f1);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary, #666);
+  font-size: 16px;
+}
+
+.personHeader {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.photo {
+  width: 280px;
+  height: 420px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.noPhoto {
+  width: 280px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary, #e5e7eb);
+  border-radius: 16px;
+  color: var(--text-tertiary, #999);
+}
+
+.infoSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #111);
+  margin: 0 0 8px 0;
+}
+
+.alsoKnownAs {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+  margin: 0 0 12px 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+.bioSection h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #111);
+  margin: 0 0 8px 0;
+}
+
+.bio {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary, #444);
+  margin: 0;
+}
+
+.readMore {
+  background: none;
+  border: none;
+  color: var(--accent-primary, #6366f1);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+}
+
+.readMore:hover {
+  text-decoration: underline;
+}
+
+.creditsSection {
+  margin-bottom: 40px;
+}
+
+.creditsSection h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #111);
+  margin: 0 0 16px 0;
+}
+
+.creditsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.creditCard {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-secondary, #f3f4f6);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.creditCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.creditPoster {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+
+.noCreditPoster {
+  width: 100%;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary, #e5e7eb);
+  font-size: 32px;
+}
+
+.creditInfo {
+  padding: 10px;
+}
+
+.creditTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #111);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.creditRole {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin: 0;
+}
+
+.creditRating {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .personHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .photo, .noPhoto {
+    width: 200px;
+    height: 300px;
+  }
+
+  .meta {
+    justify-content: center;
+  }
+
+  .creditsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .creditPoster {
+    height: 195px;
+  }
+}

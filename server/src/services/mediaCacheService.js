@@ -176,6 +176,111 @@ class MediaCacheService {
       media_type: mediaType
     };
   }
+
+  // === Person Cache ===
+
+  async getCachedPerson(personId) {
+    const result = await executeMediaQuery(
+      'SELECT * FROM person_cache WHERE tmdb_id = ?',
+      [personId]
+    );
+    if (result.success && result.data.length > 0) {
+      return this._parsePersonRow(result.data[0]);
+    }
+    return null;
+  }
+
+  async savePersonToCache(data) {
+    const personId = data.id;
+    if (!personId) return null;
+
+    await executeMediaQuery(
+      `INSERT OR REPLACE INTO person_cache
+        (tmdb_id, name, also_known_as, biography, birthday, deathday,
+         place_of_birth, profile_path, popularity, known_for, images, combined_credits, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [
+        personId,
+        data.name || null,
+        data.also_known_as ? JSON.stringify(data.also_known_as) : null,
+        data.biography || null,
+        data.birthday || null,
+        data.deathday || null,
+        data.place_of_birth || null,
+        data.profile_path || null,
+        data.popularity || 0,
+        data.known_for ? JSON.stringify(data.known_for) : null,
+        data.images ? JSON.stringify(data.images) : null,
+        data.combined_credits ? JSON.stringify(data.combined_credits) : null
+      ]
+    );
+
+    return { personId };
+  }
+
+  async getOrFetchPerson(personId) {
+    const cached = await this.getCachedPerson(personId);
+    if (cached) return cached;
+
+    try {
+      const data = await tmdbService.getPersonDetails(personId);
+      await this.savePersonToCache(data);
+      return this._parsePersonData(data);
+    } catch (error) {
+      console.error(`Ошибка получения персоны ${personId}:`, error.message);
+      return null;
+    }
+  }
+
+  _parsePersonRow(row) {
+    let alsoKnownAs = null;
+    if (row.also_known_as) {
+      try { alsoKnownAs = JSON.parse(row.also_known_as); } catch {}
+    }
+    let knownFor = null;
+    if (row.known_for) {
+      try { knownFor = JSON.parse(row.known_for); } catch {}
+    }
+    let images = null;
+    if (row.images) {
+      try { images = JSON.parse(row.images); } catch {}
+    }
+    let combinedCredits = null;
+    if (row.combined_credits) {
+      try { combinedCredits = JSON.parse(row.combined_credits); } catch {}
+    }
+    return {
+      id: row.tmdb_id,
+      name: row.name,
+      also_known_as: alsoKnownAs,
+      biography: row.biography,
+      birthday: row.birthday,
+      deathday: row.deathday,
+      place_of_birth: row.place_of_birth,
+      profile_path: row.profile_path,
+      popularity: row.popularity,
+      known_for: knownFor,
+      images,
+      combined_credits: combinedCredits
+    };
+  }
+
+  _parsePersonData(data) {
+    return {
+      id: data.id,
+      name: data.name,
+      also_known_as: data.also_known_as,
+      biography: data.biography,
+      birthday: data.birthday,
+      deathday: data.deathday,
+      place_of_birth: data.place_of_birth,
+      profile_path: data.profile_path,
+      popularity: data.popularity,
+      known_for: data.known_for,
+      images: data.images,
+      combined_credits: data.combined_credits
+    };
+  }
 }
 
 export default new MediaCacheService();

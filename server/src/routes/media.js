@@ -246,6 +246,36 @@ router.get('/search', async (req, res) => {
 });
 
 /**
+ * GET /api/media/person/:id
+ * Получение данных персоны (актёра/режиссёра) с кэшированием
+ */
+router.get('/person/:id', async (req, res) => {
+  try {
+    const personId = parseInt(req.params.id);
+    if (isNaN(personId) || personId <= 0) {
+      return res.status(400).json({ error: 'Неверный ID персоны' });
+    }
+
+    const cached = await mediaCacheService.getCachedPerson(personId);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.json(cached);
+    }
+
+    res.setHeader('X-Cache', 'MISS');
+    const data = await mediaCacheService.getOrFetchPerson(personId);
+    if (!data) {
+      return res.status(404).json({ error: 'Персона не найдена' });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Ошибка получения персоны:', error);
+    res.status(500).json({ error: 'Ошибка получения данных персоны' });
+  }
+});
+
+/**
  * GET /api/media/:type/:id
  * Получение детальной информации о фильме или сериале (с кэшированием)
  */

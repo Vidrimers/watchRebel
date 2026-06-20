@@ -71,6 +71,34 @@ function initMediaCacheTable() {
       console.log('Таблица media_cache готова');
     }
   });
+
+  // Таблица кэша персон (актёры, режиссёры)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS person_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tmdb_id INTEGER NOT NULL UNIQUE,
+      name TEXT,
+      also_known_as TEXT,
+      biography TEXT,
+      birthday TEXT,
+      deathday TEXT,
+      place_of_birth TEXT,
+      profile_path TEXT,
+      popularity REAL DEFAULT 0,
+      known_for TEXT,
+      images TEXT,
+      combined_credits TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_person_cache_tmdb ON person_cache(tmdb_id);
+  `, (err) => {
+    if (err) {
+      console.error('Ошибка создания person_cache таблицы:', err.message);
+    } else {
+      console.log('Таблица person_cache готова');
+    }
+  });
 }
 
 export function executeMediaQuery(query, params = []) {

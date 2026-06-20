@@ -729,7 +729,12 @@ const MediaDetailPage = () => {
                 <h2 className={styles.sectionTitle}>Актёры</h2>
                 <div className={styles.castGrid}>
                   {selectedMedia.credits.cast.slice(0, 12).map((person) => (
-                    <div key={person.id} className={styles.castCard}>
+                    <div
+                      key={person.id}
+                      className={styles.castCard}
+                      onClick={() => navigate(`/person/${person.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className={styles.castPhoto}>
                         {person.profile_path ? (
                           <img

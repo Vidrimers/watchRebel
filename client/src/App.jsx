@@ -39,6 +39,7 @@ const MyBugReportsPage = lazy(() => import('./pages/MyBugReportsPage'));
 const BugReportsAdminPage = lazy(() => import('./pages/BugReportsAdminPage'));
 const DatabaseManagementPage = lazy(() => import('./pages/DatabaseManagementPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const PersonPage = lazy(() => import('./pages/PersonPage'));
 
 // Компонент загрузки для Suspense
 function LoadingFallback() {
@@ -167,6 +168,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MediaDetailPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Страница персоны (актёр/режиссёр) */}
+              <Route 
+                path="/person/:personId" 
+                element={
+                  <ProtectedRoute>
+                    <PersonPage />
                   </ProtectedRoute>
                 } 
               />
