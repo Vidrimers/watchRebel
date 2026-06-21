@@ -4,7 +4,7 @@ import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import { MediaGrid } from '../components/Media';
-import { fetchLists, addToList, addToWatchlist, fetchWatchlist } from '../store/slices/listsSlice';
+import { fetchLists, addToList, addToWatchlist, removeFromWatchlist, fetchWatchlist } from '../store/slices/listsSlice';
 import useAlert from '../hooks/useAlert';
 import AddToListModal from '../components/Wall/AddToListModal';
 import Icon from '../components/Common/Icon';
@@ -288,26 +288,40 @@ const CatalogPage = () => {
   };
 
   /**
-   * Добавление в watchlist
+   * Добавление/удаление из watchlist (toggle)
    */
   const handleAddToWatchlist = async (item) => {
     try {
       const mediaType = activeTab === 'movies' ? 'movie' : 'tv';
-      await dispatch(addToWatchlist({
-        tmdbId: item.id,
-        mediaType
-      })).unwrap();
-      
-      await showAlert({
-        title: 'Успешно!',
-        message: `"${item.title || item.name}" добавлен в список "Хочу посмотреть"`,
-        type: 'success'
-      });
+      const status = mediaStatusMap[item.id] || {};
+
+      if (status.inWatchlist) {
+        // Удаляем из watchlist
+        const wlItem = (watchlist || []).find(w => w.tmdbId === item.id);
+        if (wlItem) {
+          await dispatch(removeFromWatchlist(wlItem.id)).unwrap();
+          await showAlert({
+            title: 'Удалено',
+            message: `"${item.title || item.name}" удалено из "Хочу посмотреть"`,
+            type: 'success'
+          });
+        }
+      } else {
+        await dispatch(addToWatchlist({
+          tmdbId: item.id,
+          mediaType
+        })).unwrap();
+        await showAlert({
+          title: 'Успешно!',
+          message: `"${item.title || item.name}" добавлен в "Хочу посмотреть"`,
+          type: 'success'
+        });
+      }
     } catch (error) {
-      console.error('Ошибка добавления в watchlist:', error);
+      console.error('Ошибка:', error);
       await showAlert({
         title: 'Ошибка',
-        message: 'Не удалось добавить в список. Попробуйте позже.',
+        message: 'Не удалось выполнить действие',
         type: 'error'
       });
     }
