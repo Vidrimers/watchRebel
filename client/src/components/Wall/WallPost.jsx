@@ -651,10 +651,10 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'Добавить в свой список'}
+                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
                   >
                     <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'В свой список'}
+                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
                   </button>
                 )}
               </div>
@@ -736,10 +736,10 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'Добавить в свой список'}
+                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
                   >
                     <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'В свой список'}
+                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
                   </button>
                 )}
               </div>
