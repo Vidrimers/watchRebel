@@ -292,6 +292,10 @@
   transform: scale(1.1);
 }
 
+.settingsButtonSpin:hover {
+  transform: none;
+}
+
 .settingsButton:active {
   transform: scale(0.95);
 }
@@ -305,17 +309,13 @@
   animation: spin 3s linear infinite;
 }
 
-.settingsButtonSpin:hover {
-  animation-play-state: paused;
-}
-
 .settingsButtonNew {
   opacity: 1 !important;
   color: var(--error-color, #ef4444);
 }
 
 .settingsButtonNew:hover {
-  transform: none;
+  animation-duration: 1.5s;
 }
 
 .settingsButtonInProgress {
@@ -325,7 +325,6 @@
 
 .settingsButtonInProgress:hover {
   opacity: 1;
-  transform: scale(1.1);
 }
 
 .settingsLink {
