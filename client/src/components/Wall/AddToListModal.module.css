@@ -148,6 +148,34 @@
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+.watchlistButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-secondary, #f3f4f6);
+  border: 1px dashed var(--border-color, #d1d5db);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-primary, #6366f1);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.watchlistButton:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.watchlistButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .createListButton {
   display: flex;
   align-items: center;

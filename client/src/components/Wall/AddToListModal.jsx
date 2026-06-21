@@ -104,6 +104,29 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
     }
   };
 
+  // Добавление в "Хочу посмотреть"
+  const handleAddToWatchlist = async () => {
+    try {
+      setAdding('watchlist');
+      setError(null);
+
+      await api.post('/watchlist', {
+        tmdbId,
+        mediaType
+      });
+
+      setSuccess('Добавлено в "Хочу посмотреть"!');
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    } catch (err) {
+      console.error('Ошибка добавления в watchlist:', err);
+      setError(err.response?.data?.error || 'Не удалось добавить');
+    } finally {
+      setAdding(null);
+    }
+  };
+
   // Закрытие по клику на backdrop
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -151,6 +174,17 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
 
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.success}>{success}</p>}
+
+          {!loading && !showCreateForm && (
+            <button
+              className={styles.watchlistButton}
+              onClick={handleAddToWatchlist}
+              disabled={adding === 'watchlist'}
+            >
+              <Icon name="watchlist" size="small" />
+              {adding === 'watchlist' ? 'Добавление...' : 'Хочу посмотреть'}
+            </button>
+          )}
 
           {!loading && lists.length === 0 && !showCreateForm && (
             <div className={styles.noLists}>
