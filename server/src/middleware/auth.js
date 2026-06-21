@@ -73,7 +73,7 @@ export async function authenticateToken(req, res, next) {
       emailVerified: Boolean(session.email_verified),
       googleId: session.google_id,
       discordId: session.discord_id,
-      showNickname: Boolean(session.show_nickname)
+      nicknameDisplay: session.nickname_display || 'name'
     };
 
     req.sessionId = session.id;
@@ -216,7 +216,7 @@ export async function optionalAuth(req, res, next) {
           emailVerified: Boolean(session.email_verified),
           googleId: session.google_id,
           discordId: session.discord_id,
-          showNickname: Boolean(session.show_nickname)
+          nicknameDisplay: session.nickname_display || 'name'
         };
         req.sessionId = session.id;
       }

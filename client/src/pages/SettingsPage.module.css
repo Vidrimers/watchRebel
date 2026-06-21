@@ -818,3 +818,36 @@
 .toggleSwitch input:checked + .toggleSlider:before {
   transform: translateX(20px);
 }
+
+/* Опции отображения ников */
+.nicknameDisplayOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radioOption:hover {
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.radioOption input[type="radio"] {
+  accent-color: var(--accent-primary, #6366f1);
+}
+
+:global(.dark) .radioOption {
+  background: var(--bg-primary-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}

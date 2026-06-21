@@ -409,11 +409,6 @@ const UserProfilePage = () => {
             <div className={styles.profileInfo}>
               <h1 className={styles.profileName}>
                 {profileUser.displayName}
-                {currentNickname && !isOwnProfile && (
-                  <span className={styles.nicknameBadge} title={`Ваш ник для этого пользователя: ${currentNickname}`}>
-                    ({currentNickname})
-                  </span>
-                )}
               </h1>
               {profileUser.userStatus && (
                 <p className={styles.userStatus}>{profileUser.userStatus}</p>

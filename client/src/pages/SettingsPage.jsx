@@ -193,24 +193,6 @@ const SettingsPage = () => {
                   )}
                 </div>
               </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Показывать ник:</span>
-                <label className={styles.toggleSwitch}>
-                  <input
-                    type="checkbox"
-                    checked={user.showNickname || false}
-                    onChange={async (e) => {
-                      try {
-                        await api.put('/users/me/show-nickname', { showNickname: e.target.checked });
-                        dispatch(updateProfile({ userId: user.id, showNickname: e.target.checked }));
-                      } catch (error) {
-                        console.error('Ошибка обновления настройки ника:', error);
-                      }
-                    }}
-                  />
-                  <span className={styles.toggleSlider}></span>
-                </label>
-              </div>
               <p className={styles.cardDescription}>
                 Если включено, друзья будут видеть ваши ники вместо имён
               </p>
@@ -229,6 +211,65 @@ const SettingsPage = () => {
             {openSection === 'appearance' && (
               <div className={styles.accordionContent}>
                 <ThemeDropdown embedded />
+                <div className={styles.accordionSection}>
+                  <h4 className={styles.accordionSectionTitle}>Отображение имён</h4>
+                  <p className={styles.cardDescription}>
+                    Как показывать имена пользователей, которым вы задали ник
+                  </p>
+                  <div className={styles.nicknameDisplayOptions}>
+                    <label className={styles.radioOption}>
+                      <input
+                        type="radio"
+                        name="nicknameDisplay"
+                        value="nickname"
+                        checked={(user.nicknameDisplay || 'name') === 'nickname'}
+                        onChange={async () => {
+                          try {
+                            await api.put('/users/me/nickname-display', { nicknameDisplay: 'nickname' });
+                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'nickname' }));
+                          } catch (error) {
+                            console.error(error);
+                          }
+                        }}
+                      />
+                      <span>Ник</span>
+                    </label>
+                    <label className={styles.radioOption}>
+                      <input
+                        type="radio"
+                        name="nicknameDisplay"
+                        value="name"
+                        checked={(user.nicknameDisplay || 'name') === 'name'}
+                        onChange={async () => {
+                          try {
+                            await api.put('/users/me/nickname-display', { nicknameDisplay: 'name' });
+                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'name' }));
+                          } catch (error) {
+                            console.error(error);
+                          }
+                        }}
+                      />
+                      <span>Имя</span>
+                    </label>
+                    <label className={styles.radioOption}>
+                      <input
+                        type="radio"
+                        name="nicknameDisplay"
+                        value="both"
+                        checked={(user.nicknameDisplay || 'name') === 'both'}
+                        onChange={async () => {
+                          try {
+                            await api.put('/users/me/nickname-display', { nicknameDisplay: 'both' });
+                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'both' }));
+                          } catch (error) {
+                            console.error(error);
+                          }
+                        }}
+                      />
+                      <span>Имя (Ник)</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             )}
           </div>

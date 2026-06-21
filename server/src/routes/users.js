@@ -89,7 +89,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, wall_privacy, auth_method, email, google_id, discord_id, email_verified, show_nickname, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, wall_privacy, auth_method, email, google_id, discord_id, email_verified, nickname_display, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -175,7 +175,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       hasGoogleLinked: Boolean(user.google_id),
       hasDiscordLinked: Boolean(user.discord_id),
       emailVerified: Boolean(user.email_verified),
-      showNickname: Boolean(user.show_nickname),
+      nicknameDisplay: user.nickname_display || 'name',
       createdAt: user.created_at,
       isBlockedByMe: isBlockedByMe,
       postsCount: postsCount,
@@ -1518,26 +1518,30 @@ router.get('/nicknames/all', authenticateToken, async (req, res) => {
 });
 
 /**
- * PUT /api/users/me/show-nickname
- * Переключить отображение: показывать ник или имя
+ * PUT /api/users/me/nickname-display
+ * Выбрать режим отображения: 'nickname' | 'name' | 'both'
  */
-router.put('/me/show-nickname', authenticateToken, async (req, res) => {
+router.put('/me/nickname-display', authenticateToken, async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const { showNickname } = req.body;
+    const { nicknameDisplay } = req.body;
+
+    if (!['nickname', 'name', 'both'].includes(nicknameDisplay)) {
+      return res.status(400).json({ error: 'Неверный режим отображения' });
+    }
 
     const result = await executeQuery(
-      'UPDATE users SET show_nickname = ? WHERE id = ?',
-      [showNickname ? 1 : 0, currentUserId]
+      'UPDATE users SET nickname_display = ? WHERE id = ?',
+      [nicknameDisplay, currentUserId]
     );
 
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка обновления настройки' });
     }
 
-    res.json({ showNickname: Boolean(showNickname) });
+    res.json({ nicknameDisplay });
   } catch (error) {
-    console.error('Ошибка обновления show_nickname:', error);
+    console.error('Ошибка обновления nickname_display:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });

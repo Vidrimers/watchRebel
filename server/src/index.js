@@ -55,6 +55,7 @@ import { runMigrations } from './database/migrations.js';
 import { addWallPrivacyMigration } from './database/migrations/add_wall_privacy.js';
 import { addUserNicknamesTable } from './database/migrations/add_user_nicknames_table.js';
 import { addShowNicknameColumn } from './database/migrations/add_show_nickname_column.js';
+import { addNicknameDisplayColumn } from './database/migrations/add_nickname_display_column.js';
 import { getMediaDatabase } from './database/mediaDb.js';
 import { 
   configureHelmet, 
@@ -212,6 +213,12 @@ if (process.env.NODE_ENV !== 'test') {
         await addShowNicknameColumn();
       } catch (err) {
         logger.error('Ошибка миграции show_nickname:', err);
+      }
+
+      try {
+        await addNicknameDisplayColumn();
+      } catch (err) {
+        logger.error('Ошибка миграции nickname_display:', err);
       }
     } else {
       logger.error('Ошибка выполнения миграций:', result.error);
