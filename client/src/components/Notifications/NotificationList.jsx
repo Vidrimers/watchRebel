@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchNotifications, markAsRead, markAllAsRead } from '../../store/slices/notificationsSlice';
+import { fetchNotifications, loadMoreNotifications, markAsRead, markAllAsRead } from '../../store/slices/notificationsSlice';
 import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
@@ -13,7 +13,7 @@ import styles from './NotificationList.module.css';
  */
 const NotificationList = () => {
   const dispatch = useAppDispatch();
-  const { notifications, loading, unreadCount } = useAppSelector((state) => state.notifications);
+  const { notifications, loading, loadingMore, hasMore, total, unreadCount } = useAppSelector((state) => state.notifications);
   const [selectedPostId, setSelectedPostId] = useState(null);
 
   // Загружаем уведомления при монтировании компонента
@@ -120,6 +120,11 @@ const NotificationList = () => {
     dispatch(markAllAsRead());
   };
 
+  // Обработчик загрузки ещё
+  const handleLoadMore = () => {
+    dispatch(loadMoreNotifications());
+  };
+
   // Форматирование даты
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -222,6 +227,18 @@ const NotificationList = () => {
           </li>
         ))}
       </ul>
+
+      {hasMore && (
+        <div className={styles.loadMore}>
+          <button 
+            className={styles.loadMoreButton}
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? 'Загрузка...' : `Загрузить ещё (${notifications.length} из ${total})`}
+          </button>
+        </div>
+      )}
 
       {/* Модальное окно для отображения поста */}
       <WallPostModal 

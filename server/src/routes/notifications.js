@@ -16,7 +16,29 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { unreadOnly } = req.query;
+    const { unreadOnly, limit = 20, offset = 0 } = req.query;
+    const parsedLimit = Math.min(parseInt(limit) || 20, 100);
+    const parsedOffset = parseInt(offset) || 0;
+
+    let whereClause = 'WHERE n.user_id = ?';
+    const params = [userId];
+
+    if (unreadOnly === 'true') {
+      whereClause += ' AND n.is_read = 0';
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM notifications n ${whereClause}`;
+    const countResult = await executeQuery(countQuery, params);
+    const total = countResult.success ? countResult.data[0].total : 0;
+
+    let unreadCount = 0;
+    if (unreadOnly !== 'true') {
+      const unreadResult = await executeQuery(
+        'SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND is_read = 0',
+        [userId]
+      );
+      unreadCount = unreadResult.success ? unreadResult.data[0].cnt : 0;
+    }
 
     let query = `
       SELECT n.*, 
@@ -24,17 +46,13 @@ router.get('/', authenticateToken, async (req, res) => {
              u.avatar_url as related_user_avatar
       FROM notifications n
       LEFT JOIN users u ON n.related_user_id = u.id
-      WHERE n.user_id = ?
+      ${whereClause}
+      ORDER BY n.created_at DESC
+      LIMIT ? OFFSET ?
     `;
-    const params = [userId];
+    const queryParams = [...params, parsedLimit, parsedOffset];
 
-    if (unreadOnly === 'true') {
-      query += ' AND n.is_read = 0';
-    }
-
-    query += ' ORDER BY n.created_at DESC';
-
-    const notificationsResult = await executeQuery(query, params);
+    const notificationsResult = await executeQuery(query, queryParams);
 
     if (!notificationsResult.success) {
       return res.status(500).json({ 
@@ -58,7 +76,12 @@ router.get('/', authenticateToken, async (req, res) => {
       } : null
     }));
 
-    res.json(notifications);
+    res.json({
+      notifications,
+      total,
+      unreadCount,
+      hasMore: parsedOffset + notifications.length < total
+    });
 
   } catch (error) {
     console.error('Ошибка получения уведомлений:', error);

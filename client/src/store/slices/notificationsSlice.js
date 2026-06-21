@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { APIError, NetworkError } from '../../services/api';
 
-// Вспомогательная функция для обработки ошибок
 const handleError = (error, rejectWithValue) => {
   if (error instanceof APIError) {
     return rejectWithValue(error.data || error.message);
@@ -15,7 +14,21 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/notifications');
+      const response = await api.get('/notifications', { params: { limit: 20, offset: 0 } });
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+export const loadMoreNotifications = createAsyncThunk(
+  'notifications/loadMoreNotifications',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { notifications } = getState().notifications;
+      const offset = notifications.length;
+      const response = await api.get('/notifications', { params: { limit: 20, offset } });
       return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);
@@ -52,7 +65,10 @@ const notificationsSlice = createSlice({
   initialState: {
     notifications: [],
     unreadCount: 0,
+    total: 0,
+    hasMore: false,
     loading: false,
+    loadingMore: false,
     error: null
   },
   reducers: {
@@ -62,14 +78,15 @@ const notificationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Notifications
       .addCase(fetchNotifications.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
-        state.notifications = action.payload;
-        state.unreadCount = action.payload.filter(n => !n.isRead).length;
+        state.notifications = action.payload.notifications;
+        state.total = action.payload.total;
+        state.hasMore = action.payload.hasMore;
+        state.unreadCount = action.payload.unreadCount;
         state.loading = false;
         state.error = null;
       })
@@ -77,7 +94,21 @@ const notificationsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Mark as Read
+      .addCase(loadMoreNotifications.pending, (state) => {
+        state.loadingMore = true;
+        state.error = null;
+      })
+      .addCase(loadMoreNotifications.fulfilled, (state, action) => {
+        state.notifications = [...state.notifications, ...action.payload.notifications];
+        state.hasMore = action.payload.hasMore;
+        state.total = action.payload.total;
+        state.loadingMore = false;
+        state.error = null;
+      })
+      .addCase(loadMoreNotifications.rejected, (state, action) => {
+        state.loadingMore = false;
+        state.error = action.payload;
+      })
       .addCase(markAsRead.pending, (state) => {
         state.error = null;
       })
@@ -92,7 +123,6 @@ const notificationsSlice = createSlice({
       .addCase(markAsRead.rejected, (state, action) => {
         state.error = action.payload;
       })
-      // Mark All as Read
       .addCase(markAllAsRead.pending, (state) => {
         state.error = null;
       })
