@@ -193,9 +193,7 @@ const SettingsPage = () => {
                   )}
                 </div>
               </div>
-              <p className={styles.cardDescription}>
-                Если включено, друзья будут видеть ваши ники вместо имён
-              </p>
+
             </div>
           </div>
 
