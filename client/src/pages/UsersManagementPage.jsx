@@ -218,7 +218,7 @@ const UsersManagementPage = () => {
 
                 {/* Информация о пользователе */}
                 <div className={styles.userInfo}>
-                  <div className={styles.userName}>
+                  <div className={styles.userName} title={resolveDisplayNameWithTooltip(user.id, user.displayName).tooltip}>
                     {resolveDisplayNameWithTooltip(user.id, user.displayName).text}
                     {user.isAdmin && (
                       <span className={styles.adminBadge}>Админ</span>

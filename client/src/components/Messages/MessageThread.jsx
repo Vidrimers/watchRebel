@@ -555,7 +555,7 @@ const MessageThread = ({ conversation, onClose }) => {
               </div>
             )}
           </a>
-          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+          <h2 className={styles.headerName} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
@@ -598,7 +598,7 @@ const MessageThread = ({ conversation, onClose }) => {
             {conversation.otherUser.displayName.charAt(0).toUpperCase()}
           </div>
         </a>
-        <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        <h2 className={styles.headerName} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button 
             className={styles.headerMenuBtn}

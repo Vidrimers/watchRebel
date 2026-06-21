@@ -220,6 +220,7 @@ const ReviewDisplay = ({ review, media, onGoToMediaPage }) => {
             <span 
               className={styles.authorName}
               onClick={() => navigate(`/user/${review.author.userId}`)}
+              title={resolveDisplayNameWithTooltip(review.author.userId, review.author?.displayName).tooltip}
             >
               {resolveDisplayNameWithTooltip(review.author.userId, review.author?.displayName).text}
             </span>

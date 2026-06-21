@@ -51,7 +51,7 @@ export const resolveDisplayNameWithTooltip = (userId, displayName) => {
 
   switch (nicknameDisplayMode) {
     case 'nickname':
-      return { text: `${nickname}*`, tooltip: displayName };
+      return { text: `${nickname}*`, tooltip: `Реальное имя: ${displayName}` };
     case 'both':
       return { text: `${displayName} (${nickname})`, tooltip: null };
     default:

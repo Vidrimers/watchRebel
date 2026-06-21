@@ -264,7 +264,7 @@ const ConversationList = ({ onSelectConversation }) => {
             
             <div className={styles.content}>
               <div className={styles.topRow}>
-                <span className={styles.name}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</span>
+                <span className={styles.name} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</span>
                 <span className={styles.time}>{formatDate(conversation.lastMessageAt)}</span>
               </div>
               <div className={styles.bottomRow}>

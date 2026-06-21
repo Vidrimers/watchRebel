@@ -408,7 +408,7 @@ const UserProfilePage = () => {
             </div>
             
             <div className={styles.profileInfo}>
-              <h1 className={styles.profileName}>
+              <h1 className={styles.profileName} title={resolveDisplayNameWithTooltip(userId, profileUser.displayName).tooltip}>
                 {resolveDisplayNameWithTooltip(userId, profileUser.displayName).text}
               </h1>
               {profileUser.userStatus && (
