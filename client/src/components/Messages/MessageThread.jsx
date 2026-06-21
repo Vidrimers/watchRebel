@@ -8,6 +8,7 @@ import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
 import ReportModal from '../Common/ReportModal';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import AttachmentDropdown from './AttachmentDropdown';
 import SuggestMediaModal from './SuggestMediaModal';
 import LocationModal from './LocationModal';
@@ -554,7 +555,7 @@ const MessageThread = ({ conversation, onClose }) => {
               </div>
             )}
           </a>
-          <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
+          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
@@ -597,7 +598,7 @@ const MessageThread = ({ conversation, onClose }) => {
             {conversation.otherUser.displayName.charAt(0).toUpperCase()}
           </div>
         </a>
-        <h2 className={styles.headerName}>{conversation.otherUser.displayName}</h2>
+        <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button 
             className={styles.headerMenuBtn}

@@ -4,6 +4,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchConversations, setCurrentConversation } from '../../store/slices/messagesSlice';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './ConversationList.module.css';
 
 /**
@@ -263,7 +264,7 @@ const ConversationList = ({ onSelectConversation }) => {
             
             <div className={styles.content}>
               <div className={styles.topRow}>
-                <span className={styles.name}>{conversation.otherUser.displayName}</span>
+                <span className={styles.name}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</span>
                 <span className={styles.time}>{formatDate(conversation.lastMessageAt)}</span>
               </div>
               <div className={styles.bottomRow}>

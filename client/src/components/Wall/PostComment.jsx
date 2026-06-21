@@ -6,6 +6,7 @@ import ReactionTooltip from './ReactionTooltip';
 import ImageModal from './ImageModal';
 import LinkifiedText from './LinkifiedText';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './PostComment.module.css';
 
 /**
@@ -553,9 +554,9 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
               <span 
                 className={styles.authorNameLink}
                 onClick={handleUserClick}
-                title={`Перейти на страницу ${comment.author.displayName}`}
+                title={`Перейти на страницу ${resolveDisplayNameWithTooltip(comment.author.id, comment.author.displayName).text}`}
               >
-                {comment.author.displayName}
+                {resolveDisplayNameWithTooltip(comment.author.id, comment.author.displayName).text}
               </span>
               {depth > 0 && parentAuthorName && (
                 <span 

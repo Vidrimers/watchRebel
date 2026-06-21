@@ -7,6 +7,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import Icon from '../components/Common/Icon';
 import ReportModal from '../components/Common/ReportModal';
+import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import { AdminModerationPanel } from '../components/Settings';
 import { Wall } from '../components/Wall';
 import api from '../services/api';
@@ -408,7 +409,7 @@ const UserProfilePage = () => {
             
             <div className={styles.profileInfo}>
               <h1 className={styles.profileName}>
-                {profileUser.displayName}
+                {resolveDisplayNameWithTooltip(userId, profileUser.displayName).text}
               </h1>
               {profileUser.userStatus && (
                 <p className={styles.userStatus}>{profileUser.userStatus}</p>

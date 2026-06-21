@@ -7,6 +7,7 @@ import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlic
 import { clearSearch } from '../store/slices/mediaSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import Icon from '../components/Common/Icon';
+import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import useAlert from '../hooks/useAlert';
 import ConfirmDialog from '../components/Common/ConfirmDialog';
 import api from '../services/api';
@@ -445,7 +446,7 @@ const SearchPage = () => {
                         className={styles.userAvatar}
                       />
                       <div className={styles.userCardInfo}>
-                        <h3 className={styles.userCardName}>{result.data.displayName}</h3>
+                        <h3 className={styles.userCardName}>{resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).text}</h3>
                         <p className={styles.userCardType}>Пользователь</p>
                         {/* Telegram username скрыт для других пользователей */}
                         {user?.id === result.data.id && result.data.telegramUsername && (

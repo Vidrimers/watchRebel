@@ -5,6 +5,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import BanIndicator from '../components/User/BanIndicator';
 import UserModerationModal from '../components/Settings/UserModerationModal';
 import Icon from '../components/Common/Icon';
+import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import api from '../services/api';
 import styles from './UsersManagementPage.module.css';
 
@@ -218,7 +219,7 @@ const UsersManagementPage = () => {
                 {/* Информация о пользователе */}
                 <div className={styles.userInfo}>
                   <div className={styles.userName}>
-                    {user.displayName}
+                    {resolveDisplayNameWithTooltip(user.id, user.displayName).text}
                     {user.isAdmin && (
                       <span className={styles.adminBadge}>Админ</span>
                     )}

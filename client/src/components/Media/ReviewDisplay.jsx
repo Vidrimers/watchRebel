@@ -6,6 +6,7 @@ import { addReaction } from '../../store/slices/wallSlice';
 import ReactionPicker from '../Wall/ReactionPicker';
 import ReactionTooltip from '../Wall/ReactionTooltip';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './ReviewDisplay.module.css';
 
 /**
@@ -220,7 +221,7 @@ const ReviewDisplay = ({ review, media, onGoToMediaPage }) => {
               className={styles.authorName}
               onClick={() => navigate(`/user/${review.author.userId}`)}
             >
-              {review.author?.displayName || 'Пользователь'}
+              {resolveDisplayNameWithTooltip(review.author.userId, review.author?.displayName).text}
             </span>
             <span className={styles.reviewDate}>
               {formatDate(review.createdAt)}

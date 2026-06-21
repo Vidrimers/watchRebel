@@ -5,6 +5,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
 import ReferralStats from '../components/User/ReferralStats';
 import Icon from '../components/Common/Icon';
+import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import useConfirm from '../hooks/useConfirm';
 import useAlert from '../hooks/useAlert';
 import api from '../services/api';
@@ -288,7 +289,7 @@ const FriendsPage = () => {
                       
                       <div className={styles.friendInfo}>
                         <h3 className={styles.friendName}>
-                          {friend.displayName}
+                          {resolveDisplayNameWithTooltip(friend.id, friend.displayName).text}
                           {friend.userStatus && (
                             <span className={styles.friendStatus}> | {friend.userStatus}</span>
                           )}
