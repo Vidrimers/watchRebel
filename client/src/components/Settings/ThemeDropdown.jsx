@@ -8,7 +8,7 @@ import styles from './ThemeDropdown.module.css';
  * Компонент выпадающего меню для выбора темы оформления
  * Заменяет список радио-кнопок на компактный dropdown
  */
-const ThemeDropdown = () => {
+const ThemeDropdown = ({ embedded = false }) => {
   const dispatch = useAppDispatch();
   const { theme } = useAppSelector((state) => state.theme);
   const [isOpen, setIsOpen] = useState(false);
@@ -105,8 +105,8 @@ const ThemeDropdown = () => {
   }, [isOpen]);
 
   return (
-    <div className={styles.themeSelectorCard}>
-      <h3 className={styles.cardTitle}>Тема оформления</h3>
+    <div className={embedded ? '' : styles.themeSelectorCard}>
+      {!embedded && <h3 className={styles.cardTitle}>Тема оформления</h3>}
       
       <div className={styles.dropdownContainer} ref={dropdownRef}>
         {/* Кнопка для открытия dropdown */}

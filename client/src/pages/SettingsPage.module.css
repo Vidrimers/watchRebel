@@ -678,3 +678,97 @@
 :global(.dark) .cardDescription {
   color: var(--text-secondary-dark, #aaa);
 }
+
+/* Аккордеон */
+.accordionHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  transition: color 0.2s;
+}
+
+.accordionHeader:hover {
+  color: var(--accent-primary, #6366f1);
+}
+
+.accordionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.accordionTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.accordionChevron {
+  transition: transform 0.15s ease;
+  color: var(--text-secondary, #999);
+}
+
+.accordionChevron.open {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  padding-top: 16px;
+  animation: accordionOpen 0.2s ease;
+}
+
+@keyframes accordionOpen {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.accordionSection {
+  padding: 16px 0;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.accordionSection:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.accordionSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--text-primary, #333);
+}
+
+.profileAvatarSection {
+  padding-bottom: 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+:global(.dark) .accordionHeader {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .accordionHeader:hover {
+  color: var(--accent-primary-dark, #818cf8);
+}
+
+:global(.dark) .accordionChevron {
+  color: var(--text-secondary-dark, #999);
+}
+
+:global(.dark) .accordionSectionTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .accordionSection {
+  border-top-color: var(--border-color-dark, #444);
+}
