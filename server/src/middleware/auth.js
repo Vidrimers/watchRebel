@@ -68,11 +68,12 @@ export async function authenticateToken(req, res, next) {
       userStatus: session.user_status,
       isAdmin: Boolean(session.is_admin),
       theme: session.theme,
-      authMethod: session.auth_method || 'telegram', // По умолчанию telegram для старых пользователей
+      authMethod: session.auth_method || 'telegram',
       email: session.email,
       emailVerified: Boolean(session.email_verified),
       googleId: session.google_id,
-      discordId: session.discord_id
+      discordId: session.discord_id,
+      showNickname: Boolean(session.show_nickname)
     };
 
     req.sessionId = session.id;
@@ -214,7 +215,8 @@ export async function optionalAuth(req, res, next) {
           email: session.email,
           emailVerified: Boolean(session.email_verified),
           googleId: session.google_id,
-          discordId: session.discord_id
+          discordId: session.discord_id,
+          showNickname: Boolean(session.show_nickname)
         };
         req.sessionId = session.id;
       }

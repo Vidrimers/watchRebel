@@ -53,6 +53,8 @@ import { createLoginAttemptsTable } from './middleware/loginAttempts.js';
 import { startTokenCleanupScheduler } from './middleware/tokenCleanup.js';
 import { runMigrations } from './database/migrations.js';
 import { addWallPrivacyMigration } from './database/migrations/add_wall_privacy.js';
+import { addUserNicknamesTable } from './database/migrations/add_user_nicknames_table.js';
+import { addShowNicknameColumn } from './database/migrations/add_show_nickname_column.js';
 import { getMediaDatabase } from './database/mediaDb.js';
 import { 
   configureHelmet, 
@@ -198,6 +200,18 @@ if (process.env.NODE_ENV !== 'test') {
         }
       } catch (err) {
         logger.error('Ошибка выполнения дополнительных миграций:', err);
+      }
+
+      try {
+        await addUserNicknamesTable();
+      } catch (err) {
+        logger.error('Ошибка миграции user_nicknames:', err);
+      }
+
+      try {
+        await addShowNicknameColumn();
+      } catch (err) {
+        logger.error('Ошибка миграции show_nickname:', err);
       }
     } else {
       logger.error('Ошибка выполнения миграций:', result.error);

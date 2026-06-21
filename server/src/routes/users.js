@@ -89,7 +89,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Получаем информацию о пользователе
     const userResult = await executeQuery(
-      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, wall_privacy, auth_method, email, google_id, discord_id, email_verified, created_at FROM users WHERE id = ?',
+      'SELECT id, telegram_username, display_name, avatar_url, user_status, is_admin, is_blocked, ban_reason, post_ban_until, theme, wall_privacy, auth_method, email, google_id, discord_id, email_verified, show_nickname, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -175,6 +175,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       hasGoogleLinked: Boolean(user.google_id),
       hasDiscordLinked: Boolean(user.discord_id),
       emailVerified: Boolean(user.email_verified),
+      showNickname: Boolean(user.show_nickname),
       createdAt: user.created_at,
       isBlockedByMe: isBlockedByMe,
       postsCount: postsCount,
@@ -1389,6 +1390,155 @@ router.get('/blocked', authenticateToken, async (req, res) => {
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
     });
+  }
+});
+
+// ==================== КАСТОМНЫЕ НИКИ ====================
+
+/**
+ * GET /api/users/:id/nickname
+ * Получить ник, заданный текущим пользователем для целевого пользователя
+ */
+router.get('/:id/nickname', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user.id;
+
+    const result = await executeQuery(
+      'SELECT nickname FROM user_nicknames WHERE set_by_user_id = ? AND target_user_id = ?',
+      [currentUserId, id]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения ника' });
+    }
+
+    res.json({ nickname: result.data.length > 0 ? result.data[0].nickname : null });
+  } catch (error) {
+    console.error('Ошибка получения ника:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/users/:id/nickname
+ * Установить или обновить ник для пользователя
+ */
+router.put('/:id/nickname', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user.id;
+    const { nickname } = req.body;
+
+    if (id === currentUserId) {
+      return res.status(400).json({ error: 'Нельзя задать ник самому себе' });
+    }
+
+    if (!nickname || nickname.trim().length === 0) {
+      return res.status(400).json({ error: 'Ник не может быть пустым' });
+    }
+
+    if (nickname.trim().length > 30) {
+      return res.status(400).json({ error: 'Ник не должен превышать 30 символов' });
+    }
+
+    const existing = await executeQuery(
+      'SELECT id FROM user_nicknames WHERE set_by_user_id = ? AND target_user_id = ?',
+      [currentUserId, id]
+    );
+
+    if (existing.success && existing.data.length > 0) {
+      await executeQuery(
+        'UPDATE user_nicknames SET nickname = ?, updated_at = datetime("now", "localtime") WHERE set_by_user_id = ? AND target_user_id = ?',
+        [nickname.trim(), currentUserId, id]
+      );
+    } else {
+      const nicknameId = uuidv4();
+      await executeQuery(
+        'INSERT INTO user_nicknames (id, set_by_user_id, target_user_id, nickname) VALUES (?, ?, ?, ?)',
+        [nicknameId, currentUserId, id, nickname.trim()]
+      );
+    }
+
+    res.json({ nickname: nickname.trim() });
+  } catch (error) {
+    console.error('Ошибка установки ника:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/users/:id/nickname
+ * Удалить ник для пользователя
+ */
+router.delete('/:id/nickname', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user.id;
+
+    await executeQuery(
+      'DELETE FROM user_nicknames WHERE set_by_user_id = ? AND target_user_id = ?',
+      [currentUserId, id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Ошибка удаления ника:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/users/:id/nicknames
+ * Получить все ники, заданные текущим пользователем (для отображения в ленте)
+ */
+router.get('/nicknames/all', authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+
+    const result = await executeQuery(
+      'SELECT target_user_id, nickname FROM user_nicknames WHERE set_by_user_id = ?',
+      [currentUserId]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения ников' });
+    }
+
+    const nicknames = {};
+    result.data.forEach(row => {
+      nicknames[row.target_user_id] = row.nickname;
+    });
+
+    res.json(nicknames);
+  } catch (error) {
+    console.error('Ошибка получения ников:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/users/me/show-nickname
+ * Переключить отображение: показывать ник или имя
+ */
+router.put('/me/show-nickname', authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const { showNickname } = req.body;
+
+    const result = await executeQuery(
+      'UPDATE users SET show_nickname = ? WHERE id = ?',
+      [showNickname ? 1 : 0, currentUserId]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка обновления настройки' });
+    }
+
+    res.json({ showNickname: Boolean(showNickname) });
+  } catch (error) {
+    console.error('Ошибка обновления show_nickname:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
 
