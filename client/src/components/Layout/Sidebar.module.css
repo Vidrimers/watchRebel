@@ -311,7 +311,16 @@
 
 .settingsButtonNew {
   opacity: 1 !important;
-  color: var(--error-color, #ef4444);
+}
+
+.settingsButtonNew :global(.icon) {
+  color: var(--error-color, #ef4444) !important;
+  fill: var(--error-color, #ef4444) !important;
+}
+
+.settingsButtonNew:hover :global(.icon) {
+  color: var(--error-color, #ef4444) !important;
+  fill: var(--error-color, #ef4444) !important;
 }
 
 .settingsButtonNew:hover {
@@ -320,11 +329,20 @@
 
 .settingsButtonInProgress {
   opacity: 0.5;
-  color: var(--success-color, #10b981);
+}
+
+.settingsButtonInProgress :global(.icon) {
+  color: var(--success-color, #10b981) !important;
+  fill: var(--success-color, #10b981) !important;
 }
 
 .settingsButtonInProgress:hover {
   opacity: 1;
+}
+
+.settingsButtonInProgress:hover :global(.icon) {
+  color: var(--success-color, #10b981) !important;
+  fill: var(--success-color, #10b981) !important;
 }
 
 .settingsLink {
