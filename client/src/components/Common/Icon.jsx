@@ -59,7 +59,8 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     lock: '🔒',
     database: '🗄️',
     report: '⚠️',
-    support: '❓'
+    support: '❓',
+    clock: '⏰'
   };
 
   const iconId = `icon-${name}`;

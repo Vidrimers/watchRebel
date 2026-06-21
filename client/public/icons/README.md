@@ -83,6 +83,7 @@ import Icon from '@/components/Common/Icon';
 - `database` - База данных 🗄️
 - `report` - Жалоба ⚠️
 - `support` - Поддержка ❓
+- `clock` - Время ⏰
 
 ## Особенности
 

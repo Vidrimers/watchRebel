@@ -489,14 +489,14 @@ const UserProfilePage = () => {
                         onClick={handleRemoveFriend}
                         disabled={actionLoading}
                       >
-                        ➖ Удалить из друзей
+                        <Icon name="remove" size="small" /> Удалить из друзей
                       </button>
                     ) : isFriend === 'pending' ? (
                       <button 
                         className={styles.menuItem}
                         disabled={true}
                       >
-                        ⏳ Запрос отправлен
+                        <Icon name="clock" size="small" /> Запрос отправлен
                       </button>
                     ) : (
                       <button 
@@ -504,7 +504,7 @@ const UserProfilePage = () => {
                         onClick={handleAddFriend}
                         disabled={actionLoading}
                       >
-                        ➕ Добавить в друзья
+                        <Icon name="add" size="small" /> Добавить в друзья
                       </button>
                     )
                   )}
@@ -516,7 +516,7 @@ const UserProfilePage = () => {
                       onClick={handleUnblockUser}
                       disabled={actionLoading}
                     >
-                      ✅ Разблокировать
+                      <Icon name="check" size="small" /> Разблокировать
                     </button>
                   ) : (
                     <button 
@@ -524,7 +524,7 @@ const UserProfilePage = () => {
                       onClick={handleBlockUser}
                       disabled={actionLoading}
                     >
-                      🚫 Заблокировать
+                      <Icon name="ban" size="small" /> Заблокировать
                     </button>
                   )}
                   <button 
@@ -534,7 +534,7 @@ const UserProfilePage = () => {
                       setShowReportModal(true);
                     }}
                   >
-                    ⚠️ Пожаловаться
+                    <Icon name="report" size="small" /> Пожаловаться
                   </button>
                   {!isOwnProfile && (
                     <button 
@@ -544,7 +544,7 @@ const UserProfilePage = () => {
                         setShowNicknameModal(true);
                       }}
                     >
-                      ✏️ {currentNickname ? 'Изменить ник' : 'Задать ник'}
+                      <Icon name="edit" size="small" /> {currentNickname ? 'Изменить ник' : 'Задать ник'}
                     </button>
                   )}
                 </div>
@@ -592,6 +592,23 @@ const UserProfilePage = () => {
               >
                 {nicknameLoading ? 'Сохранение...' : 'Сохранить'}
               </button>
+              {currentNickname && (
+                <button
+                  className={styles.modalDeleteButton}
+                  onClick={async () => {
+                    try {
+                      await api.delete(`/users/${userId}/nickname`);
+                      setCurrentNickname('');
+                      setNicknameInput('');
+                      setShowNicknameModal(false);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                >
+                  <Icon name="delete" size="small" /> Удалить
+                </button>
+              )}
               <button
                 className={styles.modalCancelButton}
                 onClick={() => {
