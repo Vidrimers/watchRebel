@@ -21,6 +21,8 @@ const FriendsPage = () => {
   const location = useLocation();
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
+  const [myFriendIds, setMyFriendIds] = useState(new Set());
+  const [sentRequestIds, setSentRequestIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReferrals, setShowReferrals] = useState(false);
@@ -46,6 +48,8 @@ const FriendsPage = () => {
       loadFriends();
       if (isOwnProfile) {
         loadFriendRequests();
+      } else {
+        loadMyFriendsAndSent();
       }
     }
   }, [targetUserId]);
@@ -70,6 +74,45 @@ const FriendsPage = () => {
       setFriendRequests(response.data);
     } catch (err) {
       console.error('Ошибка загрузки запросов в друзья:', err);
+    }
+  };
+
+  const loadMyFriendsAndSent = async () => {
+    try {
+      const [friendsRes, sentRes] = await Promise.all([
+        api.get(`/users/${user.id}/friends`),
+        api.get('/friend-requests/sent')
+      ]);
+      setMyFriendIds(new Set(friendsRes.data.map(f => f.id)));
+      setSentRequestIds(new Set(sentRes.data.map(r => r.to_user_id)));
+    } catch (err) {
+      console.error('Ошибка загрузки данных:', err);
+    }
+  };
+
+  const handleSendRequest = async (toUserId, toUserName) => {
+    const confirmed = await showConfirm({
+      title: 'Добавить в друзья?',
+      message: `Отправить запрос в друзья пользователю ${toUserName}?`,
+      confirmText: 'Отправить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'primary'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await api.post('/friend-requests', { toUserId });
+      setSentRequestIds(prev => new Set([...prev, toUserId]));
+      await showAlert({
+        title: 'Запрос отправлен',
+        message: `Запрос в друзья отправлен пользователю ${toUserName}`,
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Ошибка отправки запроса:', err);
+      const msg = err.response?.data?.error || 'Не удалось отправить запрос';
+      await showAlert({ title: 'Ошибка', message: msg, type: 'error' });
     }
   };
 
@@ -307,12 +350,23 @@ const FriendsPage = () => {
                           Перейти в профиль
                         </button>
                         
-                        {isOwnProfile && (
+                        {isOwnProfile ? (
                           <button
                             className={styles.removeFriendButton}
                             onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
                           >
                             Удалить из друзей
+                          </button>
+                        ) : friend.id === user?.id ? null : myFriendIds.has(friend.id) ? (
+                          <span className={styles.friendStatusBadge}>У вас в друзьях</span>
+                        ) : sentRequestIds.has(friend.id) ? (
+                          <span className={styles.friendStatusBadge}>Запрос отправлен</span>
+                        ) : (
+                          <button
+                            className={styles.addFriendButton}
+                            onClick={() => handleSendRequest(friend.id, friend.displayName)}
+                          >
+                            + В друзья
                           </button>
                         )}
                       </div>
