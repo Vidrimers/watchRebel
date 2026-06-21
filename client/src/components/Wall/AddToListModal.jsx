@@ -222,7 +222,15 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
                 >
                   <span className={styles.listName}>{list.name}</span>
                   <span className={styles.listCount}>
-                    {list.items?.length || 0} {mediaType === 'movie' ? 'фильмов' : 'сериалов'}
+                    {list.items?.length || 0} {(() => {
+                      const n = list.items?.length || 0;
+                      const words = mediaType === 'movie' 
+                        ? ['фильм', 'фильма', 'фильмов']
+                        : ['сериал', 'сериала', 'сериалов'];
+                      if (n % 10 === 1 && n % 100 !== 11) return words[0];
+                      if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) return words[1];
+                      return words[2];
+                    })()}
                   </span>
                   {adding === list.id && <span className={styles.spinner}>⏳</span>}
                 </button>

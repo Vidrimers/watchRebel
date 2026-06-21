@@ -168,7 +168,15 @@ const UserListsPage = () => {
                   <div className={styles.listHeader}>
                     <h2 className={styles.listName}>{list.name}</h2>
                     <span className={styles.listCount}>
-                      {list.items?.length || 0} {mediaType === 'movies' ? 'фильмов' : 'сериалов'}
+                      {list.items?.length || 0} {(() => {
+                        const n = list.items?.length || 0;
+                        const words = mediaType === 'movies' 
+                          ? ['фильм', 'фильма', 'фильмов']
+                          : ['сериал', 'сериала', 'сериалов'];
+                        if (n % 10 === 1 && n % 100 !== 11) return words[0];
+                        if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) return words[1];
+                        return words[2];
+                      })()}
                     </span>
                   </div>
                   {list.items && list.items.length > 0 && (
