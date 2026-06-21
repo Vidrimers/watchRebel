@@ -192,6 +192,13 @@
   color: var(--text-secondary, #999999);
 }
 
+.emptyIcon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
 .emptyHint {
   margin-top: 8px;
   font-size: 14px;

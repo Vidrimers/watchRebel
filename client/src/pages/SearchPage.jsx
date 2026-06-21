@@ -418,6 +418,12 @@ const SearchPage = () => {
               <p>Произошла ошибка при поиске</p>
               <p className={styles.errorMessage}>{error.message || 'Попробуйте еще раз'}</p>
             </div>
+          ) : !query.trim() ? (
+            <div className={styles.empty}>
+              <span className={styles.emptyIcon}>🔍</span>
+              <p>Начните вводить запрос для поиска</p>
+              <p className={styles.emptyHint}>Фильмы, сериалы, пользователи</p>
+            </div>
           ) : filteredResults.length > 0 ? (
             <div className={styles.resultsList}>
               {filteredResults.map((result, index) => (
