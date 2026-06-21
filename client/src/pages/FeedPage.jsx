@@ -5,6 +5,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import WallPost from '../components/Wall/WallPost';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
+import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import { addMessageHandler, removeMessageHandler } from '../services/websocket';
 import styles from './FeedPage.module.css';
 
@@ -290,9 +291,9 @@ const FeedPage = () => {
                               <a 
                                 href={`/user/${post.author.id}`} 
                                 style={{ color: 'inherit', textDecoration: 'none' }}
-                                title={post.author?.userStatus || ''}
+                                title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip || post.author?.userStatus || ''}
                               >
-                                {post.author?.displayName || 'Пользователь'}
+                                {resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).text}
                               </a>
                               <span style={{ color: 'var(--text-tertiary)', margin: '0 8px' }}>→</span>
                               
@@ -329,18 +330,18 @@ const FeedPage = () => {
                               <a 
                                 href={`/user/${post.wallOwner.id}`} 
                                 style={{ color: 'inherit', textDecoration: 'none' }}
-                                title={post.wallOwner?.displayName || ''}
+                                title={resolveDisplayNameWithTooltip(post.wallOwner.id, post.wallOwner.displayName).tooltip || ''}
                               >
-                                {post.wallOwner?.displayName || 'Пользователь'}
+                                {resolveDisplayNameWithTooltip(post.wallOwner.id, post.wallOwner.displayName).text}
                               </a>
                             </>
                           ) : (
                             <a 
                               href={`/user/${post.author.id}`} 
                               style={{ color: 'inherit', textDecoration: 'none' }}
-                              title={post.author?.userStatus || ''}
+                              title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip || post.author?.userStatus || ''}
                             >
-                              {post.author?.displayName || 'Пользователь'}
+                              {resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).text}
                             </a>
                           )}
                         </span>

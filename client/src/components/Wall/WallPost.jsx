@@ -14,6 +14,7 @@ import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './WallPost.module.css';
 
 /**
@@ -892,8 +893,9 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                     className={styles.authorName}
                     onClick={isModal ? undefined : () => navigate(`/user/${post.author.id}`)}
                     style={isModal ? { cursor: 'default' } : {}}
+                    title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip}
                   >
-                    {post.author.displayName}
+                    {resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).text}
                   </span>
                 </div>
               );

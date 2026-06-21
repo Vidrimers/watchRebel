@@ -5,6 +5,7 @@ import { fetchNotifications, loadMoreNotifications, markAsRead, markAllAsRead } 
 import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './NotificationList.module.css';
 
 /**
@@ -109,8 +110,10 @@ const NotificationList = () => {
 
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
-    const name = notification.relatedUser?.displayName;
-    if (name) return `${name} ${notification.content}`;
+    if (notification.relatedUser?.displayName) {
+      const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
+      return `${resolved.text} ${notification.content}`;
+    }
     if (notification.relatedUserId) return `Пользователь ${notification.content}`;
     return notification.content;
   };

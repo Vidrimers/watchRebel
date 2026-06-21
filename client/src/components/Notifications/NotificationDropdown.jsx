@@ -6,6 +6,7 @@ import { fetchNotifications, markAsRead } from '../../store/slices/notifications
 import WallPostModal from '../Wall/WallPostModal';
 import Icon from '../Common/Icon';
 import api from '../../services/api';
+import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import styles from './NotificationDropdown.module.css';
 
 /**
@@ -156,8 +157,10 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
 
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
-    const name = notification.relatedUser?.displayName;
-    if (name) return `${name} ${notification.content}`;
+    if (notification.relatedUser?.displayName) {
+      const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
+      return `${resolved.text} ${notification.content}`;
+    }
     if (notification.relatedUserId) return `Пользователь ${notification.content}`;
     return notification.content;
   };

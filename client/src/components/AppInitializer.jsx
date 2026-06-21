@@ -3,6 +3,7 @@ import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
 import { connectWebSocket, disconnectWebSocket } from '../services/websocket';
+import { fetchNicknames, setNicknames, setNicknameDisplayMode } from '../utils/nicknameResolver';
 
 /**
  * Компонент для инициализации приложения
@@ -16,7 +17,6 @@ function AppInitializer({ children }) {
   const currentUserIdRef = useRef(null);
 
   useEffect(() => {
-    // Проверяем сессию при первой загрузке
     const initializeAuth = async () => {
       await dispatch(checkSession());
       setInitialized(true);
@@ -24,6 +24,14 @@ function AppInitializer({ children }) {
 
     initializeAuth();
   }, [dispatch]);
+
+  // Загружаем ники и настройки отображения когда пользователь авторизован
+  useEffect(() => {
+    if (user?.id) {
+      fetchNicknames();
+      setNicknameDisplayMode(user.nicknameDisplay || 'name');
+    }
+  }, [user?.id, user?.nicknameDisplay]);
 
   // Подключаем WebSocket когда пользователь авторизован
   useEffect(() => {
