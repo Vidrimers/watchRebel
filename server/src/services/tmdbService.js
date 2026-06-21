@@ -313,6 +313,12 @@ class TMDbService {
     });
   }
 
+  async getTrendingMovies(page = 1) {
+    return await this.makeRequest('/trending/movie/week', {
+      page
+    });
+  }
+
   /**
    * Получение популярных сериалов
    * @param {number} page - Номер страницы (по умолчанию 1)
@@ -320,6 +326,12 @@ class TMDbService {
    */
   async getPopularTV(page = 1) {
     return await this.makeRequest('/tv/popular', {
+      page
+    });
+  }
+
+  async getTrendingTV(page = 1) {
+    return await this.makeRequest('/trending/tv/week', {
       page
     });
   }

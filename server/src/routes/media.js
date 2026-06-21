@@ -27,26 +27,26 @@ router.get('/popular', async (req, res) => {
       page: parseInt(page)
     };
 
-    // Получаем популярные в зависимости от типа
+    // Получаем трендовый контент
     if (type === 'movie' || type === 'all') {
       try {
-        const movieResults = await tmdbService.getPopularMovies(page);
+        const movieResults = await tmdbService.getTrendingMovies(page);
         results.movies = movieResults.results || [];
         results.totalMoviePages = movieResults.total_pages;
         results.totalMovieResults = movieResults.total_results;
       } catch (error) {
-        console.error('Ошибка получения популярных фильмов:', error.message);
+        console.error('Ошибка получения трендовых фильмов:', error.message);
       }
     }
 
     if (type === 'tv' || type === 'all') {
       try {
-        const tvResults = await tmdbService.getPopularTV(page);
+        const tvResults = await tmdbService.getTrendingTV(page);
         results.tv = tvResults.results || [];
         results.totalTVPages = tvResults.total_pages;
         results.totalTVResults = tvResults.total_results;
       } catch (error) {
-        console.error('Ошибка получения популярных сериалов:', error.message);
+        console.error('Ошибка получения трендовых сериалов:', error.message);
       }
     }
 
