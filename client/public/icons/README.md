@@ -77,6 +77,9 @@ import Icon from '@/components/Common/Icon';
 - `paperclip` - Скрепка (прикрепить файл)
 - `announcement` - Объявление
 - `status` - Статус
+- `theme` - Тема оформления 🎨
+- `shield` - Приватность 🛡️
+- `lock` - Безопасность 🔒
 
 ## Особенности
 

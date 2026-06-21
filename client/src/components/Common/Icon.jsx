@@ -53,7 +53,10 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     pinned: '📌',
     refresh: '🔄',
     check: '✓',
-    bug: '🐛'
+    bug: '🐛',
+    theme: '🎨',
+    shield: '🛡️',
+    lock: '🔒'
   };
 
   const iconId = `icon-${name}`;
