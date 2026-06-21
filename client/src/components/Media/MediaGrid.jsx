@@ -98,7 +98,7 @@ const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist, mediaStatu
                 loading="lazy"
               />
               {/* Индикатор "в списке" */}
-              {mediaStatusMap[item.id]?.listName && (
+              {(mediaStatusMap[item.id]?.listName || mediaStatusMap[item.id]?.inWatchlist) && (
                 <div className={styles.inListBadge}>
                   <Icon name="check" size="small" />
                 </div>
