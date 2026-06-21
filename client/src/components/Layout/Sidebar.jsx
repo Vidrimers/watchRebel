@@ -28,6 +28,8 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   // Читаем user напрямую из Redux store
   const user = useAppSelector((state) => state.auth.user);
 
+  const isSearchPage = location.pathname === '/search';
+
   // Загружаем количество входящих запросов в друзья
   useEffect(() => {
     const fetchFriendRequests = async () => {
@@ -109,7 +111,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
 
       <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''} ${isOpen ? styles.open : ''}`}>
         {/* Поисковая строка - скрыта в узком режиме и на странице поиска */}
-        {!narrow && <SearchBar />}
+        {!narrow && !isSearchPage && <SearchBar />}
 
       {/* Информация о пользователе */}
       {user && (
@@ -152,7 +154,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
               </div>
 
               {/* Аватар */}
-              <UserAvatar user={user} size={narrow ? "small" : "medium"} />
+              <UserAvatar user={user} size={isSearchPage ? "tiny" : (narrow ? "small" : "medium")} />
 
               {/* Имя пользователя - скрыто в узком режиме и на странице поиска */}
               {!narrow && (
