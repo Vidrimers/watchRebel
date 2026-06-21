@@ -27,9 +27,6 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   
   // Читаем user напрямую из Redux store
   const user = useAppSelector((state) => state.auth.user);
-  
-  // Проверяем, находимся ли мы на странице поиска
-  const isSearchPage = location.pathname === '/search';
 
   // Загружаем количество входящих запросов в друзья
   useEffect(() => {
@@ -110,9 +107,9 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
         />
       )}
 
-      <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''} ${isSearchPage ? styles.compactSearch : ''} ${isOpen ? styles.open : ''}`}>
+      <aside className={`${styles.sidebar} ${narrow ? styles.narrow : ''} ${isOpen ? styles.open : ''}`}>
         {/* Поисковая строка - скрыта в узком режиме и на странице поиска */}
-        {!narrow && !isSearchPage && <SearchBar />}
+        {!narrow && <SearchBar />}
 
       {/* Информация о пользователе */}
       {user && (
@@ -155,10 +152,10 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
               </div>
 
               {/* Аватар */}
-              <UserAvatar user={user} size={isSearchPage ? "tiny" : (narrow ? "small" : "medium")} />
+              <UserAvatar user={user} size={narrow ? "small" : "medium"} />
 
               {/* Имя пользователя - скрыто в узком режиме и на странице поиска */}
-              {!narrow && !isSearchPage && (
+              {!narrow && (
                 <>
                   <h2 className={styles.userName}>{user.displayName}</h2>
                   
@@ -196,12 +193,12 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
         <ul className={styles.navList}>
           <li className={styles.navItem}>
             <a href="/feed" className={styles.navLink} title="Лента" onClick={handleLinkClick}>
-              <Icon name="feed" size="medium" /> {!narrow && !isSearchPage && 'Лента'}
+              <Icon name="feed" size="medium" /> {!narrow && 'Лента'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/friends" className={styles.navLink} title="Друзья" onClick={handleLinkClick}>
-              <Icon name="friends" size="medium" /> {!narrow && !isSearchPage && 'Друзья'}
+              <Icon name="friends" size="medium" /> {!narrow && 'Друзья'}
               {friendRequestsCount > 0 && (
                 <span className={styles.friendRequestsBadge}>{friendRequestsCount}</span>
               )}
@@ -209,27 +206,27 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
           </li>
           <li className={styles.navItem}>
             <a href="/messages" className={styles.navLink} title="Сообщения" onClick={handleLinkClick}>
-              <Icon name="messages" size="medium" /> {!narrow && !isSearchPage && 'Сообщения'}
+              <Icon name="messages" size="medium" /> {!narrow && 'Сообщения'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/my-catalog" className={styles.navLink} title="Каталог" onClick={handleLinkClick}>
-              <Icon name="catalog" size="medium" /> {!narrow && !isSearchPage && 'Каталог'}
+              <Icon name="catalog" size="medium" /> {!narrow && 'Каталог'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/lists?type=movie" className={styles.navLink} title="Мои фильмы" onClick={handleLinkClick}>
-              <Icon name="movies" size="medium" /> {!narrow && !isSearchPage && 'Мои фильмы'}
+              <Icon name="movies" size="medium" /> {!narrow && 'Мои фильмы'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/lists?type=tv" className={styles.navLink} title="Мои сериалы" onClick={handleLinkClick}>
-              <Icon name="tv" size="medium" /> {!narrow && !isSearchPage && 'Мои сериалы'}
+              <Icon name="tv" size="medium" /> {!narrow && 'Мои сериалы'}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/watchlist" className={styles.navLink} title="Хочу посмотреть" onClick={handleLinkClick}>
-              <Icon name="watchlist" size="medium" /> {!narrow && !isSearchPage && 'Хочу посмотреть'}
+              <Icon name="watchlist" size="medium" /> {!narrow && 'Хочу посмотреть'}
             </a>
           </li>
         </ul>
