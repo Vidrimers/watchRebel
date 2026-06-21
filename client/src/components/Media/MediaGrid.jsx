@@ -8,7 +8,7 @@ import styles from './MediaGrid.module.css';
  * Отображает фильмы/сериалы в виде сетки с постерами
  * Поддерживает hover эффекты и кнопку действий
  */
-const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist }) => {
+const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist, mediaStatusMap = {} }) => {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState(null);
 
@@ -97,6 +97,12 @@ const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist }) => {
                 className={styles.poster}
                 loading="lazy"
               />
+              {/* Индикатор "в списке" */}
+              {mediaStatusMap[item.id]?.listName && (
+                <div className={styles.inListBadge}>
+                  <Icon name="check" size="small" />
+                </div>
+              )}
               
               {/* Overlay с информацией при hover */}
               <div className={styles.overlay}>
@@ -129,22 +135,27 @@ const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist }) => {
                 </button>
 
                 {/* Выпадающее меню */}
-                {activeMenu === item.id && (
-                  <div className={styles.actionMenu}>
-                    <button
-                      className={styles.menuItem}
-                      onClick={(e) => handleAddToList(e, item)}
-                    >
-                      <Icon name="add" size="small" /> Добавить в список
-                    </button>
-                    <button
-                      className={styles.menuItem}
-                      onClick={(e) => handleAddToWatchlist(e, item)}
-                    >
-                      <Icon name="watchlist" size="small" /> Хочу посмотреть
-                    </button>
-                  </div>
-                )}
+                {activeMenu === item.id && (() => {
+                  const status = mediaStatusMap[item.id] || {};
+                  return (
+                    <div className={styles.actionMenu}>
+                      <button
+                        className={`${styles.menuItem} ${status.listName ? styles.menuItemActive : ''}`}
+                        onClick={(e) => handleAddToList(e, item)}
+                      >
+                        <Icon name={status.listName ? 'check' : 'add'} size="small" />
+                        {status.listName ? status.listName : 'Добавить в список'}
+                      </button>
+                      <button
+                        className={`${styles.menuItem} ${status.inWatchlist ? styles.menuItemActive : ''}`}
+                        onClick={(e) => handleAddToWatchlist(e, item)}
+                      >
+                        <Icon name={status.inWatchlist ? 'check' : 'watchlist'} size="small" />
+                        {status.inWatchlist ? 'Хочу посмотреть' : 'Хочу посмотреть'}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import { MediaGrid } from '../components/Media';
-import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
+import { fetchLists, addToList, addToWatchlist, fetchWatchlist } from '../store/slices/listsSlice';
 import useAlert from '../hooks/useAlert';
 import AddToListModal from '../components/Wall/AddToListModal';
 import Icon from '../components/Common/Icon';
@@ -50,10 +50,30 @@ const CatalogPage = () => {
 
   // Загрузка жанров при монтировании
   useEffect(() => {
-    console.log('🚀 useEffect для жанров запущен');
     loadGenres();
+    dispatch(fetchWatchlist());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Карта статусов: tmdbId → { listName, inWatchlist }
+  const mediaStatusMap = useMemo(() => {
+    const map = {};
+    // Отмечаем custom списки
+    (customLists || []).forEach(list => {
+      (list.items || []).forEach(item => {
+        map[item.tmdbId] = { listName: list.name, inWatchlist: false };
+      });
+    });
+    // Отмечаем watchlist (перезаписывает если уже в списке)
+    (watchlist || []).forEach(item => {
+      if (map[item.tmdbId]) {
+        map[item.tmdbId].inWatchlist = true;
+      } else {
+        map[item.tmdbId] = { listName: null, inWatchlist: true };
+      }
+    });
+    return map;
+  }, [customLists, watchlist]);
 
   // Загрузка контента при изменении параметров
   useEffect(() => {
@@ -432,6 +452,7 @@ const CatalogPage = () => {
                 mediaType={activeTab === 'movies' ? 'movie' : 'tv'}
                 onAddToList={handleAddToList}
                 onAddToWatchlist={handleAddToWatchlist}
+                mediaStatusMap={mediaStatusMap}
               />
 
               {/* Пагинация */}
