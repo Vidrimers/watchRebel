@@ -501,3 +501,129 @@
     right: 8px;
   }
 }
+
+/* Модалка задания ника */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--bg-secondary, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.modalDescription {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+.nicknameInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 16px;
+  color: var(--text-primary, #333);
+  background: var(--bg-input, #fff);
+  box-sizing: border-box;
+}
+
+.nicknameInput:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.modalSaveButton {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modalSaveButton:hover:not(:disabled) {
+  background: var(--accent-primary-hover, #4f46e5);
+}
+
+.modalSaveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modalCancelButton {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modalCancelButton:hover {
+  background: var(--bg-hover, #e5e7eb);
+}
+
+/* Бейдж ника */
+.nicknameBadge {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary, #999);
+  margin-left: 8px;
+  font-style: italic;
+}
+
+:global(.dark) .modalContent {
+  background: var(--bg-secondary-dark, #2a2a2a);
+}
+
+:global(.dark) .modalTitle {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .nicknameInput {
+  background: var(--input-background-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .modalCancelButton {
+  background: var(--bg-secondary-dark, #1a1a1a);
+  color: var(--text-primary-dark, #e0e0e0);
+  border-color: var(--border-color-dark, #444);
+}

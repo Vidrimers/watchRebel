@@ -193,6 +193,27 @@ const SettingsPage = () => {
                   )}
                 </div>
               </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Показывать ник:</span>
+                <label className={styles.toggleSwitch}>
+                  <input
+                    type="checkbox"
+                    checked={user.showNickname || false}
+                    onChange={async (e) => {
+                      try {
+                        await api.put('/users/me/show-nickname', { showNickname: e.target.checked });
+                        dispatch(updateProfile({ userId: user.id, showNickname: e.target.checked }));
+                      } catch (error) {
+                        console.error('Ошибка обновления настройки ника:', error);
+                      }
+                    }}
+                  />
+                  <span className={styles.toggleSlider}></span>
+                </label>
+              </div>
+              <p className={styles.cardDescription}>
+                Если включено, друзья будут видеть ваши ники вместо имён
+              </p>
             </div>
           </div>
 

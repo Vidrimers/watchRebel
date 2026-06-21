@@ -30,7 +30,11 @@ const UserProfilePage = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [accessDenied, setAccessDenied] = useState(false); // Пользователь заблокировал меня
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [currentNickname, setCurrentNickname] = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameLoading, setNicknameLoading] = useState(false);
 
   // Определяем, это свой профиль или чужой
   const isOwnProfile = currentUser?.id === userId;
@@ -101,6 +105,39 @@ const UserProfilePage = () => {
       fetchProfile();
     }
   }, [userId, isAuthenticated, isOwnProfile, currentUser]);
+
+  // Загрузка ника для чужого профиля
+  useEffect(() => {
+    if (!isOwnProfile && userId && isAuthenticated) {
+      api.get(`/users/${userId}/nickname`)
+        .then(res => {
+          setCurrentNickname(res.data.nickname || '');
+          setNicknameInput(res.data.nickname || '');
+        })
+        .catch(() => {});
+    }
+  }, [userId, isOwnProfile, isAuthenticated]);
+
+  const handleSaveNickname = async () => {
+    if (!nicknameInput.trim()) {
+      try {
+        await api.delete(`/users/${userId}/nickname`);
+        setCurrentNickname('');
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setNicknameLoading(true);
+      try {
+        const res = await api.put(`/users/${userId}/nickname`, { nickname: nicknameInput.trim() });
+        setCurrentNickname(res.data.nickname);
+      } catch (err) {
+        console.error(err);
+      }
+      setNicknameLoading(false);
+    }
+    setShowNicknameModal(false);
+  };
 
   /**
    * Закрытие dropdown меню при клике вне его
@@ -372,6 +409,11 @@ const UserProfilePage = () => {
             <div className={styles.profileInfo}>
               <h1 className={styles.profileName}>
                 {profileUser.displayName}
+                {currentNickname && !isOwnProfile && (
+                  <span className={styles.nicknameBadge} title={`Ваш ник для этого пользователя: ${currentNickname}`}>
+                    ({currentNickname})
+                  </span>
+                )}
               </h1>
               {profileUser.userStatus && (
                 <p className={styles.userStatus}>{profileUser.userStatus}</p>
@@ -499,6 +541,17 @@ const UserProfilePage = () => {
                   >
                     ⚠️ Пожаловаться
                   </button>
+                  {!isOwnProfile && (
+                    <button 
+                      className={styles.menuItem}
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowNicknameModal(true);
+                      }}
+                    >
+                      ✏️ {currentNickname ? 'Изменить ник' : 'Задать ник'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -516,6 +569,47 @@ const UserProfilePage = () => {
           />
         </div>
       </div>
+
+      {/* Модальное окно задания ника */}
+      {showNicknameModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowNicknameModal(false)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>
+              {currentNickname ? 'Изменить ник' : 'Задать ник'}
+            </h3>
+            <p className={styles.modalDescription}>
+              Этот ник будет отображаться только вам вместо имени пользователя.
+            </p>
+            <input
+              type="text"
+              className={styles.nicknameInput}
+              value={nicknameInput}
+              onChange={e => setNicknameInput(e.target.value)}
+              placeholder="Введите ник (макс. 30 символов)"
+              maxLength={30}
+              autoFocus
+            />
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalSaveButton}
+                onClick={handleSaveNickname}
+                disabled={nicknameLoading}
+              >
+                {nicknameLoading ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button
+                className={styles.modalCancelButton}
+                onClick={() => {
+                  setNicknameInput(currentNickname);
+                  setShowNicknameModal(false);
+                }}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </UserPageLayout>
   );
 };
