@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icon from '../Common/Icon';
 import styles from './MediaGrid.module.css';
 
 /**
@@ -134,13 +135,13 @@ const MediaGrid = ({ items, mediaType, onAddToList, onAddToWatchlist }) => {
                       className={styles.menuItem}
                       onClick={(e) => handleAddToList(e, item)}
                     >
-                      📋 Добавить в список
+                      <Icon name="add" size="small" /> Добавить в список
                     </button>
                     <button
                       className={styles.menuItem}
                       onClick={(e) => handleAddToWatchlist(e, item)}
                     >
-                      ⭐ Хочу посмотреть
+                      <Icon name="watchlist" size="small" /> Хочу посмотреть
                     </button>
                   </div>
                 )}
