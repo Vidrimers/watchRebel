@@ -307,12 +307,14 @@ const FriendsPage = () => {
                           Перейти в профиль
                         </button>
                         
-                        <button
-                          className={styles.removeFriendButton}
-                          onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
-                        >
-                          Удалить из друзей
-                        </button>
+                        {isOwnProfile && (
+                          <button
+                            className={styles.removeFriendButton}
+                            onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
+                          >
+                            Удалить из друзей
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
