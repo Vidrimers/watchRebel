@@ -211,9 +211,12 @@ const CustomListManager = ({ lists, mediaType, onListSelect }) => {
                 <div className={styles.listInfo}>
                   <span className={styles.itemCount}>
                     {list.items?.length || 0} {' '}
-                    {list.items?.length === 1 ? 'элемент' : 
-                     list.items?.length > 1 && list.items?.length < 5 ? 'элемента' : 
-                     'элементов'}
+                    {mediaType === 'movie'
+                      ? (list.items?.length === 1 ? 'фильм' :
+                         list.items?.length > 1 && list.items?.length < 5 ? 'фильма' : 'фильмов')
+                      : (list.items?.length === 1 ? 'сериал' :
+                         list.items?.length > 1 && list.items?.length < 5 ? 'сериала' : 'сериалов')
+                    }
                   </span>
                 </div>
 
