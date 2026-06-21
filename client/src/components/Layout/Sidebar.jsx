@@ -162,7 +162,6 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
                     color={bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : undefined}
                   />
                 </a>
-                </a>
               </div>
 
               {/* Уведомления - в правом верхнем углу */}
