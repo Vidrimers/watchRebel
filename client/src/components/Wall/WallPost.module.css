@@ -335,9 +335,9 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--accent-primary, #6366f1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--success-color, #22c55e);
+  border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -347,8 +347,8 @@
 }
 
 .inWatchlistButton:hover {
-  background: rgba(99, 102, 241, 0.15);
-  border-color: var(--accent-primary, #6366f1);
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--success-color, #22c55e);
 }
 
 .mediaTypeLabel {
