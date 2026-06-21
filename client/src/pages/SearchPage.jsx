@@ -339,7 +339,7 @@ const SearchPage = () => {
   ) : [];
 
   return (
-    <UserPageLayout user={user} narrowSidebar={true}>
+    <UserPageLayout user={user}>
       <div className={styles.searchPage}>
         {/* Заголовок и поисковая форма */}
         <div className={styles.header}>
