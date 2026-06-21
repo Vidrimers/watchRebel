@@ -19,7 +19,7 @@ const CatalogPage = () => {
   const dispatch = useAppDispatch();
   const { showAlert } = useAlert();
   const { user } = useAppSelector((state) => state.auth);
-  const { customLists } = useAppSelector((state) => state.lists);
+  const { customLists, watchlist } = useAppSelector((state) => state.lists);
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Состояние
