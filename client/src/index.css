@@ -120,3 +120,13 @@ body {
     font-size: 16px;
   }
 }
+
+/* Кастомные ники */
+.displayNameNickname {
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .displayNameNickname {
+  color: var(--accent-primary-dark, #818cf8);
+}

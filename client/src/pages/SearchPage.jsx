@@ -446,7 +446,7 @@ const SearchPage = () => {
                         className={styles.userAvatar}
                       />
                       <div className={styles.userCardInfo}>
-                        <h3 className={styles.userCardName} title={resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).tooltip}>{resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).text}</h3>
+                        <h3 className={`${styles.userCardName} ${resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).tooltip}>{resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).text}</h3>
                         <p className={styles.userCardType}>Пользователь</p>
                         {/* Telegram username скрыт для других пользователей */}
                         {user?.id === result.data.id && result.data.telegramUsername && (

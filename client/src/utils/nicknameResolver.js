@@ -46,15 +46,15 @@ export const resolveDisplayNameWithTooltip = (userId, displayName) => {
   const nickname = nicknamesCache[userId];
   
   if (!nickname || !displayName || nicknameDisplayMode === 'name') {
-    return { text: displayName || 'Пользователь', tooltip: null };
+    return { text: displayName || 'Пользователь', tooltip: null, isNickname: false };
   }
 
   switch (nicknameDisplayMode) {
     case 'nickname':
-      return { text: `${nickname}*`, tooltip: `Реальное имя: ${displayName}` };
+      return { text: `${nickname}*`, tooltip: `Реальное имя: ${displayName}`, isNickname: true };
     case 'both':
-      return { text: `${displayName} (${nickname})`, tooltip: null };
+      return { text: `${displayName} (${nickname})`, tooltip: null, isNickname: false };
     default:
-      return { text: displayName, tooltip: null };
+      return { text: displayName, tooltip: null, isNickname: false };
   }
 };

@@ -288,7 +288,7 @@ const FriendsPage = () => {
                       />
                       
                       <div className={styles.friendInfo}>
-                        <h3 className={styles.friendName} title={resolveDisplayNameWithTooltip(friend.id, friend.displayName).tooltip}>
+                        <h3 className={`${styles.friendName} ${resolveDisplayNameWithTooltip(friend.id, friend.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(friend.id, friend.displayName).tooltip}>
                           {resolveDisplayNameWithTooltip(friend.id, friend.displayName).text}
                           {friend.userStatus && (
                             <span className={styles.friendStatus}> | {friend.userStatus}</span>

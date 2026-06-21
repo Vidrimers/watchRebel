@@ -552,7 +552,7 @@ const PostComment = ({ comment, postId, depth = 0, parentAuthorName = null, isDe
           <div className={styles.commentHeader}>
             <span className={styles.authorName}>
               <span 
-                className={styles.authorNameLink}
+                className={`${styles.authorNameLink} ${resolveDisplayNameWithTooltip(comment.author.id, comment.author.displayName).isNickname ? 'displayNameNickname' : ''}`}
                 onClick={handleUserClick}
                 title={resolveDisplayNameWithTooltip(comment.author.id, comment.author.displayName).tooltip || `Перейти на страницу ${resolveDisplayNameWithTooltip(comment.author.id, comment.author.displayName).text}`}
               >

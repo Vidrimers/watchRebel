@@ -890,7 +890,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                     />
                   )}
                   <span 
-                    className={styles.authorName}
+                    className={`${styles.authorName} ${resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).isNickname ? 'displayNameNickname' : ''}`}
                     onClick={isModal ? undefined : () => navigate(`/user/${post.author.id}`)}
                     style={isModal ? { cursor: 'default' } : {}}
                     title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip}

@@ -218,7 +218,7 @@ const ReviewDisplay = ({ review, media, onGoToMediaPage }) => {
           )}
           <div className={styles.authorDetails}>
             <span 
-              className={styles.authorName}
+              className={`${styles.authorName} ${resolveDisplayNameWithTooltip(review.author.userId, review.author?.displayName).isNickname ? 'displayNameNickname' : ''}`}
               onClick={() => navigate(`/user/${review.author.userId}`)}
               title={resolveDisplayNameWithTooltip(review.author.userId, review.author?.displayName).tooltip}
             >

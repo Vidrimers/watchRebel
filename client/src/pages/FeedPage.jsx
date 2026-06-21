@@ -291,6 +291,7 @@ const FeedPage = () => {
                               <a 
                                 href={`/user/${post.author.id}`} 
                                 style={{ color: 'inherit', textDecoration: 'none' }}
+                                className={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).isNickname ? 'displayNameNickname' : ''}
                                 title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip || post.author?.userStatus || ''}
                               >
                                 {resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).text}
@@ -330,6 +331,7 @@ const FeedPage = () => {
                               <a 
                                 href={`/user/${post.wallOwner.id}`} 
                                 style={{ color: 'inherit', textDecoration: 'none' }}
+                                className={resolveDisplayNameWithTooltip(post.wallOwner.id, post.wallOwner.displayName).isNickname ? 'displayNameNickname' : ''}
                                 title={resolveDisplayNameWithTooltip(post.wallOwner.id, post.wallOwner.displayName).tooltip || ''}
                               >
                                 {resolveDisplayNameWithTooltip(post.wallOwner.id, post.wallOwner.displayName).text}
@@ -339,6 +341,7 @@ const FeedPage = () => {
                             <a 
                               href={`/user/${post.author.id}`} 
                               style={{ color: 'inherit', textDecoration: 'none' }}
+                              className={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).isNickname ? 'displayNameNickname' : ''}
                               title={resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).tooltip || post.author?.userStatus || ''}
                             >
                               {resolveDisplayNameWithTooltip(post.author.id, post.author.displayName).text}
