@@ -347,6 +347,13 @@
     <line x1="12" y1="17" x2="12.01" y2="17"/>
   </symbol>
 
+  <!-- Support / Поддержка -->
+  <symbol id="icon-support" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </symbol>
+
 </svg>
 
 <!--
@@ -405,7 +412,8 @@
   icon-shield        Приватность 🛡️
   icon-lock          Безопасность 🔒
   icon-database      База данных 🗄️
-  icon-report        Жалоба ⚠️ =============================================================
+  icon-report        Жалоба ⚠️
+  icon-support       Поддержка ❓ =============================================================
   КАК ИСПОЛЬЗОВАТЬ:
   
   1. Подключи этот файл в HTML:

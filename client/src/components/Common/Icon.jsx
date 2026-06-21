@@ -58,7 +58,8 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     shield: '🛡️',
     lock: '🔒',
     database: '🗄️',
-    report: '⚠️'
+    report: '⚠️',
+    support: '❓'
   };
 
   const iconId = `icon-${name}`;

@@ -302,7 +302,7 @@ const SettingsPage = () => {
                   onClick={() => navigate('/my-bug-reports')}
                   className={styles.settingsNavigationButton}
                 >
-                  <Icon name="bug" size="medium" />
+                <Icon name="support" size="medium" />
                   <span>Мои багрепорты</span>
                   <Icon name="chevron-right" size="small" />
                 </button>

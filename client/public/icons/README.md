@@ -82,6 +82,7 @@ import Icon from '@/components/Common/Icon';
 - `lock` - Безопасность 🔒
 - `database` - База данных 🗄️
 - `report` - Жалоба ⚠️
+- `support` - Поддержка ❓
 
 ## Особенности
 
