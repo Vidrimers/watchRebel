@@ -28,6 +28,10 @@
   margin-bottom: 20px;
 }
 
+.settingsCardAccordion {
+  padding-bottom: 0;
+}
+
 /* Сетка карточек в два столбца */
 .cardsGrid {
   display: grid;
@@ -721,7 +725,7 @@
 }
 
 .accordionContent {
-  padding-top: 16px;
+  padding: 16px 0 24px 0;
   animation: accordionOpen 0.2s ease;
 }
 

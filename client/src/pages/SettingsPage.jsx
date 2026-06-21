@@ -198,7 +198,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Группа 2: Оформление */}
-          <div className={styles.settingsCard}>
+          <div className={`${styles.settingsCard} ${styles.settingsCardAccordion}`}>
             <button className={styles.accordionHeader} onClick={() => toggleSection('appearance')}>
               <div className={styles.accordionHeaderLeft}>
                 <Icon name="theme" size="medium" />
@@ -273,7 +273,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Группа 3: Приватность и уведомления */}
-          <div className={styles.settingsCard}>
+          <div className={`${styles.settingsCard} ${styles.settingsCardAccordion}`}>
             <button className={styles.accordionHeader} onClick={() => toggleSection('privacy')}>
               <div className={styles.accordionHeaderLeft}>
                 <Icon name="shield" size="medium" />
@@ -312,7 +312,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Группа 4: Аккаунт и безопасность */}
-          <div className={styles.settingsCard}>
+          <div className={`${styles.settingsCard} ${styles.settingsCardAccordion}`}>
             <button className={styles.accordionHeader} onClick={() => toggleSection('account')}>
               <div className={styles.accordionHeaderLeft}>
                 <Icon name="lock" size="medium" />
@@ -348,7 +348,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Группа 5: Поддержка */}
-          <div className={styles.settingsCard}>
+          <div className={`${styles.settingsCard} ${styles.settingsCardAccordion}`}>
             <button className={styles.accordionHeader} onClick={() => toggleSection('support')}>
               <div className={styles.accordionHeaderLeft}>
                 <Icon name="support" size="medium" />
