@@ -291,7 +291,7 @@ const SettingsPage = () => {
           <div className={styles.settingsCard}>
             <button className={styles.accordionHeader} onClick={() => toggleSection('support')}>
               <div className={styles.accordionHeaderLeft}>
-                <Icon name="bug" size="medium" />
+                <Icon name="support" size="medium" />
                 <span className={styles.accordionTitle}>Поддержка</span>
               </div>
               <Icon name="chevron-down" size="small" className={`${styles.accordionChevron} ${openSection === 'support' ? styles.open : ''}`} />
@@ -302,7 +302,7 @@ const SettingsPage = () => {
                   onClick={() => navigate('/my-bug-reports')}
                   className={styles.settingsNavigationButton}
                 >
-                <Icon name="support" size="medium" />
+                <Icon name="bug" size="medium" />
                   <span>Мои багрепорты</span>
                   <Icon name="chevron-right" size="small" />
                 </button>
