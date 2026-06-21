@@ -8,7 +8,7 @@ import styles from './AddToListModal.module.css';
 /**
  * Модалка для добавления медиа в список пользователя
  */
-const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
+const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onClose }) => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => state.auth.user);
   const [lists, setLists] = useState([]);
@@ -50,7 +50,21 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
     try {
       setAdding(listId);
       setError(null);
-      
+
+      // Если фильм в watchlist — удаляем оттуда
+      if (inWatchlist) {
+        try {
+          const wlRes = await api.get('/watchlist', { params: { mediaType } });
+          const wlItem = wlRes.data.find(item => item.tmdbId === tmdbId);
+          if (wlItem) {
+            await api.delete(`/watchlist/${wlItem.id}`);
+          }
+        } catch (e) {
+          console.warn('Не удалось удалить из watchlist:', e);
+        }
+        setInWatchlist(false);
+      }
+
       await api.post(`/lists/${listId}/items`, {
         tmdbId,
         mediaType,
@@ -58,8 +72,6 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
       });
 
       setSuccess(`Добавлено в список!`);
-      
-      // Закрываем модалку через 1 секунду
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -113,6 +125,18 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
     try {
       setAdding('watchlist');
       setError(null);
+
+      // Если фильм в каком-то списке — удаляем оттуда
+      if (userListName) {
+        const listToDelete = lists.find(l => l.name === userListName);
+        if (listToDelete) {
+          try {
+            await api.delete(`/lists/${listToDelete.id}/items/${tmdbId}?mediaType=${mediaType}`);
+          } catch (e) {
+            console.warn('Не удалось удалить из списка:', e);
+          }
+        }
+      }
 
       await api.post('/watchlist', {
         tmdbId,

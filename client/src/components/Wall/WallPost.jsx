@@ -646,15 +646,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 {/* Кнопка "В свой список" для других пользователей */}
                 {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
                   <button
-                    className={post.userListName ? styles.inMyListButton : styles.addToMyListButton}
+                    className={post.userListName ? styles.inMyListButton : post.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `Переместить в другой список` : 'Добавить в свой список'}
+                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'Добавить в свой список'}
                   >
-                    <Icon name={post.userListName ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : 'В свой список'}
+                    <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
+                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'В свой список'}
                   </button>
                 )}
               </div>
@@ -731,44 +731,19 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 )}
                 {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
                   <button
-                    className={post.userListName ? styles.inMyListButton : styles.addToMyListButton}
+                    className={post.userListName ? styles.inMyListButton : post.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `Переместить в другой список` : 'Добавить в свой список'}
+                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'Добавить в свой список'}
                   >
-                    <Icon name={post.userListName ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : 'В свой список'}
+                    <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
+                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'В "Хочу посмотреть"' : 'В свой список'}
                   </button>
                 )}
               </div>
             </div>
-          </div>
-        );
-
-      case 'rating':
-        return (
-          <div className={styles.ratingContent}>
-            <p className={styles.actionText}>
-              ⭐ Оценил{isOwnProfile ? '' : 'а'}
-            </p>
-            {post.tmdbId && (
-              <div 
-                className={styles.mediaInfo}
-                onClick={handleMediaClick}
-              >
-                <div className={styles.mediaDetails}>
-                  <h4 className={styles.mediaTitle}>
-                    {post.mediaType === 'movie' ? 'Фильм' : 'Сериал'} (ID: {post.tmdbId})
-                  </h4>
-                  <div className={styles.ratingValue}>
-                    <span className={styles.ratingStars}>★</span>
-                    <span className={styles.ratingNumber}>{post.rating}/10</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
 
@@ -1076,6 +1051,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           tmdbId={post.tmdbId}
           mediaType={post.mediaType}
           mediaTitle={post.content?.split('\n')[0]}
+          userListName={post.userListName}
           onClose={() => setShowAddToListModal(false)}
         />
       )}

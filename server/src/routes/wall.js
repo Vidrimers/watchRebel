@@ -108,9 +108,10 @@ router.get('/:userId', optionalAuth, async (req, res) => {
 
         const commentsCount = commentsCountResult.success ? commentsCountResult.data[0].total : 0;
 
-        // Для постов media_added проверяем, есть ли этот медиа в списках текущего пользователя
+        // Для постов media_added/media_shared проверяем, есть ли этот медиа в списках или watchlist текущего пользователя
         let userListName = null;
-        if (post.post_type === 'media_added' && post.tmdb_id && req.user) {
+        let inWatchlist = false;
+        if (['media_added', 'media_shared'].includes(post.post_type) && post.tmdb_id && req.user) {
           const userListResult = await executeQuery(
             `SELECT cl.name 
              FROM list_items li
@@ -122,6 +123,15 @@ router.get('/:userId', optionalAuth, async (req, res) => {
           
           if (userListResult.success && userListResult.data.length > 0) {
             userListName = userListResult.data[0].name;
+          }
+
+          // Также проверяем watchlist
+          const watchlistResult = await executeQuery(
+            `SELECT id FROM watchlist WHERE user_id = ? AND tmdb_id = ? AND media_type = ? LIMIT 1`,
+            [req.user.id, post.tmdb_id, post.media_type]
+          );
+          if (watchlistResult.success && watchlistResult.data.length > 0) {
+            inWatchlist = true;
           }
         }
 
@@ -183,6 +193,7 @@ router.get('/:userId', optionalAuth, async (req, res) => {
           isPinned, // Добавляем флаг закрепленного поста
           commentsCount, // Общее количество комментариев (включая ответы)
           userListName, // Название списка текущего пользователя (если медиа в его списке)
+          inWatchlist, // В списке "Хочу посмотреть"
           personalNote, // Персональная заметка владельца стены (только для владельца)
           author: {
             id: post.author_id,
