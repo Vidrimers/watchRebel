@@ -192,36 +192,36 @@ if (process.env.NODE_ENV !== 'test') {
   runMigrations().then(async (result) => {
     if (result.success) {
       logger.info('Миграции базы данных выполнены успешно');
-      
-      // Запуск дополнительных миграций
-      try {
-        const wallPrivacyResult = await addWallPrivacyMigration();
-        if (wallPrivacyResult.success) {
-          logger.info('Миграция wall_privacy выполнена успешно');
-        }
-      } catch (err) {
-        logger.error('Ошибка выполнения дополнительных миграций:', err);
-      }
-
-      try {
-        await addUserNicknamesTable();
-      } catch (err) {
-        logger.error('Ошибка миграции user_nicknames:', err);
-      }
-
-      try {
-        await addShowNicknameColumn();
-      } catch (err) {
-        logger.error('Ошибка миграции show_nickname:', err);
-      }
-
-      try {
-        await addNicknameDisplayColumn();
-      } catch (err) {
-        logger.error('Ошибка миграции nickname_display:', err);
-      }
     } else {
       logger.error('Ошибка выполнения миграций:', result.error);
+    }
+
+    // Запуск дополнительных миграций (независимо от основных)
+    try {
+      const wallPrivacyResult = await addWallPrivacyMigration();
+      if (wallPrivacyResult.success) {
+        logger.info('Миграция wall_privacy выполнена успешно');
+      }
+    } catch (err) {
+      logger.error('Ошибка выполнения wall_privacy миграции:', err);
+    }
+
+    try {
+      await addUserNicknamesTable();
+    } catch (err) {
+      logger.error('Ошибка миграции user_nicknames:', err);
+    }
+
+    try {
+      await addShowNicknameColumn();
+    } catch (err) {
+      logger.error('Ошибка миграции show_nickname:', err);
+    }
+
+    try {
+      await addNicknameDisplayColumn();
+    } catch (err) {
+      logger.error('Ошибка миграции nickname_display:', err);
     }
 
     // Инициализация media.db (кэш фильмов)
