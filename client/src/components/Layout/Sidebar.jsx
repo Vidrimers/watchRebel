@@ -156,7 +156,12 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
                   title="Настройки"
                   onClick={handleLinkClick}
                 >
-                  <Icon name="settings" size="medium" />
+                  <Icon 
+                    name="settings" 
+                    size="medium" 
+                    color={bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : undefined}
+                  />
+                </a>
                 </a>
               </div>
 
