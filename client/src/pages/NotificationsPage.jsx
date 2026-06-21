@@ -12,7 +12,7 @@ const NotificationsPage = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   return (
-    <UserPageLayout user={user} narrowSidebar={true}>
+    <UserPageLayout user={user}>
       <div className={styles.page}>
         <NotificationList />
       </div>
