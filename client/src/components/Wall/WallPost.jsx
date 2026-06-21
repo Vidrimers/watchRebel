@@ -45,6 +45,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const [editedContent, setEditedContent] = useState(post.content || '');
   const [isSaving, setIsSaving] = useState(false);
   const [showAddToListModal, setShowAddToListModal] = useState(false);
+  const [listStatus, setListStatus] = useState({ userListName: post.userListName, inWatchlist: post.inWatchlist });
   const [showGallery, setShowGallery] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
@@ -646,15 +647,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 {/* Кнопка "В свой список" для других пользователей */}
                 {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
                   <button
-                    className={post.userListName ? styles.inMyListButton : post.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
+                    className={listStatus.userListName ? styles.inMyListButton : listStatus.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
+                    title={listStatus.userListName ? `В списке: ${listStatus.userListName}` : listStatus.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
                   >
-                    <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
+                    <Icon name={listStatus.userListName || listStatus.inWatchlist ? 'check' : 'add'} size="small" />
+                    {listStatus.userListName ? `В списке: ${listStatus.userListName}` : listStatus.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
                   </button>
                 )}
               </div>
@@ -731,15 +732,15 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                 )}
                 {currentUser && post.author?.id !== currentUser.id && post.tmdbId && (
                   <button
-                    className={post.userListName ? styles.inMyListButton : post.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
+                    className={listStatus.userListName ? styles.inMyListButton : listStatus.inWatchlist ? styles.inWatchlistButton : styles.addToMyListButton}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAddToListModal(true);
                     }}
-                    title={post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
+                    title={listStatus.userListName ? `В списке: ${listStatus.userListName}` : listStatus.inWatchlist ? 'Хочу посмотреть' : 'Добавить в свой список'}
                   >
-                    <Icon name={post.userListName || post.inWatchlist ? 'check' : 'add'} size="small" />
-                    {post.userListName ? `В списке: ${post.userListName}` : post.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
+                    <Icon name={listStatus.userListName || listStatus.inWatchlist ? 'check' : 'add'} size="small" />
+                    {listStatus.userListName ? `В списке: ${listStatus.userListName}` : listStatus.inWatchlist ? 'Хочу посмотреть' : 'В свой список'}
                   </button>
                 )}
               </div>
@@ -1051,7 +1052,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
           tmdbId={post.tmdbId}
           mediaType={post.mediaType}
           mediaTitle={post.content?.split('\n')[0]}
-          userListName={post.userListName}
+          userListName={listStatus.userListName}
+          onUpdate={(status) => setListStatus(status)}
           onClose={() => setShowAddToListModal(false)}
         />
       )}

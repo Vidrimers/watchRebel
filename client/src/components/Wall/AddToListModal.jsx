@@ -8,7 +8,7 @@ import styles from './AddToListModal.module.css';
 /**
  * Модалка для добавления медиа в список пользователя
  */
-const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onClose }) => {
+const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onUpdate, onClose }) => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => state.auth.user);
   const [lists, setLists] = useState([]);
@@ -72,6 +72,7 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onClose }
       });
 
       setSuccess(`Добавлено в список!`);
+      if (onUpdate) onUpdate({ userListName: lists.find(l => l.id === listId)?.name || 'Список', inWatchlist: false });
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -144,6 +145,7 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onClose }
       });
 
       setSuccess('Добавлено в "Хочу посмотреть"!');
+      if (onUpdate) onUpdate({ userListName: null, inWatchlist: true });
       setTimeout(() => {
         onClose();
       }, 1000);
