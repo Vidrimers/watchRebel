@@ -176,13 +176,13 @@ const AdminPanel = () => {
             onClick={() => navigate('/admin/database')}
             className={styles.btnNavigation}
           >
-            <Icon name="refresh" size="small" /> База данных
+            <Icon name="database" size="small" /> База данных
           </button>
           <button
             onClick={() => navigate('/admin/reports')}
             className={styles.btnNavigation}
           >
-            <Icon name="bug" size="small" /> Жалобы
+            <Icon name="report" size="small" /> Жалобы
             {newReportsCount > 0 && (
               <span className={styles.badge}>{newReportsCount}</span>
             )}

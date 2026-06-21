@@ -80,6 +80,8 @@ import Icon from '@/components/Common/Icon';
 - `theme` - Тема оформления 🎨
 - `shield` - Приватность 🛡️
 - `lock` - Безопасность 🔒
+- `database` - База данных 🗄️
+- `report` - Жалоба ⚠️
 
 ## Особенности
 
