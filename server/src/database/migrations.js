@@ -355,6 +355,12 @@ export async function runMigrations() {
       } else {
         console.log('✓ Все таблицы успешно созданы');
         console.log('Все миграции успешно выполнены!');
+        
+        // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
+        import('./migrations/update-notification-content-templates.js')
+          .then(module => module.updateNotificationContentTemplates())
+          .catch(err => console.error('Ошибка миграции шаблонов уведомлений:', err));
+        
         resolve({ success: true });
       }
     });

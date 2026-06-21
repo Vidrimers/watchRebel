@@ -109,8 +109,8 @@ const NotificationList = () => {
 
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
-    // Просто возвращаем content как есть - имена уже сохранены в БД
-    return notification.content;
+    const name = notification.relatedUser?.displayName;
+    return name ? `${name} ${notification.content}` : notification.content;
   };
 
   // Обработчик пометки всех как прочитанные
