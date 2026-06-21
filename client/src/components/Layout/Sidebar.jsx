@@ -21,12 +21,14 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isHoveringUserInfo, setIsHoveringUserInfo] = useState(false);
   const [friendRequestsCount, setFriendRequestsCount] = useState(0);
+  const [bugStats, setBugStats] = useState({ new: 0, in_progress: 0 });
   const notificationButtonRef = useRef(null);
   const location = useLocation();
   const dispatch = useAppDispatch();
   
   // Читаем user напрямую из Redux store
   const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.isAdmin || user?.id === '137981675';
 
   const isSearchPage = location.pathname === '/search';
 
@@ -50,6 +52,24 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
     
     return () => clearInterval(interval);
   }, [user?.id]);
+
+  // Загружаем статистику багрепортов для админа
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchBugStats = async () => {
+      try {
+        const response = await api.get('/bug-reports/admin/stats');
+        setBugStats({ new: response.data.new || 0, in_progress: response.data.in_progress || 0 });
+      } catch (error) {
+        console.error('Ошибка загрузки статистики багрепортов:', error);
+      }
+    };
+
+    fetchBugStats();
+    const interval = setInterval(fetchBugStats, 30000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   // Закрытие сайдбара при клике на ссылку (для мобильных)
   const handleLinkClick = () => {
@@ -124,10 +144,15 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
           >
             <div className={styles.userInfo}>
               {/* Настройки - в левом верхнем углу */}
-              <div className={styles.settingsContainer}>
+              <div className={`${styles.settingsContainer} ${
+                bugStats.new > 0 || bugStats.in_progress > 0 ? styles.settingsContainerHasAlerts : ''
+              }`}>
                 <a 
                   href="/settings" 
-                  className={styles.settingsButton}
+                  className={`${styles.settingsButton} ${
+                    bugStats.new > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonNew}` :
+                    bugStats.in_progress > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonInProgress}` : ''
+                  }`}
                   title="Настройки"
                   onClick={handleLinkClick}
                 >

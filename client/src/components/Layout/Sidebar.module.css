@@ -261,6 +261,11 @@
   opacity: 1;
 }
 
+/* Всегда показываем кнопку настроек если есть багрепорты */
+.settingsContainerHasAlerts {
+  opacity: 1 !important;
+}
+
 /* На мобильных устройствах кнопка настроек всегда видна */
 @media (max-width: 768px) {
   .settingsContainer {
@@ -289,6 +294,38 @@
 
 .settingsButton:active {
   transform: scale(0.95);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.settingsButtonSpin {
+  animation: spin 3s linear infinite;
+}
+
+.settingsButtonSpin:hover {
+  animation-play-state: paused;
+}
+
+.settingsButtonNew {
+  opacity: 1 !important;
+  color: var(--error-color, #ef4444);
+}
+
+.settingsButtonNew:hover {
+  transform: none;
+}
+
+.settingsButtonInProgress {
+  opacity: 0.5;
+  color: var(--success-color, #10b981);
+}
+
+.settingsButtonInProgress:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .settingsLink {
