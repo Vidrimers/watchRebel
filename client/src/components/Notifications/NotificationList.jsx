@@ -110,7 +110,9 @@ const NotificationList = () => {
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
     const name = notification.relatedUser?.displayName;
-    return name ? `${name} ${notification.content}` : notification.content;
+    if (name) return `${name} ${notification.content}`;
+    if (notification.relatedUserId) return `Пользователь ${notification.content}`;
+    return notification.content;
   };
 
   // Обработчик пометки всех как прочитанные
