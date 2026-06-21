@@ -89,7 +89,7 @@ const MediaCard = ({
               onClick={() => onAddToList(media)}
               title="Добавить в список"
             >
-              +
+              <Icon name="add" size="small" />
             </button>
           )}
           {onRate && (
@@ -98,7 +98,7 @@ const MediaCard = ({
               onClick={() => onRate(media)}
               title="Оценить"
             >
-              ★
+              <Icon name="star" size="small" />
             </button>
           )}
         </div>

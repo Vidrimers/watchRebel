@@ -6,7 +6,7 @@ import UserPageLayout from '../components/Layout/UserPageLayout';
 import { MediaGrid } from '../components/Media';
 import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
 import useAlert from '../hooks/useAlert';
-import ConfirmDialog from '../components/Common/ConfirmDialog';
+import AddToListModal from '../components/Wall/AddToListModal';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './CatalogPage.module.css';
@@ -30,9 +30,8 @@ const CatalogPage = () => {
   const [genres, setGenres] = useState({ movieGenres: [], tvGenres: [] });
   
   // Состояние для выбора списка
-  const [showListSelector, setShowListSelector] = useState(false);
+  const [showAddToListModal, setShowAddToListModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedListId, setSelectedListId] = useState('');
   
   // Параметры из URL
   const activeTab = searchParams.get('tab') || 'movies'; // movies | tv
@@ -199,7 +198,7 @@ const CatalogPage = () => {
    */
   const handleAddToList = (item) => {
     setSelectedItem(item);
-    setShowListSelector(true);
+    setShowAddToListModal(true);
   };
 
   /**
@@ -264,8 +263,7 @@ const CatalogPage = () => {
    * Отмена выбора списка
    */
   const handleCancelListSelector = () => {
-    setShowListSelector(false);
-    setSelectedListId('');
+    setShowAddToListModal(false);
     setSelectedItem(null);
   };
 
@@ -470,41 +468,18 @@ const CatalogPage = () => {
         </div>
       </div>
 
-      {/* Модальное окно выбора списка */}
-      <ConfirmDialog
-        isOpen={showListSelector}
-        title="Выберите список"
-        message={
-          <div className={styles.listSelectorContent}>
-            <p className={styles.listSelectorText}>
-              Добавить "{selectedItem?.title || selectedItem?.name}" в список:
-            </p>
-            <select 
-              value={selectedListId}
-              onChange={(e) => setSelectedListId(e.target.value)}
-              className={styles.listSelect}
-            >
-              <option value="">Выберите список</option>
-              {relevantLists.map(list => (
-                <option key={list.id} value={list.id}>
-                  {list.name}
-                </option>
-              ))}
-            </select>
-            {relevantLists.length === 0 && (
-              <p className={styles.noListsMessage}>
-                У вас пока нет списков. Создайте список на странице "Мои {activeTab === 'movies' ? 'фильмы' : 'сериалы'}".
-              </p>
-            )}
-          </div>
-        }
-        onConfirm={handleConfirmAddToList}
-        onCancel={handleCancelListSelector}
-        confirmText="Добавить"
-        cancelText="Отмена"
-        confirmButtonStyle="primary"
-        confirmDisabled={!selectedListId}
-      />
+      {/* Модальное окно добавления в список */}
+      {showAddToListModal && selectedItem && (
+        <AddToListModal
+          tmdbId={selectedItem.id}
+          mediaType={activeTab === 'movies' ? 'movie' : 'tv'}
+          mediaTitle={selectedItem.title || selectedItem.name}
+          onClose={() => {
+            setShowAddToListModal(false);
+            setSelectedItem(null);
+          }}
+        />
+      )}
     </UserPageLayout>
   );
 };

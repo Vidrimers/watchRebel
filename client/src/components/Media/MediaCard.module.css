@@ -140,14 +140,18 @@
 
 .actionButton {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 8px;
   border: 1px solid var(--border-color, #ddd);
   background: var(--button-bg, #f8f9fa);
   color: var(--text-primary, #333);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
