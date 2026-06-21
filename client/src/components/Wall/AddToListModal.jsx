@@ -132,7 +132,10 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onUpdate,
         const listToDelete = lists.find(l => l.name === userListName);
         if (listToDelete) {
           try {
-            await api.delete(`/lists/${listToDelete.id}/items/${tmdbId}?mediaType=${mediaType}`);
+            const item = listToDelete.items?.find(i => i.tmdbId === tmdbId);
+            if (item) {
+              await api.delete(`/lists/${listToDelete.id}/items/${item.id}`);
+            }
           } catch (e) {
             console.warn('Не удалось удалить из списка:', e);
           }
@@ -212,7 +215,7 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, userListName, onUpdate,
               disabled={adding === 'watchlist' || inWatchlist}
             >
               <Icon name="watchlist" size="small" />
-              {inWatchlist ? '✓ Уже в "Хочу посмотреть"' : adding === 'watchlist' ? 'Добавление...' : 'Хочу посмотреть'}
+              {inWatchlist ? '✓ Уже в списке' : adding === 'watchlist' ? 'Добавление...' : 'Хочу посмотреть'}
             </button>
           )}
 
