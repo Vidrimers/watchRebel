@@ -154,7 +154,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
               </div>
 
               {/* Аватар */}
-              <UserAvatar user={user} size={isSearchPage ? "tiny" : (narrow ? "small" : "medium")} />
+              <UserAvatar user={user} size={narrow ? "small" : "medium"} />
 
               {/* Имя пользователя - скрыто в узком режиме и на странице поиска */}
               {!narrow && (
