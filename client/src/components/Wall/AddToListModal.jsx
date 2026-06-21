@@ -20,18 +20,22 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
   const [newListName, setNewListName] = useState('');
   const [creating, setCreating] = useState(false);
   const [personalNote, setPersonalNote] = useState('');
+  const [inWatchlist, setInWatchlist] = useState(false);
 
-  // Загружаем списки пользователя
+  // Загружаем списки пользователя и проверяем watchlist
   useEffect(() => {
     const fetchLists = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/lists', {
-          params: { mediaType }
-        });
-        setLists(response.data);
+        const [listsRes, watchlistRes] = await Promise.all([
+          api.get('/lists', { params: { mediaType } }),
+          api.get('/watchlist', { params: { mediaType } })
+        ]);
+        setLists(listsRes.data);
+        const isInWatchlist = watchlistRes.data.some(item => item.tmdbId === tmdbId);
+        setInWatchlist(isInWatchlist);
       } catch (err) {
-        console.error('Ошибка загрузки списков:', err);
+        console.error('Ошибка загрузки данных:', err);
         setError('Не удалось загрузить списки');
       } finally {
         setLoading(false);
@@ -39,7 +43,7 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
     };
 
     fetchLists();
-  }, [mediaType]);
+  }, [mediaType, tmdbId]);
 
   // Добавление в список
   const handleAddToList = async (listId) => {
@@ -177,12 +181,12 @@ const AddToListModal = ({ tmdbId, mediaType, mediaTitle, onClose }) => {
 
           {!loading && !showCreateForm && (
             <button
-              className={styles.watchlistButton}
-              onClick={handleAddToWatchlist}
-              disabled={adding === 'watchlist'}
+              className={`${styles.watchlistButton} ${inWatchlist ? styles.watchlistAdded : ''}`}
+              onClick={inWatchlist ? null : handleAddToWatchlist}
+              disabled={adding === 'watchlist' || inWatchlist}
             >
               <Icon name="watchlist" size="small" />
-              {adding === 'watchlist' ? 'Добавление...' : 'Хочу посмотреть'}
+              {inWatchlist ? '✓ Уже в "Хочу посмотреть"' : adding === 'watchlist' ? 'Добавление...' : 'Хочу посмотреть'}
             </button>
           )}
 

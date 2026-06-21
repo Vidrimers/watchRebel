@@ -176,6 +176,18 @@
   cursor: not-allowed;
 }
 
+.watchlistAdded {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  color: #22c55e;
+  opacity: 1;
+}
+
+.watchlistAdded:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+}
+
 .createListButton {
   display: flex;
   align-items: center;
