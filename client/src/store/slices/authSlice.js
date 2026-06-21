@@ -95,6 +95,11 @@ const authSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    updateNicknameDisplay: (state, action) => {
+      if (state.user) {
+        state.user.nicknameDisplay = action.payload;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -142,5 +147,5 @@ const authSlice = createSlice({
   }
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, updateNicknameDisplay } = authSlice.actions;
 export default authSlice.reducer;

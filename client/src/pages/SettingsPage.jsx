@@ -226,13 +226,13 @@ const SettingsPage = () => {
                         onChange={async () => {
                           try {
                             await api.put('/users/me/nickname-display', { nicknameDisplay: 'nickname' });
-                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'nickname' }));
+                            dispatch({ type: 'auth/updateNicknameDisplay', payload: 'nickname' });
                           } catch (error) {
                             console.error(error);
                           }
                         }}
                       />
-                      <span>Ник</span>
+                      <span className={styles.nicknameStar}>Ник*</span>
                     </label>
                     <label className={styles.radioOption}>
                       <input
@@ -243,7 +243,7 @@ const SettingsPage = () => {
                         onChange={async () => {
                           try {
                             await api.put('/users/me/nickname-display', { nicknameDisplay: 'name' });
-                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'name' }));
+                            dispatch({ type: 'auth/updateNicknameDisplay', payload: 'name' });
                           } catch (error) {
                             console.error(error);
                           }
@@ -260,7 +260,7 @@ const SettingsPage = () => {
                         onChange={async () => {
                           try {
                             await api.put('/users/me/nickname-display', { nicknameDisplay: 'both' });
-                            dispatch(updateProfile({ userId: user.id, nicknameDisplay: 'both' }));
+                            dispatch({ type: 'auth/updateNicknameDisplay', payload: 'both' });
                           } catch (error) {
                             console.error(error);
                           }

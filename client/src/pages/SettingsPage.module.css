@@ -851,3 +851,12 @@
   border-color: var(--border-color-dark, #444);
   color: var(--text-primary-dark, #e0e0e0);
 }
+
+.nicknameStar {
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+}
+
+:global(.dark) .nicknameStar {
+  color: var(--accent-primary-dark, #818cf8);
+}
