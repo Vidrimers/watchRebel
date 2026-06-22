@@ -527,11 +527,14 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleDeleteClick = (e, messageId) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    const container = messagesContainerRef.current.getBoundingClientRect();
+    const container = messagesContainerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const scrollTop = container.scrollTop;
+    
     setDeleteMessageId(messageId);
     setDeletePopupPosition({
-      top: rect.bottom - container.top + 4,
-      left: rect.right - container.left - 160
+      top: rect.top - containerRect.top + scrollTop + rect.height + 4,
+      left: rect.right - containerRect.left - 160
     });
     setShowDeletePopup(true);
   };
