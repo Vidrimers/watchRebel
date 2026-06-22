@@ -14,6 +14,7 @@ import SuggestMediaModal from './SuggestMediaModal';
 import LocationModal from './LocationModal';
 import RecordingOverlay from './RecordingOverlay';
 import AudioPlayer from './AudioPlayer';
+import DeleteMessagePopup from './DeleteMessagePopup';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
@@ -69,6 +70,9 @@ const MessageThread = ({ conversation, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modalImages, setModalImages] = useState([]);
   const [imageDimensions, setImageDimensions] = useState({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [deleteMessageId, setDeleteMessageId] = useState(null);
+  const [deletePopupPosition, setDeletePopupPosition] = useState(null);
 
   const {
     isRecording,
@@ -519,18 +523,29 @@ const MessageThread = ({ conversation, onClose }) => {
   // Определяем, нужно ли показывать кнопку записи
   const hasContent = messageText.trim() || selectedFiles.length > 0;
 
-  // Обработчик удаления сообщения
-  const handleDeleteMessage = async (messageId) => {
-    const confirmed = await showConfirm({
-      title: 'Удалить сообщение',
-      message: 'Вы уверены, что хотите удалить это сообщение?',
-      confirmText: 'Удалить',
-      cancelText: 'Отмена'
+  // Обработчик удаления сообщения — показ popup
+  const handleDeleteClick = (e, messageId) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const container = messagesContainerRef.current.getBoundingClientRect();
+    setDeleteMessageId(messageId);
+    setDeletePopupPosition({
+      top: rect.bottom - container.top + 4,
+      left: rect.right - container.left - 160
     });
-    
-    if (confirmed) {
-      dispatch(deleteMessage(messageId));
-    }
+    setShowDeletePopup(true);
+  };
+
+  // Удаление для себя
+  const handleDeleteForMe = async () => {
+    if (!deleteMessageId) return;
+    dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_me' }));
+  };
+
+  // Удаление для всех
+  const handleDeleteForEveryone = async () => {
+    if (!deleteMessageId) return;
+    dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_everyone' }));
   };
 
   // Форматирование времени
@@ -922,7 +937,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         {isOwnMessage && (
                           <button
                             className={styles.deleteButton}
-                            onClick={() => handleDeleteMessage(message.id)}
+                            onClick={(e) => handleDeleteClick(e, message.id)}
                             title="Удалить сообщение"
                           >
                             ×
@@ -1155,6 +1170,13 @@ const MessageThread = ({ conversation, onClose }) => {
           onClose={() => setShowLocationModal(false)}
         />
       )}
+      <DeleteMessagePopup
+        isOpen={showDeletePopup}
+        onClose={() => { setShowDeletePopup(false); setDeleteMessageId(null); }}
+        onDeleteForMe={handleDeleteForMe}
+        onDeleteForEveryone={handleDeleteForEveryone}
+        position={deletePopupPosition}
+      />
     </>
   );
 };

@@ -72,10 +72,10 @@ export const sendMessage = createAsyncThunk(
 // Удалить сообщение
 export const deleteMessage = createAsyncThunk(
   'messages/deleteMessage',
-  async (messageId, { rejectWithValue }) => {
+  async ({ messageId, deleteType = 'for_me' }, { rejectWithValue }) => {
     try {
-      await api.delete(`/messages/${messageId}`);
-      return messageId;
+      await api.delete(`/messages/${messageId}?deleteType=${deleteType}`);
+      return { messageId, deleteType };
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -198,7 +198,8 @@ const messagesSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteMessage.fulfilled, (state, action) => {
-        state.messages = state.messages.filter(m => m.id !== action.payload);
+        const { messageId } = action.payload;
+        state.messages = state.messages.filter(m => m.id !== messageId);
         state.error = null;
       })
       .addCase(deleteMessage.rejected, (state, action) => {

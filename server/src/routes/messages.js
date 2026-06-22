@@ -171,6 +171,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
         WHERE m.conversation_id = ?
+          AND (m.deleted_for_users IS NULL OR m.deleted_for_users = '[]' OR NOT m.deleted_for_users LIKE '%"${userId}"%')
         ORDER BY m.created_at DESC
         LIMIT ? OFFSET ?
       ) ORDER BY created_at ASC
@@ -485,11 +486,13 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 /**
  * DELETE /api/messages/:id
  * Удалить сообщение
+ * query: deleteType = "for_me" | "for_everyone"
  * Только отправитель может удалить свое сообщение
  */
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const { deleteType = 'for_me' } = req.query;
     const userId = req.user.id;
 
     // Проверяем, существует ли сообщение и является ли пользователь отправителем
@@ -521,23 +524,54 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    // Удаляем сообщение
-    const deleteResult = await executeQuery(
-      'DELETE FROM messages WHERE id = ?',
-      [id]
-    );
+    if (deleteType === 'for_everyone') {
+      // Физическое удаление сообщения
+      const deleteResult = await executeQuery(
+        'DELETE FROM messages WHERE id = ?',
+        [id]
+      );
 
-    if (!deleteResult.success) {
-      return res.status(500).json({ 
-        error: 'Ошибка удаления сообщения',
-        code: 'DATABASE_ERROR' 
+      if (!deleteResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка удаления сообщения',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      res.json({ 
+        message: 'Сообщение удалено для всех',
+        messageId: id 
+      });
+    } else {
+      // Soft delete — помечаем как удаленное для текущего пользователя
+      let deletedForUsers = [];
+      try {
+        deletedForUsers = JSON.parse(message.deleted_for_users || '[]');
+      } catch (e) {
+        deletedForUsers = [];
+      }
+
+      if (!deletedForUsers.includes(userId)) {
+        deletedForUsers.push(userId);
+      }
+
+      const updateResult = await executeQuery(
+        'UPDATE messages SET deleted_for_users = ? WHERE id = ?',
+        [JSON.stringify(deletedForUsers), id]
+      );
+
+      if (!updateResult.success) {
+        return res.status(500).json({ 
+          error: 'Ошибка удаления сообщения',
+          code: 'DATABASE_ERROR' 
+        });
+      }
+
+      res.json({ 
+        message: 'Сообщение удалено для вас',
+        messageId: id 
       });
     }
-
-    res.json({ 
-      message: 'Сообщение успешно удалено',
-      messageId: id 
-    });
 
   } catch (error) {
     console.error('Ошибка удаления сообщения:', error);

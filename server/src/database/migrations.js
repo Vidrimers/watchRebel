@@ -309,6 +309,9 @@ export async function runMigrations() {
       -- Добавляем колонки для геометки и предложений медиа
       ALTER TABLE messages ADD COLUMN location TEXT;
       ALTER TABLE messages ADD COLUMN suggested_media TEXT;
+      
+      -- Добавляем колонку для soft delete (удаление для конкретных пользователей)
+      ALTER TABLE messages ADD COLUMN deleted_for_users TEXT DEFAULT '[]';
 
       -- Таблица настроек уведомлений
       CREATE TABLE IF NOT EXISTS notification_settings (
