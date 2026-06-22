@@ -203,6 +203,12 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleScroll = (e) => {
     const container = e.target;
     
+    // Закрываем popup удаления при скролле
+    if (showDeletePopup) {
+      setShowDeletePopup(false);
+      setDeleteMessageId(null);
+    }
+    
     // Если проскроллили в самый верх и есть еще сообщения
     if (container.scrollTop === 0 && hasMoreMessages && !loadingMore) {
       loadOlderMessages();
