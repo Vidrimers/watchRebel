@@ -158,8 +158,10 @@ const messagesSlice = createSlice({
         }
         
         state.currentConversation = action.payload.conversationId;
-        state.hasMoreMessages = pagination.hasMore;
-        state.totalMessages = pagination.total;
+        if (pagination) {
+          state.hasMoreMessages = pagination.hasMore;
+          state.totalMessages = pagination.total;
+        }
         state.error = null;
       })
       .addCase(fetchMessages.rejected, (state, action) => {
