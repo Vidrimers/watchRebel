@@ -49,21 +49,24 @@ const RecordingOverlay = ({
     const width = canvas.width;
     const height = canvas.height;
     
-    ctx.clearRect(0, 0, width, height);
-    
-    const barCount = 40;
-    const barWidth = width / barCount - 2;
-    const step = Math.floor(analyserData.length / barCount);
-    
-    for (let i = 0; i < barCount; i++) {
-      const value = analyserData[i * step] || 0;
-      const barHeight = Math.max(2, (value / 255) * height * 0.9);
-      const x = i * (barWidth + 2);
-      const y = (height - barHeight) / 2;
+      ctx.clearRect(0, 0, width, height);
       
-      const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
-      gradient.addColorStop(0, 'var(--accent-primary, #6366f1)');
-      gradient.addColorStop(1, 'var(--accent-primary-active, #4f46e5)');
+      const barCount = 40;
+      const barWidth = width / barCount - 2;
+      const step = Math.floor(analyserData.length / barCount);
+      
+      const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim() || '#6366f1';
+      const accentActiveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary-active').trim() || '#4f46e5';
+      
+      for (let i = 0; i < barCount; i++) {
+        const value = analyserData[i * step] || 0;
+        const barHeight = Math.max(2, (value / 255) * height * 0.9);
+        const x = i * (barWidth + 2);
+        const y = (height - barHeight) / 2;
+        
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, accentColor);
+        gradient.addColorStop(1, accentActiveColor);
       
       ctx.fillStyle = gradient;
       ctx.beginPath();
