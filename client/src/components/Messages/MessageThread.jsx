@@ -91,15 +91,7 @@ const MessageThread = ({ conversation, onClose }) => {
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
     if (conversation && conversation.id) {
-      dispatch(fetchMessages({ conversationId: conversation.id, limit: 50, offset: 0 }));
-      
-      // Fallback: polling если WebSocket не работает (например через ngrok)
-      const pollInterval = setInterval(() => {
-        // Проверяем только если не получили сообщение через WebSocket недавно
-        dispatch(fetchMessages({ conversationId: conversation.id, limit: 50, offset: 0 }));
-      }, 5000); // Проверяем каждые 5 секунд
-      
-      return () => clearInterval(pollInterval);
+      dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0 }));
     }
   }, [conversation, dispatch]);
 
@@ -226,7 +218,7 @@ const MessageThread = ({ conversation, onClose }) => {
     
     await dispatch(fetchMessages({ 
       conversationId: conversation.id, 
-      limit: 50, 
+      limit: 20, 
       offset: messages.length 
     }));
     

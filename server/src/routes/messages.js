@@ -120,7 +120,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 /**
  * GET /api/messages/:conversationId
  * Получить все сообщения из конкретного диалога
- * Query params: limit (default: 50), offset (default: 0)
+ * Query params: limit (default: 20), offset (default: 0)
  * Сообщения отсортированы по дате создания (старые сверху)
  * Автоматически отмечает непрочитанные сообщения как прочитанные
  */
@@ -128,7 +128,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
     // Проверяем, что пользователь является участником диалога
