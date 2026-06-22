@@ -15,6 +15,7 @@ import LocationModal from './LocationModal';
 import RecordingOverlay from './RecordingOverlay';
 import AudioPlayer from './AudioPlayer';
 import DeleteMessagePopup from './DeleteMessagePopup';
+import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
@@ -74,6 +75,8 @@ const MessageThread = ({ conversation, onClose }) => {
   const [deleteMessageId, setDeleteMessageId] = useState(null);
   const [deleteMessageIsOwn, setDeleteMessageIsOwn] = useState(true);
   const [deletePopupPosition, setDeletePopupPosition] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const textareaRef = useRef(null);
 
   const {
     isRecording,
@@ -529,6 +532,13 @@ const MessageThread = ({ conversation, onClose }) => {
 
   // Определяем, нужно ли показывать кнопку записи
   const hasContent = messageText.trim() || selectedFiles.length > 0;
+
+  // Вставка эмодзи в textarea
+  const handleEmojiSelect = (emoji) => {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
 
   // Обработчик удаления сообщения — показ popup над крестиком
   const handleDeleteClick = (e, messageId, isOwn) => {
@@ -1051,6 +1061,7 @@ const MessageThread = ({ conversation, onClose }) => {
                 </div>
                 <div className={styles.inputFieldWrapper}>
                   <textarea
+                    ref={textareaRef}
                     className={styles.input}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
@@ -1059,15 +1070,33 @@ const MessageThread = ({ conversation, onClose }) => {
                     rows={1}
                     disabled={sendingMessage}
                   />
-                  {messageText.trim() && (
+                  <div className={styles.inputActions}>
                     <button
                       type="button"
-                      className={styles.clearInputButton}
-                      onClick={() => setMessageText('')}
-                      title="Очистить"
+                      className={styles.emojiButton}
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      title="Эмодзи"
                     >
-                      ✕
+                      😊
                     </button>
+                    {messageText.trim() && (
+                      <button
+                        type="button"
+                        className={styles.clearInputButton}
+                        onClick={() => setMessageText('')}
+                        title="Очистить"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {showEmojiPicker && (
+                    <div className={styles.emojiPickerWrapper}>
+                      <ReactionPicker
+                        onSelect={handleEmojiSelect}
+                        onClose={() => setShowEmojiPicker(false)}
+                      />
+                    </div>
                   )}
                 </div>
                 {hasContent ? (

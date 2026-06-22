@@ -333,8 +333,6 @@
 }
 
 .clearInputButton {
-  position: absolute;
-  right: 10px;
   background: none;
   border: none;
   color: var(--text-secondary, #999);
@@ -351,6 +349,40 @@
 
 .clearInputButton:hover {
   color: var(--text-primary, #333);
+}
+
+.inputActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: absolute;
+  right: 10px;
+}
+
+.emojiButton {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.emojiButton:hover {
+  transform: scale(1.2);
+}
+
+.emojiPickerWrapper {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  z-index: 100;
 }
 
 .input:focus {
