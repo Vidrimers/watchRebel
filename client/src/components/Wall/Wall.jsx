@@ -178,11 +178,13 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
         posterPath: data.posterPath
       })).unwrap();
       
-      await showAlert({
-        title: 'Опубликовано!',
-        message: 'Пост добавлен на стену',
-        type: 'success'
-      });
+      if (!isOwnProfile) {
+        await showAlert({
+          title: 'Опубликовано!',
+          message: 'Пост добавлен на стену',
+          type: 'success'
+        });
+      }
     } catch (error) {
       await showAlert({
         title: 'Ошибка',
