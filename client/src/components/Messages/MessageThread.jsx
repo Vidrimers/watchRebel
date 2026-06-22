@@ -523,18 +523,15 @@ const MessageThread = ({ conversation, onClose }) => {
   // Определяем, нужно ли показывать кнопку записи
   const hasContent = messageText.trim() || selectedFiles.length > 0;
 
-  // Обработчик удаления сообщения — показ popup
+  // Обработчик удаления сообщения — показ popup над крестиком
   const handleDeleteClick = (e, messageId) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    const container = messagesContainerRef.current;
-    const containerRect = container.getBoundingClientRect();
-    const scrollTop = container.scrollTop;
     
     setDeleteMessageId(messageId);
     setDeletePopupPosition({
-      top: rect.top - containerRect.top + scrollTop + rect.height + 4,
-      left: rect.right - containerRect.left - 160
+      top: rect.top - 120,
+      left: rect.right - 170
     });
     setShowDeletePopup(true);
   };
