@@ -116,7 +116,7 @@ app.use('/uploads', (req, res, next) => {
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.webm')) {
-      res.setHeader('Content-Type', 'video/webm');
+      res.setHeader('Content-Type', 'audio/webm');
     } else if (filePath.endsWith('.ogg')) {
       res.setHeader('Content-Type', 'audio/ogg');
     }
