@@ -79,10 +79,15 @@ const RecordingOverlay = ({
     if (!audioPreviewRef.current) return;
     if (isPlaying) {
       audioPreviewRef.current.pause();
+      setIsPlaying(false);
     } else {
-      audioPreviewRef.current.play();
+      audioPreviewRef.current.currentTime = 0;
+      audioPreviewRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error('Ошибка воспроизведения:', err);
+      });
     }
-    setIsPlaying(!isPlaying);
   };
 
   const isPreview = !!audioUrl && !isRecording;
@@ -131,7 +136,16 @@ const RecordingOverlay = ({
               onClick={togglePreview}
               title={isPlaying ? 'Пауза' : 'Прослушать'}
             >
-              <Icon name={isPlaying ? 'clock' : 'feed'} size="medium" />
+              {isPlaying ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <rect x="6" y="4" width="4" height="16" rx="1"/>
+                  <rect x="14" y="4" width="4" height="16" rx="1"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <polygon points="6,4 20,12 6,20"/>
+                </svg>
+              )}
             </button>
             <button 
               type="button" 
@@ -139,7 +153,10 @@ const RecordingOverlay = ({
               onClick={onSend}
               title="Отправить"
             >
-              <Icon name="messages" size="medium" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
             </button>
           </>
         ) : null}
