@@ -533,6 +533,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         code: 'FORBIDDEN' 
       });
     }
+
+    if (deleteType === 'for_everyone') {
       const deleteResult = await executeQuery(
         'DELETE FROM messages WHERE id = ?',
         [id]

@@ -307,12 +307,8 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
       -- Добавляем колонки для геометки и предложений медиа
-      ALTER TABLE messages ADD COLUMN location TEXT;
-      ALTER TABLE messages ADD COLUMN suggested_media TEXT;
+      -- (проверяются отдельно ниже, чтобы не падать при дубликате)
       
-      -- Добавляем колонку для soft delete (удаление для конкретных пользователей)
-      ALTER TABLE messages ADD COLUMN deleted_for_users TEXT DEFAULT '[]';
-
       -- Таблица настроек уведомлений
       CREATE TABLE IF NOT EXISTS notification_settings (
         id TEXT PRIMARY KEY,
@@ -359,6 +355,20 @@ export async function runMigrations() {
         console.log('✓ Все таблицы успешно созданы');
         console.log('Все миграции успешно выполнены!');
         
+        // Безопасное добавление колонок (игнорируем если уже существуют)
+        const safeAddColumn = (table, column, type, defaultVal) => {
+          const defaultClause = defaultVal ? ` DEFAULT ${defaultVal}` : '';
+          db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defaultClause}`, [], (err) => {
+            if (err && !err.message.includes('duplicate column')) {
+              console.error(`Ошибка добавления колонки ${table}.${column}:`, err.message);
+            }
+          });
+        };
+
+        safeAddColumn('messages', 'location', 'TEXT');
+        safeAddColumn('messages', 'suggested_media', 'TEXT');
+        safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())
