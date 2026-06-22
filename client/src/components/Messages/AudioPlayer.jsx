@@ -1,21 +1,25 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './AudioPlayer.module.css';
 
-let currentSource = null;
-let currentCtx = null;
-
-const AudioPlayer = ({ src }) => {
+const AudioPlayer = ({ src, audioBuffer: propBuffer }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [ready, setReady] = useState(false);
   const progressRef = useRef(null);
   const audioBufferRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const sourceRef = useRef(null);
   const startTimeRef = useRef(0);
   const offsetRef = useRef(0);
-  const animRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
+    if (propBuffer) {
+      audioBufferRef.current = propBuffer;
+      setDuration(propBuffer.duration);
+      return;
+    }
+    if (!src) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -27,7 +31,6 @@ const AudioPlayer = ({ src }) => {
         if (!cancelled) {
           audioBufferRef.current = buf;
           setDuration(buf.duration);
-          setReady(true);
         }
       } catch (e) {
         console.error('Audio decode error:', e);
@@ -35,28 +38,20 @@ const AudioPlayer = ({ src }) => {
     };
     load();
     return () => { cancelled = true; };
-  }, [src]);
-
-  const updateTime = useCallback(() => {
-    if (currentSource && currentCtx) {
-      const elapsed = currentCtx.currentTime - startTimeRef.current + offsetRef.current;
-      setCurrentTime(Math.min(elapsed, duration));
-      animRef.current = requestAnimationFrame(updateTime);
-    }
-  }, [duration]);
+  }, [src, propBuffer]);
 
   const stopPlayback = useCallback(() => {
-    if (currentSource) {
-      try { currentSource.stop(); } catch {}
-      currentSource = null;
+    if (sourceRef.current) {
+      try { sourceRef.current.stop(); } catch {}
+      sourceRef.current = null;
     }
-    if (currentCtx) {
-      try { currentCtx.close(); } catch {}
-      currentCtx = null;
+    if (audioCtxRef.current) {
+      try { audioCtxRef.current.close(); } catch {}
+      audioCtxRef.current = null;
     }
-    if (animRef.current) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   }, []);
 
@@ -85,14 +80,20 @@ const AudioPlayer = ({ src }) => {
       setIsPlaying(false);
       setCurrentTime(0);
       offsetRef.current = 0;
-      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
 
-    currentSource = source;
-    currentCtx = ctx;
+    sourceRef.current = source;
+    audioCtxRef.current = ctx;
     setIsPlaying(true);
-    animRef.current = requestAnimationFrame(updateTime);
-  }, [isPlaying, stopPlayback, updateTime]);
+
+    timerRef.current = setInterval(() => {
+      if (audioCtxRef.current) {
+        const elapsed = audioCtxRef.current.currentTime - startTimeRef.current + offset;
+        const ct = Math.min(elapsed, duration);
+        setCurrentTime(ct);
+      }
+    }, 100);
+  }, [isPlaying, stopPlayback, duration]);
 
   useEffect(() => {
     return () => stopPlayback();
@@ -106,7 +107,12 @@ const AudioPlayer = ({ src }) => {
 
     if (isPlaying) {
       stopPlayback();
-      offsetRef.current = newOffset;
+    }
+
+    offsetRef.current = newOffset;
+    setCurrentTime(newOffset);
+
+    if (isPlaying) {
       const buf = audioBufferRef.current;
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const source = ctx.createBufferSource();
@@ -119,13 +125,9 @@ const AudioPlayer = ({ src }) => {
         setCurrentTime(0);
         offsetRef.current = 0;
       };
-      currentSource = source;
-      currentCtx = ctx;
+      sourceRef.current = source;
+      audioCtxRef.current = ctx;
       setIsPlaying(true);
-      animRef.current = requestAnimationFrame(updateTime);
-    } else {
-      offsetRef.current = newOffset;
-      setCurrentTime(newOffset);
     }
   };
 
@@ -144,7 +146,6 @@ const AudioPlayer = ({ src }) => {
         type="button"
         className={styles.playBtn}
         onClick={togglePlay}
-        disabled={!ready}
       >
         {isPlaying ? (
           <div className={styles.pauseIcon}>

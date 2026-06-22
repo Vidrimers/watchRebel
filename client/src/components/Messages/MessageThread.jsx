@@ -74,7 +74,7 @@ const MessageThread = ({ conversation, onClose }) => {
     isRecording,
     recordingTime,
     audioBlob,
-    audioUrl,
+    audioBuffer,
     analyserData,
     error: recordingError,
     startRecording,
@@ -1012,8 +1012,7 @@ const MessageThread = ({ conversation, onClose }) => {
               <RecordingOverlay
                 recordingTime={recordingTime}
                 analyserData={analyserData}
-                audioUrl={audioUrl}
-                audioBlob={audioBlob}
+                audioBuffer={audioBuffer}
                 isRecording={isRecording}
                 onSend={handleSendAudio}
                 onCancel={() => { cancelRecording(); resetRecording(); }}

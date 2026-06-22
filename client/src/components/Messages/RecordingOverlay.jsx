@@ -5,7 +5,7 @@ import styles from './RecordingOverlay.module.css';
 const RecordingOverlay = ({
   recordingTime,
   analyserData,
-  audioUrl,
+  audioBuffer,
   isRecording,
   onSend,
   onCancel,
@@ -13,14 +13,11 @@ const RecordingOverlay = ({
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [previewTime, setPreviewTime] = useState(0);
-  const [previewDuration, setPreviewDuration] = useState(0);
   const canvasRef = useRef(null);
-  const audioBufferRef = useRef(null);
   const audioCtxRef = useRef(null);
   const sourceRef = useRef(null);
   const startTimeRef = useRef(0);
   const offsetRef = useRef(0);
-  const animFrameRef = useRef(null);
   const timerRef = useRef(null);
 
   const formatTime = (seconds) => {
@@ -30,35 +27,7 @@ const RecordingOverlay = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    if (!audioUrl || isRecording) return;
-    let cancelled = false;
-
-    const decode = async () => {
-      try {
-        let arrayBuffer;
-        if (audioUrl.startsWith('blob:')) {
-          const resp = await fetch(audioUrl);
-          arrayBuffer = await resp.arrayBuffer();
-        } else {
-          const resp = await fetch(audioUrl);
-          arrayBuffer = await resp.arrayBuffer();
-        }
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = await ctx.decodeAudioData(arrayBuffer);
-        ctx.close();
-        if (!cancelled) {
-          audioBufferRef.current = buf;
-          setPreviewDuration(Math.floor(buf.duration));
-        }
-      } catch (e) {
-        console.error('Preview decode error:', e);
-      }
-    };
-    decode();
-
-    return () => { cancelled = true; };
-  }, [audioUrl, isRecording]);
+  const duration = audioBuffer ? audioBuffer.duration : 0;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -102,10 +71,6 @@ const RecordingOverlay = ({
       try { audioCtxRef.current.close(); } catch {}
       audioCtxRef.current = null;
     }
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -119,14 +84,13 @@ const RecordingOverlay = ({
       return;
     }
 
-    const buf = audioBufferRef.current;
-    if (!buf) return;
+    if (!audioBuffer) return;
 
     stopPlayback();
 
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const source = ctx.createBufferSource();
-    source.buffer = buf;
+    source.buffer = audioBuffer;
     source.connect(ctx.destination);
 
     const offset = offsetRef.current;
@@ -146,7 +110,7 @@ const RecordingOverlay = ({
     timerRef.current = setInterval(() => {
       if (audioCtxRef.current) {
         const elapsed = audioCtxRef.current.currentTime - startTimeRef.current + offset;
-        setPreviewTime(Math.min(Math.floor(elapsed), previewDuration));
+        setPreviewTime(Math.min(Math.floor(elapsed), duration));
       }
     }, 100);
   };
@@ -155,13 +119,13 @@ const RecordingOverlay = ({
     return () => stopPlayback();
   }, []);
 
-  const isPreview = !!audioUrl && !isRecording;
+  const isPreview = audioBuffer && !isRecording;
 
   return (
     <div className={styles.overlay}>
       <div className={styles.topBar}>
         <span className={styles.timer}>
-          {isPreview ? formatTime(previewDuration) : formatTime(recordingTime)}
+          {isPreview ? formatTime(duration) : formatTime(recordingTime)}
         </span>
         {isRecording && (
           <span className={styles.recordingDot} />

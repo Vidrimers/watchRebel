@@ -1,14 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
 
-const MAX_DURATION = 5 * 60; // 5 минут
-const MIN_DURATION = 1; // 1 секунда минимум
+const MAX_DURATION = 5 * 60;
+const MIN_DURATION = 1;
 
 const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBuffer, setAudioBuffer] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [audioUrl, setAudioUrl] = useState(null);
   const [analyserData, setAnalyserData] = useState(new Uint8Array(0));
   const [error, setError] = useState(null);
 
@@ -27,11 +26,30 @@ const useAudioRecorder = () => {
     animFrameRef.current = requestAnimationFrame(updateAnalyser);
   }, []);
 
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const cleanupStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    analyserRef.current = null;
+  }, []);
+
   const startRecording = useCallback(async () => {
     try {
       setError(null);
+      setAudioBuffer(null);
       setAudioBlob(null);
-      setAudioUrl(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -43,9 +61,9 @@ const useAudioRecorder = () => {
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
-        ? 'audio/ogg;codecs=opus'
-        : 'audio/webm;codecs=opus';
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
@@ -57,21 +75,23 @@ const useAudioRecorder = () => {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
-        const url = URL.createObjectURL(blob);
+
+        try {
+          const arrayBuffer = await blob.arrayBuffer();
+          const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const decodedBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+          decodeCtx.close();
+          setAudioBuffer(decodedBuffer);
+        } catch (e) {
+          console.error('Failed to decode recorded audio:', e);
+          setError('Не удалось декодировать запись');
+        }
+
         setAudioBlob(blob);
-        setAudioUrl(url);
         stopTimer();
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
-        }
-        if (animFrameRef.current) {
-          cancelAnimationFrame(animFrameRef.current);
-          animFrameRef.current = null;
-        }
-        analyserRef.current = null;
+        cleanupStream();
       };
 
       mediaRecorder.start(100);
@@ -90,7 +110,7 @@ const useAudioRecorder = () => {
 
       updateAnalyser();
     } catch (err) {
-      console.error('Ошибка записи:', err);
+      console.error('Recording error:', err);
       if (err.name === 'NotAllowedError') {
         setError('Доступ к микрофону запрещён');
       } else if (err.name === 'NotFoundError') {
@@ -99,11 +119,19 @@ const useAudioRecorder = () => {
         setError('Не удалось начать запись');
       }
     }
-  }, [updateAnalyser]);
+  }, [updateAnalyser, stopTimer, cleanupStream]);
 
   const stopRecording = useCallback(() => {
     if (recordingTime < MIN_DURATION) {
-      cancelRecording();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      cleanupStream();
+      stopTimer();
+      setIsRecording(false);
+      setRecordingTime(0);
+      setAudioBuffer(null);
+      setAudioBlob(null);
       setError('Запись слишком короткая (минимум 1 секунда)');
       return;
     }
@@ -111,49 +139,31 @@ const useAudioRecorder = () => {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
-    setIsPaused(false);
-  }, []);
+  }, [recordingTime, cleanupStream, stopTimer]);
 
   const cancelRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     chunksRef.current = [];
+    setAudioBuffer(null);
     setAudioBlob(null);
-    setAudioUrl(null);
     setRecordingTime(0);
     setIsRecording(false);
-    setIsPaused(false);
     stopTimer();
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    analyserRef.current = null;
-  }, []);
-
-  const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
+    cleanupStream();
+    setError(null);
+  }, [stopTimer, cleanupStream]);
 
   const reset = useCallback(() => {
     cancelRecording();
-    setError(null);
   }, [cancelRecording]);
 
   return {
     isRecording,
-    isPaused,
     recordingTime,
+    audioBuffer,
     audioBlob,
-    audioUrl,
     analyserData,
     error,
     startRecording,
