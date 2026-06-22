@@ -3,7 +3,7 @@ import styles from './AudioPlayer.module.css';
 
 let currentAudio = null;
 
-const AudioPlayer = ({ src }) => {
+const AudioPlayer = ({ src, type }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -80,7 +80,7 @@ const AudioPlayer = ({ src }) => {
 
   return (
     <div className={styles.player}>
-      <audio ref={audioRef} src={src} />
+      <audio ref={audioRef} src={src} type={type} />
       
       <button 
         type="button" 

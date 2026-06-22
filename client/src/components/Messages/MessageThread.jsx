@@ -900,6 +900,7 @@ const MessageThread = ({ conversation, onClose }) => {
                               ) : attachment.mimetype.startsWith('audio/') ? (
                                 <AudioPlayer 
                                   src={`${import.meta.env.VITE_API_URL || ''}${attachment.path}`}
+                                  type={attachment.mimetype}
                                 />
                               ) : (
                                 <a
@@ -1012,6 +1013,7 @@ const MessageThread = ({ conversation, onClose }) => {
                 recordingTime={recordingTime}
                 analyserData={analyserData}
                 audioUrl={audioUrl}
+                audioBlob={audioBlob}
                 isRecording={isRecording}
                 onSend={handleSendAudio}
                 onCancel={() => { cancelRecording(); resetRecording(); }}

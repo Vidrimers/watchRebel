@@ -6,6 +6,7 @@ const RecordingOverlay = ({
   recordingTime, 
   analyserData, 
   audioUrl, 
+  audioBlob,
   isRecording, 
   onSend, 
   onCancel, 
@@ -103,7 +104,7 @@ const RecordingOverlay = ({
 
   return (
     <div className={styles.overlay}>
-      <audio ref={audioPreviewRef} src={audioUrl} />
+      <audio ref={audioPreviewRef} src={audioUrl} type={audioBlob?.type || 'audio/ogg'} />
       
       <div className={styles.topBar}>
         <span className={styles.timer}>
