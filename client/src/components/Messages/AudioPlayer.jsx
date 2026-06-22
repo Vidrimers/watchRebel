@@ -1,71 +1,131 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './AudioPlayer.module.css';
 
-let currentAudio = null;
+let currentSource = null;
+let currentCtx = null;
 
-const AudioPlayer = ({ src, type }) => {
+const AudioPlayer = ({ src }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const audioRef = useRef(null);
+  const [ready, setReady] = useState(false);
   const progressRef = useRef(null);
+  const audioBufferRef = useRef(null);
+  const startTimeRef = useRef(0);
+  const offsetRef = useRef(0);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onLoaded = () => {
-      const dur = audio.duration;
-      setDuration(isFinite(dur) ? dur : 0);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const resp = await fetch(src);
+        const arr = await resp.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = await ctx.decodeAudioData(arr);
+        ctx.close();
+        if (!cancelled) {
+          audioBufferRef.current = buf;
+          setDuration(buf.duration);
+          setReady(true);
+        }
+      } catch (e) {
+        console.error('Audio decode error:', e);
+      }
     };
-    const onTimeUpdate = () => {
-      const ct = audio.currentTime;
-      setCurrentTime(isFinite(ct) ? ct : 0);
-    };
-    const onEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    };
-
-    audio.addEventListener('loadedmetadata', onLoaded);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('ended', onEnded);
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', onLoaded);
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('ended', onEnded);
-    };
+    load();
+    return () => { cancelled = true; };
   }, [src]);
 
-  const togglePlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      if (currentAudio && currentAudio !== audio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-      }
-      currentAudio = audio;
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(err => {
-        console.error('Audio play error:', err);
-      });
+  const updateTime = useCallback(() => {
+    if (currentSource && currentCtx) {
+      const elapsed = currentCtx.currentTime - startTimeRef.current + offsetRef.current;
+      setCurrentTime(Math.min(elapsed, duration));
+      animRef.current = requestAnimationFrame(updateTime);
     }
-  }, [isPlaying]);
+  }, [duration]);
+
+  const stopPlayback = useCallback(() => {
+    if (currentSource) {
+      try { currentSource.stop(); } catch {}
+      currentSource = null;
+    }
+    if (currentCtx) {
+      try { currentCtx.close(); } catch {}
+      currentCtx = null;
+    }
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      stopPlayback();
+      setIsPlaying(false);
+      return;
+    }
+
+    const buf = audioBufferRef.current;
+    if (!buf) return;
+
+    stopPlayback();
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createBufferSource();
+    source.buffer = buf;
+    source.connect(ctx.destination);
+
+    const offset = offsetRef.current;
+    startTimeRef.current = ctx.currentTime;
+    source.start(0, offset);
+
+    source.onended = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      offsetRef.current = 0;
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+
+    currentSource = source;
+    currentCtx = ctx;
+    setIsPlaying(true);
+    animRef.current = requestAnimationFrame(updateTime);
+  }, [isPlaying, stopPlayback, updateTime]);
+
+  useEffect(() => {
+    return () => stopPlayback();
+  }, [stopPlayback]);
 
   const handleProgressClick = (e) => {
+    if (!audioBufferRef.current || !duration) return;
     const rect = progressRef.current.getBoundingClientRect();
     const pos = (e.clientX - rect.left) / rect.width;
-    const audio = audioRef.current;
-    if (audio && duration) {
-      audio.currentTime = pos * duration;
-      setCurrentTime(audio.currentTime);
+    const newOffset = pos * duration;
+
+    if (isPlaying) {
+      stopPlayback();
+      offsetRef.current = newOffset;
+      const buf = audioBufferRef.current;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createBufferSource();
+      source.buffer = buf;
+      source.connect(ctx.destination);
+      startTimeRef.current = ctx.currentTime;
+      source.start(0, newOffset);
+      source.onended = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        offsetRef.current = 0;
+      };
+      currentSource = source;
+      currentCtx = ctx;
+      setIsPlaying(true);
+      animRef.current = requestAnimationFrame(updateTime);
+    } else {
+      offsetRef.current = newOffset;
+      setCurrentTime(newOffset);
     }
   };
 
@@ -80,12 +140,11 @@ const AudioPlayer = ({ src, type }) => {
 
   return (
     <div className={styles.player}>
-      <audio ref={audioRef} src={src} type={type} />
-      
-      <button 
-        type="button" 
-        className={styles.playBtn} 
+      <button
+        type="button"
+        className={styles.playBtn}
         onClick={togglePlay}
+        disabled={!ready}
       >
         {isPlaying ? (
           <div className={styles.pauseIcon}>
@@ -95,13 +154,13 @@ const AudioPlayer = ({ src, type }) => {
           <div className={styles.playIcon} />
         )}
       </button>
-      
+
       <div className={styles.progressContainer} ref={progressRef} onClick={handleProgressClick}>
         <div className={styles.progressBar}>
           <div className={styles.progressFill} style={{ width: `${progress}%` }} />
         </div>
       </div>
-      
+
       <span className={styles.time}>
         {formatTime(currentTime)} / {formatTime(duration)}
       </span>
