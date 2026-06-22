@@ -106,12 +106,7 @@ const RecordingOverlay = ({
 
   return (
     <div className={styles.overlay}>
-      <video 
-        ref={audioPreviewRef} 
-        src={audioUrl} 
-        preload="metadata"
-        style={{ display: 'none' }}
-      />
+      <audio ref={audioPreviewRef} src={audioUrl} preload="metadata" />
       
       <div className={styles.topBar}>
         <span className={styles.timer}>

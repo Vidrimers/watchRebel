@@ -1,25 +1,25 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './AudioPlayer.module.css';
 
-let currentMedia = null;
+let currentAudio = null;
 
 const AudioPlayer = ({ src }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const mediaRef = useRef(null);
+  const audioRef = useRef(null);
   const progressRef = useRef(null);
 
   useEffect(() => {
-    const media = mediaRef.current;
-    if (!media) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     const onLoaded = () => {
-      const dur = media.duration;
+      const dur = audio.duration;
       setDuration(isFinite(dur) ? dur : 0);
     };
     const onTimeUpdate = () => {
-      const ct = media.currentTime;
+      const ct = audio.currentTime;
       setCurrentTime(isFinite(ct) ? ct : 0);
     };
     const onEnded = () => {
@@ -27,34 +27,34 @@ const AudioPlayer = ({ src }) => {
       setCurrentTime(0);
     };
 
-    media.addEventListener('loadedmetadata', onLoaded);
-    media.addEventListener('timeupdate', onTimeUpdate);
-    media.addEventListener('ended', onEnded);
+    audio.addEventListener('loadedmetadata', onLoaded);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
 
     return () => {
-      media.removeEventListener('loadedmetadata', onLoaded);
-      media.removeEventListener('timeupdate', onTimeUpdate);
-      media.removeEventListener('ended', onEnded);
+      audio.removeEventListener('loadedmetadata', onLoaded);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
     };
   }, [src]);
 
   const togglePlay = useCallback(() => {
-    const media = mediaRef.current;
-    if (!media) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     if (isPlaying) {
-      media.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      if (currentMedia && currentMedia !== media) {
-        currentMedia.pause();
-        currentMedia.currentTime = 0;
+      if (currentAudio && currentAudio !== audio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
       }
-      currentMedia = media;
-      media.load();
-      media.oncanplay = () => {
-        media.oncanplay = null;
-        media.play().then(() => {
+      currentAudio = audio;
+      audio.load();
+      audio.oncanplay = () => {
+        audio.oncanplay = null;
+        audio.play().then(() => {
           setIsPlaying(true);
         }).catch(err => {
           console.error('Ошибка воспроизведения аудио:', err);
@@ -66,10 +66,10 @@ const AudioPlayer = ({ src }) => {
   const handleProgressClick = (e) => {
     const rect = progressRef.current.getBoundingClientRect();
     const pos = (e.clientX - rect.left) / rect.width;
-    const media = mediaRef.current;
-    if (media && duration) {
-      media.currentTime = pos * duration;
-      setCurrentTime(media.currentTime);
+    const audio = audioRef.current;
+    if (audio && duration) {
+      audio.currentTime = pos * duration;
+      setCurrentTime(audio.currentTime);
     }
   };
 
@@ -84,12 +84,7 @@ const AudioPlayer = ({ src }) => {
 
   return (
     <div className={styles.player}>
-      <video 
-        ref={mediaRef} 
-        src={src} 
-        preload="metadata"
-        style={{ display: 'none' }}
-      />
+      <audio ref={audioRef} src={src} preload="metadata" />
       
       <button 
         type="button" 
