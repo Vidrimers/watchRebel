@@ -470,8 +470,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleSendAudio = async () => {
     if (!audioBlob || sendingMessage) return;
     
-    const ext = audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
-    const file = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: audioBlob.type });
+    const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: audioBlob.type });
     
     try {
       await dispatch(sendMessage({
