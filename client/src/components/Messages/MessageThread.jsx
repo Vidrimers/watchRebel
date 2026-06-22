@@ -744,14 +744,6 @@ const MessageThread = ({ conversation, onClose }) => {
         ref={messagesContainerRef}
         onScroll={handleScroll}
       >
-      <DeleteMessagePopup
-        isOpen={showDeletePopup}
-        onClose={() => { setShowDeletePopup(false); setDeleteMessageId(null); }}
-        onDeleteForMe={handleDeleteForMe}
-        onDeleteForEveryone={handleDeleteForEveryone}
-        isOwnMessage={deleteMessageIsOwn}
-        position={deletePopupPosition}
-      />
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
             <p>Начните переписку с {conversation.otherUser.displayName}</p>
@@ -1163,6 +1155,14 @@ const MessageThread = ({ conversation, onClose }) => {
         </div>
       )}
       </div>
+      <DeleteMessagePopup
+        isOpen={showDeletePopup}
+        onClose={() => { setShowDeletePopup(false); setDeleteMessageId(null); }}
+        onDeleteForMe={handleDeleteForMe}
+        onDeleteForEveryone={handleDeleteForEveryone}
+        isOwnMessage={deleteMessageIsOwn}
+        position={deletePopupPosition}
+      />
       {showReportModal && (
         <ReportModal
           reportedUserId={conversation.otherUser.id}
