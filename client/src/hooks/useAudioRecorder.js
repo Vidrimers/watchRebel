@@ -60,9 +60,12 @@ const useAudioRecorder = () => {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        setAudioBlob(blob);
-        setAudioUrl(url);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAudioBlob(blob);
+          setAudioUrl(reader.result);
+        };
+        reader.readAsDataURL(blob);
         stopTimer();
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(t => t.stop());
