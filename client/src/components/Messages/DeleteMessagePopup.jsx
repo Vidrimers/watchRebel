@@ -36,7 +36,7 @@ const DeleteMessagePopup = ({
         className={styles.option}
         onClick={() => { onDeleteForMe(); onClose(); }}
       >
-        У себя
+        Удалить у себя
       </button>
       {isOwnMessage && (
         <button 
