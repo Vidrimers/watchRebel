@@ -58,7 +58,7 @@ const useAudioRecorder = () => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
         setAudioUrl(url);

@@ -90,15 +90,12 @@ const RecordingOverlay = ({
       audio.pause();
       setIsPlaying(false);
     } else {
-      audio.load();
-      audio.oncanplay = () => {
-        audio.oncanplay = null;
-        audio.play().then(() => {
-          setIsPlaying(true);
-        }).catch(err => {
-          console.error('Ошибка воспроизведения:', err);
-        });
-      };
+      audio.currentTime = 0;
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error('Preview play error:', err);
+      });
     }
   };
 
@@ -106,7 +103,7 @@ const RecordingOverlay = ({
 
   return (
     <div className={styles.overlay}>
-      <video ref={audioPreviewRef} src={audioUrl} preload="metadata" style={{ display: 'none' }} />
+      <audio ref={audioPreviewRef} src={audioUrl} />
       
       <div className={styles.topBar}>
         <span className={styles.timer}>
