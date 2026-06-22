@@ -18,6 +18,7 @@ const RecordingOverlay = ({
   const canvasRef = useRef(null);
 
   const formatTime = (seconds) => {
+    if (!seconds || !isFinite(seconds) || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -26,8 +27,14 @@ const RecordingOverlay = ({
   useEffect(() => {
     if (audioUrl && audioPreviewRef.current) {
       const audio = audioPreviewRef.current;
-      const onLoaded = () => setPreviewDuration(Math.floor(audio.duration));
-      const onTimeUpdate = () => setPreviewTime(Math.floor(audio.currentTime));
+      const onLoaded = () => {
+        const dur = audio.duration;
+        setPreviewDuration(isFinite(dur) ? Math.floor(dur) : 0);
+      };
+      const onTimeUpdate = () => {
+        const ct = audio.currentTime;
+        setPreviewTime(isFinite(ct) ? Math.floor(ct) : 0);
+      };
       const onEnded = () => setIsPlaying(false);
       
       audio.addEventListener('loadedmetadata', onLoaded);
@@ -99,7 +106,7 @@ const RecordingOverlay = ({
 
   return (
     <div className={styles.overlay}>
-      <audio ref={audioPreviewRef} src={audioUrl} />
+      <audio ref={audioPreviewRef} src={audioUrl} preload="metadata" />
       
       <div className={styles.topBar}>
         <span className={styles.timer}>

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 
 const MAX_DURATION = 5 * 60; // 5 минут
+const MIN_DURATION = 1; // 1 секунда минимум
 
 const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -106,6 +107,11 @@ const useAudioRecorder = () => {
   }, [updateAnalyser]);
 
   const stopRecording = useCallback(() => {
+    if (recordingTime < MIN_DURATION) {
+      cancelRecording();
+      setError('Запись слишком короткая (минимум 1 секунда)');
+      return;
+    }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
