@@ -12,6 +12,9 @@ import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import AttachmentDropdown from './AttachmentDropdown';
 import SuggestMediaModal from './SuggestMediaModal';
 import LocationModal from './LocationModal';
+import RecordingOverlay from './RecordingOverlay';
+import AudioPlayer from './AudioPlayer';
+import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
 import styles from './MessageThread.module.css';
 
@@ -66,6 +69,24 @@ const MessageThread = ({ conversation, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modalImages, setModalImages] = useState([]);
   const [imageDimensions, setImageDimensions] = useState({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
+
+  const {
+    isRecording,
+    recordingTime,
+    audioBlob,
+    audioUrl,
+    analyserData,
+    error: recordingError,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    reset: resetRecording
+  } = useAudioRecorder();
+
+  const longPressTimerRef = useRef(null);
+  const isLongPressRef = useRef(false);
+
+  const showInput = !isRecording && !audioBlob;
 
   // Загружаем сообщения при выборе диалога
   useEffect(() => {
@@ -445,6 +466,66 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
+  // Отправка аудиосообщения
+  const handleSendAudio = async () => {
+    if (!audioBlob || sendingMessage) return;
+    
+    const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: audioBlob.type });
+    
+    try {
+      await dispatch(sendMessage({
+        receiverId: conversation.otherUser.id,
+        content: '',
+        files: [file]
+      }));
+      resetRecording();
+    } catch (error) {
+      console.error('Ошибка отправки аудио:', error);
+    }
+  };
+
+  // Обработчики кнопки записи (длинное нажатие = запись)
+  const handleRecordMouseDown = () => {
+    isLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      startRecording();
+    }, 300);
+  };
+
+  const handleRecordMouseUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (isLongPressRef.current) {
+      isLongPressRef.current = false;
+    } else {
+      // Короткое нажатие — ничего (остаёмся в текстовом режиме)
+    }
+  };
+
+  const handleRecordTouchStart = (e) => {
+    isLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      startRecording();
+    }, 300);
+  };
+
+  const handleRecordTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (isLongPressRef.current) {
+      isLongPressRef.current = false;
+    }
+  };
+
+  // Определяем, нужно ли показывать кнопку записи
+  const hasContent = messageText.trim() || selectedFiles.length > 0;
+
   // Обработчик удаления сообщения
   const handleDeleteMessage = async (messageId) => {
     const confirmed = await showConfirm({
@@ -815,6 +896,10 @@ const MessageThread = ({ conversation, onClose }) => {
                                   className={styles.attachmentImage}
                                   onClick={() => handleImageClick(message.attachments, attIndex)}
                                 />
+                              ) : attachment.mimetype.startsWith('audio/') ? (
+                                <AudioPlayer 
+                                  src={`${import.meta.env.VITE_API_URL || ''}${attachment.path}`}
+                                />
                               ) : (
                                 <a
                                   href={`${import.meta.env.VITE_API_URL || ''}${attachment.path}`}
@@ -920,50 +1005,80 @@ const MessageThread = ({ conversation, onClose }) => {
               accept="image/*"
               style={{ display: 'none' }}
             />
-            <div className={styles.attachContainer}>
-              <button
-                type="button"
-                className={styles.attachButton}
-                onClick={() => setShowAttachDropdown(!showAttachDropdown)}
-                title="Прикрепить"
-              >
-                <Icon name="paperclip" size="medium" />
-              </button>
-              {showAttachDropdown && (
-                <AttachmentDropdown
-                  onSelect={handleAttachmentSelect}
-                  onClose={() => setShowAttachDropdown(false)}
-                />
-              )}
-            </div>
-            <div className={styles.inputFieldWrapper}>
-              <textarea
-                className={styles.input}
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Напишите сообщение..."
-                rows={1}
-                disabled={sendingMessage}
+            
+            {(isRecording || audioBlob) ? (
+              <RecordingOverlay
+                recordingTime={recordingTime}
+                analyserData={analyserData}
+                audioUrl={audioUrl}
+                isRecording={isRecording}
+                onSend={handleSendAudio}
+                onCancel={() => { cancelRecording(); resetRecording(); }}
+                onStop={stopRecording}
               />
-              {messageText.trim() && (
-                <button
-                  type="button"
-                  className={styles.clearInputButton}
-                  onClick={() => setMessageText('')}
-                  title="Очистить"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            <button
-              type="submit"
-              className={styles.sendButton}
-              disabled={(!messageText.trim() && selectedFiles.length === 0) || sendingMessage}
-            >
-              {sendingMessage ? '...' : '➤'}
-            </button>
+            ) : (
+              <>
+                <div className={styles.attachContainer}>
+                  <button
+                    type="button"
+                    className={styles.attachButton}
+                    onClick={() => setShowAttachDropdown(!showAttachDropdown)}
+                    title="Прикрепить"
+                  >
+                    <Icon name="paperclip" size="medium" />
+                  </button>
+                  {showAttachDropdown && (
+                    <AttachmentDropdown
+                      onSelect={handleAttachmentSelect}
+                      onClose={() => setShowAttachDropdown(false)}
+                    />
+                  )}
+                </div>
+                <div className={styles.inputFieldWrapper}>
+                  <textarea
+                    className={styles.input}
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Напишите сообщение..."
+                    rows={1}
+                    disabled={sendingMessage}
+                  />
+                  {messageText.trim() && (
+                    <button
+                      type="button"
+                      className={styles.clearInputButton}
+                      onClick={() => setMessageText('')}
+                      title="Очистить"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                {hasContent ? (
+                  <button
+                    type="submit"
+                    className={styles.sendButton}
+                    disabled={(!messageText.trim() && selectedFiles.length === 0) || sendingMessage}
+                  >
+                    {sendingMessage ? '...' : '➤'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={`${styles.sendButton} ${styles.recordButton}`}
+                    onMouseDown={handleRecordMouseDown}
+                    onMouseUp={handleRecordMouseUp}
+                    onMouseLeave={handleRecordMouseUp}
+                    onTouchStart={handleRecordTouchStart}
+                    onTouchEnd={handleRecordTouchEnd}
+                    title="Зажмите для записи"
+                  >
+                    <Icon name="support" size="medium" color="white" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
       </form>

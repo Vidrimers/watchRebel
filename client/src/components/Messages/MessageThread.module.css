@@ -393,6 +393,20 @@
   cursor: not-allowed;
 }
 
+.recordButton {
+  background: var(--text-secondary, #6b7280);
+}
+
+.recordButton:hover {
+  background: var(--error-color, #ef4444);
+  transform: scale(1.1);
+}
+
+.recordButton:active {
+  transform: scale(0.95);
+  background: var(--error-color, #ef4444);
+}
+
 /* Форма ввода с файлами */
 .inputWrapper {
   width: 100%;

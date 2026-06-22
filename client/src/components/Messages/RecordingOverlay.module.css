@@ -1,0 +1,134 @@
+.overlay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--accent-primary, #6366f1);
+  border-radius: 24px;
+  flex: 1;
+  min-height: 52px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.timer {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+}
+
+.recordingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--error-color, #ef4444);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.visualizer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100%;
+  max-width: 300px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cancelBtn,
+.stopBtn,
+.playBtn,
+.sendBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.cancelBtn {
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+}
+
+.cancelBtn:hover {
+  background: var(--error-color, #ef4444);
+  color: white;
+}
+
+.stopBtn {
+  background: var(--error-color, #ef4444);
+  width: 40px;
+  height: 40px;
+}
+
+.stopBtn:hover {
+  transform: scale(1.1);
+}
+
+.stopIcon {
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 3px;
+}
+
+.playBtn {
+  background: var(--accent-primary, #6366f1);
+  color: white;
+}
+
+.playBtn:hover {
+  transform: scale(1.1);
+}
+
+.sendBtn {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.sendBtn:hover {
+  transform: scale(1.1);
+}
+
+:global(.dark) .overlay {
+  background: var(--bg-primary-dark, #1a1a1a);
+}
+
+:global(.dark) .timer {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .cancelBtn {
+  background: var(--bg-tertiary-dark, #2a2a2a);
+  color: var(--text-secondary-dark, #aaa);
+}
