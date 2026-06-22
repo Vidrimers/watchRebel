@@ -36,10 +36,16 @@ const RecordingOverlay = ({
 
     const decode = async () => {
       try {
-        const resp = await fetch(audioUrl);
-        const arr = await resp.arrayBuffer();
+        let arrayBuffer;
+        if (audioUrl.startsWith('blob:')) {
+          const resp = await fetch(audioUrl);
+          arrayBuffer = await resp.arrayBuffer();
+        } else {
+          const resp = await fetch(audioUrl);
+          arrayBuffer = await resp.arrayBuffer();
+        }
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = await ctx.decodeAudioData(arr);
+        const buf = await ctx.decodeAudioData(arrayBuffer);
         ctx.close();
         if (!cancelled) {
           audioBufferRef.current = buf;

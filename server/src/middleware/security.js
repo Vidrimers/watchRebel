@@ -49,11 +49,13 @@ export function configureHelmet() {
         ],
         connectSrc: [
           "'self'",
-          "https://api.themoviedb.org", // TMDb API
-          "https://image.tmdb.org", // TMDb изображения
-          "https://oauth.telegram.org", // Telegram OAuth
-          "wss:", // WebSocket
-          "ws:" // WebSocket для разработки
+          "blob:",
+          "data:",
+          "https://api.themoviedb.org",
+          "https://image.tmdb.org",
+          "https://oauth.telegram.org",
+          "wss:",
+          "ws:"
         ],
         frameSrc: [
           "'self'",
