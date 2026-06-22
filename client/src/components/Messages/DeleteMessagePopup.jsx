@@ -6,6 +6,7 @@ const DeleteMessagePopup = ({
   onClose, 
   onDeleteForMe, 
   onDeleteForEveryone,
+  isOwnMessage,
   position 
 }) => {
   const popupRef = useRef(null);
@@ -37,12 +38,14 @@ const DeleteMessagePopup = ({
       >
         У себя
       </button>
-      <button 
-        className={`${styles.option} ${styles.danger}`}
-        onClick={() => { onDeleteForEveryone(); onClose(); }}
-      >
-        Удалить у всех
-      </button>
+      {isOwnMessage && (
+        <button 
+          className={`${styles.option} ${styles.danger}`}
+          onClick={() => { onDeleteForEveryone(); onClose(); }}
+        >
+          Удалить у всех
+        </button>
+      )}
       <button 
         className={styles.cancel}
         onClick={onClose}

@@ -72,6 +72,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [imageDimensions, setImageDimensions] = useState({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleteMessageId, setDeleteMessageId] = useState(null);
+  const [deleteMessageIsOwn, setDeleteMessageIsOwn] = useState(true);
   const [deletePopupPosition, setDeletePopupPosition] = useState(null);
 
   const {
@@ -530,11 +531,12 @@ const MessageThread = ({ conversation, onClose }) => {
   const hasContent = messageText.trim() || selectedFiles.length > 0;
 
   // Обработчик удаления сообщения — показ popup над крестиком
-  const handleDeleteClick = (e, messageId) => {
+  const handleDeleteClick = (e, messageId, isOwn) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     
     setDeleteMessageId(messageId);
+    setDeleteMessageIsOwn(isOwn);
     setDeletePopupPosition({
       top: rect.top - 120,
       left: rect.right - 170
@@ -742,13 +744,14 @@ const MessageThread = ({ conversation, onClose }) => {
         ref={messagesContainerRef}
         onScroll={handleScroll}
       >
-        <DeleteMessagePopup
-          isOpen={showDeletePopup}
-          onClose={() => { setShowDeletePopup(false); setDeleteMessageId(null); }}
-          onDeleteForMe={handleDeleteForMe}
-          onDeleteForEveryone={handleDeleteForEveryone}
-          position={deletePopupPosition}
-        />
+      <DeleteMessagePopup
+        isOpen={showDeletePopup}
+        onClose={() => { setShowDeletePopup(false); setDeleteMessageId(null); }}
+        onDeleteForMe={handleDeleteForMe}
+        onDeleteForEveryone={handleDeleteForEveryone}
+        isOwnMessage={deleteMessageIsOwn}
+        position={deletePopupPosition}
+      />
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
             <p>Начните переписку с {conversation.otherUser.displayName}</p>
@@ -947,15 +950,13 @@ const MessageThread = ({ conversation, onClose }) => {
                       )}
                       <div className={styles.messageFooter}>
                         <span className={styles.messageTime}>{formatTime(message.createdAt)}</span>
-                        {isOwnMessage && (
-                          <button
-                            className={styles.deleteButton}
-                            onClick={(e) => handleDeleteClick(e, message.id)}
-                            title="Удалить сообщение"
-                          >
-                            ×
-                          </button>
-                        )}
+                        <button
+                          className={styles.deleteButton}
+                          onClick={(e) => handleDeleteClick(e, message.id, isOwnMessage)}
+                          title="Удалить сообщение"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -488,6 +488,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
  * Удалить сообщение
  * query: deleteType = "for_me" | "for_everyone"
  * Только отправитель может удалить свое сообщение
+ * Любой участник диалога может скрыть сообщение у себя
  */
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
@@ -495,7 +496,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { deleteType = 'for_me' } = req.query;
     const userId = req.user.id;
 
-    // Проверяем, существует ли сообщение и является ли пользователь отправителем
     const messageCheck = await executeQuery(
       'SELECT * FROM messages WHERE id = ?',
       [id]
@@ -517,15 +517,22 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     const message = messageCheck.data[0];
 
-    if (message.sender_id !== userId) {
+    // Проверяем что пользователь участник диалога
+    const isParticipant = message.sender_id === userId || message.receiver_id === userId;
+    if (!isParticipant) {
       return res.status(403).json({ 
         error: 'Нет прав на удаление этого сообщения',
         code: 'FORBIDDEN' 
       });
     }
 
-    if (deleteType === 'for_everyone') {
-      // Физическое удаление сообщения
+    // "У всех" — только автор может удалить
+    if (deleteType === 'for_everyone' && message.sender_id !== userId) {
+      return res.status(403).json({ 
+        error: 'Только автор может удалить сообщение для всех',
+        code: 'FORBIDDEN' 
+      });
+    }
       const deleteResult = await executeQuery(
         'DELETE FROM messages WHERE id = ?',
         [id]
