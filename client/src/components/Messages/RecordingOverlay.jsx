@@ -77,16 +77,21 @@ const RecordingOverlay = ({
 
   const togglePreview = () => {
     if (!audioPreviewRef.current) return;
+    const audio = audioPreviewRef.current;
+    
     if (isPlaying) {
-      audioPreviewRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      audioPreviewRef.current.currentTime = 0;
-      audioPreviewRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(err => {
-        console.error('Ошибка воспроизведения:', err);
-      });
+      audio.load();
+      audio.oncanplay = () => {
+        audio.oncanplay = null;
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(err => {
+          console.error('Ошибка воспроизведения:', err);
+        });
+      };
     }
   };
 
