@@ -63,6 +63,11 @@ export function configureHelmet() {
           "https://www.openstreetmap.org", // Геометка
           "https://www.youtube.com" // Трейлеры
         ],
+        mediaSrc: [
+          "'self'",
+          "blob:",
+          "data:"
+        ],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
       }

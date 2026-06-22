@@ -113,7 +113,13 @@ app.use('/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 });
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'audio/webm');
+    }
+  }
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);
