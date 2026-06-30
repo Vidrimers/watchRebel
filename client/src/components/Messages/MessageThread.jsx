@@ -15,6 +15,7 @@ import LocationModal from './LocationModal';
 import RecordingOverlay from './RecordingOverlay';
 import AudioPlayer from './AudioPlayer';
 import DeleteMessagePopup from './DeleteMessagePopup';
+import GroupMembersModal from './GroupMembersModal';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
@@ -82,6 +83,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [deleteMessageIsOwn, setDeleteMessageIsOwn] = useState(true);
   const [deletePopupPosition, setDeletePopupPosition] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const textareaRef = useRef(null);
 
   const {
@@ -777,7 +779,7 @@ const MessageThread = ({ conversation, onClose }) => {
                   className={styles.dropdownItem}
                   onClick={() => {
                     setShowMenu(false);
-                    // TODO: открыть список участников
+                    setShowMembersModal(true);
                   }}
                 >
                   <Icon name="friends" size="small" /> Участники
@@ -1306,6 +1308,14 @@ const MessageThread = ({ conversation, onClose }) => {
         <LocationModal
           onSend={handleSendLocation}
           onClose={() => setShowLocationModal(false)}
+        />
+      )}
+      {showMembersModal && isGroup && (
+        <GroupMembersModal
+          conversationId={conversation.id}
+          isCreator={conversation.createdBy === user.id}
+          onClose={() => setShowMembersModal(false)}
+          onMembersUpdated={() => dispatch(fetchMessages({ conversationId: conversation.id }))}
         />
       )}
     </>
