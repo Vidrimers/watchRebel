@@ -18,7 +18,6 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Получаем все диалоги пользователя с информацией о собеседнике и последнем сообщении
-    // Исключаем диалоги, где все сообщения скрыты для текущего пользователя
     const query = `
       SELECT
         c.id,
@@ -40,13 +39,12 @@ router.get('/conversations', authenticateToken, async (req, res) => {
         END as other_user_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
         (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND (deleted_for_users IS NULL OR deleted_for_users = '[]' OR NOT deleted_for_users LIKE '%"${userId}"%')) as visible_messages_count
+        (SELECT deleted_for_users FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_deleted_for,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
       LEFT JOIN users u2 ON c.user2_id = u2.id
-      WHERE (c.user1_id = ? OR c.user2_id = ?)
-        AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND (deleted_for_users IS NULL OR deleted_for_users = '[]' OR NOT deleted_for_users LIKE '%"${userId}"%')) > 0
+      WHERE c.user1_id = ? OR c.user2_id = ?
       ORDER BY c.last_message_at DESC
     `;
 
@@ -59,7 +57,18 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       });
     }
 
-    const conversations = conversationsResult.data.map(c => {
+    // Фильтруем диалоги: скрываем те, где последнее сообщение скрыто для текущего пользователя
+    const visibleConversations = conversationsResult.data.filter(c => {
+      if (!c.last_message_deleted_for) return true;
+      try {
+        const deleted = JSON.parse(c.last_message_deleted_for);
+        return !deleted.includes(userId);
+      } catch {
+        return true;
+      }
+    });
+
+    const conversations = visibleConversations.map(c => {
       // Формируем текст последнего сообщения
       let lastMessage = c.last_message_content;
       
