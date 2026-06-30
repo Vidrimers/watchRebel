@@ -18,69 +18,65 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // 1. Обычные диалоги (не групповые)
+    // 1. Личные диалоги (не групповые)
     const directQuery = `
       SELECT
-        c.id,
-        c.user1_id,
-        c.user2_id,
-        c.is_group,
-        c.group_name,
-        c.group_avatar,
-        c.created_by,
-        c.last_message_at,
-        c.created_at,
-        CASE
-          WHEN c.user1_id = ? THEN u2.id
-          ELSE u1.id
-        END as other_user_id,
-        CASE
-          WHEN c.user1_id = ? THEN u2.display_name
-          ELSE u1.display_name
-        END as other_user_name,
-        CASE
-          WHEN c.user1_id = ? THEN u2.avatar_url
-          ELSE u1.avatar_url
-        END as other_user_avatar,
+        c.id, c.user1_id, c.user2_id, c.is_group, c.group_name,
+        c.group_avatar, c.created_by, c.last_message_at, c.created_at,
+        CASE WHEN c.user1_id = ? THEN u2.id ELSE u1.id END as other_user_id,
+        CASE WHEN c.user1_id = ? THEN u2.display_name ELSE u1.display_name END as other_user_name,
+        CASE WHEN c.user1_id = ? THEN u2.avatar_url ELSE u1.avatar_url END as other_user_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
-        (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count
+        (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
       LEFT JOIN users u2 ON c.user2_id = u2.id
       WHERE (c.user1_id = ? OR c.user2_id = ?) AND (c.is_group IS NULL OR c.is_group = 0)
       ORDER BY c.last_message_at DESC
     `;
+    const directResult = await executeQuery(directQuery, [userId, userId, userId, userId, userId]);
 
-    const directResult = await executeQuery(directQuery, [userId, userId, userId, userId, userId, userId]);
+    // Добавляем unread_count отдельным запросом для личных диалогов
+    const directConvs = directResult.success ? directResult.data : [];
+    for (const conv of directConvs) {
+      const unreadResult = await executeQuery(
+        'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
+        [conv.id, userId]
+      );
+      conv.unread_count = (unreadResult.success && unreadResult.data.length > 0) ? unreadResult.data[0].cnt : 0;
+    }
 
-    // 2. Групповые диалоги (через conversation_members)
+    // 2. Групповые диалоги
     const groupQuery = `
-      SELECT
-        c.id,
-        c.is_group,
-        c.group_name,
-        c.group_avatar,
-        c.created_by,
-        c.last_message_at,
-        c.created_at,
-        (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
-        (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
-        (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != ? AND m.is_read = 0) as unread_count,
-        (SELECT COUNT(*) FROM conversation_members WHERE conversation_id = c.id AND left_at IS NULL) as members_count
+      SELECT c.id, c.is_group, c.group_name, c.group_avatar, c.created_by,
+             c.last_message_at, c.created_at,
+             (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
+             (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments
       FROM conversations c
       INNER JOIN conversation_members cm ON c.id = cm.conversation_id
       WHERE cm.user_id = ? AND cm.left_at IS NULL AND c.is_group = 1
       ORDER BY c.last_message_at DESC
     `;
+    const groupResult = await executeQuery(groupQuery, [userId]);
 
-    const groupResult = await executeQuery(groupQuery, [userId, userId, userId]);
+    // Добавляем unread_count и members_count для групп
+    const groupConvs = groupResult.success ? groupResult.data : [];
+    for (const conv of groupConvs) {
+      const unreadResult = await executeQuery(
+        'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
+        [conv.id, userId]
+      );
+      conv.unread_count = (unreadResult.success && unreadResult.data.length > 0) ? unreadResult.data[0].cnt : 0;
 
-    // Объединяем результаты
-    const allConversations = [];
-    if (directResult.success) allConversations.push(...directResult.data);
-    if (groupResult.success) allConversations.push(...groupResult.data);
+      const membersResult = await executeQuery(
+        'SELECT COUNT(*) as cnt FROM conversation_members WHERE conversation_id = ? AND left_at IS NULL',
+        [conv.id]
+      );
+      conv.members_count = (membersResult.success && membersResult.data.length > 0) ? membersResult.data[0].cnt : 0;
+    }
 
-    // Сортируем по last_message_at
+    // Объединяем и сортируем
+    const allConversations = [...directConvs, ...groupConvs];
     allConversations.sort((a, b) => {
       const dateA = a.last_message_at ? new Date(a.last_message_at) : new Date(0);
       const dateB = b.last_message_at ? new Date(b.last_message_at) : new Date(0);
