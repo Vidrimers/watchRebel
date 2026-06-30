@@ -211,6 +211,14 @@
   align-self: flex-start;
 }
 
+.senderName {
+  font-size: 0.7rem;
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+  margin-bottom: 2px;
+  margin-left: 40px;
+}
+
 .messageAvatar {
   flex-shrink: 0;
   text-decoration: none;

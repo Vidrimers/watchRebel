@@ -5,6 +5,7 @@ import { fetchConversations, setCurrentConversation } from '../../store/slices/m
 import Icon from '../Common/Icon';
 import api from '../../services/api';
 import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
+import CreateGroupChatModal from './CreateGroupChatModal';
 import styles from './ConversationList.module.css';
 
 /**
@@ -16,10 +17,11 @@ const ConversationList = ({ onSelectConversation }) => {
   const { conversations, loading, currentConversation } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [deletePopup, setDeletePopup] = useState(null); // { conversationId, position: { x, y } }
+  const [deletePopup, setDeletePopup] = useState(null);
 
   // Загружаем диалоги при монтировании компонента
   useEffect(() => {
@@ -256,74 +258,105 @@ const ConversationList = ({ onSelectConversation }) => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Сообщения</h2>
-        <button 
-          className={styles.newMessageButton}
-          onClick={() => setShowNewMessageModal(true)}
-          title="Написать новое сообщение"
-        >
-          Написать
-        </button>
-      </div>
-      
-      <ul className={styles.list}>
-        {conversations.map((conversation) => (
-          <li
-            key={conversation.id}
-            className={`${styles.item} ${currentConversation === conversation.id ? styles.active : ''}`}
-            onClick={() => handleSelectConversation(conversation)}
+        <div className={styles.headerButtons}>
+          <button
+            className={styles.newMessageButton}
+            onClick={() => setShowNewMessageModal(true)}
+            title="Написать новое сообщение"
           >
-            <div className={styles.avatar}>
-              {conversation.otherUser.avatarUrl ? (
-                <img 
-                  src={
-                    conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                      ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                      : conversation.otherUser.avatarUrl
-                  }
-                  alt={conversation.otherUser.displayName}
-                  className={styles.avatarImage}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                className={styles.avatarPlaceholder}
-                style={{ display: conversation.otherUser.avatarUrl ? 'none' : 'flex' }}
-              >
-                {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+            Написать
+          </button>
+          <button
+            className={styles.newMessageButton}
+            onClick={() => setShowCreateGroupModal(true)}
+            title="Создать групповой чат"
+          >
+            Группа
+          </button>
+        </div>
+      </div>
+
+      <ul className={styles.list}>
+        {conversations.map((conversation) => {
+          const isGroup = conversation.isGroup;
+          const displayName = isGroup ? conversation.groupName : conversation.otherUser?.displayName;
+          const avatarUrl = isGroup ? conversation.groupAvatar : conversation.otherUser?.avatarUrl;
+
+          return (
+            <li
+              key={conversation.id}
+              className={`${styles.item} ${currentConversation === conversation.id ? styles.active : ''}`}
+              onClick={() => handleSelectConversation(conversation)}
+            >
+              <div className={styles.avatar}>
+                {avatarUrl ? (
+                  <img
+                    src={
+                      avatarUrl.startsWith('/uploads/')
+                        ? `${import.meta.env.VITE_API_URL || ''}${avatarUrl}`
+                        : avatarUrl
+                    }
+                    alt={displayName}
+                    className={styles.avatarImage}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={styles.avatarPlaceholder}
+                  style={{ display: avatarUrl ? 'none' : 'flex' }}
+                >
+                  {isGroup ? '👥' : (displayName?.charAt(0).toUpperCase() || '?')}
+                </div>
               </div>
-            </div>
-            
-            <div className={styles.content}>
-              <div className={styles.topRow}>
-                <span className={`${styles.name} ${resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</span>
-                <span className={styles.time}>{formatDate(conversation.lastMessageAt)}</span>
-              </div>
-              <div className={styles.bottomRow}>
-                <p className={styles.lastMessage}>
-                  {truncateText(conversation.lastMessage)}
-                </p>
-                {conversation.unreadCount > 0 && (
-                  <div className={styles.unreadBadge}>
-                    {conversation.unreadCount}
-                  </div>
+
+              <div className={styles.content}>
+                <div className={styles.topRow}>
+                  <span className={styles.name}>
+                    {isGroup ? `👥 ${displayName}` : (
+                      conversation.otherUser ? resolveDisplayNameWithTooltip(conversation.otherUser.id, displayName).text : displayName
+                    )}
+                  </span>
+                  <span className={styles.time}>{formatDate(conversation.lastMessageAt)}</span>
+                </div>
+                <div className={styles.bottomRow}>
+                  <p className={styles.lastMessage}>
+                    {truncateText(conversation.lastMessage)}
+                  </p>
+                  {conversation.unreadCount > 0 && (
+                    <div className={styles.unreadBadge}>
+                      {conversation.unreadCount}
+                    </div>
+                  )}
+                </div>
+                {isGroup && conversation.membersCount > 0 && (
+                  <div className={styles.memberCount}>{conversation.membersCount} участников</div>
                 )}
               </div>
-            </div>
 
-            {/* Крестик удаления — появляется при hover */}
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => handleDeleteClick(e, conversation.id)}
-              title="Удалить диалог"
-            >
-              ×
-            </button>
-          </li>
-        ))}
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => handleDeleteClick(e, conversation.id)}
+                title="Удалить диалог"
+              >
+                ×
+              </button>
+            </li>
+          );
+        })}
       </ul>
+
+      {showCreateGroupModal && (
+        <CreateGroupChatModal
+          onClose={() => setShowCreateGroupModal(false)}
+          onCreated={(convId) => {
+            setShowCreateGroupModal(false);
+            dispatch(fetchConversations());
+          }}
+        />
+      )}
 
       {/* Модальное окно выбора друга */}
       {showNewMessageModal && (

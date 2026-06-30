@@ -48,6 +48,12 @@ const MessageThread = ({ conversation, onClose }) => {
   const navigate = useNavigate();
   const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
+
+  // Хелперы для групповых чатов
+  const isGroup = conversation?.isGroup;
+  const getReceiverId = () => isGroup ? conversation.id : conversation.otherUser?.id;
+  const getDisplayName = () => isGroup ? conversation.groupName : conversation.otherUser?.displayName;
+  const getAvatarUrl = () => isGroup ? conversation.groupAvatar : conversation.otherUser?.avatarUrl;
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
   const [showMenu, setShowMenu] = useState(false);
@@ -247,7 +253,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleSendLocation = async (data) => {
     try {
       await dispatch(sendMessage({
-        receiverId: conversation.otherUser.id,
+        receiverId: getReceiverId(),
         content: `📍 ${data.latitude}, ${data.longitude}`,
         files: [],
         location: { lat: data.latitude, lng: data.longitude }
@@ -261,7 +267,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleSendSuggestedMedia = async (data) => {
     try {
       await dispatch(sendMessage({
-        receiverId: conversation.otherUser.id,
+        receiverId: getReceiverId(),
         content: `🎬 ${data.title}`,
         files: [],
         suggestedMedia: {
@@ -398,7 +404,7 @@ const MessageThread = ({ conversation, onClose }) => {
 
     try {
       const result = await dispatch(sendMessage({
-        receiverId: conversation.otherUser.id,
+        receiverId: getReceiverId(),
         content,
         files
       }));
@@ -481,7 +487,7 @@ const MessageThread = ({ conversation, onClose }) => {
     
     try {
       await dispatch(sendMessage({
-        receiverId: conversation.otherUser.id,
+        receiverId: getReceiverId(),
         content: '',
         files: [file]
       }));
@@ -627,42 +633,60 @@ const MessageThread = ({ conversation, onClose }) => {
         {confirmDialog}
         <div className={styles.container}>
         <div className={styles.header}>
-          <a 
-            href={`/user/${conversation.otherUser.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.headerAvatar}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {conversation.otherUser.avatarUrl ? (
-              <>
-                <img 
+          {isGroup ? (
+            <div className={styles.headerAvatar}>
+              {getAvatarUrl() ? (
+                <img
                   src={
-                    conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                      ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                      : conversation.otherUser.avatarUrl
+                    getAvatarUrl().startsWith('/uploads/')
+                      ? `${import.meta.env.VITE_API_URL || ''}${getAvatarUrl()}`
+                      : getAvatarUrl()
                   }
-                  alt={conversation.otherUser.displayName}
+                  alt={getDisplayName()}
                   className={styles.headerAvatarImage}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
                 />
-                <div 
-                  className={styles.headerAvatarPlaceholder}
-                  style={{ display: 'none' }}
-                >
+              ) : (
+                <div className={styles.headerAvatarPlaceholder}>👥</div>
+              )}
+            </div>
+          ) : (
+            <a
+              href={`/user/${conversation.otherUser.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.headerAvatar}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {conversation.otherUser.avatarUrl ? (
+                <>
+                  <img
+                    src={
+                      conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                        ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
+                        : conversation.otherUser.avatarUrl
+                    }
+                    alt={conversation.otherUser.displayName}
+                    className={styles.headerAvatarImage}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div
+                    className={styles.headerAvatarPlaceholder}
+                    style={{ display: 'none' }}
+                  >
+                    {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                  </div>
+                </>
+              ) : (
+                <div className={styles.headerAvatarPlaceholder}>
                   {conversation.otherUser.displayName.charAt(0).toUpperCase()}
                 </div>
-              </>
-            ) : (
-              <div className={styles.headerAvatarPlaceholder}>
-                {conversation.otherUser.displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </a>
-          <h2 className={`${styles.headerName} ${resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+              )}
+            </a>
+          )}
+          <h2 className={styles.headerName}>{isGroup ? `👥 ${getDisplayName()}` : resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
@@ -675,39 +699,57 @@ const MessageThread = ({ conversation, onClose }) => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.container}>
-      {/* Шапка с информацией о собеседнике */}
+      {/* Шапка с информацией о собеседнике/группе */}
       <div className={styles.header}>
-        <a 
-          href={`/user/${conversation.otherUser.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.headerAvatar}
-        >
-          {conversation.otherUser.avatarUrl ? (
-            <img 
-              src={
-                conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                  ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                  : conversation.otherUser.avatarUrl
-              }
-              alt={conversation.otherUser.displayName}
-              className={styles.headerAvatarImage}
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-          ) : null}
-          <div 
-            className={styles.headerAvatarPlaceholder}
-            style={{ display: conversation.otherUser.avatarUrl ? 'none' : 'flex' }}
-          >
-            {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+        {isGroup ? (
+          <div className={styles.headerAvatar}>
+            {getAvatarUrl() ? (
+              <img
+                src={
+                  getAvatarUrl().startsWith('/uploads/')
+                    ? `${import.meta.env.VITE_API_URL || ''}${getAvatarUrl()}`
+                    : getAvatarUrl()
+                }
+                alt={getDisplayName()}
+                className={styles.headerAvatarImage}
+              />
+            ) : (
+              <div className={styles.headerAvatarPlaceholder}>👥</div>
+            )}
           </div>
-        </a>
-        <h2 className={`${styles.headerName} ${resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).tooltip}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        ) : (
+          <a
+            href={`/user/${conversation.otherUser.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.headerAvatar}
+          >
+            {conversation.otherUser.avatarUrl ? (
+              <img
+                src={
+                  conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                    ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
+                    : conversation.otherUser.avatarUrl
+                }
+                alt={conversation.otherUser.displayName}
+                className={styles.headerAvatarImage}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              className={styles.headerAvatarPlaceholder}
+              style={{ display: conversation.otherUser.avatarUrl ? 'none' : 'flex' }}
+            >
+              {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+            </div>
+          </a>
+        )}
+        <h2 className={styles.headerName}>{isGroup ? `👥 ${getDisplayName()}` : resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
         <div className={styles.headerMenuContainer} ref={menuRef}>
-          <button 
+          <button
             className={styles.headerMenuBtn}
             onClick={() => setShowMenu(!showMenu)}
           >
@@ -719,30 +761,47 @@ const MessageThread = ({ conversation, onClose }) => {
           </button>
           {showMenu && (
             <div className={styles.headerDropdown}>
-              <button 
-                className={styles.dropdownItem}
-                onClick={() => {
-                  setShowMenu(false);
-                  navigate(`/user/${conversation.otherUser.id}`);
-                }}
-              >
-                <Icon name="friends" size="small" /> Профиль
-              </button>
-              <button 
-                className={styles.dropdownItem}
-                onClick={handleBlockUser}
-              >
-                <Icon name="close" size="small" /> Заблокировать
-              </button>
-              <button 
-                className={styles.dropdownItem}
-                onClick={() => {
-                  setShowMenu(false);
-                  setShowReportModal(true);
-                }}
-              >
-                <Icon name="bug" size="small" /> Пожаловаться
-              </button>
+              {!isGroup && (
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setShowMenu(false);
+                    navigate(`/user/${conversation.otherUser.id}`);
+                  }}
+                >
+                  <Icon name="friends" size="small" /> Профиль
+                </button>
+              )}
+              {isGroup && (
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setShowMenu(false);
+                    // TODO: открыть список участников
+                  }}
+                >
+                  <Icon name="friends" size="small" /> Участники
+                </button>
+              )}
+              {!isGroup && (
+                <>
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={handleBlockUser}
+                  >
+                    <Icon name="close" size="small" /> Заблокировать
+                  </button>
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    <Icon name="bug" size="small" /> Пожаловаться
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -756,7 +815,7 @@ const MessageThread = ({ conversation, onClose }) => {
       >
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
-            <p>Начните переписку с {conversation.otherUser.displayName}</p>
+            <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
           </div>
         ) : (
           <div className={styles.messagesList}>
@@ -776,6 +835,10 @@ const MessageThread = ({ conversation, onClose }) => {
                   )}
                   
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
+                    {/* Имя отправителя для групповых чатов */}
+                    {isGroup && !isOwnMessage && message.sender?.displayName && (
+                      <div className={styles.senderName}>{message.sender.displayName}</div>
+                    )}
                     <div className={styles.messageAvatar}>
                       {isOwnMessage ? (
                         user.avatarUrl ? (
@@ -806,41 +869,68 @@ const MessageThread = ({ conversation, onClose }) => {
                           </div>
                         )
                       ) : (
-                        <a 
-                          href={`/user/${conversation.otherUser.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.messageAvatar}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {conversation.otherUser.avatarUrl ? (
-                            <>
-                              <img 
-                                src={
-                                  conversation.otherUser.avatarUrl.startsWith('/uploads/')
-                                    ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
-                                    : conversation.otherUser.avatarUrl
-                                }
-                                alt={conversation.otherUser.displayName}
-                                className={styles.messageAvatarImage}
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                              <div 
-                                className={styles.messageAvatarPlaceholder}
-                                style={{ display: 'none' }}
-                              >
-                                {conversation.otherUser.displayName.charAt(0).toUpperCase()}
-                              </div>
-                            </>
-                          ) : (
-                            <div className={styles.messageAvatarPlaceholder}>
-                              {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                        (() => {
+                          // Для групповых чатов — аватар реального отправителя
+                          const senderAvatar = isGroup ? message.sender?.avatarUrl : conversation.otherUser?.avatarUrl;
+                          const senderName = isGroup ? message.sender?.displayName : conversation.otherUser?.displayName;
+                          const senderId = isGroup ? message.senderId : conversation.otherUser?.id;
+
+                          return isGroup ? (
+                            <div className={styles.messageAvatar}>
+                              {senderAvatar ? (
+                                <img
+                                  src={
+                                    senderAvatar.startsWith('/uploads/')
+                                      ? `${import.meta.env.VITE_API_URL || ''}${senderAvatar}`
+                                      : senderAvatar
+                                  }
+                                  alt={senderName}
+                                  className={styles.messageAvatarImage}
+                                />
+                              ) : (
+                                <div className={styles.messageAvatarPlaceholder}>
+                                  {senderName?.charAt(0).toUpperCase() || '?'}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </a>
+                          ) : (
+                            <a
+                              href={`/user/${conversation.otherUser.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.messageAvatar}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {conversation.otherUser.avatarUrl ? (
+                                <>
+                                  <img
+                                    src={
+                                      conversation.otherUser.avatarUrl.startsWith('/uploads/')
+                                        ? `${import.meta.env.VITE_API_URL || ''}${conversation.otherUser.avatarUrl}`
+                                        : conversation.otherUser.avatarUrl
+                                    }
+                                    alt={conversation.otherUser.displayName}
+                                    className={styles.messageAvatarImage}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                  <div
+                                    className={styles.messageAvatarPlaceholder}
+                                    style={{ display: 'none' }}
+                                  >
+                                    {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className={styles.messageAvatarPlaceholder}>
+                                  {conversation.otherUser.displayName.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </a>
+                          );
+                        })()
                       )}
                     </div>
                     
