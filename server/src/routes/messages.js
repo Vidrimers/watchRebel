@@ -18,32 +18,35 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Получаем все диалоги пользователя с информацией о собеседнике и последнем сообщении
+    // Исключаем диалоги, где все сообщения скрыты для текущего пользователя
     const query = `
-      SELECT 
+      SELECT
         c.id,
         c.user1_id,
         c.user2_id,
         c.last_message_at,
         c.created_at,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.id
           ELSE u1.id
         END as other_user_id,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.display_name
           ELSE u1.display_name
         END as other_user_name,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.avatar_url
           ELSE u1.avatar_url
         END as other_user_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
         (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND (deleted_for_users IS NULL OR deleted_for_users = '[]' OR NOT deleted_for_users LIKE '%"${userId}"%')) as visible_messages_count
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
       LEFT JOIN users u2 ON c.user2_id = u2.id
-      WHERE c.user1_id = ? OR c.user2_id = ?
+      WHERE (c.user1_id = ? OR c.user2_id = ?)
+        AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND (deleted_for_users IS NULL OR deleted_for_users = '[]' OR NOT deleted_for_users LIKE '%"${userId}"%')) > 0
       ORDER BY c.last_message_at DESC
     `;
 
@@ -479,6 +482,90 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/messages/conversations/:conversationId
+ * Удалить весь диалог
+ * query: deleteType = "for_me" | "for_everyone"
+ * "for_me" — пометить все сообщения как удаленные для текущего пользователя
+ * "for_everyone" — физическое удаление всех сообщений и диалога
+ */
+router.delete('/conversations/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { deleteType = 'for_me' } = req.query;
+    const userId = req.user.id;
+
+    // Проверяем, что пользователь участник диалога
+    const conversationCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ? AND (user1_id = ? OR user2_id = ?)',
+      [conversationId, userId, userId]
+    );
+
+    if (!conversationCheck.success) {
+      return res.status(500).json({
+        error: 'Ошибка проверки диалога',
+        code: 'DATABASE_ERROR'
+      });
+    }
+
+    if (conversationCheck.data.length === 0) {
+      return res.status(404).json({
+        error: 'Диалог не найден или у вас нет доступа',
+        code: 'CONVERSATION_NOT_FOUND'
+      });
+    }
+
+    if (deleteType === 'for_everyone') {
+      // Физическое удаление всех сообщений диалога
+      await executeQuery('DELETE FROM messages WHERE conversation_id = ?', [conversationId]);
+      // Удаление самого диалога
+      await executeQuery('DELETE FROM conversations WHERE id = ?', [conversationId]);
+
+      res.json({
+        message: 'Диалог удален для всех',
+        conversationId
+      });
+    } else {
+      // Soft delete — помечаем все сообщения как удаленные для текущего пользователя
+      const messagesResult = await executeQuery(
+        'SELECT id, deleted_for_users FROM messages WHERE conversation_id = ?',
+        [conversationId]
+      );
+
+      if (messagesResult.success && messagesResult.data.length > 0) {
+        for (const msg of messagesResult.data) {
+          let deletedForUsers = [];
+          try {
+            deletedForUsers = JSON.parse(msg.deleted_for_users || '[]');
+          } catch (e) {
+            deletedForUsers = [];
+          }
+
+          if (!deletedForUsers.includes(userId)) {
+            deletedForUsers.push(userId);
+            await executeQuery(
+              'UPDATE messages SET deleted_for_users = ? WHERE id = ?',
+              [JSON.stringify(deletedForUsers), msg.id]
+            );
+          }
+        }
+      }
+
+      res.json({
+        message: 'Диалог скрыт для вас',
+        conversationId
+      });
+    }
+
+  } catch (error) {
+    console.error('Ошибка удаления диалога:', error);
+    res.status(500).json({
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR'
     });
   }
 });

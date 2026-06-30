@@ -19,6 +19,7 @@ const ConversationList = ({ onSelectConversation }) => {
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletePopup, setDeletePopup] = useState(null); // { conversationId, position: { x, y } }
 
   // Загружаем диалоги при монтировании компонента
   useEffect(() => {
@@ -89,6 +90,39 @@ const ConversationList = ({ onSelectConversation }) => {
   const filteredFriends = friends.filter(friend =>
     friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Обработчик клика на крестик удаления
+  const handleDeleteClick = (e, conversationId) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDeletePopup({
+      conversationId,
+      position: { x: rect.left, y: rect.bottom + 4 }
+    });
+  };
+
+  // Закрытие popup при клике вне области
+  useEffect(() => {
+    if (!deletePopup) return;
+    const handleClickOutside = () => setDeletePopup(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [deletePopup]);
+
+  // Удаление диалога
+  const handleDeleteConversation = async (deleteType) => {
+    if (!deletePopup) return;
+    try {
+      await api.delete(`/messages/conversations/${deletePopup.conversationId}`, {
+        params: { deleteType }
+      });
+      // Обновляем список диалогов
+      dispatch(fetchConversations());
+      setDeletePopup(null);
+    } catch (error) {
+      console.error('Ошибка удаления диалога:', error);
+    }
+  };
 
   // Форматирование даты
   const formatDate = (dateString) => {
@@ -278,6 +312,15 @@ const ConversationList = ({ onSelectConversation }) => {
                 )}
               </div>
             </div>
+
+            {/* Крестик удаления — появляется при hover */}
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => handleDeleteClick(e, conversation.id)}
+              title="Удалить диалог"
+            >
+              ×
+            </button>
           </li>
         ))}
       </ul>
@@ -348,6 +391,28 @@ const ConversationList = ({ onSelectConversation }) => {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Popup удаления диалога */}
+      {deletePopup && (
+        <div
+          className={styles.deletePopup}
+          style={{ left: deletePopup.position.x, top: deletePopup.position.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className={styles.deletePopupOption}
+            onClick={() => handleDeleteConversation('for_me')}
+          >
+            У себя
+          </button>
+          <button
+            className={`${styles.deletePopupOption} ${styles.deletePopupDanger}`}
+            onClick={() => handleDeleteConversation('for_everyone')}
+          >
+            У всех
+          </button>
         </div>
       )}
     </div>
