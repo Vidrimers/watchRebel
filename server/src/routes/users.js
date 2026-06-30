@@ -595,6 +595,48 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
 });
 
 /**
+ * GET /api/users/:id/friends/search?q=...
+ * Поиск друзей по имени/username (для @упоминаний)
+ */
+router.get('/:id/friends/search', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { q = '' } = req.query;
+
+    if (req.user.id !== id) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    const searchQuery = `%${q}%`;
+    const result = await executeQuery(
+      `SELECT u.id, u.display_name, u.telegram_username, u.avatar_url
+       FROM friends f
+       JOIN users u ON f.friend_id = u.id
+       WHERE f.user_id = ? AND u.is_blocked = 0
+         AND (u.display_name LIKE ? OR u.telegram_username LIKE ?)
+       ORDER BY u.display_name ASC
+       LIMIT 10`,
+      [id, searchQuery, searchQuery]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка поиска', code: 'DATABASE_ERROR' });
+    }
+
+    res.json(result.data.map(u => ({
+      id: u.id,
+      displayName: u.display_name,
+      telegramUsername: u.telegram_username,
+      avatarUrl: u.avatar_url
+    })));
+
+  } catch (error) {
+    console.error('Ошибка поиска друзей:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
  * GET /api/users/:id/genre-stats
  * Получить статистику по жанрам пользователя
  * Вычисляет процентное соотношение жанров на основе оценок пользователя

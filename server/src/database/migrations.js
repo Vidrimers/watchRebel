@@ -369,6 +369,24 @@ export async function runMigrations() {
         safeAddColumn('messages', 'suggested_media', 'TEXT');
         safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
 
+        // === Упоминания в постах ===
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS post_mentions (
+            id TEXT PRIMARY KEY,
+            post_id TEXT NOT NULL,
+            mentioned_user_id TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (post_id) REFERENCES wall_posts(id) ON DELETE CASCADE,
+            FOREIGN KEY (mentioned_user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_post_mentions_post ON post_mentions(post_id);
+          CREATE INDEX IF NOT EXISTS idx_post_mentions_user ON post_mentions(mentioned_user_id);
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы post_mentions:', err.message);
+          }
+        });
+
         // === Групповые чаты ===
         safeAddColumn('conversations', 'is_group', 'BOOLEAN', '0');
         safeAddColumn('conversations', 'group_name', 'TEXT');

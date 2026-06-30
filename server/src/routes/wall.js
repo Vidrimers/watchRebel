@@ -178,6 +178,20 @@ router.get('/:userId', optionalAuth, async (req, res) => {
         // Определяем, является ли пост закрепленным
         const isPinned = pinnedPostId && post.id === pinnedPostId;
 
+        // Получаем упоминания
+        const mentionsResult = await executeQuery(
+          `SELECT pm.mentioned_user_id, u.display_name, u.avatar_url
+           FROM post_mentions pm
+           LEFT JOIN users u ON pm.mentioned_user_id = u.id
+           WHERE pm.post_id = ?`,
+          [post.id]
+        );
+        const mentionUsers = mentionsResult.success ? mentionsResult.data.map(m => ({
+          id: m.mentioned_user_id,
+          displayName: m.display_name,
+          avatarUrl: m.avatar_url
+        })) : [];
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -207,8 +221,9 @@ router.get('/:userId', optionalAuth, async (req, res) => {
             avatarUrl: wallOwner.avatar_url
           },
           reactions,
-          images, // Добавляем массив изображений
-          imageUrls // Добавляем массив URL изображений для объявлений
+          images,
+          imageUrls,
+          mentions: mentionUsers
         };
       })
     );
@@ -312,6 +327,20 @@ router.get('/post/:postId', async (req, res) => {
       order: img.order
     })) : [];
 
+    // Получаем упоминания
+    const mentionsResult = await executeQuery(
+      `SELECT pm.mentioned_user_id, u.display_name, u.avatar_url
+       FROM post_mentions pm
+       LEFT JOIN users u ON pm.mentioned_user_id = u.id
+       WHERE pm.post_id = ?`,
+      [postId]
+    );
+    const mentions = mentionsResult.success ? mentionsResult.data.map(m => ({
+      id: m.mentioned_user_id,
+      displayName: m.display_name,
+      avatarUrl: m.avatar_url
+    })) : [];
+
     // Формируем ответ
     const formattedPost = {
       id: post.id,
@@ -347,7 +376,8 @@ router.get('/post/:postId', async (req, res) => {
           avatarUrl: r.avatar_url
         }
       })),
-      images // Добавляем массив изображений
+      images,
+      mentions
     };
 
     res.json(formattedPost);
@@ -376,7 +406,7 @@ router.get('/post/:postId', async (req, res) => {
 router.post('/', authenticateToken, checkPostBan, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { postType, content, tmdbId, mediaType, rating, targetUserId, posterPath } = req.body;
+    const { postType, content, tmdbId, mediaType, rating, targetUserId, posterPath, mentions } = req.body;
 
     // Определяем на чьей стене публикуем
     const wallOwnerId = targetUserId || userId;
@@ -542,12 +572,29 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
 
     // Если пост создан на чужой стене, отправляем уведомление владельцу
     if (targetUserId && targetUserId !== userId) {
-      // Импортируем функцию уведомлений
       const { notifyWallPost } = await import('../services/notificationService.js');
-      
+
       notifyWallPost(targetUserId, userId, postId).catch(err => {
         console.error('Ошибка отправки уведомления о посте на стене:', err);
       });
+    }
+
+    // Сохраняем упоминания и отправляем уведомления
+    if (mentions && Array.isArray(mentions) && mentions.length > 0) {
+      for (const mentionedUserId of mentions) {
+        if (mentionedUserId === userId) continue; // не уведомляем себя
+        const mentionId = uuidv4();
+        await executeQuery(
+          'INSERT INTO post_mentions (id, post_id, mentioned_user_id, created_at) VALUES (?, ?, ?, datetime(\'now\'))',
+          [mentionId, postId, mentionedUserId]
+        );
+
+        // Отправляем уведомление
+        const { createNotification } = await import('../services/notificationService.js');
+        createNotification(mentionedUserId, 'mention', `${post.author_display_name} упомянул вас в записи`, userId, postId).catch(err => {
+          console.error('Ошибка отправки уведомления об упоминании:', err);
+        });
+      }
     }
 
     // Отправляем WebSocket уведомление друзьям о новом посте в ленте
@@ -604,7 +651,7 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
   try {
     const { postId } = req.params;
     const userId = req.user.id;
-    const { content } = req.body;
+    const { content, mentions } = req.body;
 
     // Проверяем, существует ли пост и принадлежит ли он пользователю
     const postCheck = await executeQuery(
@@ -662,10 +709,23 @@ router.put('/:postId', authenticateToken, checkPostBan, async (req, res) => {
     );
 
     if (!updateResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка обновления записи',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
+    }
+
+    // Обновляем упоминания: удаляем старые, добавляем новые
+    if (mentions && Array.isArray(mentions)) {
+      await executeQuery('DELETE FROM post_mentions WHERE post_id = ?', [postId]);
+      for (const mentionedUserId of mentions) {
+        if (mentionedUserId === userId) continue;
+        const mentionId = uuidv4();
+        await executeQuery(
+          'INSERT INTO post_mentions (id, post_id, mentioned_user_id, created_at) VALUES (?, ?, ?, datetime(\'now\'))',
+          [mentionId, postId, mentionedUserId]
+        );
+      }
     }
 
     // Получаем обновленный пост с информацией об авторе и владельце стены
