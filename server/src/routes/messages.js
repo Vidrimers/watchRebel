@@ -36,8 +36,14 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     `;
     const directResult = await executeQuery(directQuery, [userId, userId, userId, userId, userId]);
 
+    if (!directResult.success) {
+      console.error('Ошибка запроса личных диалогов:', directResult.error);
+    } else {
+      console.log('Личные диалоги:', directResult.data?.length ?? 'data undefined');
+    }
+
     // Добавляем unread_count отдельным запросом для личных диалогов
-    const directConvs = directResult.success ? directResult.data : [];
+    const directConvs = (directResult.success && Array.isArray(directResult.data)) ? directResult.data : [];
     for (const conv of directConvs) {
       const unreadResult = await executeQuery(
         'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
@@ -59,8 +65,12 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     `;
     const groupResult = await executeQuery(groupQuery, [userId]);
 
+    if (!groupResult.success) {
+      console.error('Ошибка запроса групповых диалогов:', groupResult.error);
+    }
+
     // Добавляем unread_count и members_count для групп
-    const groupConvs = groupResult.success ? groupResult.data : [];
+    const groupConvs = (groupResult.success && Array.isArray(groupResult.data)) ? groupResult.data : [];
     for (const conv of groupConvs) {
       const unreadResult = await executeQuery(
         'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
