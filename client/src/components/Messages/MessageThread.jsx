@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchMessages, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
+import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
@@ -16,6 +16,7 @@ import RecordingOverlay from './RecordingOverlay';
 import AudioPlayer from './AudioPlayer';
 import DeleteMessagePopup from './DeleteMessagePopup';
 import GroupMembersModal from './GroupMembersModal';
+import GroupSettingsModal from './GroupSettingsModal';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
@@ -84,6 +85,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [deletePopupPosition, setDeletePopupPosition] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
   const textareaRef = useRef(null);
 
   const {
@@ -775,15 +777,28 @@ const MessageThread = ({ conversation, onClose }) => {
                 </button>
               )}
               {isGroup && (
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => {
-                    setShowMenu(false);
-                    setShowMembersModal(true);
-                  }}
-                >
-                  <Icon name="friends" size="small" /> Участники
-                </button>
+                <>
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowMembersModal(true);
+                    }}
+                  >
+                    <Icon name="friends" size="small" /> Участники
+                  </button>
+                  {conversation.createdBy === user.id && (
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setShowMenu(false);
+                        setShowGroupSettings(true);
+                      }}
+                    >
+                      <Icon name="settings" size="small" /> Настройки
+                    </button>
+                  )}
+                </>
               )}
               {!isGroup && (
                 <>
@@ -1316,6 +1331,18 @@ const MessageThread = ({ conversation, onClose }) => {
           isCreator={conversation.createdBy === user.id}
           onClose={() => setShowMembersModal(false)}
           onMembersUpdated={() => dispatch(fetchMessages({ conversationId: conversation.id }))}
+        />
+      )}
+      {showGroupSettings && isGroup && (
+        <GroupSettingsModal
+          conversationId={conversation.id}
+          currentName={conversation.groupName}
+          currentAvatar={conversation.groupAvatar}
+          onClose={() => setShowGroupSettings(false)}
+          onUpdated={(data) => {
+            setShowGroupSettings(false);
+            dispatch(fetchConversations());
+          }}
         />
       )}
     </>

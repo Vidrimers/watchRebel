@@ -4,7 +4,7 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { sendTelegramNotification, checkNotificationEnabled } from '../services/notificationService.js';
 import { sendMessageToUser } from '../services/websocketService.js';
-import { uploadMessageFiles } from '../middleware/upload.js';
+import { uploadMessageFiles, uploadAvatar } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -1141,6 +1141,47 @@ router.put('/conversations/:conversationId', authenticateToken, async (req, res)
 
   } catch (error) {
     console.error('Ошибка обновления группы:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/conversations/:conversationId/avatar
+ * Загрузить аватарку группы (только создатель)
+ */
+router.post('/conversations/:conversationId/avatar', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'NOT_FOUND' });
+    }
+    if (!convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+    if (convCheck.data[0].created_by !== userId) {
+      return res.status(403).json({ error: 'Только создатель может менять аватарку', code: 'FORBIDDEN' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен', code: 'NO_FILE' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    await executeQuery(
+      'UPDATE conversations SET group_avatar = ? WHERE id = ?',
+      [avatarUrl, conversationId]
+    );
+
+    res.json({ message: 'Аватарка обновлена', avatarUrl });
+
+  } catch (error) {
+    console.error('Ошибка загрузки аватарки группы:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
