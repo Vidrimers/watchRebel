@@ -369,6 +369,57 @@ export async function runMigrations() {
         safeAddColumn('messages', 'suggested_media', 'TEXT');
         safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
 
+        // === Групповые чаты ===
+        safeAddColumn('conversations', 'is_group', 'BOOLEAN', '0');
+        safeAddColumn('conversations', 'group_name', 'TEXT');
+        safeAddColumn('conversations', 'group_avatar', 'TEXT');
+        safeAddColumn('conversations', 'created_by', 'TEXT');
+
+        db.exec(`
+          -- Участники групповых чатов
+          CREATE TABLE IF NOT EXISTS conversation_members (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            left_at DATETIME,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(conversation_id, user_id)
+          );
+          CREATE INDEX IF NOT EXISTS idx_conv_members_conv ON conversation_members(conversation_id);
+          CREATE INDEX IF NOT EXISTS idx_conv_members_user ON conversation_members(user_id);
+
+          -- Модераторы групповых чатов
+          CREATE TABLE IF NOT EXISTS group_moderators (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            assigned_by TEXT NOT NULL,
+            assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (assigned_by) REFERENCES users(id),
+            UNIQUE(conversation_id, user_id)
+          );
+
+          -- Права модераторов групповых чатов
+          CREATE TABLE IF NOT EXISTS group_moderator_permissions (
+            id TEXT PRIMARY KEY,
+            moderator_id TEXT NOT NULL,
+            permission_type TEXT NOT NULL,
+            granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (moderator_id) REFERENCES group_moderators(id) ON DELETE CASCADE,
+            UNIQUE(moderator_id, permission_type)
+          );
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблиц групповых чатов:', err.message);
+          } else {
+            console.log('✓ Таблицы групповых чатов созданы');
+          }
+        });
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())

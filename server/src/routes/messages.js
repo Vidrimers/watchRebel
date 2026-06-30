@@ -17,23 +17,27 @@ router.get('/conversations', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Получаем все диалоги пользователя с информацией о собеседнике и последнем сообщении
-    const query = `
-      SELECT 
+    // 1. Обычные диалоги (не групповые)
+    const directQuery = `
+      SELECT
         c.id,
         c.user1_id,
         c.user2_id,
+        c.is_group,
+        c.group_name,
+        c.group_avatar,
+        c.created_by,
         c.last_message_at,
         c.created_at,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.id
           ELSE u1.id
         END as other_user_id,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.display_name
           ELSE u1.display_name
         END as other_user_name,
-        CASE 
+        CASE
           WHEN c.user1_id = ? THEN u2.avatar_url
           ELSE u1.avatar_url
         END as other_user_avatar,
@@ -43,11 +47,47 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
       LEFT JOIN users u2 ON c.user2_id = u2.id
-      WHERE c.user1_id = ? OR c.user2_id = ?
+      WHERE (c.user1_id = ? OR c.user2_id = ?) AND (c.is_group IS NULL OR c.is_group = 0)
       ORDER BY c.last_message_at DESC
     `;
 
-    const conversationsResult = await executeQuery(query, [userId, userId, userId, userId, userId, userId]);
+    const directResult = await executeQuery(directQuery, [userId, userId, userId, userId, userId, userId]);
+
+    // 2. Групповые диалоги (через conversation_members)
+    const groupQuery = `
+      SELECT
+        c.id,
+        c.is_group,
+        c.group_name,
+        c.group_avatar,
+        c.created_by,
+        c.last_message_at,
+        c.created_at,
+        (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
+        (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
+        (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != ? AND m.is_read = 0) as unread_count,
+        (SELECT COUNT(*) FROM conversation_members WHERE conversation_id = c.id AND left_at IS NULL) as members_count
+      FROM conversations c
+      INNER JOIN conversation_members cm ON c.id = cm.conversation_id
+      WHERE cm.user_id = ? AND cm.left_at IS NULL AND c.is_group = 1
+      ORDER BY c.last_message_at DESC
+    `;
+
+    const groupResult = await executeQuery(groupQuery, [userId, userId, userId]);
+
+    // Объединяем результаты
+    const allConversations = [];
+    if (directResult.success) allConversations.push(...directResult.data);
+    if (groupResult.success) allConversations.push(...groupResult.data);
+
+    // Сортируем по last_message_at
+    allConversations.sort((a, b) => {
+      const dateA = a.last_message_at ? new Date(a.last_message_at) : new Date(0);
+      const dateB = b.last_message_at ? new Date(b.last_message_at) : new Date(0);
+      return dateB - dateA;
+    });
+
+    const conversationsResult = { success: true, data: allConversations };
 
     if (!conversationsResult.success) {
       return res.status(500).json({
@@ -79,46 +119,53 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const conversations = conversationsResult.data.filter(c => !hiddenConvIds.includes(c.id)).map(c => {
       // Формируем текст последнего сообщения
       let lastMessage = c.last_message_content;
-      
+
       // Если есть вложения, показываем информацию о них
       if (c.last_message_attachments) {
         try {
           const attachments = JSON.parse(c.last_message_attachments);
           if (attachments && attachments.length > 0) {
-            // Определяем тип первого вложения
             const firstAttachment = attachments[0];
             const mimeType = firstAttachment.mimeType || '';
-            
+
             let attachmentType = 'файл';
             if (mimeType.startsWith('image/')) attachmentType = 'изображение';
             else if (mimeType.startsWith('video/')) attachmentType = 'видео';
             else if (mimeType.startsWith('audio/')) attachmentType = 'аудио';
             else attachmentType = 'документ';
-            
+
             if (attachments.length === 1) {
               lastMessage = `📎 ${attachmentType}`;
             } else {
               lastMessage = `📎 ${attachments.length} файл(ов)`;
             }
-            
-            // Если есть текст вместе с вложениями, добавляем его
+
             if (c.last_message_content && c.last_message_content.trim().length > 0) {
               lastMessage += `: ${c.last_message_content}`;
             }
           }
         } catch (e) {
-          // Если ошибка парсинга, используем обычный текст
           console.error('Ошибка парсинга attachments:', e);
         }
       }
-      
+
+      const isGroup = Boolean(c.is_group);
+
       return {
         id: c.id,
-        otherUser: {
-          id: c.other_user_id,
-          displayName: c.other_user_name,
-          avatarUrl: c.other_user_avatar
-        },
+        isGroup,
+        ...(isGroup ? {
+          groupName: c.group_name,
+          groupAvatar: c.group_avatar,
+          createdBy: c.created_by,
+          membersCount: c.members_count || 0
+        } : {
+          otherUser: {
+            id: c.other_user_id,
+            displayName: c.other_user_name,
+            avatarUrl: c.other_user_avatar
+          }
+        }),
         lastMessage: lastMessage,
         unreadCount: c.unread_count || 0,
         lastMessageAt: c.last_message_at ? c.last_message_at + 'Z' : null,
@@ -153,22 +200,40 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
 
     // Проверяем, что пользователь является участником диалога
     const conversationCheck = await executeQuery(
-      'SELECT * FROM conversations WHERE id = ? AND (user1_id = ? OR user2_id = ?)',
-      [conversationId, userId, userId]
+      'SELECT * FROM conversations WHERE id = ?',
+      [conversationId]
     );
 
     if (!conversationCheck.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка проверки диалога',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 
     if (conversationCheck.data.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Диалог не найден или у вас нет доступа',
-        code: 'CONVERSATION_NOT_FOUND' 
+        code: 'CONVERSATION_NOT_FOUND'
       });
+    }
+
+    const conv = conversationCheck.data[0];
+    const isGroup = Boolean(conv.is_group);
+
+    // Проверка доступа
+    if (isGroup) {
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [conversationId, userId]
+      );
+      if (!memberCheck.success || memberCheck.data.length === 0) {
+        return res.status(403).json({ error: 'Нет доступа к этому чату', code: 'FORBIDDEN' });
+      }
+    } else {
+      if (conv.user1_id !== userId && conv.user2_id !== userId) {
+        return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+      }
     }
 
     // Получаем общее количество сообщений
@@ -207,10 +272,18 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
     }
 
     // Отмечаем все непрочитанные сообщения как прочитанные
-    await executeQuery(
-      'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
-      [conversationId, userId]
-    );
+    if (isGroup) {
+      // Для групповых чатов — помечаем чужие сообщения как прочитанные
+      await executeQuery(
+        'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
+        [conversationId, userId]
+      );
+    } else {
+      await executeQuery(
+        'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
+        [conversationId, userId]
+      );
+    }
 
     const messages = messagesResult.data.map(m => ({
       id: m.id,
@@ -230,7 +303,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       }
     }));
 
-    res.json({
+    const responseData = {
       messages,
       pagination: {
         total: totalMessages,
@@ -238,7 +311,19 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         offset,
         hasMore: offset + messages.length < totalMessages
       }
-    });
+    };
+
+    // Для групповых чатов добавляем информацию о группе
+    if (isGroup) {
+      responseData.group = {
+        id: conv.id,
+        groupName: conv.group_name,
+        groupAvatar: conv.group_avatar,
+        createdBy: conv.created_by
+      };
+    }
+
+    res.json(responseData);
 
   } catch (error) {
     console.error('Ошибка получения сообщений:', error);
@@ -264,86 +349,114 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
     // Валидация
     if (!receiverId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Не указан получатель',
-        code: 'MISSING_RECEIVER' 
+        code: 'MISSING_RECEIVER'
       });
     }
 
     // Проверяем что есть либо текст, либо файлы, либо локация, либо предложение медиа
     if ((!content || content.trim().length === 0) && files.length === 0 && !location && !suggestedMedia) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Сообщение не может быть пустым',
-        code: 'EMPTY_MESSAGE' 
+        code: 'EMPTY_MESSAGE'
       });
     }
 
-    if (senderId === receiverId) {
-      return res.status(400).json({ 
-        error: 'Нельзя отправить сообщение самому себе',
-        code: 'SELF_MESSAGE' 
-      });
-    }
-
-    // Проверяем, существует ли получатель
-    const receiverCheck = await executeQuery(
-      'SELECT * FROM users WHERE id = ?',
+    // Проверяем, является ли это групповым чатом
+    const groupCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ? AND is_group = 1',
       [receiverId]
     );
 
-    if (!receiverCheck.success) {
-      return res.status(500).json({ 
-        error: 'Ошибка проверки получателя',
-        code: 'DATABASE_ERROR' 
-      });
-    }
-
-    if (receiverCheck.data.length === 0) {
-      return res.status(404).json({ 
-        error: 'Получатель не найден',
-        code: 'RECEIVER_NOT_FOUND' 
-      });
-    }
-
-    // Проверяем, существует ли диалог между пользователями
-    // Диалог может быть создан в любом порядке (user1_id, user2_id)
-    const conversationCheck = await executeQuery(
-      `SELECT * FROM conversations 
-       WHERE (user1_id = ? AND user2_id = ?) 
-          OR (user1_id = ? AND user2_id = ?)`,
-      [senderId, receiverId, receiverId, senderId]
-    );
-
-    if (!conversationCheck.success) {
-      return res.status(500).json({ 
-        error: 'Ошибка проверки диалога',
-        code: 'DATABASE_ERROR' 
-      });
-    }
-
     let conversationId;
+    let isGroup = false;
+    let groupMembers = [];
 
-    // Если диалога нет, создаем новый
-    if (conversationCheck.data.length === 0) {
-      conversationId = uuidv4();
-      
-      // Всегда сохраняем user1_id < user2_id для консистентности
-      const [user1Id, user2Id] = [senderId, receiverId].sort();
+    if (groupCheck.success && groupCheck.data.length > 0) {
+      // Групповой чат
+      isGroup = true;
+      conversationId = receiverId;
 
-      const createConversationResult = await executeQuery(
-        `INSERT INTO conversations (id, user1_id, user2_id, last_message_at, created_at)
-         VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
-        [conversationId, user1Id, user2Id]
+      // Проверяем что отправитель — участник группы
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [conversationId, senderId]
       );
+      if (!memberCheck.success || memberCheck.data.length === 0) {
+        return res.status(403).json({ error: 'Нет доступа к этому чату', code: 'FORBIDDEN' });
+      }
 
-      if (!createConversationResult.success) {
-        return res.status(500).json({ 
-          error: 'Ошибка создания диалога',
-          code: 'DATABASE_ERROR' 
+      // Получаем всех участников кроме отправителя
+      const membersResult = await executeQuery(
+        'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+        [conversationId, senderId]
+      );
+      groupMembers = membersResult.success ? membersResult.data.map(m => m.user_id) : [];
+
+    } else {
+      // Обычный диалог (1-на-1)
+      if (senderId === receiverId) {
+        return res.status(400).json({
+          error: 'Нельзя отправить сообщение самому себе',
+          code: 'SELF_MESSAGE'
         });
       }
-    } else {
-      conversationId = conversationCheck.data[0].id;
+
+      // Проверяем, существует ли получатель
+      const receiverCheck = await executeQuery(
+        'SELECT * FROM users WHERE id = ?',
+        [receiverId]
+      );
+
+      if (!receiverCheck.success) {
+        return res.status(500).json({
+          error: 'Ошибка проверки получателя',
+          code: 'DATABASE_ERROR'
+        });
+      }
+
+      if (receiverCheck.data.length === 0) {
+        return res.status(404).json({
+          error: 'Получатель не найден',
+          code: 'RECEIVER_NOT_FOUND'
+        });
+      }
+
+      // Проверяем, существует ли диалог между пользователями
+      const conversationCheck = await executeQuery(
+        `SELECT * FROM conversations
+         WHERE (user1_id = ? AND user2_id = ?)
+            OR (user1_id = ? AND user2_id = ?)`,
+        [senderId, receiverId, receiverId, senderId]
+      );
+
+      if (!conversationCheck.success) {
+        return res.status(500).json({
+          error: 'Ошибка проверки диалога',
+          code: 'DATABASE_ERROR'
+        });
+      }
+
+      if (conversationCheck.data.length === 0) {
+        conversationId = uuidv4();
+        const [user1Id, user2Id] = [senderId, receiverId].sort();
+
+        const createConversationResult = await executeQuery(
+          `INSERT INTO conversations (id, user1_id, user2_id, last_message_at, created_at)
+           VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
+          [conversationId, user1Id, user2Id]
+        );
+
+        if (!createConversationResult.success) {
+          return res.status(500).json({
+            error: 'Ошибка создания диалога',
+            code: 'DATABASE_ERROR'
+          });
+        }
+      } else {
+        conversationId = conversationCheck.data[0].id;
+      }
     }
 
     // Обрабатываем загруженные файлы
@@ -364,10 +477,14 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     const locationJson = locationParsed ? JSON.stringify(locationParsed) : null;
     const suggestedMediaParsed = typeof suggestedMedia === 'string' ? JSON.parse(suggestedMedia) : suggestedMedia;
     const suggestedMediaJson = suggestedMediaParsed ? JSON.stringify(suggestedMediaParsed) : null;
+
+    // Для групповых чатов receiver_id = sender_id (т.к..receiver_id NOT NULL, а реальный получатель — все участники)
+    const messageReceiverId = isGroup ? senderId : receiverId;
+
     const createMessageResult = await executeQuery(
       `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, created_at)
        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now'))`,
-      [messageId, conversationId, senderId, receiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments, locationJson, suggestedMediaJson]
+      [messageId, conversationId, senderId, messageReceiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments, locationJson, suggestedMediaJson]
     );
 
     if (!createMessageResult.success) {
@@ -421,14 +538,23 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       }
     };
 
-    // Отправляем сообщение получателю через WebSocket
-    const sentViaWebSocket = sendMessageToUser(receiverId, messageResponse);
-    
-    if (sentViaWebSocket) {
-      console.log(`✅ Сообщение отправлено через WebSocket пользователю ${receiverId}`);
+    // Отправляем сообщение через WebSocket
+    if (isGroup) {
+      // Для групповых чатов — отправляем всем участникам кроме отправителя
+      for (const memberId of groupMembers) {
+        const sent = sendMessageToUser(memberId, messageResponse);
+        if (sent) {
+          console.log(`✅ Сообщение отправлено через WebSocket пользователю ${memberId}`);
+        }
+      }
+    } else {
+      const sentViaWebSocket = sendMessageToUser(receiverId, messageResponse);
+      if (sentViaWebSocket) {
+        console.log(`✅ Сообщение отправлено через WebSocket пользователю ${receiverId}`);
+      }
     }
 
-    // Отправляем уведомление в Telegram получателю
+    // Отправляем уведомления в Telegram
     const senderResult = await executeQuery(
       'SELECT display_name FROM users WHERE id = ?',
       [senderId]
@@ -437,12 +563,10 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     if (senderResult.success && senderResult.data.length > 0) {
       const senderName = senderResult.data[0].display_name;
       const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
-      
-      // Формируем текст уведомления в зависимости от типа контента
+
       let messagePreview = '';
-      
+
       if (attachments && files.length > 0) {
-        // Если есть вложения, определяем их тип
         const attachmentTypes = files.map(file => {
           const mimeType = file.mimetype;
           if (mimeType.startsWith('image/')) return 'изображение';
@@ -450,45 +574,51 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
           if (mimeType.startsWith('audio/')) return 'аудио';
           return 'документ';
         });
-        
-        // Формируем текст в зависимости от количества и типа вложений
+
         if (files.length === 1) {
           messagePreview = `📎 Отправлено ${attachmentTypes[0]}`;
         } else {
           messagePreview = `📎 Отправлено ${files.length} файл(ов)`;
         }
-        
-        // Если есть текст вместе с вложениями
+
         if (content && content.trim().length > 0) {
           messagePreview += `\n\n${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`;
         }
-        
+
         messagePreview += '\n\n<i>Посмотреть можно только на сайте</i>';
       } else {
-        // Если только текст
         messagePreview = content.substring(0, 100) + (content.length > 100 ? '...' : '');
       }
-      
-      const telegramMessage = `💬 <b>Новое сообщение от ${senderName}</b>\n\n` +
-                             `${messagePreview}\n\n` +
-                             `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
-      
-      // Проверяем настройки уведомлений получателя
-      const isNotificationEnabled = await checkNotificationEnabled(receiverId, 'new_message');
-      
-      if (isNotificationEnabled) {
-        // Отправляем уведомление с кнопкой "Ответить"
-        sendTelegramNotification(receiverId, telegramMessage, {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
-            ]]
-          }
-        }).catch(err => {
-          console.error('Ошибка отправки Telegram уведомления:', err);
-        });
-      } else {
-        console.log(`🔕 Уведомление о новом сообщении не отправлено пользователю ${receiverId} (отключено в настройках)`);
+
+      // Получатели уведомлений: для групп — все участники кроме отправителя, для личных — получатель
+      const notificationTargets = isGroup ? groupMembers : [receiverId];
+
+      for (const targetId of notificationTargets) {
+        let telegramMessage;
+        if (isGroup) {
+          const groupName = groupCheck.data[0].group_name;
+          telegramMessage = `💬 <b>${senderName} в группе "${groupName}"</b>\n\n` +
+                           `${messagePreview}\n\n` +
+                           `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
+        } else {
+          telegramMessage = `💬 <b>Новое сообщение от ${senderName}</b>\n\n` +
+                           `${messagePreview}\n\n` +
+                           `<a href="${publicUrl}/messages">Открыть на сайте</a>`;
+        }
+
+        const isNotificationEnabled = await checkNotificationEnabled(targetId, 'new_message');
+
+        if (isNotificationEnabled) {
+          sendTelegramNotification(targetId, telegramMessage, {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
+              ]]
+            }
+          }).catch(err => {
+            console.error('Ошибка отправки Telegram уведомления:', err);
+          });
+        }
       }
     }
 
@@ -692,6 +822,516 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
     });
+  }
+});
+
+// ============================================================
+// ГРУППОВЫЕ ЧАТЫ
+// ============================================================
+
+/**
+ * POST /api/messages/conversations/group
+ * Создать групповой чат
+ * Body: { groupName: string, memberIds: string[] }
+ */
+router.post('/conversations/group', authenticateToken, async (req, res) => {
+  try {
+    const { groupName, memberIds } = req.body;
+    const userId = req.user.id;
+
+    if (!groupName || !groupName.trim()) {
+      return res.status(400).json({ error: 'Укажите название группы', code: 'MISSING_NAME' });
+    }
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length < 1) {
+      return res.status(400).json({ error: 'Добавьте хотя бы одного участника', code: 'MISSING_MEMBERS' });
+    }
+
+    // Проверяем что все memberIds — друзья пользователя
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      const friendCheck = await executeQuery(
+        'SELECT id FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
+        [userId, memberId, memberId, userId]
+      );
+      if (!friendCheck.success || friendCheck.data.length === 0) {
+        return res.status(400).json({
+          error: `Пользователь ${memberId} не является вашим другом`,
+          code: 'NOT_FRIEND'
+        });
+      }
+    }
+
+    const conversationId = uuidv4();
+
+    // Создаём групповой чат (user1_id/user2_id не используются для групп, ставим создателя)
+    const createResult = await executeQuery(
+      `INSERT INTO conversations (id, user1_id, user2_id, is_group, group_name, created_by, last_message_at, created_at)
+       VALUES (?, ?, ?, 1, ?, ?, datetime('now'), datetime('now'))`,
+      [conversationId, userId, userId, groupName.trim(), userId]
+    );
+
+    if (!createResult.success) {
+      return res.status(500).json({ error: 'Ошибка создания группы', code: 'DATABASE_ERROR' });
+    }
+
+    // Добавляем создателя как участника
+    await executeQuery(
+      'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+      [uuidv4(), conversationId, userId]
+    );
+
+    // Добавляем остальных участников
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      await executeQuery(
+        'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+        [uuidv4(), conversationId, memberId]
+      );
+    }
+
+    // Получаем созданный чат
+    const convResult = await executeQuery('SELECT * FROM conversations WHERE id = ?', [conversationId]);
+    const conv = convResult.data[0];
+
+    res.status(201).json({
+      id: conv.id,
+      isGroup: true,
+      groupName: conv.group_name,
+      groupAvatar: conv.group_avatar,
+      createdBy: conv.created_by,
+      createdAt: conv.created_at ? conv.created_at + 'Z' : null
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания группового чата:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * GET /api/messages/conversations/:conversationId/members
+ * Получить список участников группового чата
+ */
+router.get('/conversations/:conversationId/members', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем что пользователь участник чата
+    const memberCheck = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, userId]
+    );
+    if (!memberCheck.success || memberCheck.data.length === 0) {
+      return res.status(403).json({ error: 'Нет доступа к этому чату', code: 'FORBIDDEN' });
+    }
+
+    // Получаем участников
+    const membersResult = await executeQuery(
+      `SELECT cm.user_id, cm.joined_at, cm.left_at,
+              u.display_name, u.avatar_url
+       FROM conversation_members cm
+       LEFT JOIN users u ON cm.user_id = u.id
+       WHERE cm.conversation_id = ? AND cm.left_at IS NULL
+       ORDER BY cm.joined_at ASC`,
+      [conversationId]
+    );
+
+    if (!membersResult.success) {
+      return res.status(500).json({ error: 'Ошибка получения участников', code: 'DATABASE_ERROR' });
+    }
+
+    // Получаем информацию о модераторах
+    const modsResult = await executeQuery(
+      `SELECT gm.user_id, gmp.permission_type
+       FROM group_moderators gm
+       LEFT JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+       WHERE gm.conversation_id = ?`,
+      [conversationId]
+    );
+
+    // Собираем права модераторов
+    const moderatorRights = {};
+    if (modsResult.success) {
+      for (const row of modsResult.data) {
+        if (!moderatorRights[row.user_id]) moderatorRights[row.user_id] = [];
+        if (row.permission_type) moderatorRights[row.user_id].push(row.permission_type);
+      }
+    }
+
+    // Получаем создателя группы
+    const convResult = await executeQuery(
+      'SELECT created_by FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    const createdBy = convResult.success && convResult.data.length > 0
+      ? convResult.data[0].created_by : null;
+
+    const members = membersResult.data.map(m => ({
+      userId: m.user_id,
+      displayName: m.display_name,
+      avatarUrl: m.avatar_url,
+      joinedAt: m.joined_at ? m.joined_at + 'Z' : null,
+      isCreator: m.user_id === createdBy,
+      isModerator: m.user_id in moderatorRights,
+      permissions: moderatorRights[m.user_id] || []
+    }));
+
+    res.json(members);
+
+  } catch (error) {
+    console.error('Ошибка получения участников:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/conversations/:conversationId/members
+ * Добавить участника в групповой чат
+ * Body: { userId: string }
+ */
+router.post('/conversations/:conversationId/members', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { userId: newMemberId } = req.body;
+    const currentUserId = req.user.id;
+
+    // Проверяем что текущий пользователь участник чата
+    const memberCheck = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, currentUserId]
+    );
+    if (!memberCheck.success || memberCheck.data.length === 0) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    // Проверяем что это групповой чат
+    const convCheck = await executeQuery(
+      'SELECT is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+
+    // Проверяем что добавляемый пользователь не уже участник
+    const alreadyMember = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, newMemberId]
+    );
+    if (alreadyMember.success && alreadyMember.data.length > 0) {
+      return res.status(400).json({ error: 'Пользователь уже участник', code: 'ALREADY_MEMBER' });
+    }
+
+    // Если ранее выходил — обновляем запись
+    const prevMember = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, newMemberId]
+    );
+    if (prevMember.success && prevMember.data.length > 0) {
+      await executeQuery(
+        'UPDATE conversation_members SET left_at = NULL, joined_at = datetime(\'now\') WHERE conversation_id = ? AND user_id = ?',
+        [conversationId, newMemberId]
+      );
+    } else {
+      await executeQuery(
+        'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+        [uuidv4(), conversationId, newMemberId]
+      );
+    }
+
+    res.json({ message: 'Участник добавлен' });
+
+  } catch (error) {
+    console.error('Ошибка добавления участника:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/messages/conversations/:conversationId/members/:memberId
+ * Удалить участника или покинуть чат
+ */
+router.delete('/conversations/:conversationId/members/:memberId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId, memberId } = req.params;
+    const currentUserId = req.user.id;
+
+    // Проверяем что это групповой чат
+    const convCheck = await executeQuery(
+      'SELECT is_group, created_by FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+
+    const isCreator = convCheck.data[0].created_by === currentUserId;
+
+    // Удаление другого участника — только создатель или модератор с manage_members
+    if (memberId !== currentUserId && !isCreator) {
+      // Проверяем права модератора
+      const modCheck = await executeQuery(
+        `SELECT gm.id FROM group_moderators gm
+         JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+         WHERE gm.conversation_id = ? AND gm.user_id = ? AND gmp.permission_type = 'manage_members'`,
+        [conversationId, currentUserId]
+      );
+      if (!modCheck.success || modCheck.data.length === 0) {
+        return res.status(403).json({ error: 'Нет прав на удаление участников', code: 'FORBIDDEN' });
+      }
+    }
+
+    // Нельзя удалить создателя
+    if (memberId === convCheck.data[0].created_by) {
+      return res.status(400).json({ error: 'Нельзя удалить создателя группы', code: 'CANNOT_REMOVE_CREATOR' });
+    }
+
+    // Помечаем как покинувшего
+    await executeQuery(
+      'UPDATE conversation_members SET left_at = datetime(\'now\') WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, memberId]
+    );
+
+    res.json({ message: 'Участник удалён' });
+
+  } catch (error) {
+    console.error('Ошибка удаления участника:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * PUT /api/messages/conversations/:conversationId
+ * Изменить название группы (только создатель)
+ */
+router.put('/conversations/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { groupName } = req.body;
+    const userId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'NOT_FOUND' });
+    }
+    if (!convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+    if (convCheck.data[0].created_by !== userId) {
+      return res.status(403).json({ error: 'Только создатель может редактировать', code: 'FORBIDDEN' });
+    }
+
+    await executeQuery(
+      'UPDATE conversations SET group_name = ? WHERE id = ?',
+      [groupName.trim(), conversationId]
+    );
+
+    res.json({ message: 'Название обновлено', groupName: groupName.trim() });
+
+  } catch (error) {
+    console.error('Ошибка обновления группы:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/messages/conversations/:conversationId
+ * Удалить групповой чат (только создатель)
+ */
+router.delete('/conversations/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'NOT_FOUND' });
+    }
+    if (!convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+    if (convCheck.data[0].created_by !== userId) {
+      return res.status(403).json({ error: 'Только создатель может удалить группу', code: 'FORBIDDEN' });
+    }
+
+    // Удаляем сообщения, участников, модераторов — каскадно
+    await executeQuery('DELETE FROM messages WHERE conversation_id = ?', [conversationId]);
+    await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id IN (SELECT id FROM group_moderators WHERE conversation_id = ?)', [conversationId]);
+    await executeQuery('DELETE FROM group_moderators WHERE conversation_id = ?', [conversationId]);
+    await executeQuery('DELETE FROM conversation_members WHERE conversation_id = ?', [conversationId]);
+    await executeQuery('DELETE FROM conversations WHERE id = ?', [conversationId]);
+
+    res.json({ message: 'Группа удалена' });
+
+  } catch (error) {
+    console.error('Ошибка удаления группы:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// ============================================================
+// МОДЕРАТОРЫ ГРУППОВЫХ ЧАТОВ
+// ============================================================
+
+/**
+ * GET /api/messages/conversations/:conversationId/moderators
+ * Список модераторов группы
+ */
+router.get('/conversations/:conversationId/moderators', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const modsResult = await executeQuery(
+      `SELECT gm.user_id, gm.assigned_by, gm.assigned_at,
+              u.display_name, u.avatar_url,
+              ab.display_name as assigned_by_name
+       FROM group_moderators gm
+       LEFT JOIN users u ON gm.user_id = u.id
+       LEFT JOIN users ab ON gm.assigned_by = ab.id
+       WHERE gm.conversation_id = ?`,
+      [conversationId]
+    );
+
+    if (!modsResult.success) {
+      return res.status(500).json({ error: 'Ошибка получения модераторов', code: 'DATABASE_ERROR' });
+    }
+
+    const moderators = [];
+    for (const mod of modsResult.data) {
+      const permsResult = await executeQuery(
+        'SELECT permission_type FROM group_moderator_permissions WHERE moderator_id = (SELECT id FROM group_moderators WHERE conversation_id = ? AND user_id = ?)',
+        [conversationId, mod.user_id]
+      );
+      moderators.push({
+        userId: mod.user_id,
+        displayName: mod.display_name,
+        avatarUrl: mod.avatar_url,
+        assignedBy: mod.assigned_by,
+        assignedByName: mod.assigned_by_name,
+        assignedAt: mod.assigned_at ? mod.assigned_at + 'Z' : null,
+        permissions: permsResult.success ? permsResult.data.map(p => p.permission_type) : []
+      });
+    }
+
+    res.json(moderators);
+
+  } catch (error) {
+    console.error('Ошибка получения модераторов:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/conversations/:conversationId/moderators
+ * Назначить модератора (только создатель)
+ * Body: { userId: string, permissions: string[] }
+ */
+router.post('/conversations/:conversationId/moderators', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { userId: modUserId, permissions } = req.body;
+    const currentUserId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Группа не найдена', code: 'NOT_FOUND' });
+    }
+    if (convCheck.data[0].created_by !== currentUserId) {
+      return res.status(403).json({ error: 'Только создатель может назначать модераторов', code: 'FORBIDDEN' });
+    }
+
+    // Проверяем что пользователь участник
+    const memberCheck = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, modUserId]
+    );
+    if (!memberCheck.success || memberCheck.data.length === 0) {
+      return res.status(400).json({ error: 'Пользователь не является участником', code: 'NOT_MEMBER' });
+    }
+
+    // Удаляем старую запись если есть
+    const existingMod = await executeQuery(
+      'SELECT id FROM group_moderators WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, modUserId]
+    );
+    if (existingMod.success && existingMod.data.length > 0) {
+      await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id = ?', [existingMod.data[0].id]);
+      await executeQuery('DELETE FROM group_moderators WHERE id = ?', [existingMod.data[0].id]);
+    }
+
+    // Создаём нового модератора
+    const modId = uuidv4();
+    await executeQuery(
+      'INSERT INTO group_moderators (id, conversation_id, user_id, assigned_by, assigned_at) VALUES (?, ?, ?, ?, datetime(\'now\'))',
+      [modId, conversationId, modUserId, currentUserId]
+    );
+
+    // Добавляем права
+    const validPermissions = ['manage_members', 'manage_messages', 'edit_group', 'send_announcements'];
+    for (const perm of permissions || []) {
+      if (validPermissions.includes(perm)) {
+        await executeQuery(
+          'INSERT INTO group_moderator_permissions (id, moderator_id, permission_type, granted_at) VALUES (?, ?, ?, datetime(\'now\'))',
+          [uuidv4(), modId, perm]
+        );
+      }
+    }
+
+    res.json({ message: 'Модератор назначен', permissions: permissions || [] });
+
+  } catch (error) {
+    console.error('Ошибка назначения модератора:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/messages/conversations/:conversationId/moderators/:modUserId
+ * Снять модератора (только создатель)
+ */
+router.delete('/conversations/:conversationId/moderators/:modUserId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId, modUserId } = req.params;
+    const currentUserId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Группа не найдена', code: 'NOT_FOUND' });
+    }
+    if (convCheck.data[0].created_by !== currentUserId) {
+      return res.status(403).json({ error: 'Только создатель может снимать модераторов', code: 'FORBIDDEN' });
+    }
+
+    const modCheck = await executeQuery(
+      'SELECT id FROM group_moderators WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, modUserId]
+    );
+    if (!modCheck.success || modCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Модератор не найден', code: 'MODERATOR_NOT_FOUND' });
+    }
+
+    await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id = ?', [modCheck.data[0].id]);
+    await executeQuery('DELETE FROM group_moderators WHERE id = ?', [modCheck.data[0].id]);
+
+    res.json({ message: 'Модератор снят' });
+
+  } catch (error) {
+    console.error('Ошибка снятия модератора:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
 
