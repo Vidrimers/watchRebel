@@ -25,3 +25,18 @@
   background: rgba(99, 102, 241, 0.25);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+.mention {
+  color: var(--accent-primary, #6366f1);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.1);
+  transition: all 0.2s;
+}
+
+.mention:hover {
+  background: rgba(99, 102, 241, 0.2);
+  text-decoration: underline;
+}

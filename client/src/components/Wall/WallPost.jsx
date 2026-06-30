@@ -10,6 +10,7 @@ import PostImageGrid from './PostImageGrid';
 import ImageGalleryModal from './ImageGalleryModal';
 import PostComments from './PostComments';
 import LinkifiedText from './LinkifiedText';
+import MentionAutocomplete from '../Common/MentionAutocomplete';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import Icon from '../Common/Icon';
@@ -44,6 +45,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const tooltipTimeoutRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content || '');
+  const [editMentions, setEditMentions] = useState([]);
+  const editTextareaRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showAddToListModal, setShowAddToListModal] = useState(false);
   const [listStatus, setListStatus] = useState({ userListName: post.userListName, inWatchlist: post.inWatchlist });
@@ -365,11 +368,13 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
 
     setIsSaving(true);
     try {
-      await dispatch(updatePost({ 
-        postId: post.id, 
-        content: editedContent.trim() 
+      await dispatch(updatePost({
+        postId: post.id,
+        content: editedContent.trim(),
+        mentions: editMentions.map(m => m.id)
       })).unwrap();
       setIsEditing(false);
+      setEditMentions([]);
       
       // Вызываем callback если он передан (для FeedPage)
       if (onPostUpdated) {
@@ -391,6 +396,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedContent(post.content || '');
+    setEditMentions([]);
   };
 
   // Проверка, можно ли редактировать пост (в течение часа)
@@ -521,13 +527,23 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         return (
           <div className={styles.textContent}>
             {isEditing ? (
-              <div className={styles.editMode}>
+              <div className={styles.editMode} style={{ position: 'relative' }}>
                 <textarea
+                  ref={editTextareaRef}
                   className={styles.editTextarea}
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
                   rows={4}
                   disabled={isSaving}
+                />
+                <MentionAutocomplete
+                  textareaRef={editTextareaRef}
+                  onMentionSelect={(friend) => {
+                    if (!editMentions.some(m => m.id === friend.id)) {
+                      setEditMentions(prev => [...prev, friend]);
+                    }
+                  }}
+                  position="bottom"
                 />
                 <div className={styles.editButtons}>
                   <button 

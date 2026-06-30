@@ -65,9 +65,9 @@ export const addReaction = createAsyncThunk(
 
 export const updatePost = createAsyncThunk(
   'wall/updatePost',
-  async ({ postId, content }, { rejectWithValue }) => {
+  async ({ postId, content, mentions }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/wall/${postId}`, { content });
+      const response = await api.put(`/wall/${postId}`, { content, mentions });
       return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);

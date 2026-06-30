@@ -9,6 +9,7 @@ import { addMessageHandler, removeMessageHandler } from '../../services/websocke
 import styles from './Wall.module.css';
 import axios from 'axios';
 import SuggestMediaModal from '../Messages/SuggestMediaModal';
+import MentionAutocomplete from '../Common/MentionAutocomplete';
 
 /**
  * Компонент стены активности пользователя
@@ -30,6 +31,8 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
   const [suggestMediaType, setSuggestMediaType] = useState('movie');
   const fileInputRef = useRef(null);
   const attachDropdownRef = useRef(null);
+  const textareaRef = useRef(null);
+  const [mentions, setMentions] = useState([]);
 
   const filters = [
     { key: 'all', label: 'Все' },
@@ -328,6 +331,11 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       if (newPostContent.trim()) {
         postData.content = newPostContent.trim();
       }
+
+      // Добавляем упоминания
+      if (mentions.length > 0) {
+        postData.mentions = mentions.map(m => m.id);
+      }
       
       const result = await dispatch(createPost(postData)).unwrap();
 
@@ -359,6 +367,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
       setSelectedImages([]);
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
       setImagePreviews([]);
+      setMentions([]);
       
       // Перезагружаем стену после создания поста
       await dispatch(fetchWall({ userId, limit: 20, offset: 0 }));
@@ -421,14 +430,24 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
               onDrop={handleDrop}
             >
               <textarea
+                ref={textareaRef}
                 className={styles.postInput}
-                placeholder={isOwnProfile ? "Что у вас нового?" : "Написать на стене..."}
+                placeholder={isOwnProfile ? "Что у вас нового? Используйте @ для упоминания друзей" : "Написать на стене..."}
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 rows={3}
                 disabled={isCreating}
+              />
+              <MentionAutocomplete
+                textareaRef={textareaRef}
+                onMentionSelect={(friend) => {
+                  if (!mentions.some(m => m.id === friend.id)) {
+                    setMentions(prev => [...prev, friend]);
+                  }
+                }}
+                position="bottom"
               />
               
               {/* Оверлей для drag & drop - показывается только при перетаскивании */}
