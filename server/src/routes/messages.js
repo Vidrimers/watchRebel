@@ -319,13 +319,29 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       }
     };
 
-    // Для групповых чатов добавляем информацию о группе
+    // Для групповых чатов добавляем информацию о группе и правах текущего пользователя
     if (isGroup) {
+      const isCreator = conv.created_by === userId;
+      let canDeleteMessages = isCreator;
+
+      if (!isCreator) {
+        const modCheck = await executeQuery(
+          `SELECT gmp.permission_type FROM group_moderators gm
+           JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+           WHERE gm.conversation_id = ? AND gm.user_id = ?`,
+          [conversationId, userId]
+        );
+        if (modCheck.success) {
+          canDeleteMessages = modCheck.data.some(p => p.permission_type === 'manage_messages');
+        }
+      }
+
       responseData.group = {
         id: conv.id,
         groupName: conv.group_name,
         groupAvatar: conv.group_avatar,
-        createdBy: conv.created_by
+        createdBy: conv.created_by,
+        canDeleteMessages
       };
     }
 

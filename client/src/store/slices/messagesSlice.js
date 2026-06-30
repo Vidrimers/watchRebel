@@ -88,6 +88,7 @@ const messagesSlice = createSlice({
     conversations: [],
     currentConversation: null,
     messages: [],
+    group: null,
     hasMoreMessages: false,
     totalMessages: 0,
     loading: false,
@@ -145,19 +146,18 @@ const messagesSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchMessages.fulfilled, (state, action) => {
-        const { messages, pagination, offset } = action.payload;
-        
+        const { messages, pagination, offset, group } = action.payload;
+
         if (offset > 0) {
-          // Добавляем старые сообщения в начало
           state.messages = [...messages, ...state.messages];
           state.loadingMore = false;
         } else {
-          // Заменяем все сообщения (первая загрузка или обновление)
           state.messages = messages;
           state.loading = false;
         }
-        
+
         state.currentConversation = action.payload.conversationId;
+        state.group = group || null;
         if (pagination) {
           state.hasMoreMessages = pagination.hasMore;
           state.totalMessages = pagination.total;

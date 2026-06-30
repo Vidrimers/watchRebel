@@ -48,7 +48,7 @@ const parseSuggestedMedia = (sm) => {
 const MessageThread = ({ conversation, onClose }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { messages, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
+  const { messages, group, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
 
   // Хелперы для групповых чатов
@@ -1059,13 +1059,15 @@ const MessageThread = ({ conversation, onClose }) => {
                       )}
                       <div className={styles.messageFooter}>
                         <span className={styles.messageTime}>{formatTime(message.createdAt)}</span>
-                        <button
-                          className={styles.deleteButton}
-                          onClick={(e) => handleDeleteClick(e, message.id, isOwnMessage)}
-                          title="Удалить сообщение"
-                        >
-                          ×
-                        </button>
+                        {(isOwnMessage || (isGroup && group?.canDeleteMessages)) && (
+                          <button
+                            className={styles.deleteButton}
+                            onClick={(e) => handleDeleteClick(e, message.id, isOwnMessage)}
+                            title="Удалить сообщение"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
