@@ -207,52 +207,63 @@
 }
 
 .deleteButton:hover {
-  background: #ef4444;
-  color: white;
+  transform: rotate(90deg);
 }
 
 /* Popup удаления */
 .deletePopup {
   position: fixed;
   z-index: 1000;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  padding: 0.5rem;
-  min-width: 140px;
-  animation: fadeIn 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  padding: 4px 0;
+  animation: deletePopupFadeIn 0.15s ease;
+}
+
+@keyframes deletePopupFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .deletePopupOption {
   display: block;
   width: 100%;
-  padding: 0.5rem 1rem;
+  padding: 10px 16px;
   border: none;
   background: none;
-  color: var(--text-primary);
-  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+  font-size: 14px;
   text-align: left;
   cursor: pointer;
-  border-radius: 4px;
   transition: background 0.15s;
 }
 
 .deletePopupOption:hover {
-  background: var(--bg-hover);
+  background: var(--hover-bg, #f3f4f6);
 }
 
 .deletePopupDanger {
-  color: #ef4444;
+  color: var(--error-color, #ef4444);
 }
 
 .deletePopupDanger:hover {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.1);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+:global(.dark) .deletePopup {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+}
+
+:global(.dark) .deletePopupOption {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .deletePopupOption:hover {
+  background: var(--hover-bg-dark, #3a3a3a);
 }
 
 /* Модальное окно */

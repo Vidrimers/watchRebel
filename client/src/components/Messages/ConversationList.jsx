@@ -405,13 +405,20 @@ const ConversationList = ({ onSelectConversation }) => {
             className={styles.deletePopupOption}
             onClick={() => handleDeleteConversation('for_me')}
           >
-            У себя
+            Удалить у себя
           </button>
           <button
             className={`${styles.deletePopupOption} ${styles.deletePopupDanger}`}
             onClick={() => handleDeleteConversation('for_everyone')}
           >
-            У всех
+            Удалить у всех
+          </button>
+          <button
+            className={styles.deletePopupOption}
+            style={{ borderTop: '1px solid var(--border-color, #e0e0e0)', textAlign: 'center', color: 'var(--text-secondary, #666)' }}
+            onClick={() => setDeletePopup(null)}
+          >
+            Отмена
           </button>
         </div>
       )}

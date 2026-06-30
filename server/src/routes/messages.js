@@ -50,13 +50,33 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const conversationsResult = await executeQuery(query, [userId, userId, userId, userId, userId, userId]);
 
     if (!conversationsResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка получения диалогов',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 
-    const conversations = conversationsResult.data.map(c => {
+    // Получаем ID диалогов, где ВСЕ сообщения скрыты для текущего пользователя
+    const hiddenConvIds = [];
+    for (const conv of conversationsResult.data) {
+      const lastMsgResult = await executeQuery(
+        'SELECT deleted_for_users FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1',
+        [conv.id]
+      );
+      if (lastMsgResult.success && lastMsgResult.data.length > 0) {
+        const deletedFor = lastMsgResult.data[0].deleted_for_users;
+        if (deletedFor) {
+          try {
+            const arr = JSON.parse(deletedFor);
+            if (arr.includes(userId)) {
+              hiddenConvIds.push(conv.id);
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
+    }
+
+    const conversations = conversationsResult.data.filter(c => !hiddenConvIds.includes(c.id)).map(c => {
       // Формируем текст последнего сообщения
       let lastMessage = c.last_message_content;
       
