@@ -19,27 +19,26 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 
     // Получаем все диалоги пользователя с информацией о собеседнике и последнем сообщении
     const query = `
-      SELECT
+      SELECT 
         c.id,
         c.user1_id,
         c.user2_id,
         c.last_message_at,
         c.created_at,
-        CASE
+        CASE 
           WHEN c.user1_id = ? THEN u2.id
           ELSE u1.id
         END as other_user_id,
-        CASE
+        CASE 
           WHEN c.user1_id = ? THEN u2.display_name
           ELSE u1.display_name
         END as other_user_name,
-        CASE
+        CASE 
           WHEN c.user1_id = ? THEN u2.avatar_url
           ELSE u1.avatar_url
         END as other_user_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
         (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments,
-        (SELECT deleted_for_users FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_deleted_for,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND receiver_id = ? AND is_read = 0) as unread_count
       FROM conversations c
       LEFT JOIN users u1 ON c.user1_id = u1.id
@@ -57,18 +56,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       });
     }
 
-    // Фильтруем диалоги: скрываем те, где последнее сообщение скрыто для текущего пользователя
-    const visibleConversations = conversationsResult.data.filter(c => {
-      if (!c.last_message_deleted_for) return true;
-      try {
-        const deleted = JSON.parse(c.last_message_deleted_for);
-        return !deleted.includes(userId);
-      } catch {
-        return true;
-      }
-    });
-
-    const conversations = visibleConversations.map(c => {
+    const conversations = conversationsResult.data.map(c => {
       // Формируем текст последнего сообщения
       let lastMessage = c.last_message_content;
       
