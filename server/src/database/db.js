@@ -44,7 +44,7 @@ export function executeQuery(query, params = []) {
       const db = getDatabase();
       
       // Определяем тип запроса
-      const queryType = query.trim().toUpperCase().split(' ')[0];
+      const queryType = query.trim().toUpperCase().split(/\s+/)[0];
       
       if (queryType === 'SELECT') {
         // Для SELECT возвращаем все строки
