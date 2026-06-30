@@ -17,6 +17,7 @@ import AudioPlayer from './AudioPlayer';
 import DeleteMessagePopup from './DeleteMessagePopup';
 import GroupMembersModal from './GroupMembersModal';
 import GroupSettingsModal from './GroupSettingsModal';
+import MentionAutocomplete from '../Common/MentionAutocomplete';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
@@ -30,6 +31,33 @@ const parseLocation = (loc) => {
   if (loc.lat !== undefined && loc.lng !== undefined) return loc;
   if (loc.latitude !== undefined && loc.longitude !== undefined) return { lat: loc.latitude, lng: loc.longitude };
   return null;
+};
+
+// Парсинг упоминаний в тексте сообщения
+const MENTION_REGEX = /@\[([^\]]+)\]\(([^)]+)\)/g;
+const renderMessageContent = (text) => {
+  if (!text) return null;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  MENTION_REGEX.lastIndex = 0;
+  while ((match = MENTION_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    parts.push(
+      React.createElement('a', {
+        key: `mention-${match.index}`,
+        href: `/user/${match[2]}`,
+        style: { color: 'var(--accent-primary, #6366f1)', fontWeight: 600, textDecoration: 'none' }
+      }, `@${match[1]}`)
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  return parts.length > 0 ? parts : text;
 };
 
 const parseSuggestedMedia = (sm) => {
@@ -953,7 +981,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     
                     <div className={styles.messageBubble}>
                       {message.content && (
-                        <p className={styles.messageText}>{message.content}</p>
+                        <p className={styles.messageText}>{renderMessageContent(message.content)}</p>
                       )}
                       
                       {/* Геометка */}
@@ -1168,17 +1196,26 @@ const MessageThread = ({ conversation, onClose }) => {
                     />
                   )}
                 </div>
-                <div className={styles.inputFieldWrapper}>
+                <div className={styles.inputFieldWrapper} style={{ position: 'relative' }}>
                   <textarea
                     ref={textareaRef}
                     className={styles.input}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Напишите сообщение..."
+                    placeholder={isGroup ? "Напишите сообщение... (@ для упоминания)" : "Напишите сообщение..."}
                     rows={1}
                     disabled={sendingMessage}
                   />
+                  {isGroup && (
+                    <MentionAutocomplete
+                      textareaRef={textareaRef}
+                      onMentionSelect={(friend) => {
+                        // Упоминание уже вставлено в текст через MentionAutocomplete
+                      }}
+                      position="top"
+                    />
+                  )}
                   <div className={styles.inputActions}>
                     <button
                       type="button"
