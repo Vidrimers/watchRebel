@@ -1244,7 +1244,7 @@ async function publishPost(chatId, userId, content, imageUrls, userFrom) {
         'Authorization': `Bearer ${session.token}`
       },
       body: JSON.stringify({
-        content: content,
+        content: content || null,
         postType: 'text',
         wallOwnerId: userId
       })
