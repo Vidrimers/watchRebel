@@ -20,10 +20,10 @@ const FeedPage = () => {
   // Отмечаем ленту как просмотренную при открытии
   useEffect(() => {
     if (!user) return;
-    api.post('/feed/mark-viewed').then(() => {
-      // Уведомляем сайдбар что лента просмотрена
-      window.dispatchEvent(new CustomEvent('feed-viewed'));
-    }).catch(() => {});
+    // Сразу обнуляем badge в сайдбаре
+    window.dispatchEvent(new CustomEvent('feed-viewed'));
+    // Обновляем last_feed_view на сервере в фоне
+    api.post('/feed/mark-viewed').catch(() => {});
   }, [user?.id]);
 
   // Функция загрузки ленты с пагинацией
