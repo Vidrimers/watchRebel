@@ -487,11 +487,16 @@ async function handleFeedAction(chatId, userId, token, page = 0) {
       let content = post.content || '';
       if (content.length > 150) content = content.substring(0, 150) + '...';
 
+      // Название фильма/сериала
+      const mediaTitle = post.mediaTitle || '';
+      const mediaType = post.mediaType === 'tv' ? '📺' : '🎬';
+      const hasMedia = !!post.tmdbId;
+
       // Тип поста
       const typeLabels = {
         'review': '📝 Рецензия',
         'rating': '⭐ Оценка',
-        'media_added': '🎬 Добавил в список',
+        'media_added': '➕ Добавил в список',
         'media_shared': '🔗 Поделился',
         'status_update': '💬 Статус',
         'text': '📄 Пост',
@@ -499,23 +504,20 @@ async function handleFeedAction(chatId, userId, token, page = 0) {
       };
       const typeLabel = typeLabels[post.postType] || '';
 
-      // Рейтинг
-      let ratingText = '';
-      if (post.rating) ratingText = ` | ⭐ ${post.rating}`;
-
-      // Медиа
-      let mediaText = '';
-      if (post.tmdbId) {
-        const mediaType = post.mediaType === 'tv' ? '📺' : '🎬';
-        const mediaTitle = post.mediaTitle || '';
-        mediaText = mediaType + (mediaTitle ? ` <b>${mediaTitle}</b>` : '');
+      // Формируем строку с фильмом и типом
+      let movieLine = '';
+      if (hasMedia && mediaTitle) {
+        movieLine = `${mediaType} <b>${mediaTitle}</b>`;
+        if (post.rating) movieLine += ` — ⭐ ${post.rating}`;
+        if (post.userListName) movieLine += ` → ${post.userListName}`;
+      } else if (hasMedia) {
+        movieLine = `${mediaType} (загрузка...)`;
       }
 
       // Реакции
       const reactionsCount = post.reactions?.length || 0;
       let reactionsText = '';
       if (reactionsCount > 0) {
-        // Считаем уникальные эмодзи
         const emojiCounts = {};
         post.reactions.forEach(r => {
           emojiCounts[r.emoji] = (emojiCounts[r.emoji] || 0) + 1;
@@ -525,7 +527,7 @@ async function handleFeedAction(chatId, userId, token, page = 0) {
           .slice(0, 3)
           .map(([emoji, count]) => `${emoji}${count > 1 ? count : ''}`)
           .join(' ');
-        reactionsText = `\n   ${topEmojis}`;
+        reactionsText = ` ${topEmojis}`;
       }
 
       // Комментарии
@@ -534,11 +536,11 @@ async function handleFeedAction(chatId, userId, token, page = 0) {
         commentsText = ` | 💬 ${post.commentsCount}`;
       }
 
-      feedText += `<b>${author}</b>${mediaText} ${typeLabel}\n`;
-      feedText += `📅 ${date}${ratingText}${commentsText}\n`;
+      feedText += `<b>${author}</b> ${typeLabel}\n`;
+      if (movieLine) feedText += `${movieLine}\n`;
+      feedText += `📅 ${date}${reactionsText}${commentsText}\n`;
       if (content) feedText += `${content}\n`;
-      if (reactionsText) feedText += reactionsText;
-      feedText += '\n\n';
+      feedText += '\n';
     }
 
     // Кнопки навигации
