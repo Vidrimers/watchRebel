@@ -896,7 +896,13 @@ const MessageThread = ({ conversation, onClose }) => {
                   {/* Имя отправителя для групповых чатов — над сообщением */}
                   {isGroup && !isOwnMessage && message.sender?.displayName && (
                     <div className={styles.senderNameRow}>
-                      <div className={styles.senderName}>{message.sender.displayName}</div>
+                      <a
+                        href={`/user/${message.senderId}`}
+                        className={styles.senderName}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {message.sender.displayName}
+                      </a>
                     </div>
                   )}
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
@@ -937,7 +943,11 @@ const MessageThread = ({ conversation, onClose }) => {
                           const senderId = isGroup ? message.senderId : conversation.otherUser?.id;
 
                           return isGroup ? (
-                            <div className={styles.messageAvatar}>
+                            <a
+                              href={`/user/${senderId}`}
+                              className={styles.messageAvatar}
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {senderAvatar ? (
                                 <img
                                   src={
@@ -953,7 +963,7 @@ const MessageThread = ({ conversation, onClose }) => {
                                   {senderName?.charAt(0).toUpperCase() || '?'}
                                 </div>
                               )}
-                            </div>
+                            </a>
                           ) : (
                             <a
                               href={`/user/${conversation.otherUser.id}`}
