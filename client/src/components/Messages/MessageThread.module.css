@@ -1142,8 +1142,22 @@
   color: var(--accent-primary, #6366f1);
   font-weight: 600;
   text-decoration: none;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 1px 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.ownMessage .mentionLink {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .mentionLink:hover {
   text-decoration: underline;
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.ownMessage .mentionLink:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
