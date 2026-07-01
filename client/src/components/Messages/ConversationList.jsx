@@ -314,7 +314,7 @@ const ConversationList = ({ onSelectConversation }) => {
 
               <div className={styles.content}>
                 <div className={styles.topRow}>
-                  <span className={styles.name}>
+                  <span className={styles.name} title={displayName}>
                     {isGroup ? `👥 ${displayName}` : (
                       conversation.otherUser ? resolveDisplayNameWithTooltip(conversation.otherUser.id, displayName).text : displayName
                     )}
@@ -322,7 +322,7 @@ const ConversationList = ({ onSelectConversation }) => {
                   <span className={styles.time}>{formatDate(conversation.lastMessageAt)}</span>
                 </div>
                 <div className={styles.bottomRow}>
-                  <p className={styles.lastMessage}>
+                  <p className={styles.lastMessage} title={conversation.lastMessage}>
                     {truncateText(conversation.lastMessage)}
                   </p>
                   {conversation.unreadCount > 0 && (
