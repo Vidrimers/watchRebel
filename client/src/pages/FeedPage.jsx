@@ -17,6 +17,12 @@ const FeedPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [newPostsCount, setNewPostsCount] = useState(0);
 
+  // Отмечаем ленту как просмотренную при открытии
+  useEffect(() => {
+    if (!user) return;
+    api.post('/feed/mark-viewed').catch(() => {});
+  }, [user]);
+
   // Функция загрузки ленты с пагинацией
   const fetchFeed = async (limit, offset) => {
     if (!user) return { posts: [], hasMore: false };

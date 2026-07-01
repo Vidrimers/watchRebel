@@ -25,12 +25,25 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
     const friendIds = friendsResult.data.map(f => f.friend_id);
     const placeholders = friendIds.map(() => '?').join(',');
 
-    // Считаем посты друзей за последние 24 часа (упрощённый подход)
+    // Получаем last_feed_view пользователя
+    const userResult = await executeQuery(
+      `SELECT last_feed_view FROM users WHERE id = ?`,
+      [userId]
+    );
+    const lastFeedView = userResult.success && userResult.data.length > 0
+      ? userResult.data[0].last_feed_view : null;
+
+    // Считаем посты новее last_feed_view (или за 24 часа если last_feed_view не задан)
+    const timeCondition = lastFeedView
+      ? `AND created_at > ?`
+      : `AND created_at > datetime('now', '-1 day')`;
+    const timeParams = lastFeedView ? [lastFeedView] : [];
+
     const countResult = await executeQuery(
       `SELECT COUNT(*) as cnt FROM wall_posts 
        WHERE user_id IN (${placeholders})
-       AND created_at > datetime('now', '-1 day')`,
-      friendIds
+       ${timeCondition}`,
+      [...friendIds, ...timeParams]
     );
 
     const count = countResult.success ? countResult.data[0].cnt : 0;
@@ -38,6 +51,24 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка получения feed unread-count:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/feed/mark-viewed
+ * Отметить ленту как просмотренную (обновить last_feed_view)
+ */
+router.post('/mark-viewed', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await executeQuery(
+      `UPDATE users SET last_feed_view = datetime('now') WHERE id = ?`,
+      [userId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Ошибка обновления last_feed_view:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
