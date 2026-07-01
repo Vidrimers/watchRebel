@@ -1203,7 +1203,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isGroup ? "Напишите сообщение... (@ для упоминания)" : "Напишите сообщение..."}
+                    placeholder={isGroup ? "Напишите сообщение..." : "Напишите сообщение..."}
                     rows={1}
                     disabled={sendingMessage}
                   />

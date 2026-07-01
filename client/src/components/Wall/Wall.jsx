@@ -432,7 +432,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
               <textarea
                 ref={textareaRef}
                 className={styles.postInput}
-                placeholder={isOwnProfile ? "Что у вас нового? Используйте @ для упоминания друзей" : "Написать на стене..."}
+                placeholder={isOwnProfile ? "Что у вас нового?" : "Написать на стене..."}
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 onKeyDown={handleKeyDown}
