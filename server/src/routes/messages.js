@@ -1643,7 +1643,7 @@ router.post('/conversations/:conversationId/moderators', authenticateToken, asyn
     );
 
     // Добавляем права
-    const validPermissions = ['manage_members', 'manage_messages', 'edit_group', 'send_announcements', 'delete_announcements'];
+    const validPermissions = ['manage_members', 'manage_messages', 'edit_group', 'send_announcements', 'delete_announcements', 'manage_moderators'];
     for (const perm of permissions || []) {
       if (validPermissions.includes(perm)) {
         await executeQuery(
