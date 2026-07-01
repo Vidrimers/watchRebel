@@ -65,7 +65,7 @@ const NotificationList = () => {
     }
 
     // Для уведомлений об упоминании в групповом чате — переходим в конкретный чат
-    if (notification.type === 'group_mention') {
+    if (notification.type === 'group_mention' || notification.type === 'group_announcement') {
       if (notification.relatedPostId) {
         window.location.href = `/messages?conversation=${notification.relatedPostId}`;
       } else {
@@ -126,7 +126,7 @@ const NotificationList = () => {
 
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
-    if (notification.type === 'mention' || notification.type === 'group_mention') {
+    if (notification.type === 'mention' || notification.type === 'group_mention' || notification.type === 'group_announcement') {
       if (notification.relatedUser?.displayName) {
         const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
         return `${resolved.text} ${notification.content}`;
@@ -187,6 +187,10 @@ const NotificationList = () => {
         return <Icon name="bug" size="small" />;
       case 'new_bug_report':
         return <Icon name="bug" size="small" />;
+      case 'group_announcement':
+        return <Icon name="announcement" size="small" />;
+      case 'group_mention':
+        return <Icon name="messages" size="small" />;
       default:
         return <Icon name="bell" size="small" />;
     }

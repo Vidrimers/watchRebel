@@ -108,7 +108,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
     }
 
     // Для уведомлений об упоминании в групповом чате — переходим в конкретный чат
-    if (notification.type === 'group_mention') {
+    if (notification.type === 'group_mention' || notification.type === 'group_announcement') {
       if (notification.relatedPostId) {
         window.location.href = `/messages?conversation=${notification.relatedPostId}`;
       } else {
@@ -176,7 +176,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
     // Для упоминаний имя автора уже в content, не дублируем
-    if (notification.type === 'mention' || notification.type === 'group_mention') {
+    if (notification.type === 'mention' || notification.type === 'group_mention' || notification.type === 'group_announcement') {
       if (notification.relatedUser?.displayName) {
         const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
         return `${resolved.text} ${notification.content}`;
@@ -224,6 +224,10 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
         return 'bug';
       case 'new_bug_report':
         return 'bug';
+      case 'group_announcement':
+        return 'announcement';
+      case 'group_mention':
+        return 'messages';
       default:
         return 'bell';
     }

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert';
+import Icon from '../Common/Icon';
 import styles from './AnnouncementModal.module.css';
 
 const AnnouncementModal = ({ conversationId, onClose, onSent }) => {
@@ -75,7 +76,7 @@ const AnnouncementModal = ({ conversationId, onClose, onSent }) => {
       {alertDialog}
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3>📢 Объявление</h3>
+          <h3><Icon name="announcement" size="medium" /> Объявление</h3>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 

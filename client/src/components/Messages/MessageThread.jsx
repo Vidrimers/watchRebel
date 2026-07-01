@@ -937,7 +937,7 @@ const MessageThread = ({ conversation, onClose }) => {
                   {message.isAnnouncement ? (
                     <div className={styles.announcementMessage}>
                       <div className={styles.announcementHeader}>
-                        <span className={styles.announcementIcon}>📢</span>
+                        <Icon name="announcement" size="small" />
                         <span>Объявление</span>
                         {/* Кнопка удаления — только автор или модератор с delete_announcements */}
                         {(

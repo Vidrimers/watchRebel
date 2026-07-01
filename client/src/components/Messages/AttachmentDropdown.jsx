@@ -46,7 +46,7 @@ const AttachmentDropdown = ({ onSelect, onClose, isGroup }) => {
       </button>
       {isGroup && (
         <button className={styles.item} onClick={() => onSelect('announcement')}>
-          <span style={{ fontSize: '16px' }}>📢</span>
+          <Icon name="announcement" size="small" />
           <span>Объявление</span>
         </button>
       )}
