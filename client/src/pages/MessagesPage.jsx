@@ -24,6 +24,8 @@ const MessagesPage = () => {
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation);
+    // Через небольшой задержку обновляем список диалогов (чтобы badge непрочитанных обновился)
+    setTimeout(() => dispatch(fetchConversations()), 500);
   };
 
   // Загружаем список диалогов при монтировании
