@@ -399,7 +399,13 @@ bot.on('callback_query', async (query) => {
     } else if (data.startsWith('menu_')) {
       await handleMenuAction(chatId, userId, data, query.from);
     } else if (data.startsWith('settings_')) {
-      await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
+      if (data === 'settings_theme') {
+        await handleSettingsTheme(chatId, userId, query.from);
+      } else if (data === 'settings_privacy') {
+        await handleSettingsPrivacy(chatId, userId, query.from);
+      } else {
+        await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
+      }
     } else if (data === 'create_text_post') {
       await handleCreateTextPost(chatId, userId, query.from);
     } else if (data === 'create_photo_post') {
@@ -429,6 +435,12 @@ bot.on('callback_query', async (query) => {
       }
     } else if (data.startsWith('toggle_notif_')) {
       await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
+    } else if (data.startsWith('set_theme_')) {
+      const themeName = data.replace('set_theme_', '');
+      await handleSetTheme(chatId, userId, themeName, query.from);
+    } else if (data.startsWith('set_privacy_')) {
+      const privacyValue = data.replace('set_privacy_', '');
+      await handleSetPrivacy(chatId, userId, privacyValue, query.from);
     } else if (data.startsWith('reply_group_')) {
       // Обработка кнопки "Ответить" в групповом чате
       const conversationId = data.replace('reply_group_', '');
@@ -702,8 +714,10 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       text: '⚙️ <b>Настройки</b>\n\nВыберите действие:',
       buttons: [
         [{ text: '✏️ Сменить имя', callback_data: 'settings_change_name' }],
-        [{ text: '💬 Изменить статус', callback_data: 'settings_change_status' }],
-        [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings?session=${session.token}` }]
+        [{ text: '🎨 Сменить тему', callback_data: 'settings_theme' }],
+        [{ text: '🔒 Приватность стены', callback_data: 'settings_privacy' }],
+        [{ text: '🔔 Настройки уведомлений', callback_data: 'settings_notifications' }],
+        [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings` }]
       ]
     },
     'menu_bug_report': {
@@ -1127,6 +1141,134 @@ async function handleWatchlistAction(chatId, userId, token, page, mediaType) {
   } catch (error) {
     console.error('Ошибка загрузки watchlist:', error.message);
     await bot.sendMessage(chatId, '⚠️ Ошибка загрузки. Попробуйте позже.');
+  }
+}
+
+/**
+ * Показать список тем для выбора
+ */
+async function handleSettingsTheme(chatId, userId, userFrom) {
+  const themes = [
+    { value: 'light-cream', label: '☀️ Светлая (Кремовая)' },
+    { value: 'dark', label: '🌙 Тёмная' },
+    { value: 'material-light', label: '🎨 Material Light' },
+    { value: 'material-dark', label: '🎨 Material Dark' },
+    { value: 'die-my-darling', label: '❤️ Die My Darling' },
+    { value: 'steam', label: '🎮 Steam' },
+    { value: 'discord', label: '💬 Discord' },
+    { value: 'metal-and-glass', label: '🔮 Metal & Glass' },
+    { value: 'cyberpunk', label: '🌆 Cyberpunk' },
+    { value: 'dark-neon-obsidian', label: '💎 Dark Neon Obsidian' }
+  ];
+
+  const buttons = [];
+  for (let i = 0; i < themes.length; i += 2) {
+    const row = [];
+    row.push({ text: themes[i].label, callback_data: `set_theme_${themes[i].value}` });
+    if (i + 1 < themes.length) {
+      row.push({ text: themes[i + 1].label, callback_data: `set_theme_${themes[i + 1].value}` });
+    }
+    buttons.push(row);
+  }
+  buttons.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
+
+  await bot.sendMessage(chatId, '🎨 <b>Выберите тему оформления:</b>', {
+    parse_mode: 'HTML',
+    reply_markup: { inline_keyboard: buttons }
+  });
+}
+
+/**
+ * Установить тему
+ */
+async function handleSetTheme(chatId, userId, themeName, userFrom) {
+  try {
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    await fetch(`${apiUrl}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({ theme: themeName })
+    });
+
+    await bot.sendMessage(chatId, `✅ Тема изменена на "<b>${themeName}</b>".\n\nОбновите страницу на сайте, чтобы увидеть изменения.`, {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: [[{ text: '🏠 Главное меню', callback_data: 'main_menu' }]] }
+    });
+  } catch (error) {
+    console.error('Ошибка смены темы:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка смены темы. Попробуйте позже.');
+  }
+}
+
+/**
+ * Показать настройки приватности стены
+ */
+async function handleSettingsPrivacy(chatId, userId, userFrom) {
+  try {
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const response = await fetch(`${apiUrl}/api/users/${userId}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${session.token}` }
+    });
+
+    let currentPrivacy = 'all';
+    if (response.ok) {
+      const data = await response.json();
+      currentPrivacy = data.wallPrivacy || 'all';
+    }
+
+    const labels = { 'all': '🌐 Все', 'friends': '👥 Только друзья', 'none': '🔒 Никто' };
+
+    await bot.sendMessage(chatId, `🔒 <b>Приватность стены</b>\n\nТекущий режим: <b>${labels[currentPrivacy]}</b>\n\nВыберите:`, {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: `🌐 Все${currentPrivacy === 'all' ? ' ✓' : ''}`, callback_data: 'set_privacy_all' }],
+          [{ text: `👥 Только друзья${currentPrivacy === 'friends' ? ' ✓' : ''}`, callback_data: 'set_privacy_friends' }],
+          [{ text: `🔒 Никто${currentPrivacy === 'none' ? ' ✓' : ''}`, callback_data: 'set_privacy_none' }],
+          [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
+        ]
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки приватности:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка. Попробуйте позже.');
+  }
+}
+
+/**
+ * Установить приватность стены
+ */
+async function handleSetPrivacy(chatId, userId, privacyValue, userFrom) {
+  try {
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    await fetch(`${apiUrl}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({ wallPrivacy: privacyValue })
+    });
+
+    const labels = { 'all': '🌐 Все', 'friends': '👥 Только друзья', 'none': '🔒 Никто' };
+
+    await bot.sendMessage(chatId, `✅ Приватность стены изменена на "<b>${labels[privacyValue]}</b>".`, {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: [[{ text: '🏠 Главное меню', callback_data: 'main_menu' }]] }
+    });
+  } catch (error) {
+    console.error('Ошибка смены приватности:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка. Попробуйте позже.');
   }
 }
 
