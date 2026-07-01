@@ -842,6 +842,25 @@ router.delete('/:postId', authenticateToken, async (req, res) => {
       });
     }
 
+    // Удаляем изображения поста с диска
+    const imagesResult = await executeQuery(
+      'SELECT image_url FROM post_images WHERE post_id = ?',
+      [postId]
+    );
+    if (imagesResult.success && imagesResult.data.length > 0) {
+      const fs = await import('fs');
+      const path = await import('path');
+      for (const img of imagesResult.data) {
+        if (img.image_url) {
+          const filePath = path.join(process.cwd(), img.image_url);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+      }
+      await executeQuery('DELETE FROM post_images WHERE post_id = ?', [postId]);
+    }
+
     // Удаляем запись (реакции удалятся автоматически благодаря ON DELETE CASCADE)
     const deleteResult = await executeQuery(
       'DELETE FROM wall_posts WHERE id = ?',
