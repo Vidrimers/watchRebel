@@ -1214,14 +1214,21 @@ async function handlePostImage(chatId, userId, photos, stateData) {
     stateData.images = stateData.images || [];
     stateData.images.push(filePath);
     setUserState(userId, 'awaiting_post_image', stateData);
-    await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`, {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }],
-          [{ text: '✅ Опубликовать', callback_data: 'post_publish' }]
-        ]
-      }
-    });
+
+    if (stateData.images.length === 1) {
+      // Первое фото — показываем кнопки
+      await bot.sendMessage(chatId, `✅ Изображение добавлено. Можно отправить ещё или нажать "Опубликовать".`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }],
+            [{ text: '✅ Опубликовать', callback_data: 'post_publish' }]
+          ]
+        }
+      });
+    } else {
+      // Последующие фото — только подтверждение
+      await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено.`);
+    }
   } catch (error) {
     console.error('Ошибка загрузки изображения:', error.message);
     await bot.sendMessage(chatId, '⚠️ Ошибка загрузки изображения. Попробуйте ещё раз.');
