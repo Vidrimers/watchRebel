@@ -402,6 +402,20 @@ bot.on('callback_query', async (query) => {
       await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
     } else if (data === 'create_text_post') {
       await handleCreateTextPost(chatId, userId, query.from);
+    } else if (data === 'create_photo_post') {
+      setUserState(userId, 'awaiting_post_image', {
+        userFrom: query.from,
+        content: '',
+        images: []
+      });
+      await bot.sendMessage(chatId, '📸 <b>Фото-пост</b>\n\nОтправьте изображение (можно несколько), затем нажмите "✅ Опубликовать".', {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '✅ Опубликовать', callback_data: 'post_publish' }]
+          ]
+        }
+      });
     } else if (data === 'post_skip_image') {
       const skipState = getUserState(userId);
       if (skipState && skipState.state === 'awaiting_post_image') {
@@ -673,6 +687,7 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       text: '👤 <b>Мой профиль</b>\n\nВыберите действие:',
       buttons: [
         [{ text: '📝 Создать пост', callback_data: 'create_text_post' }],
+        [{ text: '📸 Фото-пост', callback_data: 'create_photo_post' }],
         [{ text: '💬 Задать статус', callback_data: 'settings_change_status' }],
         [{ text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }]
       ]
@@ -1199,7 +1214,14 @@ async function handlePostImage(chatId, userId, photos, stateData) {
     stateData.images = stateData.images || [];
     stateData.images.push(filePath);
     setUserState(userId, 'awaiting_post_image', stateData);
-    await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`);
+    await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }],
+          [{ text: '✅ Опубликовать', callback_data: 'post_publish' }]
+        ]
+      }
+    });
   } catch (error) {
     console.error('Ошибка загрузки изображения:', error.message);
     await bot.sendMessage(chatId, '⚠️ Ошибка загрузки изображения. Попробуйте ещё раз.');
