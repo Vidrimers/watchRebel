@@ -728,7 +728,17 @@ const MessageThread = ({ conversation, onClose }) => {
               )}
             </a>
           )}
-          <h2 className={styles.headerName}>{isGroup ? `👥 ${getDisplayName()}` : resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        {isGroup ? (
+          <h2
+            className={`${styles.headerName} ${styles.headerNameClickable}`}
+            title="Групповой чат"
+            onClick={() => setShowMembersModal(true)}
+          >
+            👥 {getDisplayName()}
+          </h2>
+        ) : (
+          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        )}
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
@@ -793,7 +803,17 @@ const MessageThread = ({ conversation, onClose }) => {
             </div>
           </a>
         )}
-        <h2 className={styles.headerName}>{isGroup ? `👥 ${getDisplayName()}` : resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        {isGroup ? (
+          <h2
+            className={`${styles.headerName} ${styles.headerNameClickable}`}
+            title="Групповой чат"
+            onClick={() => setShowMembersModal(true)}
+          >
+            👥 {getDisplayName()}
+          </h2>
+        ) : (
+          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+        )}
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button
             className={styles.headerMenuBtn}

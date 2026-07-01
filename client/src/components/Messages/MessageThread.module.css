@@ -103,6 +103,15 @@
   color: var(--text-primary);
 }
 
+.headerNameClickable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.headerNameClickable:hover {
+  opacity: 0.8;
+}
+
 .loading,
 .empty,
 .emptyMessages {
