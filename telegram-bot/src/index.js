@@ -430,6 +430,11 @@ bot.on('callback_query', async (query) => {
       // Поделиться фильмом: share_movie_{tmdbId}
       const tmdbId = data.replace('share_movie_', '');
       await handleShareMovieAction(chatId, tmdbId);
+    } else if (data.startsWith('feed_page_')) {
+      // Пагинация ленты: feed_page_{page}
+      const feedPage = parseInt(data.replace('feed_page_', '')) || 0;
+      const feedSession = await createSession(userId, query.from);
+      await handleFeedAction(chatId, userId, feedSession.token, feedPage);
     } else if (data === 'main_menu') {
       // Возврат в главное меню
       await showMainMenu(chatId, query.from);
@@ -449,82 +454,105 @@ bot.on('callback_query', async (query) => {
  * @param {string} userId - ID пользователя
  * @param {string} token - Токен сессии для авторизации
  */
-async function handleFeedAction(chatId, userId, token) {
+async function handleFeedAction(chatId, userId, token, page = 0) {
   try {
-    // Получаем ленту активности через API
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
-    const response = await fetch(`${apiUrl}/api/feed/${userId}`, {
+    const limit = 5;
+    const offset = page * limit;
+
+    const response = await fetch(`${apiUrl}/api/feed/${userId}?limit=${limit}&offset=${offset}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (!response.ok) {
-      throw new Error(`API вернул ошибку: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`API: ${response.status}`);
+    const data = await response.json();
+    const posts = data.posts || [];
+    const hasMore = data.hasMore;
 
-    const feed = await response.json();
-
-    // Если лента пуста
-    if (feed.length === 0) {
+    if (!posts || posts.length === 0) {
       await bot.sendMessage(
         chatId,
-        '📰 <b>Лента активности</b>\n\n' +
-        'Пока нет постов от ваших друзей.\n\n' +
-        'Добавьте друзей, чтобы видеть их активность!',
+        '📰 <b>Лента активности</b>\n\nПока нет постов от ваших друзей.\nДобавьте друзей, чтобы видеть их активность!',
         { parse_mode: 'HTML' }
       );
       return;
     }
 
-    // Форматируем посты
-    let feedText = '📰 <b>Лента активности</b>\n\n';
-    feedText += `Последние ${feed.length} постов от ваших друзей:\n\n`;
+    let feedText = `📰 <b>Лента активности</b> (стр. ${page + 1}):\n\n`;
 
-    feed.forEach((post, index) => {
-      // Форматируем дату
-      const date = new Date(post.createdAt);
-      const formattedDate = formatDate(date);
-
-      // Обрезаем длинные посты до 100 символов
+    for (const post of posts) {
+      const author = post.author?.displayName || 'Неизвестный';
+      const date = formatDate(new Date(post.createdAt));
       let content = post.content || '';
-      if (content.length > 100) {
-        content = content.substring(0, 100) + '...';
+      if (content.length > 150) content = content.substring(0, 150) + '...';
+
+      // Тип поста
+      const typeLabels = {
+        'review': '📝 Рецензия',
+        'rating': '⭐ Оценка',
+        'media_added': '🎬 Добавил в список',
+        'media_shared': '🔗 Поделился',
+        'status_update': '💬 Статус',
+        'text': '📄 Пост',
+        'announcement': '📢 Объявление'
+      };
+      const typeLabel = typeLabels[post.postType] || '';
+
+      // Рейтинг
+      let ratingText = '';
+      if (post.rating) ratingText = ` | ⭐ ${post.rating}`;
+
+      // Медиа
+      let mediaText = '';
+      if (post.tmdbId) {
+        const mediaType = post.mediaType === 'tv' ? '📺' : '🎬';
+        mediaText = ` ${mediaType}`;
       }
 
-      // Добавляем пост в текст
-      feedText += `${index + 1}. <b>${post.author.displayName}</b>\n`;
-      feedText += `   ${formattedDate}\n`;
-      feedText += `   ${content}\n\n`;
+      // Реакции
+      const reactionsCount = post.reactions?.length || 0;
+      let reactionsText = '';
+      if (reactionsCount > 0) {
+        // Считаем уникальные эмодзи
+        const emojiCounts = {};
+        post.reactions.forEach(r => {
+          emojiCounts[r.emoji] = (emojiCounts[r.emoji] || 0) + 1;
+        });
+        const topEmojis = Object.entries(emojiCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([emoji, count]) => `${emoji}${count > 1 ? count : ''}`)
+          .join(' ');
+        reactionsText = `\n   ${topEmojis}`;
+      }
+
+      // Комментарии
+      let commentsText = '';
+      if (post.commentsCount > 0) {
+        commentsText = ` | 💬 ${post.commentsCount}`;
+      }
+
+      feedText += `<b>${author}</b>${mediaText} ${typeLabel}\n`;
+      feedText += `📅 ${date}${ratingText}${commentsText}\n`;
+      if (content) feedText += `${content}\n`;
+      if (reactionsText) feedText += reactionsText;
+      feedText += '\n\n';
+    }
+
+    // Кнопки навигации
+    const navRow = [];
+    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `feed_page_${page - 1}` });
+    navRow.push({ text: '🏠 Меню', callback_data: 'main_menu' });
+    if (hasMore) navRow.push({ text: '▶️ Вперёд', callback_data: `feed_page_${page + 1}` });
+
+    await bot.sendMessage(chatId, feedText, {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: [navRow] }
     });
-
-    // Добавляем кнопку "Открыть на сайте"
-    const session = await createSession(userId, { id: userId });
-    const webAppUrl = `${publicUrl}?session=${session.token}`;
-
-    await bot.sendMessage(
-      chatId,
-      feedText,
-      {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '🌐 Открыть на сайте', url: webAppUrl }
-          ]]
-        }
-      }
-    );
-
-    console.log(`✅ Лента отправлена пользователю ${userId}`);
   } catch (error) {
-    console.error('❌ Ошибка получения ленты:', error.message);
-    
-    await bot.sendMessage(
-      chatId,
-      '⚠️ Произошла ошибка при загрузке ленты. Попробуйте позже.',
-      { parse_mode: 'HTML' }
-    );
+    console.error('Ошибка загрузки ленты:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки ленты. Попробуйте позже.');
   }
 }
 
@@ -598,9 +626,9 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       }
     },
     'menu_feed': {
-      text: '📰 <b>Лента активности</b>\n\nЗагружаю последние посты ваших друзей...',
+      text: '📰 <b>Лента активности</b>\n\nЗагружаю последние посты...',
       handler: async () => {
-        await handleFeedAction(chatId, userId, session.token);
+        await handleFeedAction(chatId, userId, session.token, 0);
       }
     },
     'menu_messages': {
