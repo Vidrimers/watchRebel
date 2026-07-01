@@ -17,6 +17,7 @@ import AudioPlayer from './AudioPlayer';
 import DeleteMessagePopup from './DeleteMessagePopup';
 import GroupMembersModal from './GroupMembersModal';
 import GroupSettingsModal from './GroupSettingsModal';
+import AnnouncementModal from './AnnouncementModal';
 import MentionAutocomplete from '../Common/MentionAutocomplete';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
@@ -120,6 +121,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [showGroupAvatarModal, setShowGroupAvatarModal] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const textareaRef = useRef(null);
 
   const {
@@ -344,6 +346,9 @@ const MessageThread = ({ conversation, onClose }) => {
       case 'suggest_series':
         setShowSuggestModal(true);
         setSuggestMediaType('tv');
+        break;
+      case 'announcement':
+        setShowAnnouncementModal(true);
         break;
     }
   };
@@ -913,6 +918,40 @@ const MessageThread = ({ conversation, onClose }) => {
                     </div>
                   )}
 
+                  {/* Объявление — по центру */}
+                  {message.isAnnouncement ? (
+                    <div className={styles.announcementMessage}>
+                      <div className={styles.announcementHeader}>
+                        <span className={styles.announcementIcon}>📢</span>
+                        <span>Объявление</span>
+                      </div>
+                      {message.sender?.displayName && (
+                        <div className={styles.announcementAuthor}>
+                          {message.sender.displayName}
+                        </div>
+                      )}
+                      {message.content && (
+                        <div className={styles.announcementText}>
+                          {renderMessageContent(message.content)}
+                        </div>
+                      )}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className={styles.announcementImages}>
+                          {message.attachments.filter(a => a.mimetype?.startsWith('image/')).map((att, i) => (
+                            <img
+                              key={i}
+                              src={`${import.meta.env.VITE_API_URL || ''}${att.path}`}
+                              alt={att.originalName}
+                              className={styles.announcementImage}
+                              onClick={() => handleImageClick(message.attachments.filter(a => a.mimetype?.startsWith('image/')), i)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <div className={styles.announcementTime}>{formatTime(message.createdAt)}</div>
+                    </div>
+                  ) : (
+                  <>
                   {/* Имя отправителя для групповых чатов — над сообщением */}
                   {isGroup && !isOwnMessage && message.sender?.displayName && (
                     <div className={styles.senderNameRow}>
@@ -1145,6 +1184,8 @@ const MessageThread = ({ conversation, onClose }) => {
                       </div>
                     </div>
                   </div>
+                  </>
+                  )}
                 </React.Fragment>
               );
             })}
@@ -1239,6 +1280,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     <AttachmentDropdown
                       onSelect={handleAttachmentSelect}
                       onClose={() => setShowAttachDropdown(false)}
+                      isGroup={isGroup}
                     />
                   )}
                 </div>
@@ -1407,6 +1449,15 @@ const MessageThread = ({ conversation, onClose }) => {
         <LocationModal
           onSend={handleSendLocation}
           onClose={() => setShowLocationModal(false)}
+        />
+      )}
+      {showAnnouncementModal && (
+        <AnnouncementModal
+          conversationId={effectiveConversation.id}
+          onClose={() => setShowAnnouncementModal(false)}
+          onSent={(msg) => {
+            dispatch({ type: 'messages/addNewMessage', payload: msg });
+          }}
         />
       )}
       {showMembersModal && isGroup && (

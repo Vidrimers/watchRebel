@@ -299,6 +299,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       content: m.content,
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
+      isAnnouncement: Boolean(m.is_announcement),
       attachments: m.attachments ? JSON.parse(m.attachments) : null,
       location: m.location ? JSON.parse(m.location) : null,
       suggestedMedia: m.suggested_media ? JSON.parse(m.suggested_media) : null,
@@ -552,6 +553,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       content: m.content,
       isRead: Boolean(m.is_read),
       sentViaBot: Boolean(m.sent_via_bot),
+      isAnnouncement: false,
       attachments: m.attachments ? JSON.parse(m.attachments) : null,
       createdAt: m.created_at ? m.created_at + 'Z' : null,
       sender: {
@@ -688,6 +690,145 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
     });
+  }
+});
+
+/**
+ * POST /api/messages/announcement
+ * Отправить объявление в групповой чат
+ * Body: { conversationId: string, content: string }
+ * Files: images[] (опционально, до 5 файлов)
+ * Только создатель или модератор с правом send_announcements
+ */
+router.post('/announcement', authenticateToken, uploadMessageFiles.array('images', 5), async (req, res) => {
+  try {
+    const { conversationId, content } = req.body;
+    const senderId = req.user.id;
+    const files = req.files || [];
+
+    if (!conversationId) {
+      return res.status(400).json({ error: 'Не указан conversationId', code: 'MISSING_CONVERSATION' });
+    }
+
+    if ((!content || content.trim().length === 0) && files.length === 0) {
+      return res.status(400).json({ error: 'Объявление не может быть пустым', code: 'EMPTY_MESSAGE' });
+    }
+
+    // Проверяем что это групповой чат
+    const convCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ? AND is_group = 1',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Групповой чат не найден', code: 'NOT_FOUND' });
+    }
+
+    const conv = convCheck.data[0];
+    const isCreator = conv.created_by === senderId;
+
+    // Проверяем права: создатель ИЛИ модератор с send_announcements
+    let hasPermission = isCreator;
+    if (!isCreator) {
+      const modCheck = await executeQuery(
+        `SELECT gm.id FROM group_moderators gm
+         JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+         WHERE gm.conversation_id = ? AND gm.user_id = ? AND gmp.permission_type = 'send_announcements'`,
+        [conversationId, senderId]
+      );
+      hasPermission = modCheck.success && modCheck.data.length > 0;
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Нет прав на отправку объявлений', code: 'FORBIDDEN' });
+    }
+
+    // Проверяем что отправитель участник группы
+    const memberCheck = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, senderId]
+    );
+    if (!memberCheck.success || memberCheck.data.length === 0) {
+      return res.status(403).json({ error: 'Нет доступа к этому чату', code: 'FORBIDDEN' });
+    }
+
+    // Обрабатываем загруженные файлы
+    let attachments = null;
+    if (files.length > 0) {
+      attachments = JSON.stringify(files.map(file => ({
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: `/uploads/messages/${file.filename}`
+      })));
+    }
+
+    // Создаём сообщение-объявление
+    const messageId = uuidv4();
+    const messageReceiverId = senderId; // Для групп receiver_id = sender_id
+
+    const createResult = await executeQuery(
+      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, is_announcement, attachments, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, 1, ?, datetime('now'))`,
+      [messageId, conversationId, senderId, messageReceiverId, content?.trim() || '', attachments]
+    );
+
+    if (!createResult.success) {
+      return res.status(500).json({ error: 'Ошибка создания объявления', code: 'DATABASE_ERROR' });
+    }
+
+    // Обновляем время последнего сообщения
+    await executeQuery(
+      `UPDATE conversations SET last_message_at = datetime('now') WHERE id = ?`,
+      [conversationId]
+    );
+
+    // Получаем созданное сообщение с информацией об отправителе
+    const messageResult = await executeQuery(
+      `SELECT m.*, u.display_name as sender_name, u.avatar_url as sender_avatar
+       FROM messages m LEFT JOIN users u ON m.sender_id = u.id
+       WHERE m.id = ?`,
+      [messageId]
+    );
+
+    if (!messageResult.success || messageResult.data.length === 0) {
+      return res.status(500).json({ error: 'Ошибка получения объявления', code: 'DATABASE_ERROR' });
+    }
+
+    const m = messageResult.data[0];
+    const messageResponse = {
+      id: m.id,
+      conversationId: m.conversation_id,
+      senderId: m.sender_id,
+      receiverId: m.receiver_id,
+      content: m.content,
+      isRead: Boolean(m.is_read),
+      isAnnouncement: Boolean(m.is_announcement),
+      sentViaBot: Boolean(m.sent_via_bot),
+      attachments: m.attachments ? JSON.parse(m.attachments) : null,
+      createdAt: m.created_at ? m.created_at + 'Z' : null,
+      sender: {
+        displayName: m.sender_name,
+        avatarUrl: m.sender_avatar
+      }
+    };
+
+    // Отправляем через WebSocket всем участникам группы
+    const membersResult = await executeQuery(
+      'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+      [conversationId, senderId]
+    );
+    const groupMembers = membersResult.success ? membersResult.data.map(m => m.user_id) : [];
+
+    for (const memberId of groupMembers) {
+      sendMessageToUser(memberId, messageResponse);
+    }
+
+    res.status(201).json(messageResponse);
+
+  } catch (error) {
+    console.error('Ошибка отправки объявления:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
 

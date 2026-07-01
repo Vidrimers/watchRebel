@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Icon from '../Common/Icon';
 import styles from './AttachmentDropdown.module.css';
 
-const AttachmentDropdown = ({ onSelect, onClose }) => {
+const AttachmentDropdown = ({ onSelect, onClose, isGroup }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -44,6 +44,12 @@ const AttachmentDropdown = ({ onSelect, onClose }) => {
         <Icon name="tv" size="small" />
         <span>Предложить сериал</span>
       </button>
+      {isGroup && (
+        <button className={styles.item} onClick={() => onSelect('announcement')}>
+          <span style={{ fontSize: '16px' }}>📢</span>
+          <span>Объявление</span>
+        </button>
+      )}
     </div>
   );
 };

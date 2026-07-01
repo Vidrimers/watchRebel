@@ -367,6 +367,7 @@ export async function runMigrations() {
         safeAddColumn('messages', 'location', 'TEXT');
         safeAddColumn('messages', 'suggested_media', 'TEXT');
         safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
+        safeAddColumn('messages', 'is_announcement', 'BOOLEAN', '0');
 
         // === Упоминания в постах ===
         db.exec(`
