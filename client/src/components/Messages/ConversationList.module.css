@@ -190,14 +190,14 @@
 
 .unreadBadge {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  bottom: .5rem;
+  right: .5rem;
   background: var(--accent-primary, #6366f1);
   color: white;
   border-radius: 50%;
   width: 20px;
   height: 20px;
-  font-size: 0.75rem;
+  font-size: 0.55rem;
   font-weight: 600;
   display: flex;
   align-items: center;
