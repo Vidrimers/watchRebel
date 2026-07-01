@@ -117,7 +117,7 @@ const AnnouncementModal = ({ conversationId, onClose, onSent }) => {
               onClick={() => fileInputRef.current?.click()}
               disabled={images.length >= 5}
             >
-              🖼️ Фото
+              <Icon name="add" size="small" /> Фото
             </button>
             <input
               ref={fileInputRef}
