@@ -1,6 +1,7 @@
 import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import mediaCacheService from '../services/mediaCacheService.js';
 
 const router = express.Router();
 
