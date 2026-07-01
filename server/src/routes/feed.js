@@ -25,13 +25,19 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
     const friendIds = friendsResult.data.map(f => f.friend_id);
     const placeholders = friendIds.map(() => '?').join(',');
 
-    // Получаем last_feed_view пользователя
+    // Получаем last_feed_view пользователя и обновляем его
     const userResult = await executeQuery(
       `SELECT last_feed_view FROM users WHERE id = ?`,
       [userId]
     );
     const lastFeedView = userResult.success && userResult.data.length > 0
       ? userResult.data[0].last_feed_view : null;
+
+    // Обновляем last_feed_view при каждом запросе счётчика
+    await executeQuery(
+      `UPDATE users SET last_feed_view = datetime('now') WHERE id = ?`,
+      [userId]
+    );
 
     // Считаем посты новее last_feed_view (или за 24 часа если last_feed_view не задан)
     const timeCondition = lastFeedView
