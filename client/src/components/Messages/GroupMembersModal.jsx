@@ -35,6 +35,15 @@ const GroupMembersModal = ({
     loadMembers();
   }, [conversationId]);
 
+  useEffect(() => {
+    if (!modTarget) return;
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setModTarget(null);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [modTarget]);
+
   const loadMembers = async () => {
     try {
       const response = await api.get(`/messages/conversations/${conversationId}/members`);
@@ -282,7 +291,7 @@ const GroupMembersModal = ({
 
         {/* Модалка выбора/редактирования прав модератора */}
         {modTarget && (
-          <div className={styles.permOverlay} onClick={() => setModTarget(null)}>
+          <div className={styles.permOverlay}>
             <div className={styles.permModal} onClick={e => e.stopPropagation()}>
               <h4 className={styles.permTitle}>
                 {modTarget.isModerator ? 'Редактировать права' : 'Назначить модератором'}
@@ -290,18 +299,19 @@ const GroupMembersModal = ({
               <p className={styles.permSubtitle}>{modTarget.displayName}</p>
               <div className={styles.permList}>
                 {PERMISSIONS.map(p => (
-                  <label key={p.key} className={styles.permItem}>
-                    <input
-                      type="checkbox"
-                      checked={modPermissions.includes(p.key)}
-                      onChange={() => togglePermission(p.key)}
-                      className={styles.permCheckbox}
-                    />
+                  <div
+                    key={p.key}
+                    className={styles.permItem}
+                    onClick={() => togglePermission(p.key)}
+                  >
+                    <div className={`${styles.permCheckbox} ${modPermissions.includes(p.key) ? styles.permCheckboxChecked : ''}`}>
+                      {modPermissions.includes(p.key) && '✓'}
+                    </div>
                     <div className={styles.permInfo}>
                       <span className={styles.permLabel}>{p.label}</span>
                       <span className={styles.permDesc}>{p.desc}</span>
                     </div>
-                  </label>
+                  </div>
                 ))}
               </div>
               <div className={styles.permActions}>
