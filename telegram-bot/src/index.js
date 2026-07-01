@@ -1189,7 +1189,7 @@ async function handlePostImage(chatId, userId, photos, stateData) {
       contentType: 'image/jpeg'
     });
 
-    const uploadResponse = await fetch(`${apiUrl}/api/wall/upload-image`, {
+    const uploadResponse = await fetch(`${apiUrl}/api/wall/images`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.token}`,
