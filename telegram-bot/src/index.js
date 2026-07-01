@@ -2133,8 +2133,12 @@ bot.on('photo', async (msg) => {
   const userId = msg.from.id.toString();
   const userState = getUserState(userId);
 
+  // Если пользователь загружает изображение для поста
+  if (userState && userState.state === 'awaiting_post_image') {
+    await handlePostImage(chatId, userId, msg.photo, userState.data);
+  }
   // Если пользователь в состоянии добавления изображений к багрепорту
-  if (userState && userState.state === 'awaiting_bug_report_images') {
+  else if (userState && userState.state === 'awaiting_bug_report_images') {
     await handleBugReportImage(chatId, userId, msg.photo, userState.data);
   }
 });
