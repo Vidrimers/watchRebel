@@ -581,19 +581,32 @@ router.post('/', authenticateToken, checkPostBan, async (req, res) => {
 
     // Сохраняем упоминания и отправляем уведомления
     if (mentions && Array.isArray(mentions) && mentions.length > 0) {
+      const { createNotification } = await import('../services/notificationService.js');
+      const { sendTelegramNotification, checkNotificationEnabled } = await import('../services/notificationService.js');
+      const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
+
       for (const mentionedUserId of mentions) {
-        if (mentionedUserId === userId) continue; // не уведомляем себя
+        if (mentionedUserId === userId) continue;
         const mentionId = uuidv4();
         await executeQuery(
           'INSERT INTO post_mentions (id, post_id, mentioned_user_id, created_at) VALUES (?, ?, ?, datetime(\'now\'))',
           [mentionId, postId, mentionedUserId]
         );
 
-        // Отправляем уведомление
-        const { createNotification } = await import('../services/notificationService.js');
-        createNotification(mentionedUserId, 'mention', `${post.author_display_name} упомянул вас в записи`, userId, postId).catch(err => {
-          console.error('Ошибка отправки уведомления об упоминании:', err);
+        // Уведомление на сайте (без имени — оно добавится при рендере)
+        createNotification(mentionedUserId, 'mention', 'упомянул вас в записи', userId, postId).catch(err => {
+          console.error('Ошибка создания уведомления:', err);
         });
+
+        // Telegram уведомление
+        const isNotifEnabled = await checkNotificationEnabled(mentionedUserId, 'new_message');
+        if (isNotifEnabled) {
+          const tgMessage = `🏷 <b>${post.author_display_name} упомянул вас в записи</b>\n\n` +
+            `<a href="${publicUrl}/user/${post.user_id}">Открыть на сайте</a>`;
+          sendTelegramNotification(mentionedUserId, tgMessage).catch(err => {
+            console.error('Ошибка Telegram уведомления:', err);
+          });
+        }
       }
     }
 

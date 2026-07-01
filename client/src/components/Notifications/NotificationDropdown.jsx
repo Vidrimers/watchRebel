@@ -157,6 +157,14 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
 
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
+    // Для упоминаний имя автора уже в content, не дублируем
+    if (notification.type === 'mention') {
+      if (notification.relatedUser?.displayName) {
+        const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
+        return `${resolved.text} ${notification.content}`;
+      }
+      return notification.content;
+    }
     if (notification.relatedUser?.displayName) {
       const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
       return `${resolved.text} ${notification.content}`;

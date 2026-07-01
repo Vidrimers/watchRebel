@@ -49,7 +49,7 @@ const renderMessageContent = (text) => {
       React.createElement('a', {
         key: `mention-${match.index}`,
         href: `/user/${match[2]}`,
-        style: { color: 'var(--accent-primary, #6366f1)', fontWeight: 600, textDecoration: 'none' }
+        className: styles.mentionLink
       }, `@${match[1]}`)
     );
     lastIndex = match.index + match[0].length;

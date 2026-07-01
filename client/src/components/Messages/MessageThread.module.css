@@ -1137,3 +1137,13 @@
     bottom: 10px;
   }
 }
+
+.mentionLink {
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mentionLink:hover {
+  text-decoration: underline;
+}
