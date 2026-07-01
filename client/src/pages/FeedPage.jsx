@@ -217,7 +217,7 @@ const FeedPage = () => {
               className={styles.newPostsButton}
               onClick={handleShowNewPosts}
             >
-              <Icon name="refresh" size="small" color="white" /> Показать {newPostsCount} {newPostsCount === 1 ? 'новый пост' : 'новых постов'}
+              <Icon name="arrow-up" size="small" color="white" /> Показать {newPostsCount} {newPostsCount === 1 ? 'новый пост' : 'новых постов'}
             </button>
           </div>
         )}
