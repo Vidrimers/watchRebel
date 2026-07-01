@@ -848,9 +848,9 @@ async function handleMessagesAction(chatId, userId, token, page = 0) {
       if (time) text += `📅 ${time}\n`;
       text += `${lastMsg}\n\n`;
 
-      // Кнопка "Ответить" — для личных чатов, "Открыть" — для групп
+      // Кнопка "Ответить" — для всех диалогов
       if (conv.isGroup) {
-        buttons.push([{ text: `💬 ${name.substring(0, 30)}`, url: `${publicUrl}/messages?conversation=${conv.id}` }]);
+        buttons.push([{ text: `💬 ${name.substring(0, 30)}`, callback_data: `reply_group_${conv.id}` }]);
       } else {
         buttons.push([{ text: `💬 Ответить ${name.substring(0, 25)}`, callback_data: `reply_message_${conv.otherUser.id}` }]);
       }
