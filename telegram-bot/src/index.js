@@ -216,9 +216,6 @@ bot.onText(/\/menu/, async (msg) => {
       ],
       [
         { text: '⚙️ Настройки', callback_data: 'menu_settings' }
-      ],
-      [
-        { text: '🔔 Настройки уведомлений', callback_data: 'settings_notifications' }
       ]
     ];
 
@@ -1300,9 +1297,6 @@ async function showMainMenu(chatId, userFrom) {
     ],
     [
       { text: '⚙️ Настройки', callback_data: 'menu_settings' }
-    ],
-    [
-      { text: '🔔 Настройки уведомлений', callback_data: 'settings_notifications' }
     ]
   ];
 
