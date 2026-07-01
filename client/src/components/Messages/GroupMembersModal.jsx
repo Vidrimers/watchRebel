@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
 import styles from './GroupMembersModal.module.css';
@@ -17,6 +18,7 @@ const GroupMembersModal = ({
   onMembersUpdated
 }) => {
   const { user } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddMember, setShowAddMember] = useState(false);
@@ -205,7 +207,11 @@ const GroupMembersModal = ({
               <div className={styles.membersList}>
                 {members.map(member => (
                   <div key={member.userId} className={styles.memberItem}>
-                    <div className={styles.memberAvatar}>
+                    <a
+                      href={`/user/${member.userId}`}
+                      className={styles.memberAvatar}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/user/${member.userId}`); }}
+                    >
                       {member.avatarUrl ? (
                         <img
                           src={
@@ -221,12 +227,16 @@ const GroupMembersModal = ({
                           {member.displayName?.charAt(0).toUpperCase() || '?'}
                         </div>
                       )}
-                    </div>
+                    </a>
                     <div className={styles.memberInfo}>
-                      <span className={styles.memberName}>
+                      <a
+                        href={`/user/${member.userId}`}
+                        className={styles.memberNameLink}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/user/${member.userId}`); }}
+                      >
                         {member.displayName}
                         {member.userId === user.id && ' (вы)'}
-                      </span>
+                      </a>
                       <div className={styles.memberBadges}>
                         {member.isCreator && <span className={styles.badgeCreator}>Создатель</span>}
                         {member.isModerator && <span className={styles.badgeMod}>Модератор</span>}

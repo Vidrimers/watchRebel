@@ -193,6 +193,9 @@
 
 .memberAvatar {
   flex-shrink: 0;
+  text-decoration: none;
+  display: flex;
+  cursor: pointer;
 }
 
 .memberAvatarImg {
@@ -228,6 +231,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.memberNameLink {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.memberNameLink:hover {
+  color: var(--accent-primary, #6366f1);
+  text-decoration: underline;
 }
 
 .memberBadges {
