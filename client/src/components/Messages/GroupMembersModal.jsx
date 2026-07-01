@@ -3,6 +3,13 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
 import styles from './GroupMembersModal.module.css';
 
+const PERMISSIONS = [
+  { key: 'manage_members', label: 'Управление участниками', desc: 'Добавлять и удалять участников' },
+  { key: 'manage_messages', label: 'Управление сообщениями', desc: 'Удалять сообщения других участников' },
+  { key: 'edit_group', label: 'Редактирование группы', desc: 'Изменять название и аватарку' },
+  { key: 'send_announcements', label: 'Объявления', desc: 'Отправлять объявления в группу' }
+];
+
 const GroupMembersModal = ({
   conversationId,
   isCreator,
@@ -17,6 +24,8 @@ const GroupMembersModal = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [error, setError] = useState(null);
+  const [modTarget, setModTarget] = useState(null); // участник для назначения модератором
+  const [modPermissions, setModPermissions] = useState(['manage_members', 'manage_messages']);
 
   useEffect(() => {
     loadMembers();
@@ -88,17 +97,30 @@ const GroupMembersModal = ({
         setError(err.data?.error || 'Ошибка снятия модератора');
       }
     } else {
-      // Назначить модератора (с базовыми правами)
-      try {
-        await api.post(`/messages/conversations/${conversationId}/moderators`, {
-          userId: member.userId,
-          permissions: ['manage_members', 'manage_messages']
-        });
-        await loadMembers();
-      } catch (err) {
-        setError(err.data?.error || 'Ошибка назначения модератора');
-      }
+      // Показать модалку выбора прав
+      setModTarget(member);
+      setModPermissions(member.permissions?.length > 0 ? member.permissions : ['manage_members', 'manage_messages']);
     }
+  };
+
+  const handleAssignModerator = async () => {
+    if (!modTarget) return;
+    try {
+      await api.post(`/messages/conversations/${conversationId}/moderators`, {
+        userId: modTarget.userId,
+        permissions: modPermissions
+      });
+      setModTarget(null);
+      await loadMembers();
+    } catch (err) {
+      setError(err.data?.error || 'Ошибка назначения модератора');
+    }
+  };
+
+  const togglePermission = (key) => {
+    setModPermissions(prev =>
+      prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key]
+    );
   };
 
   const filteredFriends = friends.filter(f =>
@@ -238,6 +260,36 @@ const GroupMembersModal = ({
 
           {error && <div className={styles.error}>{error}</div>}
         </div>
+
+        {/* Модалка выбора прав модератора */}
+        {modTarget && (
+          <div className={styles.permOverlay} onClick={() => setModTarget(null)}>
+            <div className={styles.permModal} onClick={e => e.stopPropagation()}>
+              <h4 className={styles.permTitle}>Назначить модератором</h4>
+              <p className={styles.permSubtitle}>{modTarget.displayName}</p>
+              <div className={styles.permList}>
+                {PERMISSIONS.map(p => (
+                  <label key={p.key} className={styles.permItem}>
+                    <input
+                      type="checkbox"
+                      checked={modPermissions.includes(p.key)}
+                      onChange={() => togglePermission(p.key)}
+                      className={styles.permCheckbox}
+                    />
+                    <div className={styles.permInfo}>
+                      <span className={styles.permLabel}>{p.label}</span>
+                      <span className={styles.permDesc}>{p.desc}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className={styles.permActions}>
+                <button className={styles.permCancel} onClick={() => setModTarget(null)}>Отмена</button>
+                <button className={styles.permSave} onClick={handleAssignModerator}>Назначить</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className={styles.footer}>
           <button className={styles.leaveBtn} onClick={handleLeaveGroup}>

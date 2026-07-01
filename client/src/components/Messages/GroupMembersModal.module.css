@@ -353,3 +353,125 @@
     max-height: 90vh;
   }
 }
+
+/* Модалка прав модератора */
+.permOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1rem;
+}
+
+.permModal {
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 360px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s ease;
+}
+
+.permTitle {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.permSubtitle {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.permList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.permItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.permItem:hover {
+  background: var(--bg-hover);
+}
+
+.permCheckbox {
+  margin-top: 2px;
+  accent-color: var(--accent-primary, #6366f1);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.permInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.permLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.permDesc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.permActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.permCancel {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  transition: background 0.2s;
+}
+
+.permCancel:hover {
+  background: var(--bg-hover);
+}
+
+.permSave {
+  padding: 0.5rem 1rem;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.permSave:hover {
+  background: var(--accent-primary-active, #4f46e5);
+}

@@ -323,6 +323,10 @@ bot.on('message', async (msg) => {
   else if (userState && userState.state === 'awaiting_message_reply') {
     await handleSendMessageReply(chatId, userId, msg.text, userState.data);
   }
+  // Если пользователь в состоянии ожидания ответа в групповой чат
+  else if (userState && userState.state === 'awaiting_group_message_reply') {
+    await handleSendGroupMessageReply(chatId, userId, msg.text, userState.data);
+  }
   // Если пользователь в состоянии создания багрепорта - ожидание заголовка
   else if (userState && userState.state === 'awaiting_bug_report_title') {
     await handleBugReportTitle(chatId, userId, msg.text, userState.data);
@@ -391,8 +395,12 @@ bot.on('callback_query', async (query) => {
       await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
     } else if (data.startsWith('toggle_notif_')) {
       await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
+    } else if (data.startsWith('reply_group_')) {
+      // Обработка кнопки "Ответить" в групповом чате
+      const conversationId = data.replace('reply_group_', '');
+      await handleReplyGroupMessageAction(chatId, userId, conversationId, query.from);
     } else if (data.startsWith('reply_message_')) {
-      // Обработка кнопки "Ответить" на сообщение
+      // Обработка кнопки "Ответить" на сообщение (личный чат)
       const receiverId = data.replace('reply_message_', '');
       await handleReplyMessageAction(chatId, userId, receiverId, query.from);
     } else if (data.startsWith('bug_report_')) {
@@ -832,6 +840,62 @@ async function handleMessagesAction(chatId, userId, token) {
     await bot.sendMessage(
       chatId,
       '⚠️ Произошла ошибка при загрузке сообщений. Попробуйте позже.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка действия "Ответить в групповой чат"
+ * @param {number} chatId - ID чата Telegram
+ * @param {string} userId - ID пользователя
+ * @param {string} conversationId - ID группового диалога
+ * @param {Object} userFrom - Объект пользователя из Telegram
+ */
+async function handleReplyGroupMessageAction(chatId, userId, conversationId, userFrom) {
+  try {
+    console.log(`📝 Пользователь ${userId} хочет ответить в групповой чат ${conversationId}`);
+
+    // Получаем информацию о группе
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const response = await fetch(`${apiUrl}/api/messages/${conversationId}?limit=1`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.token}`
+      }
+    });
+
+    let groupName = 'группу';
+    if (response.ok) {
+      const data = await response.json();
+      groupName = data.group?.groupName || 'группу';
+    }
+
+    // Устанавливаем состояние ожидания ответа в группу
+    setUserState(userId, 'awaiting_group_message_reply', {
+      chatId,
+      userFrom,
+      conversationId,
+      groupName
+    });
+
+    await bot.sendMessage(
+      chatId,
+      `💬 <b>Ответ в "${groupName}"</b>\n\n` +
+      'Отправьте текст сообщения.\n\n' +
+      'Для отмены отправьте /cancel',
+      { parse_mode: 'HTML' }
+    );
+
+    console.log(`✅ Состояние установлено для пользователя ${userId} (группа ${conversationId})`);
+  } catch (error) {
+    console.error('❌ Ошибка обработки ответа в группу:', error.message);
+
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка. Попробуйте позже.',
       { parse_mode: 'HTML' }
     );
   }
@@ -1367,6 +1431,80 @@ async function handleSendMessageReply(chatId, userId, messageText, stateData) {
     // Очищаем состояние пользователя
     clearUserState(userId);
     
+    await bot.sendMessage(
+      chatId,
+      '⚠️ Произошла ошибка при отправке сообщения. Попробуйте позже или обратитесь к администратору.',
+      { parse_mode: 'HTML' }
+    );
+  }
+}
+
+/**
+ * Обработка отправки ответа в групповой чат
+ * @param {number} chatId - ID чата Telegram
+ * @param {string} userId - ID пользователя
+ * @param {string} messageText - Текст сообщения
+ * @param {Object} stateData - Данные состояния (conversationId, groupName, userFrom)
+ */
+async function handleSendGroupMessageReply(chatId, userId, messageText, stateData) {
+  try {
+    if (!messageText || messageText.trim().length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Сообщение не может быть пустым.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    if (messageText.trim().length > 1000) {
+      await bot.sendMessage(
+        chatId,
+        '⚠️ Сообщение слишком длинное. Максимум 1000 символов.\n\nПопробуйте еще раз или отправьте /cancel для отмены.',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    console.log(`📝 Отправка сообщения от ${userId} в группу ${stateData.conversationId}`);
+
+    const session = await createSession(userId, stateData.userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const response = await fetch(`${apiUrl}/api/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        receiverId: stateData.conversationId,
+        content: messageText.trim(),
+        sentViaBot: true
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API вернул ошибку: ${response.status}`);
+    }
+
+    clearUserState(userId);
+
+    await bot.sendMessage(
+      chatId,
+      `✅ <b>Сообщение отправлено в "${stateData.groupName}"!</b>\n\n` +
+      `Ваше сообщение:\n${messageText.trim()}`,
+      { parse_mode: 'HTML' }
+    );
+
+    console.log(`✅ Сообщение от ${userId} отправлено в группу ${stateData.conversationId}`);
+  } catch (error) {
+    console.error('❌ Ошибка отправки сообщения в группу:', error.message);
+
+    clearUserState(userId);
+
     await bot.sendMessage(
       chatId,
       '⚠️ Произошла ошибка при отправке сообщения. Попробуйте позже или обратитесь к администратору.',

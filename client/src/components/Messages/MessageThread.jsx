@@ -79,11 +79,11 @@ const MessageThread = ({ conversation, onClose }) => {
   const { messages, group, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
 
-  // Хелперы для групповых чатов
-  const isGroup = conversation?.isGroup;
-  const getReceiverId = () => isGroup ? conversation.id : conversation.otherUser?.id;
-  const getDisplayName = () => isGroup ? conversation.groupName : conversation.otherUser?.displayName;
-  const getAvatarUrl = () => isGroup ? conversation.groupAvatar : conversation.otherUser?.avatarUrl;
+  // Хелперы для групповых чатов (используем effectiveConversation для обновлений без перезагрузки)
+  const isGroup = effectiveConversation?.isGroup;
+  const getReceiverId = () => isGroup ? effectiveConversation.id : effectiveConversation.otherUser?.id;
+  const getDisplayName = () => isGroup ? effectiveConversation.groupName : effectiveConversation.otherUser?.displayName;
+  const getAvatarUrl = () => isGroup ? effectiveConversation.groupAvatar : effectiveConversation.otherUser?.avatarUrl;
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
   const [showMenu, setShowMenu] = useState(false);
@@ -114,7 +114,12 @@ const MessageThread = ({ conversation, onClose }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [showGroupAvatarModal, setShowGroupAvatarModal] = useState(false);
+  const [conversationOverrides, setConversationOverrides] = useState({});
   const textareaRef = useRef(null);
+
+  // Мержим проп conversation с локальными оверрайдами (для обновления имени/аватарки без перезагрузки)
+  const effectiveConversation = { ...conversation, ...conversationOverrides };
 
   const {
     isRecording,
@@ -666,7 +671,11 @@ const MessageThread = ({ conversation, onClose }) => {
         <div className={styles.container}>
         <div className={styles.header}>
           {isGroup ? (
-            <div className={styles.headerAvatar}>
+            <div
+              className={styles.headerAvatar}
+              onClick={() => getAvatarUrl() && setShowGroupAvatarModal(true)}
+              style={{ cursor: getAvatarUrl() ? 'pointer' : 'default' }}
+            >
               {getAvatarUrl() ? (
                 <img
                   src={
@@ -734,7 +743,11 @@ const MessageThread = ({ conversation, onClose }) => {
       {/* Шапка с информацией о собеседнике/группе */}
       <div className={styles.header}>
         {isGroup ? (
-          <div className={styles.headerAvatar}>
+          <div
+            className={styles.headerAvatar}
+            onClick={() => getAvatarUrl() && setShowGroupAvatarModal(true)}
+            style={{ cursor: getAvatarUrl() ? 'pointer' : 'default' }}
+          >
             {getAvatarUrl() ? (
               <img
                 src={
@@ -815,7 +828,7 @@ const MessageThread = ({ conversation, onClose }) => {
                   >
                     <Icon name="friends" size="small" /> Участники
                   </button>
-                  {conversation.createdBy === user.id && (
+                  {effectiveConversation.createdBy === user.id && (
                     <button
                       className={styles.dropdownItem}
                       onClick={() => {
@@ -880,9 +893,28 @@ const MessageThread = ({ conversation, onClose }) => {
                   )}
                   
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
-                    {/* Имя отправителя для групповых чатов */}
+                    {/* Имя отправителя для групповых чатов — над аватаркой и пузырём */}
                     {isGroup && !isOwnMessage && message.sender?.displayName && (
-                      <div className={styles.senderName}>{message.sender.displayName}</div>
+                      <div className={styles.senderNameRow}>
+                        <div className={styles.senderAvatarSmall}>
+                          {message.sender?.avatarUrl ? (
+                            <img
+                              src={
+                                message.sender.avatarUrl.startsWith('/uploads/')
+                                  ? `${import.meta.env.VITE_API_URL || ''}${message.sender.avatarUrl}`
+                                  : message.sender.avatarUrl
+                              }
+                              alt={message.sender.displayName}
+                              className={styles.senderAvatarSmallImage}
+                            />
+                          ) : (
+                            <div className={styles.senderAvatarSmallPlaceholder}>
+                              {message.sender.displayName?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                          )}
+                        </div>
+                        <div className={styles.senderName}>{message.sender.displayName}</div>
+                      </div>
                     )}
                     <div className={styles.messageAvatar}>
                       {isOwnMessage ? (
@@ -1365,23 +1397,45 @@ const MessageThread = ({ conversation, onClose }) => {
       )}
       {showMembersModal && isGroup && (
         <GroupMembersModal
-          conversationId={conversation.id}
-          isCreator={conversation.createdBy === user.id}
+          conversationId={effectiveConversation.id}
+          isCreator={effectiveConversation.createdBy === user.id}
           onClose={() => setShowMembersModal(false)}
-          onMembersUpdated={() => dispatch(fetchMessages({ conversationId: conversation.id }))}
+          onMembersUpdated={() => dispatch(fetchMessages({ conversationId: effectiveConversation.id }))}
         />
       )}
       {showGroupSettings && isGroup && (
         <GroupSettingsModal
-          conversationId={conversation.id}
-          currentName={conversation.groupName}
-          currentAvatar={conversation.groupAvatar}
+          conversationId={effectiveConversation.id}
+          currentName={effectiveConversation.groupName}
+          currentAvatar={effectiveConversation.groupAvatar}
           onClose={() => setShowGroupSettings(false)}
-          onUpdated={(data) => {
+          onUpdated={(updateData) => {
+            setConversationOverrides(prev => ({ ...prev, ...updateData }));
             setShowGroupSettings(false);
             dispatch(fetchConversations());
           }}
         />
+      )}
+      {showGroupAvatarModal && getAvatarUrl() && (
+        <div className={styles.imageModal} onClick={() => setShowGroupAvatarModal(false)}>
+          <div className={styles.imageModalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              className={styles.imageModalClose}
+              onClick={() => setShowGroupAvatarModal(false)}
+            >
+              ×
+            </button>
+            <img
+              src={
+                getAvatarUrl().startsWith('/uploads/')
+                  ? `${import.meta.env.VITE_API_URL || ''}${getAvatarUrl()}`
+                  : getAvatarUrl()
+              }
+              alt={getDisplayName()}
+              className={styles.imageModalImage}
+            />
+          </div>
+        </div>
       )}
     </>
   );

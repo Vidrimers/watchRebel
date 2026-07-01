@@ -588,6 +588,15 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
       let messagePreview = '';
 
+      // Форматируем упоминания для Telegram: @[Name](id) → <a href="t.me/...">Name</a>
+      const formatMentionsForTelegram = (text) => {
+        if (!text) return text;
+        const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+        return text.replace(mentionRegex, (match, name, id) => {
+          return `<a href="${publicUrl}/user/${id}">@${name}</a>`;
+        });
+      };
+
       if (attachments && files.length > 0) {
         const attachmentTypes = files.map(file => {
           const mimeType = file.mimetype;
@@ -604,12 +613,12 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
         }
 
         if (content && content.trim().length > 0) {
-          messagePreview += `\n\n${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`;
+          messagePreview += `\n\n${formatMentionsForTelegram(content.substring(0, 50))}${content.length > 50 ? '...' : ''}`;
         }
 
         messagePreview += '\n\n<i>Посмотреть можно только на сайте</i>';
       } else {
-        messagePreview = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+        messagePreview = formatMentionsForTelegram(content.substring(0, 100) + (content.length > 100 ? '...' : ''));
       }
 
       // Получатели уведомлений: для групп — все участники кроме отправителя, для личных — получатель
@@ -631,10 +640,13 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
         const isNotificationEnabled = await checkNotificationEnabled(targetId, 'new_message');
 
         if (isNotificationEnabled) {
+          const replyCallbackData = isGroup
+            ? `reply_group_${conversationId}`
+            : `reply_message_${senderId}`;
           sendTelegramNotification(targetId, telegramMessage, {
             reply_markup: {
               inline_keyboard: [[
-                { text: '💬 Ответить', callback_data: `reply_message_${senderId}` }
+                { text: '💬 Ответить', callback_data: replyCallbackData }
               ]]
             }
           }).catch(err => {

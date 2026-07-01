@@ -211,12 +211,44 @@
   align-self: flex-start;
 }
 
+.senderNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  margin-left: 0;
+}
+
+.senderAvatarSmall {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.senderAvatarSmallImage {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.senderAvatarSmallPlaceholder {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
 .senderName {
   font-size: 0.7rem;
   color: var(--accent-primary, #6366f1);
   font-weight: 600;
-  margin-bottom: 2px;
-  margin-left: 40px;
 }
 
 .messageAvatar {
@@ -319,7 +351,7 @@
 
 .input {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 2.75rem 0.75rem 1rem;
   border: 1px solid var(--border-color);
   border-radius: 1.5rem;
   background: var(--bg-primary);
@@ -943,7 +975,7 @@
   }
 
   .input {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
     font-size: 0.875rem;
     border-radius: 1.25rem;
   }
@@ -1088,7 +1120,7 @@
   }
 
   .input {
-    padding: 0.4rem 0.6rem;
+    padding: 0.4rem 2.25rem 0.4rem 0.6rem;
     font-size: 0.8125rem;
   }
 

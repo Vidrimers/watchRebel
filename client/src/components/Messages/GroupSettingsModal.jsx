@@ -29,7 +29,7 @@ const GroupSettingsModal = ({
       await api.put(`/messages/conversations/${conversationId}`, {
         groupName: groupName.trim()
       });
-      onUpdated();
+      onUpdated({ groupName: groupName.trim() });
     } catch (err) {
       setError(err.data?.error || 'Ошибка переименования');
     } finally {
@@ -51,10 +51,10 @@ const GroupSettingsModal = ({
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      await api.post(`/messages/conversations/${conversationId}/avatar`, formData, {
+      const response = await api.post(`/messages/conversations/${conversationId}/avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      onUpdated();
+      onUpdated({ groupAvatar: response.data.avatarUrl });
     } catch (err) {
       setError(err.data?.error || 'Ошибка загрузки аватарки');
     } finally {
