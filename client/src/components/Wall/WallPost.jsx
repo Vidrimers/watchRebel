@@ -543,6 +543,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
                       setEditMentions(prev => [...prev, friend]);
                     }
                   }}
+                  onTextChange={(text) => setEditedContent(text)}
                   position="bottom"
                 />
                 <div className={styles.editButtons}>

@@ -447,6 +447,7 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
                     setMentions(prev => [...prev, friend]);
                   }
                 }}
+                onTextChange={(text) => setNewPostContent(text)}
                 position="bottom"
               />
               

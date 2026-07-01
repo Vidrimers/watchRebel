@@ -3,7 +3,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
 import styles from './MentionAutocomplete.module.css';
 
-const MentionAutocomplete = ({ textareaRef, onMentionSelect, position = 'top' }) => {
+const MentionAutocomplete = ({ textareaRef, onMentionSelect, onTextChange, position = 'top' }) => {
   const { user } = useAppSelector((state) => state.auth);
   const [query, setQuery] = useState('');
   const [friends, setFriends] = useState([]);
@@ -107,11 +107,9 @@ const MentionAutocomplete = ({ textareaRef, onMentionSelect, position = 'top' })
     setShowDropdown(false);
     setMentionStart(-1);
 
-    // Вызываем callback
+    // Обновляем React state родителя
+    onTextChange?.(newValue);
     onMentionSelect?.(friend);
-
-    // Триггерим input событие для обновления React state
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   if (!showDropdown) return null;

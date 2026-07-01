@@ -1210,9 +1210,8 @@ const MessageThread = ({ conversation, onClose }) => {
                   {isGroup && (
                     <MentionAutocomplete
                       textareaRef={textareaRef}
-                      onMentionSelect={(friend) => {
-                        // Упоминание уже вставлено в текст через MentionAutocomplete
-                      }}
+                      onMentionSelect={() => {}}
+                      onTextChange={(text) => setMessageText(text)}
                       position="top"
                     />
                   )}
