@@ -1218,30 +1218,23 @@ async function handlePostImage(chatId, userId, photos, stateData) {
 /**
  * Опубликовать пост
  */
-async function publishPost(chatId, userId, content, imageUrl, userFrom) {
+async function publishPost(chatId, userId, content, imageUrls, userFrom) {
   try {
     const session = await createSession(userId, userFrom);
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
 
-    const body = {
-      content: content,
-      postType: 'text',
-      wallOwnerId: userId
-    };
-
-    if (imageUrl && Array.isArray(imageUrl) && imageUrl.length > 0) {
-      body.imageUrls = imageUrl;
-    } else if (imageUrl && typeof imageUrl === 'string') {
-      body.imageUrls = [imageUrl];
-    }
-
+    // 1. Создаём пост
     const response = await fetch(`${apiUrl}/api/wall`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.token}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        content: content,
+        postType: 'text',
+        wallOwnerId: userId
+      })
     });
 
     if (!response.ok) {
@@ -1250,10 +1243,43 @@ async function publishPost(chatId, userId, content, imageUrl, userFrom) {
       throw new Error(`API: ${response.status}`);
     }
 
+    const postData = await response.json();
+    const postId = postData.id;
+
+    // 2. Если есть изображения — загружаем к посту
+    if (imageUrls && imageUrls.length > 0 && postId) {
+      for (const imageUrl of imageUrls) {
+        try {
+          // Скачиваем изображение и загружаем через /api/wall/images
+          const imgResponse = await fetch(imageUrl);
+          const buffer = Buffer.from(await imgResponse.arrayBuffer());
+
+          const FormData = (await import('form-data')).default;
+          const formData = new FormData();
+          formData.append('postId', postId);
+          formData.append('images', buffer, {
+            filename: `post_img_${Date.now()}.jpg`,
+            contentType: 'image/jpeg'
+          });
+
+          await fetch(`${apiUrl}/api/wall/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.token}`,
+              ...formData.getHeaders()
+            },
+            body: formData
+          });
+        } catch (imgErr) {
+          console.error('Ошибка загрузки изображения к посту:', imgErr.message);
+        }
+      }
+    }
+
     clearUserState(userId);
 
     let replyText = `✅ <b>Пост опубликован!</b>\n\n${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`;
-    if (imageUrl) replyText += '\n\n🖼️ С изображением';
+    if (imageUrls && imageUrls.length > 0) replyText += `\n\n🖼️ ${imageUrls.length} изображение(ий)`;
 
     await bot.sendMessage(chatId, replyText, { parse_mode: 'HTML' });
   } catch (error) {
