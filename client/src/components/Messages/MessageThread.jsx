@@ -1195,7 +1195,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       
                       {message.sentViaBot && (
                         <div className={styles.botLabel}>
-                          📱 Отвечено с помощью бота
+                          📱 Отвечено с помощью <a href="https://t.me/watchRebel_bot" target="_blank" rel="noopener noreferrer" className={styles.botLink}>бота</a>
                         </div>
                       )}
                       <div className={styles.messageFooter}>

@@ -296,6 +296,16 @@
   font-style: italic;
 }
 
+.botLink {
+  color: inherit;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.botLink:hover {
+  opacity: 0.7;
+}
+
 .otherMessage .botLabel {
   border-top-color: var(--border-color);
 }
