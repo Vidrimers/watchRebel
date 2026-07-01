@@ -79,6 +79,11 @@ const MessageThread = ({ conversation, onClose }) => {
   const { messages, group, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
 
+  const [conversationOverrides, setConversationOverrides] = useState({});
+
+  // Мержим проп conversation с локальными оверрайдами (для обновления имени/аватарки без перезагрузки)
+  const effectiveConversation = { ...conversation, ...conversationOverrides };
+
   // Хелперы для групповых чатов (используем effectiveConversation для обновлений без перезагрузки)
   const isGroup = effectiveConversation?.isGroup;
   const getReceiverId = () => isGroup ? effectiveConversation.id : effectiveConversation.otherUser?.id;
@@ -115,11 +120,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [showGroupAvatarModal, setShowGroupAvatarModal] = useState(false);
-  const [conversationOverrides, setConversationOverrides] = useState({});
   const textareaRef = useRef(null);
-
-  // Мержим проп conversation с локальными оверрайдами (для обновления имени/аватарки без перезагрузки)
-  const effectiveConversation = { ...conversation, ...conversationOverrides };
 
   const {
     isRecording,
