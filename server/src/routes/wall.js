@@ -855,6 +855,12 @@ router.delete('/:postId', authenticateToken, async (req, res) => {
       });
     }
 
+    // Уведомляем друзей об удалении поста через WebSocket
+    const { notifyPostDeleted } = await import('../services/websocketService.js');
+    notifyPostDeleted(post.user_id, postId).catch(err => {
+      console.error('Ошибка уведомления об удалении поста:', err);
+    });
+
     res.json({ 
       message: 'Запись успешно удалена',
       postId 
