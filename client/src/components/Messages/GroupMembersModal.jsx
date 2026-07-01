@@ -91,17 +91,13 @@ const GroupMembersModal = ({
 
   const handleToggleModerator = async (member) => {
     if (member.isModerator) {
-      // Снять модератора
-      try {
-        await api.delete(`/messages/conversations/${conversationId}/moderators/${member.userId}`);
-        await loadMembers();
-      } catch (err) {
-        setError(err.data?.error || 'Ошибка снятия модератора');
-      }
+      // Показать модалку с текущими правами для редактирования
+      setModTarget(member);
+      setModPermissions(member.permissions?.length > 0 ? [...member.permissions] : []);
     } else {
       // Показать модалку выбора прав
       setModTarget(member);
-      setModPermissions(member.permissions?.length > 0 ? member.permissions : ['manage_members', 'manage_messages']);
+      setModPermissions(['manage_members', 'manage_messages']);
     }
   };
 
@@ -116,6 +112,17 @@ const GroupMembersModal = ({
       await loadMembers();
     } catch (err) {
       setError(err.data?.error || 'Ошибка назначения модератора');
+    }
+  };
+
+  const handleRemoveModerator = async () => {
+    if (!modTarget) return;
+    try {
+      await api.delete(`/messages/conversations/${conversationId}/moderators/${modTarget.userId}`);
+      setModTarget(null);
+      await loadMembers();
+    } catch (err) {
+      setError(err.data?.error || 'Ошибка снятия модератора');
     }
   };
 
@@ -271,11 +278,13 @@ const GroupMembersModal = ({
           {error && <div className={styles.error}>{error}</div>}
         </div>
 
-        {/* Модалка выбора прав модератора */}
+        {/* Модалка выбора/редактирования прав модератора */}
         {modTarget && (
           <div className={styles.permOverlay} onClick={() => setModTarget(null)}>
             <div className={styles.permModal} onClick={e => e.stopPropagation()}>
-              <h4 className={styles.permTitle}>Назначить модератором</h4>
+              <h4 className={styles.permTitle}>
+                {modTarget.isModerator ? 'Редактировать права' : 'Назначить модератором'}
+              </h4>
               <p className={styles.permSubtitle}>{modTarget.displayName}</p>
               <div className={styles.permList}>
                 {PERMISSIONS.map(p => (
@@ -294,8 +303,15 @@ const GroupMembersModal = ({
                 ))}
               </div>
               <div className={styles.permActions}>
-                <button className={styles.permCancel} onClick={() => setModTarget(null)}>Отмена</button>
-                <button className={styles.permSave} onClick={handleAssignModerator}>Назначить</button>
+                {modTarget.isModerator && (
+                  <button className={styles.permRemove} onClick={handleRemoveModerator}>Снять модератора</button>
+                )}
+                <div className={styles.permActionsRight}>
+                  <button className={styles.permCancel} onClick={() => setModTarget(null)}>Отмена</button>
+                  <button className={styles.permSave} onClick={handleAssignModerator}>
+                    {modTarget.isModerator ? 'Сохранить' : 'Назначить'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -342,38 +342,6 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-:global(.dark) .modal {
-  background: var(--bg-primary-dark, #1a1a1a);
-  border-color: var(--border-color-dark, #444);
-}
-
-:global(.dark) .searchInput {
-  background: var(--bg-input-dark, #2a2a2a);
-  color: var(--text-primary-dark, #e0e0e0);
-  border-color: var(--border-color-dark, #444);
-}
-
-:global(.dark) .addMemberPanel {
-  background: var(--bg-secondary-dark, #2a2a2a);
-}
-
-:global(.dark) .badgeCreator {
-  background: rgba(234, 179, 8, 0.2);
-  color: #fbbf24;
-}
-
-:global(.dark) .badgeMod {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-}
-
-@media (max-width: 768px) {
-  .modal {
-    max-width: 100%;
-    max-height: 90vh;
-  }
-}
-
 /* Модалка прав модератора */
 .permOverlay {
   position: fixed;
@@ -461,8 +429,14 @@
 
 .permActions {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.permActionsRight {
+  display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .permCancel {
@@ -494,4 +468,36 @@
 
 .permSave:hover {
   background: var(--accent-primary-active, #4f46e5);
+}
+
+.permRemove {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--error-color, #ef4444);
+  border-radius: 8px;
+  color: var(--error-color, #ef4444);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  transition: background 0.2s;
+}
+
+.permRemove:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+:global(.dark) .badgeCreator {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+:global(.dark) .badgeMod {
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
+
+@media (max-width: 768px) {
+  .modal {
+    max-width: 100%;
+    max-height: 90vh;
+  }
 }
