@@ -197,7 +197,6 @@
 
 .message {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.5rem;
   max-width: 70%;
@@ -215,11 +214,8 @@
 .senderNameRow {
   display: flex;
   align-items: center;
-  gap: 6px;
   margin-bottom: 2px;
-  margin-left: 0;
-  width: 100%;
-  flex-basis: 100%;
+  margin-left: 38px;
 }
 
 .senderName {

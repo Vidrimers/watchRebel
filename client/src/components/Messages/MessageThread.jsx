@@ -886,20 +886,20 @@ const MessageThread = ({ conversation, onClose }) => {
               const showDateSeparator = shouldShowDateSeparator(message, messages[index - 1]);
 
               return (
-                <React.Fragment key={message.id}>
+                  <React.Fragment key={message.id}>
                   {showDateSeparator && (
                     <div className={styles.dateSeparator}>
                       {formatDateSeparator(message.createdAt)}
                     </div>
                   )}
-                  
+
+                  {/* Имя отправителя для групповых чатов — над сообщением */}
+                  {isGroup && !isOwnMessage && message.sender?.displayName && (
+                    <div className={styles.senderNameRow}>
+                      <div className={styles.senderName}>{message.sender.displayName}</div>
+                    </div>
+                  )}
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
-                    {/* Имя отправителя для групповых чатов — над пузырём */}
-                    {isGroup && !isOwnMessage && message.sender?.displayName && (
-                      <div className={styles.senderNameRow}>
-                        <div className={styles.senderName}>{message.sender.displayName}</div>
-                      </div>
-                    )}
                     <div className={styles.messageAvatar}>
                       {isOwnMessage ? (
                         user.avatarUrl ? (
