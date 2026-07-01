@@ -203,8 +203,7 @@ bot.onText(/\/menu/, async (msg) => {
         { text: '📰 Лента', callback_data: 'menu_feed' }
       ],
       [
-        { text: '💬 Сообщения', callback_data: 'menu_messages' },
-        { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+        { text: '💬 Сообщения', callback_data: 'menu_messages' }
       ],
       [
         { text: '👤 Мой профиль', callback_data: 'menu_profile' }
@@ -327,6 +326,10 @@ bot.on('message', async (msg) => {
   else if (userState && userState.state === 'awaiting_group_message_reply') {
     await handleSendGroupMessageReply(chatId, userId, msg.text, userState.data);
   }
+  // Если пользователь в состоянии создания текстового поста
+  else if (userState && userState.state === 'awaiting_text_post') {
+    await handleSendTextPost(chatId, userId, msg.text, userState.data.userFrom);
+  }
   // Если пользователь в состоянии создания багрепорта - ожидание заголовка
   else if (userState && userState.state === 'awaiting_bug_report_title') {
     await handleBugReportTitle(chatId, userId, msg.text, userState.data);
@@ -393,6 +396,8 @@ bot.on('callback_query', async (query) => {
       await handleMenuAction(chatId, userId, data, query.from);
     } else if (data.startsWith('settings_')) {
       await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
+    } else if (data === 'create_text_post') {
+      await handleCreateTextPost(chatId, userId, query.from);
     } else if (data.startsWith('toggle_notif_')) {
       await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
     } else if (data.startsWith('reply_group_')) {
@@ -650,8 +655,12 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/notifications?session=${session.token}` }
     },
     'menu_profile': {
-      text: '👤 <b>Мой профиль</b>\n\nОткройте сайт чтобы увидеть свой профиль и стену.',
-      button: { text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }
+      text: '👤 <b>Мой профиль</b>\n\nВыберите действие:',
+      buttons: [
+        [{ text: '📝 Создать текстовый пост', callback_data: 'create_text_post' }],
+        [{ text: '💬 Задать статус', callback_data: 'settings_change_status' }],
+        [{ text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }]
+      ]
     },
     'menu_invite': {
       text: '👥 <b>Пригласить друга</b>\n\nГенерирую вашу реферальную ссылку...',
@@ -1106,8 +1115,7 @@ async function showMainMenu(chatId, userFrom) {
       { text: '📰 Лента', callback_data: 'menu_feed' }
     ],
     [
-      { text: '💬 Сообщения', callback_data: 'menu_messages' },
-      { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+      { text: '💬 Сообщения', callback_data: 'menu_messages' }
     ],
     [
       { text: '👤 Мой профиль', callback_data: 'menu_profile' }
@@ -1148,6 +1156,71 @@ async function showMainMenu(chatId, userFrom) {
 async function handleShareMovieAction(chatId, tmdbId) {
   // share URL обрабатывается Telegram нативно, ничего делать не нужно
   // Эта функция нужна на случай если захотим добавить доп. логику
+}
+
+/**
+ * Создание текстового поста через бота
+ */
+async function handleCreateTextPost(chatId, userId, userFrom) {
+  setUserState(userId, 'awaiting_text_post', { userFrom });
+  await bot.sendMessage(
+    chatId,
+    '📝 <b>Создание поста</b>\n\n' +
+    'Напишите текст вашего поста.\n\n' +
+    'Для отмены отправьте /cancel',
+    { parse_mode: 'HTML' }
+  );
+}
+
+/**
+ * Обработка отправки текстового поста
+ */
+async function handleSendTextPost(chatId, userId, messageText, userFrom) {
+  try {
+    if (!messageText || messageText.trim().length === 0) {
+      await bot.sendMessage(chatId, '⚠️ Пост не может быть пустым. Попробуйте еще раз или /cancel');
+      return;
+    }
+
+    if (messageText.trim().length > 2000) {
+      await bot.sendMessage(chatId, '⚠️ Пост слишком длинный. Максимум 2000 символов. Попробуйте еще раз или /cancel');
+      return;
+    }
+
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const response = await fetch(`${apiUrl}/api/wall`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify({
+        content: messageText.trim(),
+        postType: 'text',
+        wallOwnerId: userId
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API: ${response.status}`);
+    }
+
+    clearUserState(userId);
+
+    await bot.sendMessage(
+      chatId,
+      `✅ <b>Пост опубликован!</b>\n\n${messageText.trim().substring(0, 100)}${messageText.trim().length > 100 ? '...' : ''}`,
+      { parse_mode: 'HTML' }
+    );
+  } catch (error) {
+    console.error('Ошибка создания поста:', error.message);
+    clearUserState(userId);
+    await bot.sendMessage(chatId, '⚠️ Ошибка создания поста. Попробуйте позже.');
+  }
 }
 
 /**
@@ -1386,7 +1459,7 @@ async function handleNotificationSettingsMenu(chatId, userId, userFrom, messageI
         callback_data: 'toggle_notif_adminAnnouncement' 
       }],
       // Кнопка "Назад"
-      [{ text: '◀️ Назад', callback_data: 'menu_settings' }]
+      [{ text: '◀️ Назад', callback_data: 'main_menu' }]
     ];
 
     // Если есть messageId, редактируем сообщение, иначе отправляем новое
