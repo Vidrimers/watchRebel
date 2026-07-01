@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { sendTelegramNotification, checkNotificationEnabled } from '../services/notificationService.js';
+import { sendTelegramNotification, checkNotificationEnabled, createNotification } from '../services/notificationService.js';
 import { sendMessageToUser } from '../services/websocketService.js';
 import { uploadMessageFiles, uploadAvatar } from '../middleware/upload.js';
 
@@ -678,7 +678,6 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       }
 
       if (mentionedUserIds.size > 0) {
-        const { createNotification } = await import('../services/notificationService.js');
         const groupName = groupCheck.data[0].group_name;
 
         for (const mentionedId of mentionedUserIds) {
