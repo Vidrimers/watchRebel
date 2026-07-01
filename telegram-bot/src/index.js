@@ -507,7 +507,8 @@ async function handleFeedAction(chatId, userId, token, page = 0) {
       let mediaText = '';
       if (post.tmdbId) {
         const mediaType = post.mediaType === 'tv' ? '📺' : '🎬';
-        mediaText = ` ${mediaType}`;
+        const mediaTitle = post.mediaTitle || '';
+        mediaText = mediaType + (mediaTitle ? ` <b>${mediaTitle}</b>` : '');
       }
 
       // Реакции

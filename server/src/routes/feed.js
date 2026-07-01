@@ -303,6 +303,15 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           }
         }
 
+        // Получаем название медиа для постов с tmdbId
+        let mediaTitle = null;
+        if (post.tmdb_id && post.media_type) {
+          try {
+            const mediaDetails = await mediaCacheService.getOrFetch(post.tmdb_id, post.media_type);
+            mediaTitle = mediaDetails.title || mediaDetails.name || null;
+          } catch (e) { /* ignore */ }
+        }
+
         return {
           id: post.id,
           userId: post.user_id,
@@ -310,14 +319,15 @@ router.get('/:userId', authenticateToken, async (req, res) => {
           content: post.content,
           tmdbId: post.tmdb_id,
           mediaType: post.media_type,
+          mediaTitle,
           posterPath: post.poster_path,
           listId: post.list_id,
-          rating: postRating, // Оценка пользователя
+          rating: postRating,
           createdAt: post.created_at,
           editedAt: post.edited_at,
-          commentsCount, // Общее количество комментариев (включая ответы)
-          userListName, // Название списка текущего пользователя (если медиа в его списке)
-          personalNote, // Персональная заметка владельца стены (только для владельца)
+          commentsCount,
+          userListName,
+          personalNote,
           author: {
             id: post.author_id,
             displayName: post.author_display_name,
