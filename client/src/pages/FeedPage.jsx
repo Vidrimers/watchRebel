@@ -20,8 +20,11 @@ const FeedPage = () => {
   // Отмечаем ленту как просмотренную при открытии
   useEffect(() => {
     if (!user) return;
-    api.post('/feed/mark-viewed').catch(() => {});
-  }, [user]);
+    api.post('/feed/mark-viewed').then(() => {
+      // Уведомляем сайдбар что лента просмотрена
+      window.dispatchEvent(new CustomEvent('feed-viewed'));
+    }).catch(() => {});
+  }, [user?.id]);
 
   // Функция загрузки ленты с пагинацией
   const fetchFeed = async (limit, offset) => {

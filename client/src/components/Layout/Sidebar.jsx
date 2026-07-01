@@ -86,7 +86,15 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
 
     fetchFeedCount();
     const interval = setInterval(fetchFeedCount, 60000);
-    return () => clearInterval(interval);
+
+    // Сбрасываем счётчик при просмотре ленты
+    const handleFeedViewed = () => setFeedCount(0);
+    window.addEventListener('feed-viewed', handleFeedViewed);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('feed-viewed', handleFeedViewed);
+    };
   }, [user?.id]);
 
   // Загружаем статистику багрепортов для админа
