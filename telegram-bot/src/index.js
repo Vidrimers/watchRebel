@@ -406,6 +406,25 @@ bot.on('callback_query', async (query) => {
     } else if (data.startsWith('bug_report_')) {
       // Обработка действий багрепорта
       await handleBugReportAction(chatId, userId, data, query.from);
+    } else if (data.startsWith('list_')) {
+      // Просмотр фильмов в списке: list_{listId}_{page}
+      const parts = data.replace('list_', '').split('_');
+      const listId = parts[0];
+      const page = parseInt(parts[1]) || 0;
+      await handleListItemsAction(chatId, userId, listId, page);
+    } else if (data.startsWith('wl_page_')) {
+      // Пагинация watchlist: wl_page_{page}
+      const page = parseInt(data.replace('wl_page_', '')) || 0;
+      const session = await createSession(userId, query.from);
+      await handleWatchlistAction(chatId, userId, session.token, page);
+    } else if (data.startsWith('share_movie_')) {
+      // Поделиться фильмом: share_movie_{tmdbId}
+      const tmdbId = data.replace('share_movie_', '');
+      await handleShareMovieAction(chatId, tmdbId);
+    } else if (data === 'main_menu') {
+      // Возврат в главное меню
+      const session = await createSession(userId, query.from);
+      await handleMenuAction(chatId, userId, 'show_menu', query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -543,16 +562,22 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
   
   const actionMap = {
     'menu_movies': {
-      text: '🎬 <b>Мои фильмы</b>\n\nЗдесь будут отображаться ваши списки фильмов.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/movies?session=${session.token}` }
+      text: '🎬 <b>Мои фильмы</b>\n\nЗагружаю ваши списки...',
+      handler: async () => {
+        await handleUserListsAction(chatId, userId, session.token, 'movie');
+      }
     },
     'menu_tv': {
-      text: '📺 <b>Мои сериалы</b>\n\nЗдесь будут отображаться ваши списки сериалов.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/tv?session=${session.token}` }
+      text: '📺 <b>Мои сериалы</b>\n\nЗагружаю ваши списки...',
+      handler: async () => {
+        await handleUserListsAction(chatId, userId, session.token, 'tv');
+      }
     },
     'menu_watchlist': {
-      text: '⭐ <b>Хочу посмотреть</b>\n\nЗдесь будут фильмы и сериалы, которые вы хотите посмотреть.\nОткройте сайт для полного функционала.',
-      button: { text: '🌐 Открыть на сайте', url: `${publicUrl}/watchlist?session=${session.token}` }
+      text: '⭐ <b>Хочу посмотреть</b>\n\nЗагружаю...',
+      handler: async () => {
+        await handleWatchlistAction(chatId, userId, session.token, 0);
+      }
     },
     'menu_feed': {
       text: '📰 <b>Лента активности</b>\n\nЗагружаю последние посты ваших друзей...',
@@ -843,6 +868,227 @@ async function handleMessagesAction(chatId, userId, token) {
       { parse_mode: 'HTML' }
     );
   }
+}
+
+/**
+ * Получить списки пользователя (фильмы или сериалы)
+ * @param {number} chatId - ID чата Telegram
+ * @param {string} userId - ID пользователя
+ * @param {string} token - Токен сессии
+ * @param {string} mediaType - 'movie' или 'tv'
+ */
+async function handleUserListsAction(chatId, userId, token, mediaType) {
+  try {
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+    const response = await fetch(`${apiUrl}/api/lists?media_type=${mediaType}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error(`API: ${response.status}`);
+    const lists = await response.json();
+
+    const typeLabel = mediaType === 'movie' ? 'фильмов' : 'сериалов';
+    const emoji = mediaType === 'movie' ? '🎬' : '📺';
+
+    if (!lists || lists.length === 0) {
+      await bot.sendMessage(
+        chatId,
+        `${emoji} <b>Мои ${typeLabel}</b>\n\nУ вас пока нет списков.\nСоздайте списки на сайте.`,
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🌐 Открыть на сайте', url: `${publicUrl}/lists/${mediaType === 'movie' ? 'movies' : 'tv'}` }
+            ]]
+          }
+        }
+      );
+      return;
+    }
+
+    // Формируем кнопки списков (по 2 в ряд)
+    const buttons = [];
+    for (let i = 0; i < lists.length; i += 2) {
+      const row = [];
+      row.push({ text: lists[i].name, callback_data: `list_${lists[i].id}_0` });
+      if (i + 1 < lists.length) {
+        row.push({ text: lists[i + 1].name, callback_data: `list_${lists[i + 1].id}_0` });
+      }
+      buttons.push(row);
+    }
+    buttons.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
+
+    await bot.sendMessage(
+      chatId,
+      `${emoji} <b>Мои ${typeLabel}</b>\n\nВыберите список:`,
+      {
+        parse_mode: 'HTML',
+        reply_markup: { inline_keyboard: buttons }
+      }
+    );
+  } catch (error) {
+    console.error('Ошибка загрузки списков:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки списков. Попробуйте позже.');
+  }
+}
+
+/**
+ * Показать фильмы в списке (пагинация по 5)
+ */
+async function handleListItemsAction(chatId, userId, listId, page) {
+  try {
+    const session = await createSession(userId, { id: userId });
+    const token = session.token;
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+    const limit = 5;
+    const offset = page * limit;
+
+    const response = await fetch(`${apiUrl}/api/lists/${listId}/items?limit=${limit}&offset=${offset}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error(`API: ${response.status}`);
+    const data = await response.json();
+    const items = data.items || data || [];
+    const total = data.total || items.length;
+
+    if (!items || items.length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '📋 Список пуст.',
+        { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '◀️ Назад', callback_data: 'menu_movies' }]] } }
+      );
+      return;
+    }
+
+    // Формируем сообщение с фильмами
+    let text = `📋 <b>Список</b> (фильмы ${offset + 1}-${Math.min(offset + limit, total)} из ${total}):\n\n`;
+    const buttons = [];
+
+    for (const item of items) {
+      const title = item.title || item.name || 'Без названия';
+      const originalTitle = item.originalTitle || item.original_title || '';
+      const year = item.releaseDate ? new Date(item.releaseDate).getFullYear() : (item.release_date ? new Date(item.release_date).getFullYear() : '');
+      const rating = item.voteAverage || item.vote_average || item.rating || '';
+      const genres = item.genres || '';
+
+      text += `🎬 *${title}*`;
+      if (originalTitle && originalTitle !== title) text += ` (${originalTitle})`;
+      text += '\n';
+      if (genres) text += `   Жанр: ${genres}`;
+      if (year) text += ` | Год: ${year}`;
+      if (rating) text += ` | ⭐ ${typeof rating === 'number' ? rating.toFixed(1) : rating}`;
+      text += '\n';
+      text += `   👉 ${publicUrl}/media/movie/${item.tmdbId || item.id}\n\n`;
+
+      // Кнопка "Поделиться" для каждого фильма
+      buttons.push([
+        { text: `🌐 ${title.substring(0, 30)}`, url: `${publicUrl}/media/movie/${item.tmdbId || item.id}` },
+        { text: '📤 Поделиться', url: `https://t.me/share/url?url=${encodeURIComponent(`${publicUrl}/media/movie/${item.tmdbId || item.id}`)}&text=${encodeURIComponent(`Посмотри "${title}" на watchRebel`)}` }
+      ]);
+    }
+
+    // Кнопки навигации
+    const navRow = [];
+    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `list_${listId}_${page - 1}` });
+    navRow.push({ text: '🏠 Меню', callback_data: 'main_menu' });
+    if (offset + limit < total) navRow.push({ text: '▶️ Вперёд', callback_data: `list_${listId}_${page + 1}` });
+    buttons.push(navRow);
+
+    await bot.sendMessage(chatId, text, {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: buttons }
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки фильмов списка:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки фильмов. Попробуйте позже.');
+  }
+}
+
+/**
+ * Показать watchlist (пагинация по 5)
+ */
+async function handleWatchlistAction(chatId, userId, token, page) {
+  try {
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+    const limit = 5;
+    const offset = page * limit;
+
+    const response = await fetch(`${apiUrl}/api/watchlist?limit=${limit}&offset=${offset}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error(`API: ${response.status}`);
+    const data = await response.json();
+    const items = data.items || data || [];
+    const total = data.total || items.length;
+
+    if (!items || items.length === 0) {
+      await bot.sendMessage(
+        chatId,
+        '⭐ <b>Хочу посмотреть</b>\n\nСписок пуст.\nДобавьте фильмы на сайте.',
+        {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🌐 Открыть на сайте', url: `${publicUrl}/watchlist` }
+            ]]
+          }
+        }
+      );
+      return;
+    }
+
+    let text = `⭐ <b>Хочу посмотреть</b> (${offset + 1}-${Math.min(offset + limit, total)} из ${total}):\n\n`;
+    const buttons = [];
+
+    for (const item of items) {
+      const title = item.title || item.name || 'Без названия';
+      const originalTitle = item.originalTitle || item.original_title || '';
+      const year = item.releaseDate ? new Date(item.releaseDate).getFullYear() : (item.release_date ? new Date(item.release_date).getFullYear() : '');
+      const rating = item.voteAverage || item.vote_average || item.rating || '';
+      const mediaType = item.mediaType || item.media_type || 'movie';
+      const typeLabel = mediaType === 'tv' ? '📺 Сериал' : '🎬 Фильм';
+
+      text += `${typeLabel} *${title}*`;
+      if (originalTitle && originalTitle !== title) text += ` (${originalTitle})`;
+      text += '\n';
+      if (year) text += `   Год: ${year}`;
+      if (rating) text += ` | ⭐ ${typeof rating === 'number' ? rating.toFixed(1) : rating}`;
+      text += '\n';
+      text += `   👉 ${publicUrl}/media/${mediaType}/${item.tmdbId || item.id}\n\n`;
+
+      buttons.push([
+        { text: `🌐 ${title.substring(0, 30)}`, url: `${publicUrl}/media/${mediaType}/${item.tmdbId || item.id}` },
+        { text: '📤 Поделиться', url: `https://t.me/share/url?url=${encodeURIComponent(`${publicUrl}/media/${mediaType}/${item.tmdbId || item.id}`)}&text=${encodeURIComponent(`Посмотри "${title}" на watchRebel`)}` }
+      ]);
+    }
+
+    const navRow = [];
+    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `wl_page_${page - 1}` });
+    navRow.push({ text: '🏠 Меню', callback_data: 'main_menu' });
+    if (offset + limit < total) navRow.push({ text: '▶️ Вперёд', callback_data: `wl_page_${page + 1}` });
+    buttons.push(navRow);
+
+    await bot.sendMessage(chatId, text, {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: buttons }
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки watchlist:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки. Попробуйте позже.');
+  }
+}
+
+/**
+ * Действие "Поделиться фильмом" — просто открывает share URL
+ */
+async function handleShareMovieAction(chatId, tmdbId) {
+  // share URL обрабатывается Telegram нативно, ничего делать не нужно
+  // Эта функция нужна на случай если захотим добавить доп. логику
 }
 
 /**
