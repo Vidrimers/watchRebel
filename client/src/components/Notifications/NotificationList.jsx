@@ -64,9 +64,13 @@ const NotificationList = () => {
       return;
     }
 
-    // Для уведомлений об упоминании в групповом чате — переходим в сообщения
+    // Для уведомлений об упоминании в групповом чате — переходим в конкретный чат
     if (notification.type === 'group_mention') {
-      window.location.href = '/messages';
+      if (notification.relatedPostId) {
+        window.location.href = `/messages?conversation=${notification.relatedPostId}`;
+      } else {
+        window.location.href = '/messages';
+      }
       return;
     }
     

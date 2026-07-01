@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { fetchConversations } from '../store/slices/messagesSlice';
@@ -15,6 +15,7 @@ import styles from './MessagesPage.module.css';
  */
 const MessagesPage = () => {
   const { userId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { conversations } = useAppSelector((state) => state.messages);
@@ -29,6 +30,18 @@ const MessagesPage = () => {
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
+
+  // Автоматически открываем диалог из URL параметра ?conversation=id
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation');
+    if (conversationId && conversations.length > 0) {
+      const conv = conversations.find(c => c.id === conversationId);
+      if (conv) {
+        setSelectedConversation(conv);
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, conversations, setSearchParams]);
 
   // Если передан userId в URL, проверяем существующие диалоги или создаем новый
   useEffect(() => {

@@ -661,7 +661,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
         const groupName = groupCheck.data[0].group_name;
 
         for (const mentionedId of mentionedUserIds) {
-          createNotification(mentionedId, 'group_mention', `упомянул вас в чате "${groupName}"`, senderId, null).catch(err => {
+          createNotification(mentionedId, 'group_mention', `упомянул вас в чате "${groupName}"`, senderId, conversationId).catch(err => {
             console.error('Ошибка уведомления об упоминании в чате:', err);
           });
         }
