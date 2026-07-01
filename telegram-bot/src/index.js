@@ -407,6 +407,12 @@ bot.on('callback_query', async (query) => {
       if (skipState && skipState.state === 'awaiting_post_image') {
         await publishPost(chatId, userId, skipState.data.content, null, skipState.data.userFrom);
       }
+    } else if (data === 'post_publish') {
+      const pubState = getUserState(userId);
+      if (pubState && pubState.state === 'awaiting_post_image') {
+        const images = pubState.data.images || [];
+        await publishPost(chatId, userId, pubState.data.content, images.length > 0 ? images : null, pubState.data.userFrom);
+      }
     } else if (data.startsWith('toggle_notif_')) {
       await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
     } else if (data.startsWith('reply_group_')) {
@@ -1160,21 +1166,19 @@ async function showMainMenu(chatId, userFrom) {
 }
 
 /**
- * Обработка загрузки изображения для поста
+ * Обработка загрузки изображения для поста — собирает файлы
  */
 async function handlePostImage(chatId, userId, photos, stateData) {
   try {
     if (!photos || photos.length === 0) return;
 
-    const photo = photos[photos.length - 1]; // Самое большое фото
+    const photo = photos[photos.length - 1];
     const file = await bot.getFile(photo.file_id);
     const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
 
-    // Скачиваем файл
     const response = await fetch(fileUrl);
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    // Загружаем на сервер
     const session = await createSession(userId, stateData.userFrom);
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
 
@@ -1194,17 +1198,20 @@ async function handlePostImage(chatId, userId, photos, stateData) {
       body: formData
     });
 
-    let imageUrl = null;
     if (uploadResponse.ok) {
       const uploadData = await uploadResponse.json();
-      imageUrl = uploadData.url || uploadData.imageUrl;
+      const imageUrl = uploadData.url || uploadData.imageUrl;
+      if (imageUrl) {
+        // Сохраняем изображение в состояние
+        stateData.images = stateData.images || [];
+        stateData.images.push(imageUrl);
+        setUserState(userId, 'awaiting_post_image', stateData);
+        await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`);
+      }
     }
-
-    await publishPost(chatId, userId, stateData.content, imageUrl, stateData.userFrom);
   } catch (error) {
     console.error('Ошибка загрузки изображения:', error.message);
-    // Публикуем без изображения
-    await publishPost(chatId, userId, stateData.content, null, stateData.userFrom);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки изображения. Попробуйте ещё раз.');
   }
 }
 
@@ -1222,7 +1229,9 @@ async function publishPost(chatId, userId, content, imageUrl, userFrom) {
       wallOwnerId: userId
     };
 
-    if (imageUrl) {
+    if (imageUrl && Array.isArray(imageUrl) && imageUrl.length > 0) {
+      body.imageUrls = imageUrl;
+    } else if (imageUrl && typeof imageUrl === 'string') {
       body.imageUrls = [imageUrl];
     }
 
@@ -1294,18 +1303,20 @@ async function handleSendTextPost(chatId, userId, messageText, userFrom) {
     // Сохраняем текст и переходим к шагу загрузки изображения
     setUserState(userId, 'awaiting_post_image', {
       userFrom,
-      content: messageText.trim()
+      content: messageText.trim(),
+      images: []
     });
 
     await bot.sendMessage(
       chatId,
       '📸 <b>Изображение</b>\n\n' +
-      'Отправьте изображение или нажмите кнопку ниже, чтобы опубликовать без картинки.',
+      'Отправьте изображение (можно несколько) или нажмите кнопку ниже, чтобы опубликовать без картинки.',
       {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }]
+            [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }],
+            [{ text: '✅ Опубликовать', callback_data: 'post_publish' }]
           ]
         }
       }
