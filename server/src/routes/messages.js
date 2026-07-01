@@ -644,6 +644,30 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       }
     }
 
+    // Уведомления об упоминаниях в сообщениях (групповые чаты)
+    if (isGroup && content) {
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+      let mentionMatch;
+      const mentionedUserIds = new Set();
+      while ((mentionMatch = mentionRegex.exec(content)) !== null) {
+        const mentionedId = mentionMatch[2];
+        if (mentionedId !== senderId) {
+          mentionedUserIds.add(mentionedId);
+        }
+      }
+
+      if (mentionedUserIds.size > 0) {
+        const { createNotification } = await import('../services/notificationService.js');
+        const groupName = groupCheck.data[0].group_name;
+
+        for (const mentionedId of mentionedUserIds) {
+          createNotification(mentionedId, 'group_mention', `упомянул вас в чате "${groupName}"`, senderId, null).catch(err => {
+            console.error('Ошибка уведомления об упоминании в чате:', err);
+          });
+        }
+      }
+    }
+
     res.status(201).json(messageResponse);
 
   } catch (error) {

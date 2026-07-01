@@ -100,6 +100,20 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
       return;
     }
 
+    // Для уведомлений об упоминании — переходим на стену автора
+    if (notification.type === 'mention' && notification.relatedUserId) {
+      window.location.href = `/user/${notification.relatedUserId}`;
+      onClose();
+      return;
+    }
+
+    // Для уведомлений об упоминании в групповом чате — переходим в сообщения
+    if (notification.type === 'group_mention') {
+      window.location.href = '/messages';
+      onClose();
+      return;
+    }
+
     // Проверяем, что relatedPostId это UUID (формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     const isValidPostId = notification.relatedPostId && 
                           notification.relatedPostId.includes('-') && 
@@ -158,7 +172,7 @@ const NotificationDropdown = ({ isOpen, onClose, buttonRef }) => {
   // Формирование текста уведомления
   const formatNotificationText = (notification) => {
     // Для упоминаний имя автора уже в content, не дублируем
-    if (notification.type === 'mention') {
+    if (notification.type === 'mention' || notification.type === 'group_mention') {
       if (notification.relatedUser?.displayName) {
         const resolved = resolveDisplayNameWithTooltip(notification.relatedUserId, notification.relatedUser.displayName);
         return `${resolved.text} ${notification.content}`;
