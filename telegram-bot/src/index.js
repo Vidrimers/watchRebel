@@ -330,6 +330,10 @@ bot.on('message', async (msg) => {
   else if (userState && userState.state === 'awaiting_text_post') {
     await handleSendTextPost(chatId, userId, msg.text, userState.data.userFrom);
   }
+  // Если пользователь загружает изображение для поста
+  else if (userState && userState.state === 'awaiting_post_image') {
+    await handlePostImage(chatId, userId, msg.photo, userState.data);
+  }
   // Если пользователь в состоянии создания багрепорта - ожидание заголовка
   else if (userState && userState.state === 'awaiting_bug_report_title') {
     await handleBugReportTitle(chatId, userId, msg.text, userState.data);
@@ -398,6 +402,11 @@ bot.on('callback_query', async (query) => {
       await handleSettingsAction(chatId, userId, data, query.from, query.message.message_id);
     } else if (data === 'create_text_post') {
       await handleCreateTextPost(chatId, userId, query.from);
+    } else if (data === 'post_skip_image') {
+      const skipState = getUserState(userId);
+      if (skipState && skipState.state === 'awaiting_post_image') {
+        await publishPost(chatId, userId, skipState.data.content, null, skipState.data.userFrom);
+      }
     } else if (data.startsWith('toggle_notif_')) {
       await handleToggleNotification(chatId, userId, data, query.from, query.message.message_id);
     } else if (data.startsWith('reply_group_')) {
@@ -657,7 +666,7 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
     'menu_profile': {
       text: '👤 <b>Мой профиль</b>\n\nВыберите действие:',
       buttons: [
-        [{ text: '📝 Создать текстовый пост', callback_data: 'create_text_post' }],
+        [{ text: '📝 Создать пост', callback_data: 'create_text_post' }],
         [{ text: '💬 Задать статус', callback_data: 'settings_change_status' }],
         [{ text: '🌐 Открыть профиль', url: `${publicUrl}/profile?session=${session.token}` }]
       ]
@@ -1151,6 +1160,101 @@ async function showMainMenu(chatId, userFrom) {
 }
 
 /**
+ * Обработка загрузки изображения для поста
+ */
+async function handlePostImage(chatId, userId, photos, stateData) {
+  try {
+    if (!photos || photos.length === 0) return;
+
+    const photo = photos[photos.length - 1]; // Самое большое фото
+    const file = await bot.getFile(photo.file_id);
+    const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+
+    // Скачиваем файл
+    const response = await fetch(fileUrl);
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    // Загружаем на сервер
+    const session = await createSession(userId, stateData.userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    formData.append('image', buffer, {
+      filename: `post_${Date.now()}.jpg`,
+      contentType: 'image/jpeg'
+    });
+
+    const uploadResponse = await fetch(`${apiUrl}/api/wall/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.token}`,
+        ...formData.getHeaders()
+      },
+      body: formData
+    });
+
+    let imageUrl = null;
+    if (uploadResponse.ok) {
+      const uploadData = await uploadResponse.json();
+      imageUrl = uploadData.url || uploadData.imageUrl;
+    }
+
+    await publishPost(chatId, userId, stateData.content, imageUrl, stateData.userFrom);
+  } catch (error) {
+    console.error('Ошибка загрузки изображения:', error.message);
+    // Публикуем без изображения
+    await publishPost(chatId, userId, stateData.content, null, stateData.userFrom);
+  }
+}
+
+/**
+ * Опубликовать пост
+ */
+async function publishPost(chatId, userId, content, imageUrl, userFrom) {
+  try {
+    const session = await createSession(userId, userFrom);
+    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+
+    const body = {
+      content: content,
+      postType: 'text',
+      wallOwnerId: userId
+    };
+
+    if (imageUrl) {
+      body.imageUrls = [imageUrl];
+    }
+
+    const response = await fetch(`${apiUrl}/api/wall`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ API ошибка ${response.status}:`, errorData);
+      throw new Error(`API: ${response.status}`);
+    }
+
+    clearUserState(userId);
+
+    let replyText = `✅ <b>Пост опубликован!</b>\n\n${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`;
+    if (imageUrl) replyText += '\n\n🖼️ С изображением';
+
+    await bot.sendMessage(chatId, replyText, { parse_mode: 'HTML' });
+  } catch (error) {
+    console.error('Ошибка публикации поста:', error.message);
+    clearUserState(userId);
+    await bot.sendMessage(chatId, '⚠️ Ошибка публикации поста. Попробуйте позже.');
+  }
+}
+
+/**
  * Действие "Поделиться фильмом" — просто открывает share URL
  */
 async function handleShareMovieAction(chatId, tmdbId) {
@@ -1187,34 +1291,24 @@ async function handleSendTextPost(chatId, userId, messageText, userFrom) {
       return;
     }
 
-    const session = await createSession(userId, userFrom);
-    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
-
-    const response = await fetch(`${apiUrl}/api/wall`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.token}`
-      },
-      body: JSON.stringify({
-        content: messageText.trim(),
-        postType: 'text',
-        wallOwnerId: userId
-      })
+    // Сохраняем текст и переходим к шагу загрузки изображения
+    setUserState(userId, 'awaiting_post_image', {
+      userFrom,
+      content: messageText.trim()
     });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`❌ API ошибка ${response.status}:`, errorData);
-      throw new Error(`API: ${response.status}`);
-    }
-
-    clearUserState(userId);
 
     await bot.sendMessage(
       chatId,
-      `✅ <b>Пост опубликован!</b>\n\n${messageText.trim().substring(0, 100)}${messageText.trim().length > 100 ? '...' : ''}`,
-      { parse_mode: 'HTML' }
+      '📸 <b>Изображение</b>\n\n' +
+      'Отправьте изображение или нажмите кнопку ниже, чтобы опубликовать без картинки.',
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '⏩ Опубликовать без изображения', callback_data: 'post_skip_image' }]
+          ]
+        }
+      }
     );
   } catch (error) {
     console.error('Ошибка создания поста:', error.message);
