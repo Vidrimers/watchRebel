@@ -894,26 +894,9 @@ const MessageThread = ({ conversation, onClose }) => {
                   )}
                   
                   <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
-                    {/* Имя отправителя для групповых чатов — над аватаркой и пузырём */}
+                    {/* Имя отправителя для групповых чатов — над пузырём */}
                     {isGroup && !isOwnMessage && message.sender?.displayName && (
                       <div className={styles.senderNameRow}>
-                        <div className={styles.senderAvatarSmall}>
-                          {message.sender?.avatarUrl ? (
-                            <img
-                              src={
-                                message.sender.avatarUrl.startsWith('/uploads/')
-                                  ? `${import.meta.env.VITE_API_URL || ''}${message.sender.avatarUrl}`
-                                  : message.sender.avatarUrl
-                              }
-                              alt={message.sender.displayName}
-                              className={styles.senderAvatarSmallImage}
-                            />
-                          ) : (
-                            <div className={styles.senderAvatarSmallPlaceholder}>
-                              {message.sender.displayName?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                          )}
-                        </div>
                         <div className={styles.senderName}>{message.sender.displayName}</div>
                       </div>
                     )}
