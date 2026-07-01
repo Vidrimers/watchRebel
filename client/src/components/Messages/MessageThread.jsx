@@ -117,6 +117,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const [deleteMessageId, setDeleteMessageId] = useState(null);
   const [deleteMessageIsOwn, setDeleteMessageIsOwn] = useState(true);
   const [deletePopupPosition, setDeletePopupPosition] = useState(null);
+  const [deleteIsAnnouncement, setDeleteIsAnnouncement] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
@@ -175,10 +176,14 @@ const MessageThread = ({ conversation, onClose }) => {
     // Обработчик новых сообщений через WebSocket
     const handleWebSocketMessage = (data) => {
       if (data.type === 'new_message' && data.message) {
-        // Добавляем новое сообщение в Redux store
         dispatch({ 
           type: 'messages/addNewMessage', 
           payload: data.message 
+        });
+      } else if (data.type === 'announcement_deleted' && data.messageId) {
+        dispatch({
+          type: 'messages/removeMessage',
+          payload: data.messageId
         });
       }
     };
@@ -590,12 +595,13 @@ const MessageThread = ({ conversation, onClose }) => {
   };
 
   // Обработчик удаления сообщения — показ popup над крестиком
-  const handleDeleteClick = (e, messageId, isOwn) => {
+  const handleDeleteClick = (e, messageId, isOwn, isAnnouncement = false) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     
     setDeleteMessageId(messageId);
     setDeleteMessageIsOwn(isOwn);
+    setDeleteIsAnnouncement(isAnnouncement);
     setDeletePopupPosition({
       top: rect.top - 120,
       left: rect.right - 170
@@ -612,7 +618,16 @@ const MessageThread = ({ conversation, onClose }) => {
   // Удаление для всех
   const handleDeleteForEveryone = async () => {
     if (!deleteMessageId) return;
-    dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_everyone' }));
+    if (deleteIsAnnouncement) {
+      try {
+        await api.delete(`/messages/announcement/${deleteMessageId}`);
+        dispatch({ type: 'messages/removeMessage', payload: deleteMessageId });
+      } catch (err) {
+        console.error('Ошибка удаления объявления:', err);
+      }
+    } else {
+      dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_everyone' }));
+    }
   };
 
   // Форматирование времени
@@ -924,6 +939,19 @@ const MessageThread = ({ conversation, onClose }) => {
                       <div className={styles.announcementHeader}>
                         <span className={styles.announcementIcon}>📢</span>
                         <span>Объявление</span>
+                        {/* Кнопка удаления — только автор или модератор с delete_announcements */}
+                        {(
+                          message.senderId === user.id ||
+                          (isGroup && (effectiveConversation.createdBy === user.id || group?.canDeleteAnnouncements))
+                        ) && (
+                          <button
+                            className={styles.announcementDeleteBtn}
+                            onClick={(e) => handleDeleteClick(e, message.id, message.senderId === user.id, true)}
+                            title="Удалить объявление"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                       {message.sender?.displayName && (
                         <div className={styles.announcementAuthor}>
@@ -1428,6 +1456,7 @@ const MessageThread = ({ conversation, onClose }) => {
         onDeleteForMe={handleDeleteForMe}
         onDeleteForEveryone={handleDeleteForEveryone}
         isOwnMessage={deleteMessageIsOwn}
+        isAnnouncement={deleteIsAnnouncement}
         position={deletePopupPosition}
       />
       {showReportModal && (

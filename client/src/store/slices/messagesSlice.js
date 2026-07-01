@@ -108,15 +108,17 @@ const messagesSlice = createSlice({
       state.currentConversation = null;
     },
     addNewMessage: (state, action) => {
-      // Добавляем новое сообщение только если оно для текущего диалога
       const message = action.payload;
       if (message.conversationId === state.currentConversation) {
-        // Проверяем что сообщение еще не добавлено
         const exists = state.messages.some(m => m.id === message.id);
         if (!exists) {
           state.messages.push(message);
         }
       }
+    },
+    removeMessage: (state, action) => {
+      const messageId = action.payload;
+      state.messages = state.messages.filter(m => m.id !== messageId);
     }
   },
   extraReducers: (builder) => {
@@ -208,5 +210,5 @@ const messagesSlice = createSlice({
   }
 });
 
-export const { clearError, setCurrentConversation, clearMessages, addNewMessage } = messagesSlice.actions;
+export const { clearError, setCurrentConversation, clearMessages, addNewMessage, removeMessage } = messagesSlice.actions;
 export default messagesSlice.reducer;

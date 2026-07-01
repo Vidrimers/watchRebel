@@ -8,7 +8,9 @@ const PERMISSIONS = [
   { key: 'manage_members', label: 'Управление участниками', desc: 'Добавлять и удалять участников' },
   { key: 'manage_messages', label: 'Управление сообщениями', desc: 'Удалять сообщения других участников' },
   { key: 'edit_group', label: 'Редактирование группы', desc: 'Изменять название и аватарку' },
-  { key: 'send_announcements', label: 'Объявления', desc: 'Отправлять объявления в группу' }
+  { key: 'send_announcements', label: 'Отправлять объявления', desc: 'Создавать объявления в группе' },
+  { key: 'delete_announcements', label: 'Удалять объявления', desc: 'Удалять объявления в группе' },
+  { key: 'manage_moderators', label: 'Управление модераторами', desc: 'Назначать и снимать модераторов (своих)' }
 ];
 
 const GroupMembersModal = ({

@@ -324,6 +324,8 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
     if (isGroup) {
       const isCreator = conv.created_by === userId;
       let canDeleteMessages = isCreator;
+      let canDeleteAnnouncements = isCreator;
+      let canSendAnnouncements = isCreator;
 
       if (!isCreator) {
         const modCheck = await executeQuery(
@@ -333,7 +335,10 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
           [conversationId, userId]
         );
         if (modCheck.success) {
-          canDeleteMessages = modCheck.data.some(p => p.permission_type === 'manage_messages');
+          const perms = modCheck.data.map(p => p.permission_type);
+          canDeleteMessages = perms.includes('manage_messages');
+          canDeleteAnnouncements = perms.includes('delete_announcements');
+          canSendAnnouncements = perms.includes('send_announcements');
         }
       }
 
@@ -342,7 +347,9 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         groupName: conv.group_name,
         groupAvatar: conv.group_avatar,
         createdBy: conv.created_by,
-        canDeleteMessages
+        canDeleteMessages,
+        canDeleteAnnouncements,
+        canSendAnnouncements
       };
     }
 
@@ -824,10 +831,117 @@ router.post('/announcement', authenticateToken, uploadMessageFiles.array('images
       sendMessageToUser(memberId, messageResponse);
     }
 
+    // Отправляем уведомления об объявлении
+    const senderResult = await executeQuery(
+      'SELECT display_name FROM users WHERE id = ?',
+      [senderId]
+    );
+    if (senderResult.success && senderResult.data.length > 0) {
+      const senderName = senderResult.data[0].display_name;
+      const groupName = conv.group_name;
+      const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
+      const chatLink = `${publicUrl}/messages?conversation=${conversationId}`;
+
+      for (const memberId of groupMembers) {
+        // Уведомление на сайт
+        createNotification(memberId, 'group_announcement', `объявление в "${groupName}"`, senderId, conversationId).catch(err => {
+          console.error('Ошибка уведомления об объявлении:', err);
+        });
+
+        // Telegram уведомление
+        const isNotifEnabled = await checkNotificationEnabled(memberId, 'new_message');
+        if (isNotifEnabled) {
+          const tgMessage = `📢 <b>Объявление от ${senderName} в "${groupName}"</b>\n\n` +
+            `${content?.trim() || 'Нет текста'}\n\n` +
+            `<a href="${chatLink}">Открыть чат</a>`;
+          sendTelegramNotification(memberId, tgMessage).catch(err => {
+            console.error('Ошибка Telegram уведомления об объявлении:', err);
+          });
+        }
+      }
+    }
+
     res.status(201).json(messageResponse);
 
   } catch (error) {
     console.error('Ошибка отправки объявления:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/messages/announcement/:messageId
+ * Удалить объявление из группового чата
+ * Только автор объявления ИЛИ модератор с delete_announcements
+ */
+router.delete('/announcement/:messageId', authenticateToken, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user.id;
+
+    // Находим сообщение
+    const msgCheck = await executeQuery(
+      'SELECT * FROM messages WHERE id = ? AND is_announcement = 1',
+      [messageId]
+    );
+    if (!msgCheck.success || msgCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Объявление не найдено', code: 'NOT_FOUND' });
+    }
+
+    const message = msgCheck.data[0];
+    const conversationId = message.conversation_id;
+
+    // Проверяем права: автор ИЛИ модератор с delete_announcements
+    const isAuthor = message.sender_id === userId;
+    let hasPermission = isAuthor;
+
+    if (!isAuthor) {
+      // Проверяем является ли пользователь создателем группы
+      const convCheck = await executeQuery(
+        'SELECT created_by FROM conversations WHERE id = ?',
+        [conversationId]
+      );
+      const isCreator = convCheck.success && convCheck.data.length > 0 && convCheck.data[0].created_by === userId;
+
+      if (isCreator) {
+        hasPermission = true;
+      } else {
+        const modCheck = await executeQuery(
+          `SELECT gm.id FROM group_moderators gm
+           JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+           WHERE gm.conversation_id = ? AND gm.user_id = ? AND gmp.permission_type = 'delete_announcements'`,
+          [conversationId, userId]
+        );
+        hasPermission = modCheck.success && modCheck.data.length > 0;
+      }
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Нет прав на удаление объявлений', code: 'FORBIDDEN' });
+    }
+
+    // Удаляем сообщение
+    await executeQuery('DELETE FROM messages WHERE id = ?', [messageId]);
+
+    // Уведомляем участников через WebSocket
+    const membersResult = await executeQuery(
+      'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+      [conversationId, userId]
+    );
+    if (membersResult.success) {
+      for (const member of membersResult.data) {
+        sendMessageToUser(member.user_id, {
+          type: 'announcement_deleted',
+          messageId,
+          conversationId
+        });
+      }
+    }
+
+    res.json({ message: 'Объявление удалено', messageId });
+
+  } catch (error) {
+    console.error('Ошибка удаления объявления:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
@@ -1471,7 +1585,7 @@ router.get('/conversations/:conversationId/moderators', authenticateToken, async
 
 /**
  * POST /api/messages/conversations/:conversationId/moderators
- * Назначить модератора (только создатель)
+ * Назначить модератора (создатель ИЛИ модератор с manage_moderators)
  * Body: { userId: string, permissions: string[] }
  */
 router.post('/conversations/:conversationId/moderators', authenticateToken, async (req, res) => {
@@ -1487,8 +1601,20 @@ router.post('/conversations/:conversationId/moderators', authenticateToken, asyn
     if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
       return res.status(400).json({ error: 'Группа не найдена', code: 'NOT_FOUND' });
     }
-    if (convCheck.data[0].created_by !== currentUserId) {
-      return res.status(403).json({ error: 'Только создатель может назначать модераторов', code: 'FORBIDDEN' });
+
+    const isCreator = convCheck.data[0].created_by === currentUserId;
+
+    // Проверяем права: создатель ИЛИ модератор с manage_moderators
+    if (!isCreator) {
+      const modCheck = await executeQuery(
+        `SELECT gm.id FROM group_moderators gm
+         JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+         WHERE gm.conversation_id = ? AND gm.user_id = ? AND gmp.permission_type = 'manage_moderators'`,
+        [conversationId, currentUserId]
+      );
+      if (!modCheck.success || modCheck.data.length === 0) {
+        return res.status(403).json({ error: 'Нет прав на управление модераторами', code: 'FORBIDDEN' });
+      }
     }
 
     // Проверяем что пользователь участник
@@ -1518,7 +1644,7 @@ router.post('/conversations/:conversationId/moderators', authenticateToken, asyn
     );
 
     // Добавляем права
-    const validPermissions = ['manage_members', 'manage_messages', 'edit_group', 'send_announcements'];
+    const validPermissions = ['manage_members', 'manage_messages', 'edit_group', 'send_announcements', 'delete_announcements'];
     for (const perm of permissions || []) {
       if (validPermissions.includes(perm)) {
         await executeQuery(
@@ -1538,7 +1664,7 @@ router.post('/conversations/:conversationId/moderators', authenticateToken, asyn
 
 /**
  * DELETE /api/messages/conversations/:conversationId/moderators/:modUserId
- * Снять модератора (только создатель)
+ * Снять модератора (создатель ИЛИ модератор с manage_moderators — только своих)
  */
 router.delete('/conversations/:conversationId/moderators/:modUserId', authenticateToken, async (req, res) => {
   try {
@@ -1552,20 +1678,39 @@ router.delete('/conversations/:conversationId/moderators/:modUserId', authentica
     if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
       return res.status(400).json({ error: 'Группа не найдена', code: 'NOT_FOUND' });
     }
-    if (convCheck.data[0].created_by !== currentUserId) {
-      return res.status(403).json({ error: 'Только создатель может снимать модераторов', code: 'FORBIDDEN' });
-    }
+
+    const isCreator = convCheck.data[0].created_by === currentUserId;
 
     const modCheck = await executeQuery(
-      'SELECT id FROM group_moderators WHERE conversation_id = ? AND user_id = ?',
+      'SELECT id, assigned_by FROM group_moderators WHERE conversation_id = ? AND user_id = ?',
       [conversationId, modUserId]
     );
     if (!modCheck.success || modCheck.data.length === 0) {
       return res.status(404).json({ error: 'Модератор не найден', code: 'MODERATOR_NOT_FOUND' });
     }
 
-    await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id = ?', [modCheck.data[0].id]);
-    await executeQuery('DELETE FROM group_moderators WHERE id = ?', [modCheck.data[0].id]);
+    const moderatorRecord = modCheck.data[0];
+
+    // Проверяем права
+    if (!isCreator) {
+      // Модератор может снять только тех, кого назначил он сам
+      const modPermCheck = await executeQuery(
+        `SELECT gm.id FROM group_moderators gm
+         JOIN group_moderator_permissions gmp ON gm.id = gmp.moderator_id
+         WHERE gm.conversation_id = ? AND gm.user_id = ? AND gmp.permission_type = 'manage_moderators'`,
+        [conversationId, currentUserId]
+      );
+      if (!modPermCheck.success || modPermCheck.data.length === 0) {
+        return res.status(403).json({ error: 'Нет прав на управление модераторами', code: 'FORBIDDEN' });
+      }
+      // Модератор может снять только тех, кого назначил он сам (assigned_by = currentUserId)
+      if (moderatorRecord.assigned_by !== currentUserId) {
+        return res.status(403).json({ error: 'Нельзя снять модератора, назначенного создателем', code: 'FORBIDDEN' });
+      }
+    }
+
+    await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id = ?', [moderatorRecord.id]);
+    await executeQuery('DELETE FROM group_moderators WHERE id = ?', [moderatorRecord.id]);
 
     res.json({ message: 'Модератор снят' });
 
