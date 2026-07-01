@@ -1173,7 +1173,14 @@ async function handlePostImage(chatId, userId, photos, stateData) {
     if (!photos || photos.length === 0) return;
 
     const photo = photos[photos.length - 1];
-    const file = await bot.getFile(photo.file_id);
+    const fileId = photo.file_id;
+
+    // Дедупликация — не обрабатываем одно фото дважды
+    stateData.processedFiles = stateData.processedFiles || [];
+    if (stateData.processedFiles.includes(fileId)) return;
+    stateData.processedFiles.push(fileId);
+
+    const file = await bot.getFile(fileId);
     const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
 
     const response = await fetch(fileUrl);
