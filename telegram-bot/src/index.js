@@ -855,9 +855,11 @@ async function handleMessagesAction(chatId, userId, token) {
 async function handleReplyGroupMessageAction(chatId, userId, conversationId, userFrom) {
   try {
     console.log(`📝 Пользователь ${userId} хочет ответить в групповой чат ${conversationId}`);
+    console.log(`📝 userFrom:`, JSON.stringify(userFrom));
 
     // Получаем информацию о группе
     const session = await createSession(userId, userFrom);
+    console.log(`📝 Session создана:`, session?.token ? 'ok' : 'fail');
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
 
     const response = await fetch(`${apiUrl}/api/messages/${conversationId}?limit=1`, {
