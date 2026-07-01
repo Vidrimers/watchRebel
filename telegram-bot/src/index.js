@@ -435,6 +435,11 @@ bot.on('callback_query', async (query) => {
       const feedPage = parseInt(data.replace('feed_page_', '')) || 0;
       const feedSession = await createSession(userId, query.from);
       await handleFeedAction(chatId, userId, feedSession.token, feedPage);
+    } else if (data.startsWith('msg_page_')) {
+      // Пагинация сообщений: msg_page_{page}
+      const msgPage = parseInt(data.replace('msg_page_', '')) || 0;
+      const msgSession = await createSession(userId, query.from);
+      await handleMessagesAction(chatId, userId, msgSession.token, msgPage);
     } else if (data === 'main_menu') {
       // Возврат в главное меню
       await showMainMenu(chatId, query.from);
@@ -786,45 +791,26 @@ async function handleInviteAction(chatId, userId, token) {
  * @param {string} userId - ID пользователя
  * @param {string} token - Токен сессии для авторизации
  */
-async function handleMessagesAction(chatId, userId, token) {
+async function handleMessagesAction(chatId, userId, token, page = 0) {
   try {
-    console.log(`📝 Запрос диалогов для пользователя ${userId}`);
-    
-    // Получаем список диалогов через API
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
-    const url = `${apiUrl}/api/messages/conversations`;
-    console.log(`📡 Отправка запроса к: ${url}`);
-    
-    const response = await fetch(url, {
+    const response = await fetch(`${apiUrl}/api/messages/conversations`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    console.log(`📥 Ответ API: статус ${response.status}`);
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`❌ API ошибка ${response.status}:`, errorData);
-      throw new Error(`API вернул ошибку: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`API: ${response.status}`);
     const conversations = await response.json();
-    console.log(`✅ Получено диалогов: ${conversations.length}`);
 
-    // Если нет диалогов
-    if (conversations.length === 0) {
+    if (!conversations || conversations.length === 0) {
       await bot.sendMessage(
         chatId,
-        '💬 <b>Сообщения</b>\n\n' +
-        'У вас пока нет диалогов.\n\n' +
-        'Найдите пользователя на сайте и отправьте ему сообщение!',
+        '💬 <b>Сообщения</b>\n\nУ вас пока нет диалогов.\nНайдите пользователя на сайте и отправьте сообщение!',
         {
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [[
-              { text: '🌐 Открыть сайт', url: `${publicUrl}/messages?session=${token}` }
+              { text: '🌐 Открыть сайт', url: `${publicUrl}/messages` }
             ]]
           }
         }
@@ -832,90 +818,61 @@ async function handleMessagesAction(chatId, userId, token) {
       return;
     }
 
-    // Фильтруем только диалоги с непрочитанными сообщениями
-    const unreadConversations = conversations.filter(c => c.unreadCount > 0);
+    const limit = 5;
+    const offset = page * limit;
+    const pageConvs = conversations.slice(offset, offset + limit);
+    const hasMore = offset + limit < conversations.length;
 
-    if (unreadConversations.length === 0) {
-      // Если нет непрочитанных, показываем все диалоги
-      let messageText = '💬 <b>Сообщения</b>\n\n';
-      messageText += `У вас ${conversations.length} диалог(ов), но нет новых сообщений.\n\n`;
-      messageText += '<b>Последние диалоги:</b>\n\n';
+    // Считаем непрочитанные
+    const unreadTotal = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
 
-      // Показываем первые 5 диалогов
-      const displayConversations = conversations.slice(0, 5);
-      displayConversations.forEach((conv, index) => {
-        const lastMessage = conv.lastMessage ? 
-          (conv.lastMessage.length > 30 ? conv.lastMessage.substring(0, 30) + '...' : conv.lastMessage) : 
-          'Нет сообщений';
-        
-        messageText += `${index + 1}. <b>${conv.otherUser.displayName}</b>\n`;
-        messageText += `   ${lastMessage}\n\n`;
-      });
-
-      await bot.sendMessage(
-        chatId,
-        messageText,
-        {
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [[
-              { text: '🌐 Открыть все сообщения', url: `${publicUrl}/messages?session=${token}` }
-            ]]
-          }
-        }
-      );
-      return;
+    let text = '💬 <b>Сообщения</b>\n\n';
+    if (unreadTotal > 0) {
+      text += `📬 ${unreadTotal} непрочитанных\n\n`;
     }
+    text += `Диалоги ${offset + 1}-${Math.min(offset + limit, conversations.length)} из ${conversations.length}:\n\n`;
 
-    // Формируем сообщение с непрочитанными диалогами
-    let messageText = '💬 <b>Новые сообщения</b>\n\n';
-    messageText += `У вас ${unreadConversations.length} диалог(ов) с новыми сообщениями:\n\n`;
+    const buttons = [];
 
-    // Формируем инлайн-кнопки для каждого диалога
-    const inlineButtons = [];
+    for (const conv of pageConvs) {
+      const name = conv.isGroup ? `👥 ${conv.groupName}` : conv.otherUser?.displayName || 'Неизвестный';
+      const lastMsg = conv.lastMessage
+        ? (conv.lastMessage.length > 40 ? conv.lastMessage.substring(0, 40) + '...' : conv.lastMessage)
+        : 'Нет сообщений';
+      const unread = conv.unreadCount > 0 ? ` (${conv.unreadCount} new)` : '';
+      const time = conv.lastMessageAt
+        ? formatDate(new Date(conv.lastMessageAt))
+        : '';
 
-    unreadConversations.forEach((conv, index) => {
-      const lastMessage = conv.lastMessage ? 
-        (conv.lastMessage.length > 50 ? conv.lastMessage.substring(0, 50) + '...' : conv.lastMessage) : 
-        'Нет сообщений';
-      
-      messageText += `${index + 1}. <b>${conv.otherUser.displayName}</b> (${conv.unreadCount} нов.)\n`;
-      messageText += `   ${lastMessage}\n\n`;
+      text += `💬 <b>${name}</b>${unread}\n`;
+      if (time) text += `📅 ${time}\n`;
+      text += `${lastMsg}\n\n`;
 
-      // Добавляем кнопки для каждого диалога
-      inlineButtons.push([
-        { 
-          text: `💬 Ответить ${conv.otherUser.displayName}`, 
-          callback_data: `reply_message_${conv.otherUser.id}` 
-        }
-      ]);
-    });
-
-    // Добавляем кнопку "Открыть на сайте"
-    inlineButtons.push([
-      { text: '🌐 Открыть все сообщения', url: `${publicUrl}/messages?session=${token}` }
-    ]);
-
-    await bot.sendMessage(
-      chatId,
-      messageText,
-      {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: inlineButtons
-        }
+      // Кнопка "Ответить" — для личных чатов, "Открыть" — для групп
+      if (conv.isGroup) {
+        buttons.push([{ text: `💬 ${name.substring(0, 30)}`, url: `${publicUrl}/messages?conversation=${conv.id}` }]);
+      } else {
+        buttons.push([{ text: `💬 Ответить ${name.substring(0, 25)}`, callback_data: `reply_message_${conv.otherUser.id}` }]);
       }
-    );
+    }
 
-    console.log(`✅ Список сообщений отправлен пользователю ${userId}`);
+    // Навигация
+    const navRow = [];
+    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `msg_page_${page - 1}` });
+    navRow.push({ text: '🏠 Меню', callback_data: 'main_menu' });
+    if (hasMore) navRow.push({ text: '▶️ Вперёд', callback_data: `msg_page_${page + 1}` });
+    buttons.push(navRow);
+
+    // Кнопка "Открыть все на сайте"
+    buttons.push([{ text: '🌐 Открыть на сайте', url: `${publicUrl}/messages` }]);
+
+    await bot.sendMessage(chatId, text, {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: buttons }
+    });
   } catch (error) {
-    console.error('❌ Ошибка получения сообщений:', error.message);
-    
-    await bot.sendMessage(
-      chatId,
-      '⚠️ Произошла ошибка при загрузке сообщений. Попробуйте позже.',
-      { parse_mode: 'HTML' }
-    );
+    console.error('Ошибка загрузки сообщений:', error.message);
+    await bot.sendMessage(chatId, '⚠️ Ошибка загрузки сообщений. Попробуйте позже.');
   }
 }
 
