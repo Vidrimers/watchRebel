@@ -1166,7 +1166,7 @@ async function showMainMenu(chatId, userFrom) {
 }
 
 /**
- * Обработка загрузки изображения для поста — собирает файлы
+ * Обработка загрузки изображения для поста — скачивает во временную папку
  */
 async function handlePostImage(chatId, userId, photos, stateData) {
   try {
@@ -1179,36 +1179,20 @@ async function handlePostImage(chatId, userId, photos, stateData) {
     const response = await fetch(fileUrl);
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    const session = await createSession(userId, stateData.userFrom);
-    const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
+    // Сохраняем во временную папку
+    const fs = await import('fs');
+    const path = await import('path');
+    const tmpDir = '/tmp/watchrebel_bot';
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+    const fileName = `post_${userId}_${Date.now()}.jpg`;
+    const filePath = path.join(tmpDir, fileName);
+    fs.writeFileSync(filePath, buffer);
 
-    const FormData = (await import('form-data')).default;
-    const formData = new FormData();
-    formData.append('image', buffer, {
-      filename: `post_${Date.now()}.jpg`,
-      contentType: 'image/jpeg'
-    });
-
-    const uploadResponse = await fetch(`${apiUrl}/api/wall/images`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.token}`,
-        ...formData.getHeaders()
-      },
-      body: formData
-    });
-
-    if (uploadResponse.ok) {
-      const uploadData = await uploadResponse.json();
-      const imageUrl = uploadData.url || uploadData.imageUrl;
-      if (imageUrl) {
-        // Сохраняем изображение в состояние
-        stateData.images = stateData.images || [];
-        stateData.images.push(imageUrl);
-        setUserState(userId, 'awaiting_post_image', stateData);
-        await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`);
-      }
-    }
+    // Сохраняем путь в состояние
+    stateData.images = stateData.images || [];
+    stateData.images.push(filePath);
+    setUserState(userId, 'awaiting_post_image', stateData);
+    await bot.sendMessage(chatId, `✅ Изображение ${stateData.images.length} добавлено. Можно отправить ещё или нажать "Опубликовать".`);
   } catch (error) {
     console.error('Ошибка загрузки изображения:', error.message);
     await bot.sendMessage(chatId, '⚠️ Ошибка загрузки изображения. Попробуйте ещё раз.');
@@ -1248,28 +1232,29 @@ async function publishPost(chatId, userId, content, imageUrls, userFrom) {
 
     // 2. Если есть изображения — загружаем к посту
     if (imageUrls && imageUrls.length > 0 && postId) {
-      for (const imageUrl of imageUrls) {
+      const fs = await import('fs');
+      for (const filePath of imageUrls) {
         try {
-          // Скачиваем изображение и загружаем через /api/wall/images
-          const imgResponse = await fetch(imageUrl);
-          const buffer = Buffer.from(await imgResponse.arrayBuffer());
+          if (!fs.existsSync(filePath)) continue;
+          const buffer = fs.readFileSync(filePath);
 
           const FormData = (await import('form-data')).default;
           const formData = new FormData();
           formData.append('postId', postId);
           formData.append('images', buffer, {
-            filename: `post_img_${Date.now()}.jpg`,
+            filename: path.basename(filePath),
             contentType: 'image/jpeg'
           });
 
-          await fetch(`${apiUrl}/api/wall/images`, {
-            method: 'POST',
+          await axios.post(`${apiUrl}/api/wall/images`, formData, {
             headers: {
               'Authorization': `Bearer ${session.token}`,
               ...formData.getHeaders()
-            },
-            body: formData
+            }
           });
+
+          // Удаляем временный файл
+          fs.unlinkSync(filePath);
         } catch (imgErr) {
           console.error('Ошибка загрузки изображения к посту:', imgErr.message);
         }
