@@ -413,18 +413,26 @@ bot.on('callback_query', async (query) => {
       const page = parseInt(parts[1]) || 0;
       await handleListItemsAction(chatId, userId, listId, page);
     } else if (data.startsWith('wl_page_')) {
-      // Пагинация watchlist: wl_page_{page}
-      const page = parseInt(data.replace('wl_page_', '')) || 0;
+      // Пагинация watchlist: wl_page_{type}_{page}
+      const parts = data.replace('wl_page_', '').split('_');
+      const wlType = parts[0];
+      const page = parseInt(parts[1]) || 0;
       const session = await createSession(userId, query.from);
-      await handleWatchlistAction(chatId, userId, session.token, page);
+      await handleWatchlistAction(chatId, userId, session.token, page, wlType);
+    } else if (data.startsWith('wl_type_')) {
+      // Выбор типа в watchlist: wl_type_{type}_{page}
+      const parts = data.replace('wl_type_', '').split('_');
+      const wlType = parts[0];
+      const page = parseInt(parts[1]) || 0;
+      const session = await createSession(userId, query.from);
+      await handleWatchlistAction(chatId, userId, session.token, page, wlType);
     } else if (data.startsWith('share_movie_')) {
       // Поделиться фильмом: share_movie_{tmdbId}
       const tmdbId = data.replace('share_movie_', '');
       await handleShareMovieAction(chatId, tmdbId);
     } else if (data === 'main_menu') {
       // Возврат в главное меню
-      const session = await createSession(userId, query.from);
-      await handleMenuAction(chatId, userId, 'show_menu', query.from);
+      await showMainMenu(chatId, query.from);
     }
   } catch (error) {
     console.error('Ошибка обработки callback:', error.message);
@@ -574,9 +582,19 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
       }
     },
     'menu_watchlist': {
-      text: '⭐ <b>Хочу посмотреть</b>\n\nЗагружаю...',
+      text: '⭐ <b>Хочу посмотреть</b>\n\nЧто хотите посмотреть?',
       handler: async () => {
-        await handleWatchlistAction(chatId, userId, session.token, 0);
+        // Показываем выбор: Фильмы или Сериалы
+        await bot.sendMessage(chatId, '⭐ <b>Хочу посмотреть</b>\n\nВыберите:', {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '🎬 Фильмы', callback_data: 'wl_type_movie_0' }],
+              [{ text: '📺 Сериалы', callback_data: 'wl_type_tv_0' }],
+              [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
+            ]
+          }
+        });
       }
     },
     'menu_feed': {
@@ -880,7 +898,7 @@ async function handleMessagesAction(chatId, userId, token) {
 async function handleUserListsAction(chatId, userId, token, mediaType) {
   try {
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
-    const response = await fetch(`${apiUrl}/api/lists?media_type=${mediaType}`, {
+    const response = await fetch(`${apiUrl}/api/lists?mediaType=${mediaType}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -942,19 +960,20 @@ async function handleListItemsAction(chatId, userId, listId, page) {
     const token = session.token;
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const limit = 5;
-    const offset = page * limit;
 
-    const response = await fetch(`${apiUrl}/api/lists/${listId}/items?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`${apiUrl}/api/lists/${listId}/items`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!response.ok) throw new Error(`API: ${response.status}`);
-    const data = await response.json();
-    const items = data.items || data || [];
-    const total = data.total || items.length;
+    const allItems = await response.json();
+    const items = Array.isArray(allItems) ? allItems : (allItems.items || []);
+    const total = items.length;
+    const offset = page * limit;
+    const pageItems = items.slice(offset, offset + limit);
 
-    if (!items || items.length === 0) {
+    if (!pageItems || pageItems.length === 0) {
       await bot.sendMessage(
         chatId,
         '📋 Список пуст.',
@@ -967,14 +986,14 @@ async function handleListItemsAction(chatId, userId, listId, page) {
     let text = `📋 <b>Список</b> (фильмы ${offset + 1}-${Math.min(offset + limit, total)} из ${total}):\n\n`;
     const buttons = [];
 
-    for (const item of items) {
+    for (const item of pageItems) {
       const title = item.title || item.name || 'Без названия';
       const originalTitle = item.originalTitle || item.original_title || '';
       const year = item.releaseDate ? new Date(item.releaseDate).getFullYear() : (item.release_date ? new Date(item.release_date).getFullYear() : '');
       const rating = item.voteAverage || item.vote_average || item.rating || '';
       const genres = item.genres || '';
 
-      text += `🎬 *${title}*`;
+      text += `🎬 <b>${title}</b>`;
       if (originalTitle && originalTitle !== title) text += ` (${originalTitle})`;
       text += '\n';
       if (genres) text += `   Жанр: ${genres}`;
@@ -998,7 +1017,7 @@ async function handleListItemsAction(chatId, userId, listId, page) {
     buttons.push(navRow);
 
     await bot.sendMessage(chatId, text, {
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       reply_markup: { inline_keyboard: buttons }
     });
   } catch (error) {
@@ -1010,23 +1029,25 @@ async function handleListItemsAction(chatId, userId, listId, page) {
 /**
  * Показать watchlist (пагинация по 5)
  */
-async function handleWatchlistAction(chatId, userId, token, page) {
+async function handleWatchlistAction(chatId, userId, token, page, mediaType) {
   try {
     const apiUrl = process.env.LOCAL_API_URL || process.env.API_URL || 'http://localhost:1313';
     const limit = 5;
     const offset = page * limit;
 
-    const response = await fetch(`${apiUrl}/api/watchlist?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`${apiUrl}/api/watchlist?limit=${limit}&offset=${offset}&mediaType=${mediaType}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!response.ok) throw new Error(`API: ${response.status}`);
     const data = await response.json();
-    const items = data.items || data || [];
-    const total = data.total || items.length;
+    const allItems = data.items || data || [];
+    const items = Array.isArray(allItems) ? allItems : [];
+    const total = items.length;
+    const pageItems = items.slice(offset, offset + limit);
 
-    if (!items || items.length === 0) {
+    if (!pageItems || pageItems.length === 0) {
       await bot.sendMessage(
         chatId,
         '⭐ <b>Хочу посмотреть</b>\n\nСписок пуст.\nДобавьте фильмы на сайте.',
@@ -1045,15 +1066,14 @@ async function handleWatchlistAction(chatId, userId, token, page) {
     let text = `⭐ <b>Хочу посмотреть</b> (${offset + 1}-${Math.min(offset + limit, total)} из ${total}):\n\n`;
     const buttons = [];
 
-    for (const item of items) {
+    for (const item of pageItems) {
       const title = item.title || item.name || 'Без названия';
       const originalTitle = item.originalTitle || item.original_title || '';
       const year = item.releaseDate ? new Date(item.releaseDate).getFullYear() : (item.release_date ? new Date(item.release_date).getFullYear() : '');
       const rating = item.voteAverage || item.vote_average || item.rating || '';
-      const mediaType = item.mediaType || item.media_type || 'movie';
       const typeLabel = mediaType === 'tv' ? '📺 Сериал' : '🎬 Фильм';
 
-      text += `${typeLabel} *${title}*`;
+      text += `${typeLabel} <b>${title}</b>`;
       if (originalTitle && originalTitle !== title) text += ` (${originalTitle})`;
       text += '\n';
       if (year) text += `   Год: ${year}`;
@@ -1068,19 +1088,70 @@ async function handleWatchlistAction(chatId, userId, token, page) {
     }
 
     const navRow = [];
-    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `wl_page_${page - 1}` });
+    if (page > 0) navRow.push({ text: '◀️ Назад', callback_data: `wl_page_${mediaType}_${page - 1}` });
     navRow.push({ text: '🏠 Меню', callback_data: 'main_menu' });
-    if (offset + limit < total) navRow.push({ text: '▶️ Вперёд', callback_data: `wl_page_${page + 1}` });
+    if (offset + limit < total) navRow.push({ text: '▶️ Вперёд', callback_data: `wl_page_${mediaType}_${page + 1}` });
     buttons.push(navRow);
 
     await bot.sendMessage(chatId, text, {
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       reply_markup: { inline_keyboard: buttons }
     });
   } catch (error) {
     console.error('Ошибка загрузки watchlist:', error.message);
     await bot.sendMessage(chatId, '⚠️ Ошибка загрузки. Попробуйте позже.');
   }
+}
+
+/**
+ * Показать главное меню
+ */
+async function showMainMenu(chatId, userFrom) {
+  const session = await createSession(userFrom.id.toString(), userFrom);
+  const menuButtons = [
+    [
+      { text: '🎬 Мои фильмы', callback_data: 'menu_movies' },
+      { text: '📺 Мои сериалы', callback_data: 'menu_tv' }
+    ],
+    [
+      { text: '⭐ Хочу посмотреть', callback_data: 'menu_watchlist' },
+      { text: '📰 Лента', callback_data: 'menu_feed' }
+    ],
+    [
+      { text: '💬 Сообщения', callback_data: 'menu_messages' },
+      { text: '🔔 Уведомления', callback_data: 'menu_notifications' }
+    ],
+    [
+      { text: '👤 Мой профиль', callback_data: 'menu_profile' }
+    ],
+    [
+      { text: '👥 Пригласить друга', callback_data: 'menu_invite' }
+    ],
+    [
+      { text: '🐛 Багрепорты и предложения', callback_data: 'menu_bug_report' }
+    ],
+    [
+      { text: '⚙️ Настройки', callback_data: 'menu_settings' }
+    ],
+    [
+      { text: '🔔 Настройки уведомлений', callback_data: 'settings_notifications' }
+    ]
+  ];
+
+  if (!publicUrl.includes('localhost')) {
+    menuButtons.push([
+      { text: '🌐 Открыть сайт', url: `${publicUrl}?session=${session.token}` }
+    ]);
+  }
+
+  await bot.sendMessage(
+    chatId,
+    '<b>📱 Главное меню</b>\n\nВыберите действие:',
+    {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: menuButtons }
+    }
+  );
 }
 
 /**
