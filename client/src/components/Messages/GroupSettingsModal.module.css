@@ -198,17 +198,6 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-:global(.dark) .modal {
-  background: var(--bg-primary-dark, #1a1a1a);
-  border-color: var(--border-color-dark, #444);
-}
-
-:global(.dark) .input {
-  background: var(--bg-input-dark, #2a2a2a);
-  color: var(--text-primary-dark, #e0e0e0);
-  border-color: var(--border-color-dark, #444);
-}
-
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;

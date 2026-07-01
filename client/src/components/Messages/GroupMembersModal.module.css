@@ -485,16 +485,6 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-:global(.dark) .badgeCreator {
-  background: rgba(234, 179, 8, 0.2);
-  color: #fbbf24;
-}
-
-:global(.dark) .badgeMod {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-}
-
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;

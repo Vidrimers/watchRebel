@@ -212,30 +212,6 @@
   cursor: not-allowed;
 }
 
-:global(.dark) .modal {
-  background: var(--bg-primary-dark, #1a1a1a);
-  border-color: var(--border-color-dark, #444);
-}
-
-:global(.dark) .input {
-  background: var(--bg-input-dark, #2a2a2a);
-  color: var(--text-primary-dark, #e0e0e0);
-  border-color: var(--border-color-dark, #444);
-}
-
-:global(.dark) .friendItem:hover {
-  background: var(--hover-bg-dark, #3a3a3a);
-}
-
-:global(.dark) .friendItem.selected {
-  background: rgba(99, 102, 241, 0.2);
-}
-
-:global(.dark) .cancelBtn {
-  border-color: var(--border-color-dark, #444);
-  color: var(--text-secondary-dark, #aaa);
-}
-
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;
