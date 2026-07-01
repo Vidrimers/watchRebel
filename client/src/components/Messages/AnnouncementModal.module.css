@@ -146,6 +146,9 @@
   cursor: pointer;
   font-size: 0.8125rem;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .addImageBtn:hover:not(:disabled) {
