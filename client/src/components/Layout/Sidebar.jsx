@@ -87,13 +87,20 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
     fetchFeedCount();
     const interval = setInterval(fetchFeedCount, 60000);
 
-    // Сбрасываем счётчик при просмотре ленты
-    const handleFeedViewed = () => setFeedCount(0);
-    window.addEventListener('feed-viewed', handleFeedViewed);
+    // Проверяем localStorage — если лента была просмотрена, обнуляем badge
+    const checkFeedViewed = () => {
+      const lastView = localStorage.getItem('feedViewed');
+      if (lastView) {
+        setFeedCount(0);
+        localStorage.removeItem('feedViewed');
+      }
+    };
+    checkFeedViewed();
+    const viewedInterval = setInterval(checkFeedViewed, 2000);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('feed-viewed', handleFeedViewed);
+      clearInterval(viewedInterval);
     };
   }, [user?.id]);
 

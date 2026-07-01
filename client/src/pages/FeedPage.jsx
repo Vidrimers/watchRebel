@@ -20,9 +20,7 @@ const FeedPage = () => {
   // Отмечаем ленту как просмотренную при открытии
   useEffect(() => {
     if (!user) return;
-    // Сразу обнуляем badge в сайдбаре
-    window.dispatchEvent(new CustomEvent('feed-viewed'));
-    // Обновляем last_feed_view на сервере в фоне
+    localStorage.setItem('feedViewed', Date.now().toString());
     api.post('/feed/mark-viewed').catch(() => {});
   }, [user?.id]);
 
