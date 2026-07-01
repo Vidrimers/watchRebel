@@ -5,6 +5,44 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 /**
+ * GET /api/feed/unread-count
+ * Получить количество новых постов друзей с момента последнего просмотра ленты
+ */
+router.get('/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Получаем список друзей
+    const friendsResult = await executeQuery(
+      `SELECT friend_id FROM friends WHERE user_id = ?`,
+      [userId]
+    );
+
+    if (!friendsResult.success || friendsResult.data.length === 0) {
+      return res.json({ count: 0 });
+    }
+
+    const friendIds = friendsResult.data.map(f => f.friend_id);
+    const placeholders = friendIds.map(() => '?').join(',');
+
+    // Считаем посты друзей за последние 24 часа (упрощённый подход)
+    const countResult = await executeQuery(
+      `SELECT COUNT(*) as cnt FROM wall_posts 
+       WHERE user_id IN (${placeholders})
+       AND created_at > datetime('now', '-1 day')`,
+      friendIds
+    );
+
+    const count = countResult.success ? countResult.data[0].cnt : 0;
+    res.json({ count });
+
+  } catch (error) {
+    console.error('Ошибка получения feed unread-count:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
  * GET /api/feed/:userId
  * Получить ленту активности друзей, самого пользователя и объявлений администратора
  * Query params: limit (default 20), offset (default 0)

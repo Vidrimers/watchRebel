@@ -21,6 +21,8 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isHoveringUserInfo, setIsHoveringUserInfo] = useState(false);
   const [friendRequestsCount, setFriendRequestsCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [feedCount, setFeedCount] = useState(0);
   const [bugStats, setBugStats] = useState({ new: 0, in_progress: 0 });
   const notificationButtonRef = useRef(null);
   const location = useLocation();
@@ -50,6 +52,40 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
     // Обновляем каждые 30 секунд
     const interval = setInterval(fetchFriendRequests, 30000);
     
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Загружаем количество непрочитанных сообщений
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await api.get('/messages/unread-count');
+        setUnreadMessagesCount(response.data.count || 0);
+      } catch (error) {
+        console.error('Ошибка загрузки unread-count:', error);
+      }
+    };
+
+    fetchUnreadMessages();
+    const interval = setInterval(fetchUnreadMessages, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Загружаем количество новых постов в ленте
+  useEffect(() => {
+    const fetchFeedCount = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await api.get('/feed/unread-count');
+        setFeedCount(response.data.count || 0);
+      } catch (error) {
+        console.error('Ошибка загрузки feed-count:', error);
+      }
+    };
+
+    fetchFeedCount();
+    const interval = setInterval(fetchFeedCount, 60000);
     return () => clearInterval(interval);
   }, [user?.id]);
 
@@ -225,19 +261,25 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
           <li className={styles.navItem}>
             <a href="/feed" className={styles.navLink} title="Лента" onClick={handleLinkClick}>
               <Icon name="feed" size="medium" /> {!narrow && 'Лента'}
+              {feedCount > 0 && (
+                <span className={styles.navBadge}>{feedCount}</span>
+              )}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/friends" className={styles.navLink} title="Друзья" onClick={handleLinkClick}>
               <Icon name="friends" size="medium" /> {!narrow && 'Друзья'}
               {friendRequestsCount > 0 && (
-                <span className={styles.friendRequestsBadge}>{friendRequestsCount}</span>
+                <span className={styles.navBadge}>{friendRequestsCount}</span>
               )}
             </a>
           </li>
           <li className={styles.navItem}>
             <a href="/messages" className={styles.navLink} title="Сообщения" onClick={handleLinkClick}>
               <Icon name="messages" size="medium" /> {!narrow && 'Сообщения'}
+              {unreadMessagesCount > 0 && (
+                <span className={styles.navBadge}>{unreadMessagesCount}</span>
+              )}
             </a>
           </li>
           <li className={styles.navItem}>

@@ -9,6 +9,48 @@ import { uploadMessageFiles, uploadAvatar } from '../middleware/upload.js';
 const router = express.Router();
 
 /**
+ * GET /api/messages/unread-count
+ * Получить суммарное количество непрочитанных сообщений
+ */
+router.get('/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Личные диалоги: непрочитанные где receiver_id = userId
+    const directResult = await executeQuery(
+      `SELECT COUNT(*) as cnt FROM messages 
+       WHERE receiver_id = ? AND sender_id != ? AND is_read = 0
+       AND conversation_id IN (
+         SELECT id FROM conversations WHERE is_group IS NULL OR is_group = 0
+       )`,
+      [userId, userId]
+    );
+
+    // Групповые диалоги: непрочитанные где sender_id != userId
+    const groupResult = await executeQuery(
+      `SELECT COUNT(*) as cnt FROM messages 
+       WHERE conversation_id IN (
+         SELECT cm.conversation_id FROM conversation_members cm 
+         WHERE cm.user_id = ? AND cm.left_at IS NULL
+       ) AND sender_id != ? AND is_read = 0
+       AND conversation_id IN (
+         SELECT id FROM conversations WHERE is_group = 1
+       )`,
+      [userId, userId]
+    );
+
+    const directCount = directResult.success ? directResult.data[0].cnt : 0;
+    const groupCount = groupResult.success ? groupResult.data[0].cnt : 0;
+
+    res.json({ count: directCount + groupCount });
+
+  } catch (error) {
+    console.error('Ошибка получения unread-count:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
  * GET /api/messages/conversations
  * Получить список всех диалогов текущего пользователя
  * Диалоги отсортированы по дате последнего сообщения (новые сверху)
