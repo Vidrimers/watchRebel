@@ -232,12 +232,23 @@ const AnnouncementsPage = () => {
 
     try {
       setSendingToSelf(true);
-      
+
+      let imageUrl = null;
+      if (telegramImage) {
+        const formData = new FormData();
+        formData.append('image', telegramImage);
+        const uploadRes = await api.post('/admin/advertising/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data?.url) imageUrl = uploadRes.data.url;
+      }
+
       await api.post('/admin/telegram-announcement-self', {
-        content: telegramAnnouncement.trim()
+        content: telegramAnnouncement.trim(),
+        imageUrl,
+        type: 'announcement'
       });
       
-      // Показываем уведомление об успехе
       alert('Объявление отправлено вам в Telegram!');
     } catch (err) {
       console.error('Ошибка отправки объявления себе:', err);

@@ -86,8 +86,21 @@ const AdvertisingAdminPage = () => {
     if (!telegramText.trim()) return;
     try {
       setSendingToSelf(true);
+
+      let imageUrl = null;
+      if (telegramImage) {
+        const formData = new FormData();
+        formData.append('image', telegramImage);
+        const uploadRes = await api.post('/admin/advertising/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data?.url) imageUrl = uploadRes.data.url;
+      }
+
       await api.post('/admin/telegram-announcement-self', {
-        content: telegramText.trim()
+        content: telegramText.trim(),
+        imageUrl,
+        type: 'advertising'
       });
       alert('Реклама отправлена вам в Telegram!');
     } catch (err) {

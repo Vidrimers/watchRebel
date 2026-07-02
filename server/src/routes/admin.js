@@ -1034,21 +1034,54 @@ router.post('/telegram-announcement', async (req, res) => {
 
 /**
  * POST /api/admin/telegram-announcement-self
- * Отправить объявление только себе в Telegram (для проверки)
- * Только для администратора
+ * Отправить объявление/рекламу только текущему админу (для проверки)
  * 
  * Body:
- * - content: string (текст объявления)
+ * - content: string (текст)
+ * - imageUrl: string (опционально)
+ * - type: 'announcement' | 'advertising'
  */
 router.post('/telegram-announcement-self', async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, imageUrl, type } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ 
-        error: 'Содержание объявления не может быть пустым',
+        error: 'Содержание не может быть пустым',
         code: 'EMPTY_CONTENT' 
       });
+    }
+
+    const header = type === 'advertising' ? '📣 *Реклама*' : '📢 *Объявление*';
+    const fullMessage = `${header}\n\n${content.trim()}`;
+
+    const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
+    const fullImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${publicUrl}${imageUrl}`) : null;
+
+    if (fullImageUrl) {
+      await sendTelegramNotification(req.user.id, fullMessage, {
+        parse_mode: 'MarkdownV2',
+        photo: fullImageUrl
+      });
+    } else {
+      await notifyModeration(req.user.id, 'announcement', {
+        content: fullMessage
+      });
+    }
+
+    res.json({
+      message: 'Отправлено вам в Telegram',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Ошибка отправки:', error);
+    res.status(500).json({ 
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR' 
+    });
+  }
+});
     }
 
     // Отправляем объявление только текущему админу
