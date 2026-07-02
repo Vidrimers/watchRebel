@@ -1341,6 +1341,98 @@ router.put('/reports/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/admin/advertising
+ * Создать рекламный пост на стены всех пользователей
+ *
+ * Body:
+ * - content: string (текст рекламы)
+ * - linkUrl: string (опционально, ссылка)
+ * - linkLabel: string (опционально, текст ссылки)
+ * - imageUrls: string[] (опционально, изображения)
+ */
+router.post('/advertising', async (req, res) => {
+  try {
+    const { content, linkUrl, linkLabel, imageUrls } = req.body;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Текст обязателен', code: 'EMPTY_CONTENT' });
+    }
+
+    const { v4: uuidv4 } = await import('uuid');
+    const postId = uuidv4();
+
+    // Сохраняем рекламный пост
+    const result = await executeQuery(
+      `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+      [postId, content.trim(), linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка создания рекламного поста', code: 'DATABASE_ERROR' });
+    }
+
+    res.status(201).json({ id: postId, message: 'Рекламный пост создан' });
+  } catch (error) {
+    console.error('Ошибка создания рекламного поста:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/advertising
+ * Получить все рекламные посты
+ */
+router.get('/advertising', async (req, res) => {
+  try {
+    const result = await executeQuery(
+      `SELECT ap.*, u.display_name as creator_name
+       FROM advertising_posts ap
+       LEFT JOIN users u ON ap.created_by = u.id
+       ORDER BY ap.created_at DESC`
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения рекламных постов' });
+    }
+
+    const posts = result.data.map(p => ({
+      id: p.id,
+      content: p.content,
+      linkUrl: p.link_url,
+      linkLabel: p.link_label,
+      imageUrls: p.image_urls ? JSON.parse(p.image_urls) : [],
+      createdBy: p.created_by,
+      creatorName: p.creator_name,
+      createdAt: p.created_at
+    }));
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/admin/advertising/:id
+ * Удалить рекламный пост
+ */
+router.delete('/advertising/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await executeQuery('DELETE FROM advertising_posts WHERE id = ?', [id]);
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка удаления' });
+    }
+    res.json({ message: 'Рекламный пост удалён' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
  * DELETE /api/admin/reports/:id
  * Удалить жалобу
  */

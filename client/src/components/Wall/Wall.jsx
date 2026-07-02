@@ -41,13 +41,18 @@ const Wall = ({ userId, isOwnProfile = false, wallPrivacy = 'all', isFriend = fa
     { key: 'media', label: 'Медиа' }
   ];
 
-  const filteredPosts = activeFilter === 'all' 
-    ? posts 
-    : activeFilter === 'rating_review'
-      ? posts.filter(p => p.postType === 'rating' || p.postType === 'review' || p.rating != null)
-      : activeFilter === 'media'
-        ? posts.filter(p => p.postType === 'media_added' || p.postType === 'media_shared')
-        : posts.filter(p => p.postType === activeFilter);
+  const filteredPosts = activeFilter === 'all'
+    ? posts
+    : posts.filter(p =>
+        // Рекламные и объявления всегда видны
+        p.postType === 'advertising' || p.postType === 'announcement' ||
+        // Остальные — по фильтру
+        (activeFilter === 'rating_review'
+          ? (p.postType === 'rating' || p.postType === 'review' || p.rating != null)
+          : activeFilter === 'media'
+            ? (p.postType === 'media_added' || p.postType === 'media_shared')
+            : p.postType === activeFilter)
+      );
 
   // Загрузка постов при монтировании компонента
   useEffect(() => {

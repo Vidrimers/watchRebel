@@ -347,11 +347,42 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       })
     );
 
-    // Объявления добавляем только на первой странице (offset=0)
+    // Получаем рекламные посты
+    const adResult = await executeQuery(
+      `SELECT ap.*, u.display_name, u.avatar_url
+       FROM advertising_posts ap
+       LEFT JOIN users u ON ap.created_by = u.id
+       ORDER BY ap.created_at DESC`
+    );
+
+    const adPosts = [];
+    if (adResult.success) {
+      for (const a of adResult.data) {
+        adPosts.push({
+          id: a.id,
+          userId: a.created_by,
+          postType: 'advertising',
+          content: a.content,
+          linkUrl: a.link_url,
+          linkLabel: a.link_label,
+          imageUrls: a.image_urls ? JSON.parse(a.image_urls) : [],
+          createdAt: a.created_at,
+          editedAt: null,
+          author: {
+            displayName: a.display_name,
+            avatarUrl: a.avatar_url
+          },
+          reactions: [],
+          isAdvertising: true
+        });
+      }
+    }
+
+    // Объявления и реклама добавляем только на первой странице (offset=0)
     let allPosts = postsWithReactions;
     if (offset === 0) {
-      // Объединяем объявления и посты, сортируем по дате
-      allPosts = [...announcementPosts, ...postsWithReactions]
+      // Объединяем объявления, рекламу и посты, сортируем по дате
+      allPosts = [...announcementPosts, ...adPosts, ...postsWithReactions]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 

@@ -465,6 +465,49 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
 
   // Рендер контента в зависимости от типа поста
   const renderPostContent = () => {
+    // Если это рекламный пост
+    if (post.postType === 'advertising' || post.isAdvertising) {
+      return (
+        <div className={styles.advertisingContent}>
+          <div className={styles.advertisingBadge}>
+            <Icon name="announcement" size="medium" color="#f59e0b" />
+            <span>Реклама</span>
+          </div>
+          {post.content && (
+            <LinkifiedText text={post.content} />
+          )}
+          {/* Ссылка */}
+          {post.linkUrl && (
+            <a
+              href={post.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.advertisingLink}
+            >
+              {post.linkLabel || post.linkUrl} →
+            </a>
+          )}
+          {/* Изображения */}
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <div className={styles.announcementImages}>
+              {post.imageUrls.map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className={`${styles.announcementImage} ${styles.announcementImageSingle}`}
+                  onClick={() => handleImageClick(index)}
+                >
+                  <img
+                    src={imageUrl.startsWith('http') ? imageUrl : `${import.meta.env.VITE_API_URL || ''}${imageUrl}`}
+                    alt={`Реклама ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // Если это объявление (по типу или по контенту), всегда используем case 'announcement'
     if (isAnnouncement) {
       return (

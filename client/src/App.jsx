@@ -39,6 +39,7 @@ const MyBugReportsPage = lazy(() => import('./pages/MyBugReportsPage'));
 const BugReportsAdminPage = lazy(() => import('./pages/BugReportsAdminPage'));
 const DatabaseManagementPage = lazy(() => import('./pages/DatabaseManagementPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const AdvertisingAdminPage = lazy(() => import('./pages/AdvertisingAdminPage'));
 const PersonPage = lazy(() => import('./pages/PersonPage'));
 
 // Компонент загрузки для Suspense
@@ -323,13 +324,23 @@ function App() {
               />
 
               {/* Страница жалоб (только для админа) */}
-              <Route 
-                path="/admin/reports" 
+              <Route
+                path="/admin/reports"
                 element={
                   <ProtectedRoute>
                     <ReportsPage />
                   </ProtectedRoute>
-                } 
+                }
+              />
+
+              {/* Страница рекламы (только для админа) */}
+              <Route
+                path="/admin/advertising"
+                element={
+                  <ProtectedRoute>
+                    <AdvertisingAdminPage />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Страница "Мои багрепорты" */}

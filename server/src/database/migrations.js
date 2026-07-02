@@ -439,6 +439,26 @@ export async function runMigrations() {
           }
         });
 
+        // Таблица рекламных постов
+        db.run(`
+          CREATE TABLE IF NOT EXISTS advertising_posts (
+            id TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            link_url TEXT,
+            link_label TEXT,
+            image_urls TEXT DEFAULT '[]',
+            created_by TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+          );
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы advertising_posts:', err.message);
+          } else {
+            console.log('✓ Таблица advertising_posts создана');
+          }
+        });
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())
