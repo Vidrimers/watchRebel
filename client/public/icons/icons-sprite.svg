@@ -231,6 +231,12 @@
     <path d="M6 16v4"/>
   </symbol>
 
+  <!-- Advertising / Реклама (megaphone) -->
+  <symbol id="icon-advertising" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11l18-5v12L3 13v-2z"/>
+    <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+  </symbol>
+
   <!-- Image / Изображение -->
   <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>

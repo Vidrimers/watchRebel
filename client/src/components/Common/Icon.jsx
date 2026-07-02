@@ -49,6 +49,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     delete: '🗑️',
     close: '✕',
     announcement: '📢',
+    advertising: '📣',
     pin: '📍',
     pinned: '📌',
     refresh: '🔄',

@@ -210,7 +210,7 @@ const AdvertisingAdminPage = () => {
       </button>
 
       <h1 className={styles.title}>
-        <Icon name="announcement" size="medium" /> Реклама
+        <Icon name="advertising" size="medium" /> Реклама
       </h1>
 
       {/* Контакты для рекламы */}
@@ -268,8 +268,14 @@ const AdvertisingAdminPage = () => {
         ) : (
           <div className={styles.contactsDisplay}>
             {contactText && <p>{contactText}</p>}
-            <p>Email: {contactEmail}</p>
-            <p>Telegram: {contactTelegram}</p>
+            <p>
+              <span className={styles.contactIcon}><Icon name="email" size="small" /></span>
+              Email: {contactEmail}
+            </p>
+            <p>
+              <span className={styles.contactIcon}><Icon name="telegram" size="small" /></span>
+              Telegram: {contactTelegram}
+            </p>
           </div>
         )}
       </div>

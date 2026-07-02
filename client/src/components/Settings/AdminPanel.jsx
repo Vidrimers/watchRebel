@@ -90,7 +90,7 @@ const AdminPanel = () => {
             onClick={() => navigate('/admin/advertising')}
             className={styles.btnNavigation}
           >
-            <Icon name="announcement" size="small" /> Реклама
+            <Icon name="advertising" size="small" /> Реклама
           </button>
           <button
             onClick={() => navigate('/admin/bug-reports')}
