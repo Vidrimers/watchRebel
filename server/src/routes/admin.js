@@ -1082,35 +1082,6 @@ router.post('/telegram-announcement-self', async (req, res) => {
     });
   }
 });
-    }
-
-    // Отправляем объявление только текущему админу
-    try {
-      await notifyModeration(req.user.id, 'announcement', {
-        content: content.trim()
-      });
-
-      res.json({
-        message: 'Объявление отправлено вам в Telegram',
-        success: true
-      });
-    } catch (err) {
-      console.error('Ошибка отправки объявления:', err);
-      res.status(500).json({ 
-        error: 'Не удалось отправить объявление',
-        code: 'SEND_ERROR',
-        details: err.message
-      });
-    }
-
-  } catch (error) {
-    console.error('Ошибка отправки объявления в Telegram:', error);
-    res.status(500).json({ 
-      error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
-    });
-  }
-});
 
 // ==========================================
 // Управление базой данных
