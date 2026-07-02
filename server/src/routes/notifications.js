@@ -73,8 +73,40 @@ router.get('/', authenticateToken, async (req, res) => {
       relatedUser: n.related_user_id ? {
         displayName: n.related_user_name,
         avatarUrl: n.related_user_avatar
-      } : null
+      } : null,
+      conversationId: (n.type === 'group_mention' || n.type === 'group_announcement') ? n.related_post_id : undefined
     }));
+
+    // Подтягиваем актуальные названия групп для group-уведомлений
+    const groupNotificationTypes = ['group_mention', 'group_announcement'];
+    const groupConvIds = [...new Set(
+      notifications
+        .filter(n => groupNotificationTypes.includes(n.type) && n.conversationId)
+        .map(n => n.conversationId)
+    )];
+
+    if (groupConvIds.length > 0) {
+      const placeholders = groupConvIds.map(() => '?').join(',');
+      const convResult = await executeQuery(
+        `SELECT id, group_name FROM conversations WHERE id IN (${placeholders})`,
+        groupConvIds
+      );
+
+      if (convResult.success && convResult.data.length > 0) {
+        const convMap = {};
+        for (const c of convResult.data) {
+          convMap[c.id] = c.group_name;
+        }
+
+        for (const n of notifications) {
+          if (groupNotificationTypes.includes(n.type) && n.conversationId && convMap[n.conversationId]) {
+            const currentName = convMap[n.conversationId];
+            // Заменяем старое название в кавычках на актуальное
+            n.content = n.content.replace(/"([^"]+)"/, `"${currentName}"`);
+          }
+        }
+      }
+    }
 
     res.json({
       notifications,
