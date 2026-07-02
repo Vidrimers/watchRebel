@@ -925,7 +925,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
       )}
       
       {/* Заголовок поста с именем автора */}
-      {!isAnnouncement && !isFeedView && (
+      {!isSpecialPost && !isFeedView && (
         <div className={styles.postHeader}>
           {/* Логика отображения имени автора */}
           {(() => {
@@ -989,8 +989,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
             {post.editedAt && <span className={styles.editedLabel}> (изменено)</span>}
           </span>
 
-          {/* Кнопки управления (для автора поста или владельца стены, но не для объявлений) */}
-          {!isAnnouncement && currentUser && (
+          {/* Кнопки управления (для автора поста или владельца стены, но не для объявлений и рекламы) */}
+          {!isSpecialPost && currentUser && (
             post.author?.id === currentUser.id || 
             post.wallOwner?.id === currentUser.id
           ) && (
