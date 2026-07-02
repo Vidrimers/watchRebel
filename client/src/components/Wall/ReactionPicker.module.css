@@ -118,9 +118,14 @@
 }
 
 /* Темная тема */
-@media (prefers-color-scheme: dark) {
-  .reactionPicker {
-    background: var(--card-bg-dark, #1f2937);
-    border-color: var(--border-color-dark, #374151);
-  }
+[data-theme="dark"] .reactionPicker,
+[data-theme="dark-neon-obsidian"] .reactionPicker,
+[data-theme="die-my-darling"] .reactionPicker,
+[data-theme="cyberpunk"] .reactionPicker,
+[data-theme="discord"] .reactionPicker,
+[data-theme="steam"] .reactionPicker,
+[data-theme="metal-and-glass"] .reactionPicker,
+[data-theme="material-dark"] .reactionPicker {
+  background: var(--card-bg-dark, #1f2937);
+  border-color: var(--border-color-dark, #374151);
 }
