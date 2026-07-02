@@ -298,6 +298,14 @@ const AdvertisingAdminPage = () => {
     catch (err) { console.error(err); }
   };
 
+  const handleCleanupImages = async () => {
+    if (!confirm('Удалить все неиспользуемые изображения? Файлы, привязанные к активным постам, не будут удалены.')) return;
+    try {
+      const r = await api.post('/admin/advertising/cleanup-images');
+      alert(r.data.message);
+    } catch (err) { console.error(err); setError('Не удалось очистить изображения'); }
+  };
+
   const formatDate = (d) => new Date(d).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   // ===================== RENDER =====================
@@ -528,7 +536,12 @@ const AdvertisingAdminPage = () => {
 
       {/* ===== История ===== */}
       <div className={styles.section}>
-        <h2>История отправленных {isAd ? 'рекламных постов' : 'объявлений'}</h2>
+        <div className={styles.sectionHeader}>
+          <h2>История отправленных {isAd ? 'рекламных постов' : 'объявлений'}</h2>
+          <button onClick={handleCleanupImages} className={styles.btnEdit} title="Удалить неиспользуемые изображения">
+            <Icon name="delete" size="small" /> Очистить изображения
+          </button>
+        </div>
         {loadingHistory ? <p className={styles.loading}>Загрузка...</p> : sentPosts.length === 0 ? <p className={styles.empty}>Пока ничего не отправлено</p> : (
           <div className={styles.sentList}>
             {sentPosts.map(p => (

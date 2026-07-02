@@ -1565,6 +1565,53 @@ router.delete('/sent-posts/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/admin/advertising/cleanup-images
+ * Удалить неиспользуемые изображения (не привязанные ни к какому посту)
+ */
+router.post('/advertising/cleanup-images', async (req, res) => {
+  try {
+    const advertisingDir = path.join(__dirname, '../../uploads/advertising');
+
+    // Проверяем существование директории
+    try { await fs.access(advertisingDir); }
+    catch { return res.json({ message: 'Папка не найдена', deleted: 0 }); }
+
+    const filesOnDisk = await fs.readdir(advertisingDir);
+
+    // Собираем все URL изображений из БД
+    const adResult = await executeQuery('SELECT image_urls FROM advertising_posts');
+    const sentResult = await executeQuery('SELECT image_url FROM sent_posts WHERE image_url IS NOT NULL');
+
+    const referencedUrls = new Set();
+    if (adResult.success) {
+      for (const row of adResult.data) {
+        const urls = JSON.parse(row.image_urls || '[]');
+        urls.forEach(url => referencedUrls.add(url));
+      }
+    }
+    if (sentResult.success) {
+      sentResult.data.forEach(row => referencedUrls.add(row.image_url));
+    }
+
+    let deletedCount = 0;
+    for (const filename of filesOnDisk) {
+      const urlPath = `/uploads/advertising/${filename}`;
+      if (!referencedUrls.has(urlPath)) {
+        await fs.unlink(path.join(advertisingDir, filename)).catch(err =>
+          console.error('Ошибка удаления файла:', err)
+        );
+        deletedCount++;
+      }
+    }
+
+    res.json({ message: `Удалено ${deletedCount} неиспользуемых файлов`, deleted: deletedCount });
+  } catch (error) {
+    console.error('Ошибка очистки:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
  * DELETE /api/admin/reports/:id
  * Удалить жалобу
  */
