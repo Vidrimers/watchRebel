@@ -6,6 +6,27 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 /**
+ * GET /api/settings/ad-pricing (публичный)
+ * Получить все настройки цен рекламы для прайс-листа
+ */
+router.get('/ad-pricing', (req, res) => {
+  const db = getDatabase();
+  db.all(
+    "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'advertising_contacts')",
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('Ошибка:', err);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      const settings = {};
+      rows.forEach(r => { if (r.value) settings[r.key] = r.value; });
+      res.json(settings);
+    }
+  );
+});
+
+/**
  * GET /api/settings/:key
  * Получить значение настройки по ключу (публичный endpoint)
  */
@@ -45,7 +66,6 @@ router.put('/:key', authenticateToken, (req, res) => {
   const userId = req.user.id;
   const db = getDatabase();
 
-  // Проверяем, является ли пользователь админом
   db.get(
     'SELECT is_admin FROM users WHERE id = ?',
     [userId],
@@ -59,7 +79,6 @@ router.put('/:key', authenticateToken, (req, res) => {
         return res.status(403).json({ error: 'Доступ запрещен. Требуются права администратора.' });
       }
 
-      // Обновляем настройку
       db.run(
         `UPDATE site_settings 
          SET value = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
@@ -75,7 +94,6 @@ router.put('/:key', authenticateToken, (req, res) => {
             return res.status(404).json({ error: 'Настройка не найдена' });
           }
 
-          // Получаем обновленную настройку
           db.get(
             'SELECT value, updated_at FROM site_settings WHERE key = ?',
             [key],
@@ -95,27 +113,6 @@ router.put('/:key', authenticateToken, (req, res) => {
           );
         }
       );
-    }
-  );
-});
-
-/**
- * GET /api/settings/ad-pricing (публичный)
- * Получить все настройки цен рекламы для прайс-листа
- */
-router.get('/ad-pricing', (req, res) => {
-  const db = getDatabase();
-  db.all(
-    "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'advertising_contacts')",
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error('Ошибка:', err);
-        return res.status(500).json({ error: 'Ошибка сервера' });
-      }
-      const settings = {};
-      rows.forEach(r => { if (r.value) settings[r.key] = r.value; });
-      res.json(settings);
     }
   );
 });
