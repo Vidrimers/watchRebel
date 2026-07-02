@@ -33,6 +33,8 @@ import styles from './WallPost.module.css';
 const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostUpdated, isFeedView = false, isModal = false }) => {
   // Проверка, является ли пост объявлением администратора (нужно в начале для useEffect)
   const isAnnouncement = post.postType === 'announcement' || post.content?.startsWith('📢 Объявление администратора:');
+  const isAdvertising = post.postType === 'advertising' || post.isAdvertising;
+  const isSpecialPost = isAnnouncement || isAdvertising;
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -1027,7 +1029,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         </div>
 
         {/* Реакции */}
-        {!isAnnouncement && (
+        {!isSpecialPost && (
           <div className={styles.reactionsContainer}>
             {/* Кнопка комментирования */}
             {currentUser && (
@@ -1165,8 +1167,8 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         </>
       )}
 
-      {/* Комментарии к посту (не для объявлений) */}
-      {!isAnnouncement && (
+      {/* Комментарии к посту (не для объявлений и рекламы) */}
+      {!isSpecialPost && (
         <PostComments 
           postId={post.id} 
           isOpen={showComments}
