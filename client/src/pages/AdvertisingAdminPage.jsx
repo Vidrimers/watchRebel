@@ -37,6 +37,46 @@ const AdvertisingAdminPage = () => {
   const [telegramImage, setTelegramImage] = useState(null);
   const [telegramImagePreview, setTelegramImagePreview] = useState(null);
 
+  useEffect(() => {
+    if (!user?.isAdmin) {
+      navigate('/');
+      return;
+    }
+    loadContacts();
+    loadAdPosts();
+  }, [user, navigate]);
+
+  // === Контакты ===
+  const loadContacts = async () => {
+    try {
+      setContactsLoading(true);
+      const response = await api.get('/settings/advertising_contacts');
+      const value = response.data.value || '';
+      const lines = value.split('\n');
+      let email = 'admin@watchrebel.com';
+      let telegram = '@watchrebel_admin';
+      let text = '';
+
+      lines.forEach(line => {
+        const emailMatch = line.match(/Email:\s*(.+)/i);
+        const telegramMatch = line.match(/Telegram:\s*(.+)/i);
+        if (emailMatch) email = emailMatch[1].trim();
+        else if (telegramMatch) telegram = telegramMatch[1].trim();
+        else if (line.trim() && !line.includes('Email:') && !line.includes('Telegram:')) {
+          text += (text ? '\n' : '') + line;
+        }
+      });
+
+      setContactEmail(email);
+      setContactTelegram(telegram);
+      setContactText(text);
+    } catch (err) {
+      console.error('Ошибка загрузки контактов:', err);
+    } finally {
+      setContactsLoading(false);
+    }
+  };
+
   const handleSendTelegramAd = async () => {
     if (!telegramText.trim()) return;
     try {
