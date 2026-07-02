@@ -264,13 +264,30 @@ const AdvertisingAdminPage = () => {
 
   const handleRepeatPost = (post) => {
     const isTg = post.channel === 'telegram';
-    // Переключаем на правильную вкладку
     if (activeTab === 'advertising') {
-      if (isTg) { setTgText(post.content); setTgImage(null); setTgImagePreview(null); }
-      else { setNewAdContent(post.content); setNewAdLinkUrl('https://'); setNewAdLinkLabel(''); setSelectedImages([]); setImagePreviews([]); }
+      if (isTg) {
+        setTgText(post.content);
+        if (post.imageUrl) {
+          const fullUrl = post.imageUrl.startsWith('http') ? post.imageUrl : `${import.meta.env.VITE_API_URL || ''}${post.imageUrl}`;
+          setTgImagePreview(fullUrl);
+        }
+      } else {
+        setNewAdContent(post.content);
+        setNewAdLinkUrl('https://');
+        setNewAdLinkLabel('');
+        setSelectedImages([]); setImagePreviews([]);
+      }
     } else {
-      if (isTg) { setTgText(post.content); setTgImage(null); setTgImagePreview(null); }
-      else { setNewAnnouncement(post.content); setSelectedAnnImages([]); setAnnImagePreviews([]); }
+      if (isTg) {
+        setTgText(post.content);
+        if (post.imageUrl) {
+          const fullUrl = post.imageUrl.startsWith('http') ? post.imageUrl : `${import.meta.env.VITE_API_URL || ''}${post.imageUrl}`;
+          setTgImagePreview(fullUrl);
+        }
+      } else {
+        setNewAnnouncement(post.content);
+        setSelectedAnnImages([]); setAnnImagePreviews([]);
+      }
     }
     setActiveSubTab(isTg ? 'telegram' : 'site');
     window.scrollTo({ top: 0, behavior: 'smooth' });
