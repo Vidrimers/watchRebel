@@ -99,8 +99,6 @@ router.put('/:key', authenticateToken, (req, res) => {
   );
 });
 
-export default router;
-
 /**
  * GET /api/settings/ad-pricing (публичный)
  * Получить все настройки цен рекламы для прайс-листа
@@ -121,3 +119,5 @@ router.get('/ad-pricing', (req, res) => {
     }
   );
 });
+
+export default router;
