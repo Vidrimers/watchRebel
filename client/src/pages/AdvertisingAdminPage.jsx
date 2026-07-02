@@ -22,7 +22,7 @@ const AdvertisingAdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newAdContent, setNewAdContent] = useState('');
-  const [newAdLinkUrl, setNewAdLinkUrl] = useState('');
+  const [newAdLinkUrl, setNewAdLinkUrl] = useState('https://');
   const [newAdLinkLabel, setNewAdLinkLabel] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -195,7 +195,7 @@ const AdvertisingAdminPage = () => {
 
   const handleRepeatPost = (post) => {
     setNewAdContent(post.content);
-    setNewAdLinkUrl('');
+    setNewAdLinkUrl('https://');
     setNewAdLinkLabel('');
     setSelectedImages([]);
     setImagePreviews([]);
@@ -250,13 +250,15 @@ const AdvertisingAdminPage = () => {
 
       await api.post('/admin/advertising', {
         content: newAdContent.trim(),
-        linkUrl: newAdLinkUrl.trim() || null,
+        linkUrl: newAdLinkUrl.trim() && newAdLinkUrl.trim() !== 'https://'
+          ? (newAdLinkUrl.trim().startsWith('http') ? newAdLinkUrl.trim() : `https://${newAdLinkUrl.trim()}`)
+          : null,
         linkLabel: newAdLinkLabel.trim() || null,
         imageUrls: uploadedUrls
       });
 
       setNewAdContent('');
-      setNewAdLinkUrl('');
+      setNewAdLinkUrl('https://');
       setNewAdLinkLabel('');
       setSelectedImages([]);
       setImagePreviews([]);
@@ -514,7 +516,7 @@ const AdvertisingAdminPage = () => {
                 value={newAdLinkUrl}
                 onChange={(e) => setNewAdLinkUrl(e.target.value)}
                 className={styles.input}
-                placeholder="https://example.com"
+                placeholder="google.com"
               />
             </div>
             <div className={styles.formGroup}>
