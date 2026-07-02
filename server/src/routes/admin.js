@@ -414,6 +414,14 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
       console.log(`✅ Создано постов: ${usersResult.data.length}`);
     }
 
+    // Сохраняем в историю
+    const firstImage = imageUrls.length > 0 ? imageUrls[0] : null;
+    await executeQuery(
+      `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
+       VALUES (?, ?, ?, 'announcement', 'site', ?, ?, datetime('now', 'localtime'))`,
+      [uuidv4(), announcementContent.trim(), firstImage, usersResult.success ? usersResult.data.length : 0, req.user.id]
+    );
+
     res.status(201).json({
       id: announcementId,
       content,
