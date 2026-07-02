@@ -81,16 +81,10 @@ const AdminPanel = () => {
             <Icon name="friends" size="small" /> Пользователи
           </button>
           <button
-            onClick={() => navigate('/admin/announcements')}
-            className={styles.btnNavigation}
-          >
-            <Icon name="announcement" size="small" /> Объявления
-          </button>
-          <button
             onClick={() => navigate('/admin/advertising')}
             className={styles.btnNavigation}
           >
-            <Icon name="advertising" size="small" /> Реклама
+            <Icon name="advertising" size="small" /> Объявления и реклама
           </button>
           <button
             onClick={() => navigate('/admin/bug-reports')}

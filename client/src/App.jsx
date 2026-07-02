@@ -34,7 +34,6 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const AdvertisingContactsPage = lazy(() => import('./pages/AdvertisingContactsPage'));
 const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
-const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
 const MyBugReportsPage = lazy(() => import('./pages/MyBugReportsPage'));
 const BugReportsAdminPage = lazy(() => import('./pages/BugReportsAdminPage'));
 const DatabaseManagementPage = lazy(() => import('./pages/DatabaseManagementPage'));
@@ -289,16 +288,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UsersManagementPage />
-                  </ProtectedRoute>
-                } 
-              />
-
-              {/* Страница управления объявлениями (только для админа) */}
-              <Route 
-                path="/admin/announcements" 
-                element={
-                  <ProtectedRoute>
-                    <AnnouncementsPage />
                   </ProtectedRoute>
                 } 
               />
