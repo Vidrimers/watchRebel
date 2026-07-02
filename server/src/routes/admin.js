@@ -2,7 +2,7 @@ import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { notifyModeration } from '../services/notificationService.js';
-import { uploadAnnouncement } from '../middleware/upload.js';
+import { uploadAnnouncement, uploadAdvertisingImages } from '../middleware/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -1336,6 +1336,24 @@ router.put('/reports/:id', async (req, res) => {
     res.json({ message: 'Статус жалобы обновлён' });
   } catch (error) {
     console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/advertising/upload
+ * Загрузить изображение для рекламного поста
+ */
+router.post('/advertising/upload', uploadAdvertisingImages.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен', code: 'NO_FILE' });
+    }
+
+    const imageUrl = `/uploads/advertising/${req.file.filename}`;
+    res.json({ url: imageUrl });
+  } catch (error) {
+    console.error('Ошибка загрузки изображения:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

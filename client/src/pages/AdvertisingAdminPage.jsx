@@ -24,6 +24,8 @@ const AdvertisingAdminPage = () => {
   const [newAdContent, setNewAdContent] = useState('');
   const [newAdLinkUrl, setNewAdLinkUrl] = useState('');
   const [newAdLinkLabel, setNewAdLinkLabel] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -96,24 +98,39 @@ const AdvertisingAdminPage = () => {
 
   const handleCreateAd = async (e) => {
     e.preventDefault();
-    if (!newAdContent.trim()) {
-      setError('Введите текст рекламного поста');
+    if (!newAdContent.trim() && selectedImages.length === 0) {
+      setError('Добавьте текст или изображения');
       return;
     }
 
     try {
       setCreating(true);
 
+      // Загружаем изображения
+      const uploadedUrls = [];
+      for (const image of selectedImages) {
+        const formData = new FormData();
+        formData.append('image', image);
+        const uploadRes = await api.post('/admin/advertising/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data?.url) {
+          uploadedUrls.push(uploadRes.data.url);
+        }
+      }
+
       await api.post('/admin/advertising', {
         content: newAdContent.trim(),
         linkUrl: newAdLinkUrl.trim() || null,
         linkLabel: newAdLinkLabel.trim() || null,
-        imageUrls: []
+        imageUrls: uploadedUrls
       });
 
       setNewAdContent('');
       setNewAdLinkUrl('');
       setNewAdLinkLabel('');
+      setSelectedImages([]);
+      setImagePreviews([]);
       setError(null);
       await loadAdPosts();
     } catch (err) {
@@ -132,6 +149,41 @@ const AdvertisingAdminPage = () => {
       console.error('Ошибка удаления:', err);
       setError('Не удалось удалить рекламный пост');
     }
+  };
+
+  const addImages = (files) => {
+    if (selectedImages.length + files.length > 5) {
+      setError('Максимум 5 изображений');
+      return;
+    }
+    const validFiles = [];
+    const newPreviews = [];
+
+    files.forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Размер изображения не более 5MB');
+        return;
+      }
+      validFiles.push(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result);
+        if (newPreviews.length === validFiles.length) {
+          setImagePreviews(prev => [...prev, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setSelectedImages(prev => [...prev, ...validFiles]);
+  };
+
+  const handleImageSelect = (e) => addImages(Array.from(e.target.files));
+
+  const handleRemoveImage = (index) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -225,7 +277,32 @@ const AdvertisingAdminPage = () => {
               rows={4}
               disabled={creating}
             />
+            <label htmlFor="adImageInput" className={styles.attachButton} title="Прикрепить изображения">
+              <Icon name="paperclip" size="medium" />
+            </label>
+            <input
+              id="adImageInput"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              className={styles.hiddenFileInput}
+              disabled={creating || selectedImages.length >= 5}
+            />
           </div>
+
+          {imagePreviews.length > 0 && (
+            <div className={styles.imagePreviews}>
+              {imagePreviews.map((preview, index) => (
+                <div key={index} className={styles.imagePreview}>
+                  <img src={preview} alt={`Превью ${index + 1}`} />
+                  <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveImage(index)} disabled={creating}>
+                    <Icon name="close" size="small" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
@@ -255,7 +332,7 @@ const AdvertisingAdminPage = () => {
           <button
             type="submit"
             className={styles.createButton}
-            disabled={creating || !newAdContent.trim()}
+            disabled={creating || (!newAdContent.trim() && selectedImages.length === 0)}
           >
             {creating ? 'Публикация...' : 'Опубликовать рекламу'}
           </button>

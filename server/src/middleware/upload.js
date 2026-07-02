@@ -11,6 +11,7 @@ const avatarsDir = path.join(__dirname, '../../uploads/avatars');
 const announcementsDir = path.join(__dirname, '../../uploads/announcements');
 const messagesDir = path.join(__dirname, '../../uploads/messages');
 const imagesDir = path.join(__dirname, '../../uploads/images');
+const advertisingDir = path.join(__dirname, '../../uploads/advertising');
 const bugReportsDir = path.join(__dirname, '../../uploads/bug-reports');
 
 if (!fs.existsSync(avatarsDir)) {
@@ -27,6 +28,9 @@ if (!fs.existsSync(imagesDir)) {
 }
 if (!fs.existsSync(bugReportsDir)) {
   fs.mkdirSync(bugReportsDir, { recursive: true });
+}
+if (!fs.existsSync(advertisingDir)) {
+  fs.mkdirSync(advertisingDir, { recursive: true });
 }
 
 // Настройка хранилища для аватаров
@@ -173,5 +177,27 @@ const uploadBugReportImages = multer({
   }
 });
 
-export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage, uploadBugReportImages };
+// Настройка хранилища для изображений рекламы
+const advertisingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, advertisingDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `ad_${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`;
+    cb(null, filename);
+  }
+});
+
+// Настройка multer для изображений рекламы (до 5 изображений, 5MB каждое)
+const uploadAdvertisingImages = multer({
+  storage: advertisingStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 5
+  }
+});
+
+export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage, uploadBugReportImages, uploadAdvertisingImages };
 export default uploadAvatar;
