@@ -252,13 +252,15 @@ const FeedPage = () => {
         ) : (
           <div className={styles.postsList}>
             {posts.map((post) => {
-              // Проверяем, является ли пост объявлением администратора
+              // Проверяем, является ли пост объявлением или рекламой
               const isAnnouncement = post.content?.startsWith('📢 Объявление администратора:');
-              
+              const isAdvertising = post.postType === 'advertising' || post.isAdvertising;
+              const isSpecialPost = isAnnouncement || isAdvertising;
+
               return (
                 <div key={post.id} className={styles.postWrapper}>
-                  {/* Информация об авторе поста (не показываем для объявлений) */}
-                  {!isAnnouncement && (
+                  {/* Информация об авторе поста (не показываем для объявлений и рекламы) */}
+                  {!isSpecialPost && (
                     <div className={styles.postAuthor}>
                       <div className={styles.authorLink}>
                         {/* Аватар автора */}
