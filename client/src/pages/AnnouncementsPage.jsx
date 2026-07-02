@@ -623,7 +623,11 @@ const AnnouncementsPage = () => {
                 <div className={styles.announcementHeader}>
                   <div className={styles.announcementMeta}>
                     <span className={styles.creatorName}>
-                      {post.channel === 'telegram' ? '✈️ Telegram' : '🌐 Сайт'}
+                      {post.channel === 'telegram' ? (
+                        <><Icon name="telegram" size="small" /> Telegram</>
+                      ) : (
+                        <><Icon name="feed" size="small" /> Сайт</>
+                      )}
                     </span>
                     <span className={styles.date}>{formatDate(post.createdAt)}</span>
                     {post.sentTo > 0 && (

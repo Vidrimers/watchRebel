@@ -602,7 +602,11 @@ const AdvertisingAdminPage = () => {
                 <div className={styles.sentHeader}>
                   <div className={styles.sentMeta}>
                     <span className={styles.sentChannel}>
-                      {post.channel === 'telegram' ? '✈️ Telegram' : '🌐 Сайт'}
+                      {post.channel === 'telegram' ? (
+                        <><Icon name="telegram" size="small" /> Telegram</>
+                      ) : (
+                        <><Icon name="feed" size="small" /> Сайт</>
+                      )}
                     </span>
                     <span className={styles.sentDate}>{formatDate(post.createdAt)}</span>
                     {post.sentTo > 0 && (
