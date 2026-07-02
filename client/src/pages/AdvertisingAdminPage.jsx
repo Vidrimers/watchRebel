@@ -53,6 +53,8 @@ const AdvertisingAdminPage = () => {
   // === История ===
   const [sentPosts, setSentPosts] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
+  const [cleanupStats, setCleanupStats] = useState(null);
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
@@ -299,11 +301,24 @@ const AdvertisingAdminPage = () => {
   };
 
   const handleCleanupImages = async () => {
-    if (!confirm('Удалить все неиспользуемые изображения? Файлы, привязанные к активным постам, не будут удалены.')) return;
+    try {
+      const r = await api.get('/admin/advertising/image-stats');
+      setCleanupStats(r.data);
+      if (r.data.orphaned === 0) {
+        alert('Нет неиспользуемых изображений');
+        return;
+      }
+      setShowCleanupConfirm(true);
+    } catch (err) { console.error(err); setError('Не удалось проверить изображения'); }
+  };
+
+  const handleConfirmCleanup = async () => {
     try {
       const r = await api.post('/admin/advertising/cleanup-images');
+      setShowCleanupConfirm(false);
+      setCleanupStats(null);
       alert(r.data.message);
-    } catch (err) { console.error(err); setError('Не удалось очистить изображения'); }
+    } catch (err) { console.error(err); setError('Не удалось очистить'); }
   };
 
   const formatDate = (d) => new Date(d).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -566,6 +581,31 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
       </div>
+
+      {/* Диалог подтверждения очистки */}
+      {showCleanupConfirm && cleanupStats && (
+        <div className={styles.telegramModal}>
+          <div className={styles.telegramModalContent}>
+            <h3><Icon name="delete" size="medium" /> Очистка изображений</h3>
+            <div className={styles.cleanupStats}>
+              <p>Всего изображений на диске: <strong>{cleanupStats.total}</strong></p>
+              <p>Привязаны к постам: <strong>{cleanupStats.referenced}</strong></p>
+              <p className={styles.cleanupOrphaned}>Неиспользуемых: <strong>{cleanupStats.orphaned}</strong></p>
+            </div>
+            <p className={styles.tgDesc}>
+              Неиспользуемые изображения будут удалены навсегда. Файлы, привязанные к активным постам, не пострадают.
+            </p>
+            <div className={styles.tgButtons}>
+              <button className={styles.tgSendAll} onClick={handleConfirmCleanup}>
+                Удалить {cleanupStats.orphaned} файл(ов)
+              </button>
+              <button className={styles.tgSendSelf} onClick={() => { setShowCleanupConfirm(false); setCleanupStats(null); }}>
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

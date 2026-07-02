@@ -539,6 +539,28 @@
   margin: 0 0 16px 0;
 }
 
+.cleanupStats {
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.cleanupStats p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.cleanupStats p:last-child {
+  margin-bottom: 0;
+}
+
+.cleanupOrphaned {
+  color: var(--color-error, #ef4444);
+}
+
 .telegramModalButtons,
 .tgButtons {
   display: flex;

@@ -1565,6 +1565,48 @@ router.delete('/sent-posts/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/advertising/image-stats
+ * Статистика изображений: сколько всего, сколько привязано, сколько неиспользуемых
+ */
+router.get('/advertising/image-stats', async (req, res) => {
+  try {
+    const advertisingDir = path.join(__dirname, '../../uploads/advertising');
+    try { await fs.access(advertisingDir); }
+    catch { return res.json({ total: 0, referenced: 0, orphaned: 0 }); }
+
+    const filesOnDisk = await fs.readdir(advertisingDir);
+
+    const adResult = await executeQuery('SELECT image_urls FROM advertising_posts');
+    const sentResult = await executeQuery('SELECT image_url FROM sent_posts WHERE image_url IS NOT NULL');
+
+    const referencedUrls = new Set();
+    if (adResult.success) {
+      for (const row of adResult.data) {
+        JSON.parse(row.image_urls || '[]').forEach(url => referencedUrls.add(url));
+      }
+    }
+    if (sentResult.success) {
+      sentResult.data.forEach(row => referencedUrls.add(row.image_url));
+    }
+
+    let orphanedCount = 0;
+    for (const filename of filesOnDisk) {
+      const urlPath = `/uploads/advertising/${filename}`;
+      if (!referencedUrls.has(urlPath)) orphanedCount++;
+    }
+
+    res.json({
+      total: filesOnDisk.length,
+      referenced: filesOnDisk.length - orphanedCount,
+      orphaned: orphanedCount
+    });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
  * POST /api/admin/advertising/cleanup-images
  * Удалить неиспользуемые изображения (не привязанные ни к какому посту)
  */
