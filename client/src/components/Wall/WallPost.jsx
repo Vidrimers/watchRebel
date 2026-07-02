@@ -157,7 +157,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   // Загрузка и синхронизация количества комментариев (не для объявлений)
   useEffect(() => {
     // Пропускаем для объявлений
-    if (isAnnouncement) return;
+    if (isAnnouncement || post.postType === 'advertising' || post.isAdvertising) return;
 
     // Если commentsCount есть в post (пришёл с сервера или обновлён через WebSocket)
     if (post.commentsCount !== undefined) {
