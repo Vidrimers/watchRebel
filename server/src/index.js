@@ -255,7 +255,11 @@ if (process.env.NODE_ENV !== 'test') {
   
   // Инициализация WebSocket
   initWebSocket(server);
-  
+
+  // Запуск сервиса повторений рекламы
+  const { startAdRepeatService } = await import('./services/adRepeatService.js');
+  startAdRepeatService();
+
   server.listen(PORT, () => {
     logger.info(`Сервер запущен на порту ${PORT}`, { 
       port: PORT, 

@@ -32,6 +32,9 @@ const AdvertisingAdminPage = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [creatingAd, setCreatingAd] = useState(false);
+  const [adPinDuration, setAdPinDuration] = useState(0);
+  const [adRepeatCount, setAdRepeatCount] = useState(0);
+  const [adRepeatInterval, setAdRepeatInterval] = useState(0);
 
   // === Объявления (сайт) ===
   const [announcements, setAnnouncements] = useState([]);
@@ -41,9 +44,19 @@ const AdvertisingAdminPage = () => {
   const [annImagePreviews, setAnnImagePreviews] = useState([]);
   const [creatingAnn, setCreatingAnn] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [annPinDuration, setAnnPinDuration] = useState(0);
+  const [annRepeatCount, setAnnRepeatCount] = useState(0);
+  const [annRepeatInterval, setAnnRepeatInterval] = useState(0);
 
   // === Telegram (общий) ===
   const [tgText, setTgText] = useState('');
+  const [tgRepeatCount, setTgRepeatCount] = useState(0);
+  const [tgRepeatInterval, setTgRepeatInterval] = useState(0);
+
+  // === Настройки цен ===
+  const [adSettings, setAdSettings] = useState({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [tgImage, setTgImage] = useState(null);
   const [tgImagePreview, setTgImagePreview] = useState(null);
   const [sendingTg, setSendingTg] = useState(false);
@@ -59,7 +72,7 @@ const AdvertisingAdminPage = () => {
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
-    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts();
+    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts(); loadAdSettings();
   }, [user, navigate]);
 
   useEffect(() => { loadSentPosts(); }, [activeTab]);
@@ -92,6 +105,23 @@ const AdvertisingAdminPage = () => {
     finally { setContactsSaving(false); }
   };
 
+  // ===================== НАСТРОЙКИ ЦЕН =====================
+  const loadAdSettings = async () => {
+    try {
+      const r = await api.get('/admin/ad-settings');
+      setAdSettings(r.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSaveAdSetting = async (key, value) => {
+    try {
+      setSettingsSaving(true);
+      await api.put('/admin/ad-settings', { key, value });
+      setAdSettings(prev => ({ ...prev, [key]: value }));
+    } catch (err) { setError('Не удалось сохранить настройку'); }
+    finally { setSettingsSaving(false); }
+  };
+
   // ===================== РЕКЛАМА (САЙТ) =====================
   const loadAdPosts = async () => {
     try { setLoadingAd(true); const r = await api.get('/admin/advertising'); setAdPosts(r.data); }
@@ -112,10 +142,13 @@ const AdvertisingAdminPage = () => {
       await api.post('/admin/advertising', {
         content: newAdContent.trim(),
         linkUrl: newAdLinkUrl.trim() !== 'https://' ? (newAdLinkUrl.startsWith('http') ? newAdLinkUrl : `https://${newAdLinkUrl}`) : null,
-        linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls
+        linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls,
+        pinDuration: adPinDuration, repeatCount: adRepeatCount, repeatIntervalHours: adRepeatInterval
       });
       setNewAdContent(''); setNewAdLinkUrl('https://'); setNewAdLinkLabel('');
-      setSelectedImages([]); setImagePreviews([]); setError(null); await loadAdPosts();
+      setSelectedImages([]); setImagePreviews([]); setError(null);
+      setAdPinDuration(0); setAdRepeatCount(0); setAdRepeatInterval(0);
+      await loadAdPosts();
     } catch (err) { setError('Не удалось создать рекламный пост'); }
     finally { setCreatingAd(false); }
   };
@@ -137,9 +170,14 @@ const AdvertisingAdminPage = () => {
     try {
       setCreatingAnn(true);
       const fd = new FormData(); fd.append('content', newAnnouncement.trim() || ' ');
+      fd.append('pinDuration', annPinDuration);
+      fd.append('repeatCount', annRepeatCount);
+      fd.append('repeatIntervalHours', annRepeatInterval);
       selectedAnnImages.forEach(img => fd.append('images', img));
       await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null); await loadAnnouncements();
+      setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
+      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0);
+      await loadAnnouncements();
     } catch (err) { setError('Не удалось создать объявление'); }
     finally { setCreatingAnn(false); }
   };
@@ -183,9 +221,12 @@ const AdvertisingAdminPage = () => {
     try {
       setSendingTg(true); setTgProgress({ current: 0, total: 0 });
       const imageUrl = await uploadTgImage();
-      const r = await api.post('/admin/telegram-announcement', { content: tgText.trim(), imageUrl, type: tgType });
+      const r = await api.post('/admin/telegram-announcement', {
+        content: tgText.trim(), imageUrl, type: tgType,
+        repeatCount: tgRepeatCount, repeatIntervalHours: tgRepeatInterval
+      });
       setTgProgress({ current: r.data.success, total: r.data.total, failed: r.data.failed });
-      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); }, 3000);
+      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); }, 3000);
     } catch (err) { setError('Не удалось отправить в Telegram'); setTgProgress(null); }
     finally { setSendingTg(false); }
   };
@@ -382,6 +423,39 @@ const AdvertisingAdminPage = () => {
 
       {error && <div className={styles.error}>{error}</div>}
 
+      {/* ===== Настройки цен ===== */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Настройки рекламы и прайс</h2>
+          <button onClick={() => setShowSettings(!showSettings)} className={styles.btnEdit}>
+            {showSettings ? 'Скрыть' : 'Настроить'}
+          </button>
+        </div>
+        {showSettings && (
+          <div className={styles.editForm}>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label>Цена показа на сайте:</label>
+                <input type="number" min="0" value={adSettings.ad_price_site || ''} onChange={e => handleSaveAdSetting('ad_price_site', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за повторения:</label>
+                <input type="number" min="0" value={adSettings.ad_price_repeat || ''} onChange={e => handleSaveAdSetting('ad_price_repeat', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за интервал:</label>
+                <input type="number" min="0" value={adSettings.ad_price_interval || ''} onChange={e => handleSaveAdSetting('ad_price_interval', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за ТГ-рассылку:</label>
+                <input type="number" min="0" value={adSettings.ad_price_telegram || ''} onChange={e => handleSaveAdSetting('ad_price_telegram', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+            </div>
+            <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 50, повторений — 50, интервал — 50 часов.</p>
+          </div>
+        )}
+      </div>
+
       {/* ===== ПОДВКЛАДКА: НА САЙТЕ ===== */}
       {activeSubTab === 'site' && isAd && (
         <>
@@ -406,6 +480,20 @@ const AdvertisingAdminPage = () => {
               <div className={styles.formRow}>
                 <div className={styles.formGroup}><label>Ссылка (URL):</label><input type="url" value={newAdLinkUrl} onChange={e => setNewAdLinkUrl(e.target.value)} className={styles.input} placeholder="google.com" /></div>
                 <div className={styles.formGroup}><label>Текст ссылки:</label><input type="text" value={newAdLinkLabel} onChange={e => setNewAdLinkLabel(e.target.value)} className={styles.input} placeholder="Перейти" /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Показов в закреплённых:</label>
+                  <input type="number" min="0" max="50" value={adPinDuration} onChange={e => setAdPinDuration(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Повторений:</label>
+                  <input type="number" min="0" max="50" value={adRepeatCount} onChange={e => setAdRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Интервал (часы):</label>
+                  <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+                </div>
               </div>
               <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
                 {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
@@ -453,6 +541,20 @@ const AdvertisingAdminPage = () => {
                   ))}
                 </div>
               )}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Показов в закреплённых:</label>
+                  <input type="number" min="0" max="50" value={annPinDuration} onChange={e => setAnnPinDuration(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Повторений:</label>
+                  <input type="number" min="0" max="50" value={annRepeatCount} onChange={e => setAnnRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Интервал (часы):</label>
+                  <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+                </div>
+              </div>
               <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
                 {creatingAnn ? 'Создание...' : 'Создать объявление'}
               </button>
@@ -533,6 +635,17 @@ const AdvertisingAdminPage = () => {
               {tgProgress.failed > 0 && <p className={styles.progressError}>Не удалось: {tgProgress.failed}</p>}
             </div>
           )}
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Повторений:</label>
+              <input type="number" min="0" max="50" value={tgRepeatCount} onChange={e => setTgRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Интервал (часы):</label>
+              <input type="number" min="0" max="50" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+            </div>
+          </div>
 
           <div className={styles.tgButtons}>
             <button className={styles.tgSendSelf} onClick={handleSendSelf} disabled={sendingTg || sendingSelf || !tgText.trim()}>

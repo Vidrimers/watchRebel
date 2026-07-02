@@ -30,6 +30,7 @@ const FeedPage = lazy(() => import('./pages/FeedPage'));
 const CatalogPage = lazy(() => import('./pages/CatalogPage'));
 const IntegrationTestPage = lazy(() => import('./pages/IntegrationTestPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const AdvertisingContactsPage = lazy(() => import('./pages/AdvertisingContactsPage'));
@@ -105,6 +106,7 @@ function App() {
               
               {/* Публичные страницы Footer */}
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/advertising-contacts" element={<AdvertisingContactsPage />} />

@@ -358,6 +358,17 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     const adPosts = [];
     if (adResult.success) {
       for (const a of adResult.data) {
+        // Если pin_duration > 0, проверяем — показано ли уже достаточно постов после рекламы
+        if (a.pin_duration > 0) {
+          const postsSinceAd = await executeQuery(
+            `SELECT COUNT(*) as cnt FROM wall_posts WHERE created_at > ?`,
+            [a.created_at]
+          );
+          if (postsSinceAd.success && postsSinceAd.data[0].cnt >= a.pin_duration) {
+            continue; // Пропускаем — реклама уже "сползла" вниз
+          }
+        }
+
         adPosts.push({
           id: a.id,
           userId: a.created_by,

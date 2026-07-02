@@ -1654,6 +1654,48 @@ router.post('/advertising/cleanup-images', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/ad-settings
+ * Получить настройки цен рекламы
+ */
+router.get('/ad-settings', async (req, res) => {
+  try {
+    const result = await executeQuery(
+      "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram')"
+    );
+    if (!result.success) return res.status(500).json({ error: 'Ошибка' });
+    const settings = {};
+    result.data.forEach(r => { settings[r.key] = r.value; });
+    res.json(settings);
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/ad-settings
+ * Обновить настройки цен рекламы
+ * Body: { key: string, value: string }
+ */
+router.put('/ad-settings', async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    const allowedKeys = ['ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram'];
+    if (!allowedKeys.includes(key)) {
+      return res.status(400).json({ error: 'Недопустимый ключ' });
+    }
+    await executeQuery(
+      'UPDATE site_settings SET value = ?, updated_at = datetime("now") WHERE key = ?',
+      [value || '', key]
+    );
+    res.json({ message: 'Настройка обновлена' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
  * DELETE /api/admin/reports/:id
  * Удалить жалобу
  */

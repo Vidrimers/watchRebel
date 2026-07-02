@@ -100,3 +100,24 @@ router.put('/:key', authenticateToken, (req, res) => {
 });
 
 export default router;
+
+/**
+ * GET /api/settings/ad-pricing (публичный)
+ * Получить все настройки цен рекламы для прайс-листа
+ */
+router.get('/ad-pricing', (req, res) => {
+  const db = getDatabase();
+  db.all(
+    "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'advertising_contacts')",
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('Ошибка:', err);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      const settings = {};
+      rows.forEach(r => { if (r.value) settings[r.key] = r.value; });
+      res.json(settings);
+    }
+  );
+});
