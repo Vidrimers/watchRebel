@@ -58,7 +58,8 @@ const AdvertisingAdminPage = () => {
 
       const response = await api.post('/admin/telegram-announcement', {
         content: telegramText.trim(),
-        imageUrl
+        imageUrl,
+        type: 'advertising'
       });
       setTelegramProgress({
         current: response.data.success,

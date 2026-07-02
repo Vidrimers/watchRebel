@@ -951,23 +951,27 @@ router.delete('/announcements/:id', async (req, res) => {
 
 /**
  * POST /api/admin/telegram-announcement
- * Отправить объявление всем пользователям в Telegram
- * Только для администратора
+ * Отправить объявление/рекламу всем пользователям в Telegram
  * 
  * Body:
- * - content: string (текст объявления)
+ * - content: string (текст)
  * - imageUrl: string (опционально, URL изображения)
+ * - type: 'announcement' | 'advertising' (тип — объявление или реклама)
  */
 router.post('/telegram-announcement', async (req, res) => {
   try {
-    const { content, imageUrl } = req.body;
+    const { content, imageUrl, type } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ 
-        error: 'Содержание объявления не может быть пустым',
+        error: 'Содержание не может быть пустым',
         code: 'EMPTY_CONTENT' 
       });
     }
+
+    // Формируем сообщение с заголовком
+    const header = type === 'advertising' ? '📣 *Реклама*' : '📢 *Объявление*';
+    const fullMessage = `${header}\n\n${content.trim()}`;
 
     // Получаем всех пользователей
     const usersResult = await executeQuery(
@@ -989,32 +993,28 @@ router.post('/telegram-announcement', async (req, res) => {
     const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
     const fullImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${publicUrl}${imageUrl}`) : null;
 
-    // Отправляем объявление каждому пользователю
+    // Отправляем каждому пользователю
     for (const user of users) {
       try {
-        // Проверяем настройки уведомлений
         const { checkNotificationEnabled } = await import('../services/notificationService.js');
         const isEnabled = await checkNotificationEnabled(user.id, 'admin_announcement');
         if (!isEnabled) continue;
 
         if (fullImageUrl) {
-          await sendTelegramNotification(user.id, content.trim(), {
+          await sendTelegramNotification(user.id, fullMessage, {
             parse_mode: 'MarkdownV2',
             photo: fullImageUrl
           });
         } else {
           await notifyModeration(user.id, 'announcement', {
-            content: content.trim()
+            content: fullMessage
           });
         }
         successCount++;
       } catch (err) {
         failCount++;
-        errors.push({
-          userId: user.id,
-          error: err.message
-        });
-        console.error(`Ошибка отправки объявления пользователю ${user.id}:`, err);
+        errors.push({ userId: user.id, error: err.message });
+        console.error(`Ошибка отправки пользователю ${user.id}:`, err);
       }
     }
 
@@ -1027,11 +1027,8 @@ router.post('/telegram-announcement', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Ошибка отправки объявления в Telegram:', error);
-    res.status(500).json({ 
-      error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
-    });
+    console.error('Ошибка отправки в Telegram:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
 

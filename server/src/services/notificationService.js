@@ -129,9 +129,36 @@ export async function sendTelegramNotification(userId, message, options = {}) {
       return { success: false, error: 'Bot token not configured' };
     }
 
-    // Если есть изображение — отправляем через sendPhoto
+    // Если есть изображение — загружаем через multipart/form-data
     if (options.photo) {
       const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+
+      // Если photo — это URL, скачиваем файл и загружаем через FormData
+      if (options.photo.startsWith('http')) {
+        const fileResponse = await fetch(options.photo);
+        if (!fileResponse.ok) {
+          console.error(`❌ Не удалось скачать изображение: ${options.photo}`);
+          return { success: false, error: 'Failed to download image' };
+        }
+        const buffer = await fileResponse.arrayBuffer();
+        const blob = new Blob([buffer], { type: 'image/jpeg' });
+        const formData = new FormData();
+        formData.append('chat_id', userId);
+        formData.append('photo', blob, 'image.jpg');
+        formData.append('caption', message);
+        formData.append('parse_mode', options.parse_mode || 'HTML');
+
+        const response = await fetch(url, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (!data.ok) {
+          console.error(`❌ Ошибка отправки фото пользователю ${userId}:`, data.description);
+          return { success: false, error: data.description };
+        }
+        console.log(`✅ Telegram фото отправлено пользователю ${userId}`);
+        return { success: true, messageId: data.result.message_id };
+      }
+
+      // Если photo — это file_id, отправляем как есть
       const payload = {
         chat_id: userId,
         photo: options.photo,

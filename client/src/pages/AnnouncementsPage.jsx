@@ -198,7 +198,8 @@ const AnnouncementsPage = () => {
 
       const response = await api.post('/admin/telegram-announcement', {
         content: telegramAnnouncement.trim(),
-        imageUrl
+        imageUrl,
+        type: 'announcement'
       });
       
       setTelegramProgress({
