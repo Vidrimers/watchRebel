@@ -1475,11 +1475,22 @@ router.get('/advertising', async (req, res) => {
 
 /**
  * DELETE /api/admin/advertising/:id
- * Удалить рекламный пост
+ * Удалить рекламный пост и связанные изображения
  */
 router.delete('/advertising/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Получаем данные поста для удаления файлов
+    const postCheck = await executeQuery('SELECT image_urls FROM advertising_posts WHERE id = ?', [id]);
+    if (postCheck.success && postCheck.data.length > 0) {
+      const imageUrls = JSON.parse(postCheck.data[0].image_urls || '[]');
+      for (const imageUrl of imageUrls) {
+        const filePath = path.join(__dirname, '../..', imageUrl);
+        await fs.unlink(filePath).catch(err => console.error('Ошибка удаления файла:', err));
+      }
+    }
+
     const result = await executeQuery('DELETE FROM advertising_posts WHERE id = ?', [id]);
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка удаления' });
