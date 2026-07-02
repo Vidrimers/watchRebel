@@ -24,6 +24,8 @@ const AnnouncementsPage = () => {
   const [sendingTelegram, setSendingTelegram] = useState(false);
   const [telegramProgress, setTelegramProgress] = useState(null);
   const [sendingToSelf, setSendingToSelf] = useState(false);
+  const [telegramImage, setTelegramImage] = useState(null);
+  const [telegramImagePreview, setTelegramImagePreview] = useState(null);
 
   // Проверка прав администратора
   useEffect(() => {
@@ -180,9 +182,23 @@ const AnnouncementsPage = () => {
     try {
       setSendingTelegram(true);
       setTelegramProgress({ current: 0, total: 0 });
-      
+
+      // Если есть изображение — загружаем
+      let imageUrl = null;
+      if (telegramImage) {
+        const formData = new FormData();
+        formData.append('image', telegramImage);
+        const uploadRes = await api.post('/admin/advertising/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data?.url) {
+          imageUrl = uploadRes.data.url;
+        }
+      }
+
       const response = await api.post('/admin/telegram-announcement', {
-        content: telegramAnnouncement.trim()
+        content: telegramAnnouncement.trim(),
+        imageUrl
       });
       
       setTelegramProgress({
@@ -196,6 +212,8 @@ const AnnouncementsPage = () => {
         setShowTelegramModal(false);
         setTelegramAnnouncement('');
         setTelegramProgress(null);
+        setTelegramImage(null);
+        setTelegramImagePreview(null);
       }, 3000);
     } catch (err) {
       console.error('Ошибка отправки объявления в Telegram:', err);
@@ -226,6 +244,17 @@ const AnnouncementsPage = () => {
     } finally {
       setSendingToSelf(false);
     }
+  };
+
+  const handleTelegramImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Максимум 5MB'); return; }
+    setTelegramImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setTelegramImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   // Функции для форматирования текста (Telegram MarkdownV2)
@@ -648,6 +677,27 @@ const AnnouncementsPage = () => {
               rows={6}
               disabled={sendingTelegram || sendingToSelf}
             />
+
+            {/* Загрузка изображения для ТГ */}
+            <div className={styles.telegramImageSection}>
+              <label className={styles.telegramImageLabel}>
+                <Icon name="image" size="small" /> Изображение (необязательно)
+              </label>
+              <input type="file" accept="image/*" onChange={handleTelegramImageSelect} className={styles.hiddenFileInput} id="tgImageInputAnn" disabled={sendingTelegram || sendingToSelf} />
+              {telegramImagePreview ? (
+                <div className={styles.telegramImagePreview}>
+                  <img src={telegramImagePreview} alt="Превью" />
+                  <button type="button" className={styles.removeImageButton} onClick={() => { setTelegramImage(null); setTelegramImagePreview(null); }} disabled={sendingTelegram || sendingToSelf}>
+                    <Icon name="close" size="small" />
+                  </button>
+                </div>
+              ) : (
+                <label htmlFor="tgImageInputAnn" className={styles.telegramImageDropzone}>
+                  <Icon name="image" size="medium" />
+                  <span>Нажмите или перетащите изображение</span>
+                </label>
+              )}
+            </div>
 
             {/* Превью сообщения */}
             <div className={styles.previewSection}>

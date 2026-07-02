@@ -123,13 +123,36 @@ export async function createNotification(userId, type, content, relatedUserId = 
 export async function sendTelegramNotification(userId, message, options = {}) {
   try {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    
+
     if (!botToken) {
       console.error('❌ TELEGRAM_BOT_TOKEN не найден в переменных окружения');
       return { success: false, error: 'Bot token not configured' };
     }
 
-    // Отправляем сообщение напрямую через Telegram Bot API
+    // Если есть изображение — отправляем через sendPhoto
+    if (options.photo) {
+      const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+      const payload = {
+        chat_id: userId,
+        photo: options.photo,
+        caption: message,
+        parse_mode: options.parse_mode || 'HTML'
+      };
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!data.ok) {
+        console.error(`❌ Ошибка отправки фото пользователю ${userId}:`, data.description);
+        return { success: false, error: data.description };
+      }
+      console.log(`✅ Telegram фото отправлено пользователю ${userId}`);
+      return { success: true, messageId: data.result.message_id };
+    }
+
+    // Обычная отправка текста
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
     const payload = {

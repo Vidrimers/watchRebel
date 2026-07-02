@@ -1,7 +1,7 @@
 import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
-import { notifyModeration } from '../services/notificationService.js';
+import { notifyModeration, sendTelegramNotification } from '../services/notificationService.js';
 import { uploadAnnouncement, uploadAdvertisingImages } from '../middleware/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -956,10 +956,11 @@ router.delete('/announcements/:id', async (req, res) => {
  * 
  * Body:
  * - content: string (текст объявления)
+ * - imageUrl: string (опционально, URL изображения)
  */
 router.post('/telegram-announcement', async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, imageUrl } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ 
@@ -985,12 +986,27 @@ router.post('/telegram-announcement', async (req, res) => {
     let failCount = 0;
     const errors = [];
 
+    const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1313';
+    const fullImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${publicUrl}${imageUrl}`) : null;
+
     // Отправляем объявление каждому пользователю
     for (const user of users) {
       try {
-        await notifyModeration(user.id, 'announcement', {
-          content: content.trim()
-        });
+        // Проверяем настройки уведомлений
+        const { checkNotificationEnabled } = await import('../services/notificationService.js');
+        const isEnabled = await checkNotificationEnabled(user.id, 'admin_announcement');
+        if (!isEnabled) continue;
+
+        if (fullImageUrl) {
+          await sendTelegramNotification(user.id, content.trim(), {
+            parse_mode: 'MarkdownV2',
+            photo: fullImageUrl
+          });
+        } else {
+          await notifyModeration(user.id, 'announcement', {
+            content: content.trim()
+          });
+        }
         successCount++;
       } catch (err) {
         failCount++;

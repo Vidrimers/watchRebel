@@ -34,45 +34,78 @@ const AdvertisingAdminPage = () => {
   const [sendingTelegram, setSendingTelegram] = useState(false);
   const [sendingToSelf, setSendingToSelf] = useState(false);
   const [telegramProgress, setTelegramProgress] = useState(null);
+  const [telegramImage, setTelegramImage] = useState(null);
+  const [telegramImagePreview, setTelegramImagePreview] = useState(null);
 
-  useEffect(() => {
-    if (!user?.isAdmin) {
-      navigate('/');
-      return;
-    }
-    loadContacts();
-    loadAdPosts();
-  }, [user, navigate]);
-
-  // === Контакты ===
-  const loadContacts = async () => {
+  const handleSendTelegramAd = async () => {
+    if (!telegramText.trim()) return;
     try {
-      setContactsLoading(true);
-      const response = await api.get('/settings/advertising_contacts');
-      const value = response.data.value || '';
-      const lines = value.split('\n');
-      let email = 'admin@watchrebel.com';
-      let telegram = '@watchrebel_admin';
-      let text = '';
+      setSendingTelegram(true);
+      setTelegramProgress({ current: 0, total: 0 });
 
-      lines.forEach(line => {
-        const emailMatch = line.match(/Email:\s*(.+)/i);
-        const telegramMatch = line.match(/Telegram:\s*(.+)/i);
-        if (emailMatch) email = emailMatch[1].trim();
-        else if (telegramMatch) telegram = telegramMatch[1].trim();
-        else if (line.trim() && !line.includes('Email:') && !line.includes('Telegram:')) {
-          text += (text ? '\n' : '') + line;
+      // Если есть изображение — загружаем его
+      let imageUrl = null;
+      if (telegramImage) {
+        const formData = new FormData();
+        formData.append('image', telegramImage);
+        const uploadRes = await api.post('/admin/advertising/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data?.url) {
+          imageUrl = uploadRes.data.url;
         }
-      });
+      }
 
-      setContactEmail(email);
-      setContactTelegram(telegram);
-      setContactText(text);
+      const response = await api.post('/admin/telegram-announcement', {
+        content: telegramText.trim(),
+        imageUrl
+      });
+      setTelegramProgress({
+        current: response.data.success,
+        total: response.data.total,
+        failed: response.data.failed
+      });
+      setTimeout(() => {
+        setShowTelegramModal(false);
+        setTelegramText('');
+        setTelegramProgress(null);
+        setTelegramImage(null);
+        setTelegramImagePreview(null);
+      }, 3000);
     } catch (err) {
-      console.error('Ошибка загрузки контактов:', err);
+      console.error('Ошибка отправки в Telegram:', err);
+      setError('Не удалось отправить в Telegram');
+      setTelegramProgress(null);
     } finally {
-      setContactsLoading(false);
+      setSendingTelegram(false);
     }
+  };
+
+  const handleSendToSelf = async () => {
+    if (!telegramText.trim()) return;
+    try {
+      setSendingToSelf(true);
+      await api.post('/admin/telegram-announcement-self', {
+        content: telegramText.trim()
+      });
+      alert('Реклама отправлена вам в Telegram!');
+    } catch (err) {
+      console.error('Ошибка отправки себе:', err);
+      setError('Не удалось отправить');
+    } finally {
+      setSendingToSelf(false);
+    }
+  };
+
+  const handleTelegramImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Максимум 5MB'); return; }
+    setTelegramImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setTelegramImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleSaveContacts = async () => {
@@ -193,49 +226,6 @@ const AdvertisingAdminPage = () => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSendTelegramAd = async () => {
-    if (!telegramText.trim()) return;
-    try {
-      setSendingTelegram(true);
-      setTelegramProgress({ current: 0, total: 0 });
-      const response = await api.post('/admin/telegram-announcement', {
-        content: telegramText.trim()
-      });
-      setTelegramProgress({
-        current: response.data.success,
-        total: response.data.total,
-        failed: response.data.failed
-      });
-      setTimeout(() => {
-        setShowTelegramModal(false);
-        setTelegramText('');
-        setTelegramProgress(null);
-      }, 3000);
-    } catch (err) {
-      console.error('Ошибка отправки в Telegram:', err);
-      setError('Не удалось отправить в Telegram');
-      setTelegramProgress(null);
-    } finally {
-      setSendingTelegram(false);
-    }
-  };
-
-  const handleSendToSelf = async () => {
-    if (!telegramText.trim()) return;
-    try {
-      setSendingToSelf(true);
-      await api.post('/admin/telegram-announcement-self', {
-        content: telegramText.trim()
-      });
-      alert('Реклама отправлена вам в Telegram!');
-    } catch (err) {
-      console.error('Ошибка отправки себе:', err);
-      setError('Не удалось отправить');
-    } finally {
-      setSendingToSelf(false);
-    }
-  };
-
   const insertFormatting = (before, after = '', placeholder = '') => {
     const textarea = document.querySelector(`.${styles.telegramTextarea}`);
     if (!textarea) return;
@@ -257,18 +247,34 @@ const AdvertisingAdminPage = () => {
     }, 0);
   };
 
+  const insertAtCursor = (text) => {
+    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const newText = telegramText.substring(0, start) + text + telegramText.substring(start);
+    setTelegramText(newText);
+    setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + text.length, start + text.length); }, 0);
+  };
+
   const handleBold = () => insertFormatting('*', '*', 'текст');
   const handleItalic = () => insertFormatting('_', '_', 'текст');
   const handleUnderline = () => insertFormatting('__', '__', 'текст');
   const handleStrikethrough = () => insertFormatting('~', '~', 'текст');
   const handleCode = () => insertFormatting('`', '`', 'код');
-  const handleQuote = () => {
+  const handleMonospace = () => insertFormatting('```\n', '\n```', 'код');
+  const handleQuote = () => insertAtCursor('> ');
+  const handleLink = () => insertFormatting('[', '](https://example.com)', 'текст ссылки');
+  const handleBulletList = () => insertAtCursor('• ');
+  const handleNumberedList = () => {
     const textarea = document.querySelector(`.${styles.telegramTextarea}`);
     if (!textarea) return;
     const start = textarea.selectionStart;
-    const newText = telegramText.substring(0, start) + '> ' + telegramText.substring(start);
-    setTelegramText(newText);
-    setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, start + 2); }, 0);
+    const textBefore = telegramText.substring(0, start);
+    const lines = textBefore.split('\n');
+    const lastLine = lines[lines.length - 1];
+    const match = lastLine.match(/^(\d+)\.\s/);
+    const nextNumber = match ? parseInt(match[1]) + 1 : 1;
+    insertAtCursor(`${nextNumber}. `);
   };
 
   const renderTelegramPreview = (text) => {
@@ -501,12 +507,16 @@ const AdvertisingAdminPage = () => {
             </p>
 
             <div className={styles.formattingToolbar}>
-              <button type="button" onClick={handleBold} className={styles.formatButton} title="Жирный" disabled={sendingTelegram || sendingToSelf}><strong>B</strong></button>
-              <button type="button" onClick={handleItalic} className={styles.formatButton} title="Курсив" disabled={sendingTelegram || sendingToSelf}><em>I</em></button>
-              <button type="button" onClick={handleUnderline} className={styles.formatButton} title="Подчёркнутый" disabled={sendingTelegram || sendingToSelf}><u>U</u></button>
-              <button type="button" onClick={handleStrikethrough} className={styles.formatButton} title="Зачёркнутый" disabled={sendingTelegram || sendingToSelf}><s>S</s></button>
-              <button type="button" onClick={handleCode} className={styles.formatButton} title="Код" disabled={sendingTelegram || sendingToSelf}><code>{'<>'}</code></button>
-              <button type="button" onClick={handleQuote} className={styles.formatButton} title="Цитата" disabled={sendingTelegram || sendingToSelf}><span>"</span></button>
+              <button type="button" onClick={handleBold} className={styles.formatButton} title="Жирный (*текст*)" disabled={sendingTelegram || sendingToSelf}><strong>B</strong></button>
+              <button type="button" onClick={handleItalic} className={styles.formatButton} title="Курсив (_текст_)" disabled={sendingTelegram || sendingToSelf}><em>I</em></button>
+              <button type="button" onClick={handleUnderline} className={styles.formatButton} title="Подчёркнутый (__текст__)" disabled={sendingTelegram || sendingToSelf}><u>U</u></button>
+              <button type="button" onClick={handleStrikethrough} className={styles.formatButton} title="Зачёркнутый (~текст~)" disabled={sendingTelegram || sendingToSelf}><s>S</s></button>
+              <button type="button" onClick={handleCode} className={styles.formatButton} title="Код (`код`)" disabled={sendingTelegram || sendingToSelf}><code>{'<>'}</code></button>
+              <button type="button" onClick={handleMonospace} className={styles.formatButton} title="Блок кода (```код```)" disabled={sendingTelegram || sendingToSelf}><code>{'{ }'}</code></button>
+              <button type="button" onClick={handleQuote} className={styles.formatButton} title="Цитата (> текст)" disabled={sendingTelegram || sendingToSelf}><span>"</span></button>
+              <button type="button" onClick={handleLink} className={styles.formatButton} title="Ссылка ([текст](url))" disabled={sendingTelegram || sendingToSelf}><span>🔗</span></button>
+              <button type="button" onClick={handleBulletList} className={styles.formatButton} title="Маркированный список" disabled={sendingTelegram || sendingToSelf}><span>•</span></button>
+              <button type="button" onClick={handleNumberedList} className={styles.formatButton} title="Нумерованный список" disabled={sendingTelegram || sendingToSelf}><span>1.</span></button>
             </div>
 
             <textarea
@@ -517,6 +527,27 @@ const AdvertisingAdminPage = () => {
               rows={6}
               disabled={sendingTelegram || sendingToSelf}
             />
+
+            {/* Загрузка изображения для ТГ */}
+            <div className={styles.telegramImageSection}>
+              <label className={styles.telegramImageLabel}>
+                <Icon name="image" size="small" /> Изображение (необязательно)
+              </label>
+              <input type="file" accept="image/*" onChange={handleTelegramImageSelect} className={styles.hiddenFileInput} id="tgImageInput" disabled={sendingTelegram || sendingToSelf} />
+              {telegramImagePreview ? (
+                <div className={styles.telegramImagePreview}>
+                  <img src={telegramImagePreview} alt="Превью" />
+                  <button type="button" className={styles.removeImageButton} onClick={() => { setTelegramImage(null); setTelegramImagePreview(null); }} disabled={sendingTelegram || sendingToSelf}>
+                    <Icon name="close" size="small" />
+                  </button>
+                </div>
+              ) : (
+                <label htmlFor="tgImageInput" className={styles.telegramImageDropzone}>
+                  <Icon name="image" size="medium" />
+                  <span>Нажмите или перетащите изображение</span>
+                </label>
+              )}
+            </div>
 
             <div className={styles.previewSection}>
               <h4>Превью:</h4>
