@@ -49,6 +49,40 @@
   font-weight: 600;
 }
 
+/* Подвкладки */
+.subTabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.subTabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.subTabButton:hover {
+  color: var(--text-primary);
+}
+
+.subTabButtonActive {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+  font-weight: 600;
+}
+
 .backButton {
   display: flex;
   align-items: center;
@@ -499,13 +533,21 @@
   margin: 0 0 16px 0;
 }
 
-.telegramModalButtons {
+.tgDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+}
+
+.telegramModalButtons,
+.tgButtons {
   display: flex;
   gap: 10px;
   margin-top: 16px;
 }
 
-.telegramSendButton {
+.telegramSendButton,
+.tgSendAll {
   padding: 10px 20px;
   background: #0088cc;
   color: #fff;
@@ -526,7 +568,8 @@
   cursor: not-allowed;
 }
 
-.telegramSendToSelfButton {
+.telegramSendToSelfButton,
+.tgSendSelf {
   padding: 10px 20px;
   background: var(--bg-tertiary);
   color: var(--text-primary);
@@ -622,7 +665,8 @@
   cursor: not-allowed;
 }
 
-.telegramTextarea {
+.telegramTextarea,
+.tgTextarea {
   width: 100%;
   min-height: 120px;
 }
@@ -637,7 +681,8 @@
   color: var(--text-secondary);
 }
 
-.telegramPreview {
+.telegramPreview,
+.tgPreview {
   padding: 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -694,11 +739,13 @@
 }
 
 /* Загрузка изображения для ТГ */
-.telegramImageSection {
+.telegramImageSection,
+.tgImageSection {
   margin-top: 12px;
 }
 
-.telegramImageLabel {
+.telegramImageLabel,
+.tgImageLabel {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -709,7 +756,8 @@
   cursor: pointer;
 }
 
-.telegramImagePreview {
+.telegramImagePreview,
+.tgImagePreview {
   position: relative;
   display: inline-block;
 }
@@ -739,7 +787,8 @@
   font-size: 11px;
 }
 
-.telegramImageDropzone {
+.telegramImageDropzone,
+.tgImageDropzone {
   display: flex;
   flex-direction: column;
   align-items: center;

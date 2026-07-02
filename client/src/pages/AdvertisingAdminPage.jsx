@@ -10,7 +10,8 @@ const AdvertisingAdminPage = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   // === Вкладки ===
-  const [activeTab, setActiveTab] = useState('advertising'); // 'advertising' | 'announcements'
+  const [activeTab, setActiveTab] = useState('advertising');
+  const [activeSubTab, setActiveSubTab] = useState('site'); // 'site' | 'telegram'
 
   // === Контакты ===
   const [contactText, setContactText] = useState('');
@@ -20,10 +21,9 @@ const AdvertisingAdminPage = () => {
   const [contactsSaving, setContactsSaving] = useState(false);
   const [isEditingContacts, setIsEditingContacts] = useState(false);
 
-  // === Общее ===
   const [error, setError] = useState(null);
 
-  // === Рекламные посты ===
+  // === Рекламные посты (сайт) ===
   const [adPosts, setAdPosts] = useState([]);
   const [loadingAd, setLoadingAd] = useState(true);
   const [newAdContent, setNewAdContent] = useState('');
@@ -33,7 +33,7 @@ const AdvertisingAdminPage = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [creatingAd, setCreatingAd] = useState(false);
 
-  // === Объявления ===
+  // === Объявления (сайт) ===
   const [announcements, setAnnouncements] = useState([]);
   const [loadingAnn, setLoadingAnn] = useState(true);
   const [newAnnouncement, setNewAnnouncement] = useState('');
@@ -43,13 +43,12 @@ const AdvertisingAdminPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // === Telegram (общий) ===
-  const [showTelegramModal, setShowTelegramModal] = useState(false);
-  const [telegramText, setTelegramText] = useState('');
-  const [sendingTelegram, setSendingTelegram] = useState(false);
-  const [sendingToSelf, setSendingToSelf] = useState(false);
-  const [telegramProgress, setTelegramProgress] = useState(null);
-  const [telegramImage, setTelegramImage] = useState(null);
-  const [telegramImagePreview, setTelegramImagePreview] = useState(null);
+  const [tgText, setTgText] = useState('');
+  const [tgImage, setTgImage] = useState(null);
+  const [tgImagePreview, setTgImagePreview] = useState(null);
+  const [sendingTg, setSendingTg] = useState(false);
+  const [sendingSelf, setSendingSelf] = useState(false);
+  const [tgProgress, setTgProgress] = useState(null);
 
   // === История ===
   const [sentPosts, setSentPosts] = useState([]);
@@ -57,281 +56,168 @@ const AdvertisingAdminPage = () => {
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
-    loadContacts();
-    loadAdPosts();
-    loadAnnouncements();
-    loadSentPosts();
+    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts();
   }, [user, navigate]);
 
-  // При смене вкладки перезагружаем историю
-  useEffect(() => {
-    loadSentPosts();
-  }, [activeTab]);
+  useEffect(() => { loadSentPosts(); }, [activeTab]);
 
   // ===================== КОНТАКТЫ =====================
   const loadContacts = async () => {
     try {
       setContactsLoading(true);
-      const response = await api.get('/settings/advertising_contacts');
-      const value = response.data.value || '';
-      const lines = value.split('\n');
-      let email = 'admin@watchrebel.com';
-      let telegram = '@watchrebel_admin';
-      let text = '';
-      lines.forEach(line => {
-        const emailMatch = line.match(/Email:\s*(.+)/i);
-        const telegramMatch = line.match(/Telegram:\s*(.+)/i);
-        if (emailMatch) email = emailMatch[1].trim();
-        else if (telegramMatch) telegram = telegramMatch[1].trim();
-        else if (line.trim() && !line.includes('Email:') && !line.includes('Telegram:')) {
-          text += (text ? '\n' : '') + line;
-        }
+      const r = await api.get('/settings/advertising_contacts');
+      const v = r.data.value || '';
+      const lines = v.split('\n');
+      let email = 'admin@watchrebel.com', telegram = '@watchrebel_admin', text = '';
+      lines.forEach(l => {
+        const em = l.match(/Email:\s*(.+)/i), tm = l.match(/Telegram:\s*(.+)/i);
+        if (em) email = em[1].trim();
+        else if (tm) telegram = tm[1].trim();
+        else if (l.trim() && !l.includes('Email:') && !l.includes('Telegram:')) text += (text ? '\n' : '') + l;
       });
-      setContactEmail(email);
-      setContactTelegram(telegram);
-      setContactText(text);
-    } catch (err) {
-      console.error('Ошибка загрузки контактов:', err);
-    } finally {
-      setContactsLoading(false);
-    }
+      setContactEmail(email); setContactTelegram(telegram); setContactText(text);
+    } catch (err) { console.error('Ошибка загрузки контактов:', err); }
+    finally { setContactsLoading(false); }
   };
 
   const handleSaveContacts = async () => {
     try {
       setContactsSaving(true);
-      const contactsValue = `${contactText}\n\nEmail: ${contactEmail}\nTelegram: ${contactTelegram}`;
-      await api.put('/settings/advertising_contacts', { value: contactsValue });
+      await api.put('/settings/advertising_contacts', { value: `${contactText}\n\nEmail: ${contactEmail}\nTelegram: ${contactTelegram}` });
       setIsEditingContacts(false);
-    } catch (err) {
-      console.error('Ошибка сохранения контактов:', err);
-      setError('Не удалось сохранить контакты');
-    } finally {
-      setContactsSaving(false);
-    }
+    } catch (err) { setError('Не удалось сохранить контакты'); }
+    finally { setContactsSaving(false); }
   };
 
-  // ===================== РЕКЛАМА =====================
+  // ===================== РЕКЛАМА (САЙТ) =====================
   const loadAdPosts = async () => {
-    try {
-      setLoadingAd(true);
-      const response = await api.get('/admin/advertising');
-      setAdPosts(response.data);
-    } catch (err) {
-      console.error('Ошибка загрузки рекламных постов:', err);
-    } finally {
-      setLoadingAd(false);
-    }
+    try { setLoadingAd(true); const r = await api.get('/admin/advertising'); setAdPosts(r.data); }
+    catch (err) { console.error(err); } finally { setLoadingAd(false); }
   };
 
   const handleCreateAd = async (e) => {
     e.preventDefault();
-    if (!newAdContent.trim() && selectedImages.length === 0) {
-      setError('Добавьте текст или изображения'); return;
-    }
+    if (!newAdContent.trim() && selectedImages.length === 0) { setError('Добавьте текст или изображения'); return; }
     try {
       setCreatingAd(true);
-      const uploadedUrls = [];
-      for (const image of selectedImages) {
-        const formData = new FormData();
-        formData.append('image', image);
-        const uploadRes = await api.post('/admin/advertising/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (uploadRes.data?.url) uploadedUrls.push(uploadRes.data.url);
+      const urls = [];
+      for (const img of selectedImages) {
+        const fd = new FormData(); fd.append('image', img);
+        const r = await api.post('/admin/advertising/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        if (r.data?.url) urls.push(r.data.url);
       }
       await api.post('/admin/advertising', {
         content: newAdContent.trim(),
-        linkUrl: newAdContent.trim() && newAdLinkUrl.trim() !== 'https://'
-          ? (newAdLinkUrl.trim().startsWith('http') ? newAdLinkUrl.trim() : `https://${newAdLinkUrl.trim()}`)
-          : null,
-        linkLabel: newAdLinkLabel.trim() || null,
-        imageUrls: uploadedUrls
+        linkUrl: newAdLinkUrl.trim() !== 'https://' ? (newAdLinkUrl.startsWith('http') ? newAdLinkUrl : `https://${newAdLinkUrl}`) : null,
+        linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls
       });
       setNewAdContent(''); setNewAdLinkUrl('https://'); setNewAdLinkLabel('');
-      setSelectedImages([]); setImagePreviews([]); setError(null);
-      await loadAdPosts();
-    } catch (err) {
-      console.error('Ошибка создания рекламного поста:', err);
-      setError('Не удалось создать рекламный пост');
-    } finally {
-      setCreatingAd(false);
-    }
+      setSelectedImages([]); setImagePreviews([]); setError(null); await loadAdPosts();
+    } catch (err) { setError('Не удалось создать рекламный пост'); }
+    finally { setCreatingAd(false); }
   };
 
   const handleDeleteAd = async (id) => {
-    try {
-      await api.delete(`/admin/advertising/${id}`);
-      await loadAdPosts();
-    } catch (err) {
-      console.error('Ошибка удаления:', err);
-      setError('Не удалось удалить рекламный пост');
-    }
+    try { await api.delete(`/admin/advertising/${id}`); await loadAdPosts(); }
+    catch (err) { setError('Не удалось удалить'); }
   };
 
-  // ===================== ОБЪЯВЛЕНИЯ =====================
+  // ===================== ОБЪЯВЛЕНИЯ (САЙТ) =====================
   const loadAnnouncements = async () => {
-    try {
-      setLoadingAnn(true);
-      const response = await api.get('/admin/announcements');
-      setAnnouncements(response.data);
-    } catch (err) {
-      console.error('Ошибка загрузки объявлений:', err);
-    } finally {
-      setLoadingAnn(false);
-    }
+    try { setLoadingAnn(true); const r = await api.get('/admin/announcements'); setAnnouncements(r.data); }
+    catch (err) { console.error(err); } finally { setLoadingAnn(false); }
   };
 
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
-    if (!newAnnouncement.trim() && selectedAnnImages.length === 0) {
-      setError('Добавьте текст или изображения'); return;
-    }
+    if (!newAnnouncement.trim() && selectedAnnImages.length === 0) { setError('Добавьте текст или изображения'); return; }
     try {
       setCreatingAnn(true);
-      const formData = new FormData();
-      formData.append('content', newAnnouncement.trim() || ' ');
-      selectedAnnImages.forEach(image => formData.append('images', image));
-      await api.post('/admin/announcements', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
-      await loadAnnouncements();
-    } catch (err) {
-      console.error('Ошибка создания объявления:', err);
-      setError('Не удалось создать объявление');
-    } finally {
-      setCreatingAnn(false);
-    }
+      const fd = new FormData(); fd.append('content', newAnnouncement.trim() || ' ');
+      selectedAnnImages.forEach(img => fd.append('images', img));
+      await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null); await loadAnnouncements();
+    } catch (err) { setError('Не удалось создать объявление'); }
+    finally { setCreatingAnn(false); }
   };
 
   const handleDeleteAnnouncement = async (id) => {
-    try {
-      await api.delete(`/admin/announcements/${id}`);
-      await loadAnnouncements();
-      setDeleteConfirm(null);
-    } catch (err) {
-      console.error('Ошибка удаления:', err);
-      setError('Не удалось удалить объявление');
-    }
+    try { await api.delete(`/admin/announcements/${id}`); await loadAnnouncements(); setDeleteConfirm(null); }
+    catch (err) { setError('Не удалось удалить'); }
   };
 
   // ===================== ИЗОБРАЖЕНИЯ =====================
-  const addImages = (files, setSelected, setPreviews, setErrorMsg) => {
-    if (files.length > 5) { setErrorMsg('Максимум 5 изображений'); return; }
-    const validFiles = [];
-    const newPreviews = [];
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      if (file.size > 5 * 1024 * 1024) { setErrorMsg('Размер не более 5MB'); return; }
-      validFiles.push(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result);
-        if (newPreviews.length === validFiles.length) setPreviews(prev => [...prev, ...newPreviews]);
-      };
-      reader.readAsDataURL(file);
+  const addImages = (files, setSel, setPrev, setErr) => {
+    if (files.length > 5) { setErr('Максимум 5'); return; }
+    const valid = [], previews = [];
+    files.forEach(f => {
+      if (!f.type.startsWith('image/') || f.size > 5*1024*1024) return;
+      valid.push(f);
+      const r = new FileReader();
+      r.onloadend = () => { previews.push(r.result); if (previews.length === valid.length) setPrev(p => [...p, ...previews]); };
+      r.readAsDataURL(f);
     });
-    setSelected(prev => [...prev, ...validFiles]);
+    setSel(p => [...p, ...valid]);
   };
 
   const handleImageSelect = (e) => addImages(Array.from(e.target.files), setSelectedImages, setImagePreviews, setError);
-  const handleRemoveImage = (index) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
+  const handleRemoveImage = (i) => { setSelectedImages(p => p.filter((_,j) => j!==i)); setImagePreviews(p => p.filter((_,j) => j!==i)); };
   const handleAnnImageSelect = (e) => addImages(Array.from(e.target.files), setSelectedAnnImages, setAnnImagePreviews, setError);
-  const handleRemoveAnnImage = (index) => {
-    setSelectedAnnImages(prev => prev.filter((_, i) => i !== index));
-    setAnnImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
+  const handleRemoveAnnImage = (i) => { setSelectedAnnImages(p => p.filter((_,j) => j!==i)); setAnnImagePreviews(p => p.filter((_,j) => j!==i)); };
 
   // ===================== TELEGRAM =====================
+  const tgType = activeTab === 'advertising' ? 'advertising' : 'announcement';
+
   const uploadTgImage = async () => {
-    if (!telegramImage) return null;
-    const formData = new FormData();
-    formData.append('image', telegramImage);
-    const uploadRes = await api.post('/admin/advertising/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return uploadRes.data?.url || null;
+    if (!tgImage) return null;
+    const fd = new FormData(); fd.append('image', tgImage);
+    const r = await api.post('/admin/advertising/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return r.data?.url || null;
   };
 
-  const handleSendTelegram = async () => {
-    if (!telegramText.trim()) return;
-    const type = activeTab === 'advertising' ? 'advertising' : 'announcement';
+  const handleSendTg = async () => {
+    if (!tgText.trim()) return;
     try {
-      setSendingTelegram(true);
-      setTelegramProgress({ current: 0, total: 0 });
+      setSendingTg(true); setTgProgress({ current: 0, total: 0 });
       const imageUrl = await uploadTgImage();
-      const response = await api.post('/admin/telegram-announcement', {
-        content: telegramText.trim(), imageUrl, type
-      });
-      setTelegramProgress({ current: response.data.success, total: response.data.total, failed: response.data.failed });
-      setTimeout(() => {
-        setShowTelegramModal(false); setTelegramText(''); setTelegramProgress(null);
-        setTelegramImage(null); setTelegramImagePreview(null);
-      }, 3000);
-    } catch (err) {
-      console.error('Ошибка отправки в Telegram:', err);
-      setError('Не удалось отправить в Telegram');
-      setTelegramProgress(null);
-    } finally {
-      setSendingTelegram(false);
-    }
+      const r = await api.post('/admin/telegram-announcement', { content: tgText.trim(), imageUrl, type: tgType });
+      setTgProgress({ current: r.data.success, total: r.data.total, failed: r.data.failed });
+      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); }, 3000);
+    } catch (err) { setError('Не удалось отправить в Telegram'); setTgProgress(null); }
+    finally { setSendingTg(false); }
   };
 
-  const handleSendToSelf = async () => {
-    if (!telegramText.trim()) return;
-    const type = activeTab === 'advertising' ? 'advertising' : 'announcement';
+  const handleSendSelf = async () => {
+    if (!tgText.trim()) return;
     try {
-      setSendingToSelf(true);
+      setSendingSelf(true);
       const imageUrl = await uploadTgImage();
-      await api.post('/admin/telegram-announcement-self', {
-        content: telegramText.trim(), imageUrl, type
-      });
-      alert(`${type === 'advertising' ? 'Реклама' : 'Объявление'} отправлено вам в Telegram!`);
-    } catch (err) {
-      console.error('Ошибка отправки себе:', err);
-      setError('Не удалось отправить');
-    } finally {
-      setSendingToSelf(false);
-    }
+      await api.post('/admin/telegram-announcement-self', { content: tgText.trim(), imageUrl, type: tgType });
+      alert(`${tgType === 'advertising' ? 'Реклама' : 'Объявление'} отправлено вам в Telegram!`);
+    } catch (err) { setError('Не удалось отправить'); }
+    finally { setSendingSelf(false); }
   };
 
-  const handleTelegramImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file || !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return;
-    setTelegramImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setTelegramImagePreview(reader.result);
-    reader.readAsDataURL(file);
+  const handleTgImageSelect = (e) => {
+    const f = e.target.files[0]; if (!f || !f.type.startsWith('image/') || f.size > 5*1024*1024) return;
+    setTgImage(f);
+    const r = new FileReader(); r.onloadend = () => setTgImagePreview(r.result); r.readAsDataURL(f);
   };
 
   // ===================== ФОРМАТИРОВАНИЕ ТГ =====================
   const insertFormatting = (before, after = '', placeholder = '') => {
-    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = telegramText.substring(start, end);
-    const textToInsert = selectedText || placeholder;
-    const newText = telegramText.substring(0, start) + before + textToInsert + after + telegramText.substring(end);
-    setTelegramText(newText);
-    setTimeout(() => {
-      textarea.focus();
-      if (selectedText) { const pos = start + before.length + selectedText.length; textarea.setSelectionRange(pos, pos); }
-      else { const s = start + before.length; textarea.setSelectionRange(s, s + placeholder.length); }
-    }, 0);
+    const ta = document.querySelector(`.${styles.tgTextarea}`); if (!ta) return;
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = tgText.substring(s, e), ins = sel || placeholder;
+    setTgText(tgText.substring(0, s) + before + ins + after + tgText.substring(e));
+    setTimeout(() => { ta.focus(); if (sel) { const p = s + before.length + sel.length; ta.setSelectionRange(p, p); } else { ta.setSelectionRange(s + before.length, s + before.length + placeholder.length); } }, 0);
   };
 
   const insertAtCursor = (text) => {
-    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    setTelegramText(telegramText.substring(0, start) + text + telegramText.substring(start));
-    setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + text.length, start + text.length); }, 0);
+    const ta = document.querySelector(`.${styles.tgTextarea}`); if (!ta) return;
+    const s = ta.selectionStart;
+    setTgText(tgText.substring(0, s) + text + tgText.substring(s));
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(s + text.length, s + text.length); }, 0);
   };
 
   const handleBold = () => insertFormatting('*', '*', 'текст');
@@ -344,27 +230,25 @@ const AdvertisingAdminPage = () => {
   const handleLink = () => insertFormatting('[', '](https://example.com)', 'текст ссылки');
   const handleBulletList = () => insertAtCursor('• ');
   const handleNumberedList = () => {
-    const textarea = document.querySelector(`.${styles.telegramTextarea}`);
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const lines = telegramText.substring(0, start).split('\n');
-    const lastLine = lines[lines.length - 1];
-    const match = lastLine.match(/^(\d+)\.\s/);
-    insertAtCursor(`${match ? parseInt(match[1]) + 1 : 1}. `);
+    const ta = document.querySelector(`.${styles.tgTextarea}`); if (!ta) return;
+    const s = ta.selectionStart;
+    const lines = tgText.substring(0, s).split('\n');
+    const m = lines[lines.length - 1].match(/^(\d+)\.\s/);
+    insertAtCursor(`${m ? parseInt(m[1]) + 1 : 1}. `);
   };
 
-  const renderTelegramPreview = (text) => {
+  const renderTgPreview = (text) => {
     if (!text) return 'Превью появится здесь...';
-    let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    html = html.replace(/```\n?([\s\S]+?)\n?```/g, '<pre>$1</pre>');
-    html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
-    html = html.replace(/\*([^*]+?)\*/g, '<strong>$1</strong>');
-    html = html.replace(/__([^_]+?)__/g, '<u>$1</u>');
-    html = html.replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>');
-    html = html.replace(/~([^~]+?)~/g, '<s>$1</s>');
-    html = html.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
-    html = html.replace(/\n/g, '<br/>');
-    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+    let h = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    h = h.replace(/```\n?([\s\S]+?)\n?```/g, '<pre>$1</pre>');
+    h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
+    h = h.replace(/\*([^*]+?)\*/g, '<strong>$1</strong>');
+    h = h.replace(/__([^_]+?)__/g, '<u>$1</u>');
+    h = h.replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>');
+    h = h.replace(/~([^~]+?)~/g, '<s>$1</s>');
+    h = h.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
+    h = h.replace(/\n/g, '<br/>');
+    return <div dangerouslySetInnerHTML={{ __html: h }} />;
   };
 
   // ===================== ИСТОРИЯ =====================
@@ -372,43 +256,37 @@ const AdvertisingAdminPage = () => {
     try {
       setLoadingHistory(true);
       const type = activeTab === 'advertising' ? 'advertising' : 'announcement';
-      const response = await api.get('/admin/sent-posts', { params: { type } });
-      setSentPosts(response.data);
-    } catch (err) {
-      console.error('Ошибка загрузки истории:', err);
-    } finally {
-      setLoadingHistory(false);
-    }
+      const r = await api.get('/admin/sent-posts', { params: { type } });
+      setSentPosts(r.data);
+    } catch (err) { console.error(err); }
+    finally { setLoadingHistory(false); }
   };
 
   const handleRepeatPost = (post) => {
+    const isTg = post.channel === 'telegram';
+    // Переключаем на правильную вкладку
     if (activeTab === 'advertising') {
-      setNewAdContent(post.content);
-      setNewAdLinkUrl('https://');
-      setNewAdLinkLabel('');
+      if (isTg) { setTgText(post.content); setTgImage(null); setTgImagePreview(null); }
+      else { setNewAdContent(post.content); setNewAdLinkUrl('https://'); setNewAdLinkLabel(''); setSelectedImages([]); setImagePreviews([]); }
     } else {
-      setNewAnnouncement(post.content);
+      if (isTg) { setTgText(post.content); setTgImage(null); setTgImagePreview(null); }
+      else { setNewAnnouncement(post.content); setSelectedAnnImages([]); setAnnImagePreviews([]); }
     }
-    setSelectedImages([]); setImagePreviews([]);
-    setSelectedAnnImages([]); setAnnImagePreviews([]);
+    setActiveSubTab(isTg ? 'telegram' : 'site');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteSentPost = async (id) => {
     try { await api.delete(`/admin/sent-posts/${id}`); await loadSentPosts(); }
-    catch (err) { console.error('Ошибка удаления:', err); }
+    catch (err) { console.error(err); }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
+  const formatDate = (d) => new Date(d).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   // ===================== RENDER =====================
-  const tgTitle = activeTab === 'advertising' ? 'Отправить рекламу в Telegram' : 'Отправить объявление в Telegram';
-  const tgDescription = activeTab === 'advertising'
-    ? 'Реклама будет отправлена всем пользователям через Telegram бота'
-    : 'Объявление будет отправлено всем пользователям через Telegram бота';
+  const isAd = activeTab === 'advertising';
+  const tgTitle = isAd ? 'Отправить рекламу в Telegram' : 'Отправить объявление в Telegram';
+  const tgDesc = isAd ? 'Реклама будет отправлена всем пользователям' : 'Объявление будет отправлено всем пользователям';
 
   return (
     <div className={styles.page}>
@@ -424,26 +302,14 @@ const AdvertisingAdminPage = () => {
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2>Контакты для рекламы</h2>
-          {!isEditingContacts && (
-            <button onClick={() => setIsEditingContacts(true)} className={styles.btnEdit}>Редактировать</button>
-          )}
+          {!isEditingContacts && <button onClick={() => setIsEditingContacts(true)} className={styles.btnEdit}>Редактировать</button>}
         </div>
-        {contactsLoading ? (
-          <p className={styles.loading}>Загрузка...</p>
-        ) : isEditingContacts ? (
+        {contactsLoading ? <p className={styles.loading}>Загрузка...</p>
+        : isEditingContacts ? (
           <div className={styles.editForm}>
-            <div className={styles.formGroup}>
-              <label>Текст:</label>
-              <textarea value={contactText} onChange={(e) => setContactText(e.target.value)} className={styles.textarea} rows={3} placeholder="Для размещения рекламы свяжитесь с нами:" />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Email:</label>
-              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={styles.input} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Telegram:</label>
-              <input type="text" value={contactTelegram} onChange={(e) => setContactTelegram(e.target.value)} className={styles.input} />
-            </div>
+            <div className={styles.formGroup}><label>Текст:</label><textarea value={contactText} onChange={e => setContactText(e.target.value)} className={styles.textarea} rows={3} /></div>
+            <div className={styles.formGroup}><label>Email:</label><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className={styles.input} /></div>
+            <div className={styles.formGroup}><label>Telegram:</label><input type="text" value={contactTelegram} onChange={e => setContactTelegram(e.target.value)} className={styles.input} /></div>
             <div className={styles.formButtons}>
               <button onClick={handleSaveContacts} className={styles.btnSave} disabled={contactsSaving}>{contactsSaving ? 'Сохранение...' : 'Сохранить'}</button>
               <button onClick={() => { setIsEditingContacts(false); loadContacts(); }} className={styles.btnCancel}>Отмена</button>
@@ -458,81 +324,71 @@ const AdvertisingAdminPage = () => {
         )}
       </div>
 
-      {/* ===== Вкладки ===== */}
+      {/* ===== Основные вкладки ===== */}
       <div className={styles.tabs}>
-        <button className={`${styles.tabButton} ${activeTab === 'advertising' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('advertising')}>
+        <button className={`${styles.tabButton} ${activeTab === 'advertising' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('advertising'); setActiveSubTab('site'); }}>
           <Icon name="advertising" size="small" /> Реклама
         </button>
-        <button className={`${styles.tabButton} ${activeTab === 'announcements' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('announcements')}>
+        <button className={`${styles.tabButton} ${activeTab === 'announcements' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('announcements'); setActiveSubTab('site'); }}>
           <Icon name="announcement" size="small" /> Объявления
+        </button>
+      </div>
+
+      {/* ===== Подвкладки ===== */}
+      <div className={styles.subTabs}>
+        <button className={`${styles.subTabButton} ${activeSubTab === 'site' ? styles.subTabButtonActive : ''}`} onClick={() => setActiveSubTab('site')}>
+          <Icon name="feed" size="small" /> {isAd ? 'Реклама на сайте' : 'Объявления на сайте'}
+        </button>
+        <button className={`${styles.subTabButton} ${activeSubTab === 'telegram' ? styles.subTabButtonActive : ''}`} onClick={() => setActiveSubTab('telegram')}>
+          <Icon name="telegram" size="small" /> {isAd ? 'Реклама в ТГ' : 'Объявления в ТГ'}
         </button>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
 
-      {/* ===== ВКЛАДКА: РЕКЛАМА ===== */}
-      {activeTab === 'advertising' && (
+      {/* ===== ПОДВКЛАДКА: НА САЙТЕ ===== */}
+      {activeSubTab === 'site' && isAd && (
         <>
-          {/* Создание рекламного поста */}
           <div className={styles.section}>
             <h2>Создать рекламный пост</h2>
             <form onSubmit={handleCreateAd} className={styles.createForm}>
               <div className={styles.textareaWrapper}>
-                <textarea value={newAdContent} onChange={(e) => setNewAdContent(e.target.value)} placeholder="Текст рекламного поста..." className={styles.textarea} rows={4} disabled={creatingAd} />
+                <textarea value={newAdContent} onChange={e => setNewAdContent(e.target.value)} placeholder="Текст рекламного поста..." className={styles.textarea} rows={4} disabled={creatingAd} />
                 <label htmlFor="adImageInput" className={styles.attachButton} title="Прикрепить изображения"><Icon name="paperclip" size="medium" /></label>
                 <input id="adImageInput" type="file" accept="image/*" multiple onChange={handleImageSelect} className={styles.hiddenFileInput} disabled={creatingAd || selectedImages.length >= 5} />
               </div>
               {imagePreviews.length > 0 && (
                 <div className={styles.imagePreviews}>
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className={styles.imagePreview}>
-                      <img src={preview} alt={`Превью ${index + 1}`} />
-                      <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveImage(index)} disabled={creatingAd}><Icon name="close" size="small" /></button>
+                  {imagePreviews.map((p, i) => (
+                    <div key={i} className={styles.imagePreview}>
+                      <img src={p} alt="" />
+                      <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveImage(i)} disabled={creatingAd}><Icon name="close" size="small" /></button>
                     </div>
                   ))}
                 </div>
               )}
               <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Ссылка (URL):</label>
-                  <input type="url" value={newAdLinkUrl} onChange={(e) => setNewAdLinkUrl(e.target.value)} className={styles.input} placeholder="google.com" />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Текст ссылки:</label>
-                  <input type="text" value={newAdLinkLabel} onChange={(e) => setNewAdLinkLabel(e.target.value)} className={styles.input} placeholder="Перейти" />
-                </div>
+                <div className={styles.formGroup}><label>Ссылка (URL):</label><input type="url" value={newAdLinkUrl} onChange={e => setNewAdLinkUrl(e.target.value)} className={styles.input} placeholder="google.com" /></div>
+                <div className={styles.formGroup}><label>Текст ссылки:</label><input type="text" value={newAdLinkLabel} onChange={e => setNewAdLinkLabel(e.target.value)} className={styles.input} placeholder="Перейти" /></div>
               </div>
-              <div className={styles.createButtons}>
-                <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
-                  {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
-                </button>
-                <button type="button" className={styles.telegramButton} onClick={() => setShowTelegramModal(true)}>
-                  <Icon name="telegram" size="small" /> Реклама в ТГ
-                </button>
-              </div>
+              <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
+                {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
+              </button>
             </form>
           </div>
-
-          {/* Список рекламных постов */}
           <div className={styles.section}>
             <h2>Опубликованные рекламные посты</h2>
-            {loadingAd ? <p className={styles.loading}>Загрузка...</p>
-            : adPosts.length === 0 ? <p className={styles.empty}>Рекламных постов пока нет</p>
-            : (
+            {loadingAd ? <p className={styles.loading}>Загрузка...</p> : adPosts.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
               <div className={styles.adList}>
-                {adPosts.map((post) => (
-                  <div key={post.id} className={styles.adCard}>
+                {adPosts.map(p => (
+                  <div key={p.id} className={styles.adCard}>
                     <div className={styles.adHeader}>
-                      <span className={styles.adDate}>{formatDate(post.createdAt)}</span>
-                      <button onClick={() => handleDeleteAd(post.id)} className={styles.deleteButton} title="Удалить"><Icon name="delete" size="small" /></button>
+                      <span className={styles.adDate}>{formatDate(p.createdAt)}</span>
+                      <button onClick={() => handleDeleteAd(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
                     </div>
-                    <p className={styles.adContent}>{post.content}</p>
-                    {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{post.linkLabel || post.linkUrl}</a>}
-                    {post.imageUrls && post.imageUrls.length > 0 && (
-                      <div className={styles.adImages}>
-                        {post.imageUrls.map((url, i) => <img key={i} src={url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`} alt="" />)}
-                      </div>
-                    )}
+                    <p className={styles.adContent}>{p.content}</p>
+                    {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{p.linkLabel || p.linkUrl}</a>}
+                    {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   </div>
                 ))}
               </div>
@@ -541,68 +397,51 @@ const AdvertisingAdminPage = () => {
         </>
       )}
 
-      {/* ===== ВКЛАДКА: ОБЪЯВЛЕНИЯ ===== */}
-      {activeTab === 'announcements' && (
+      {activeSubTab === 'site' && !isAd && (
         <>
-          {/* Создание объявления */}
           <div className={styles.section}>
             <h2>Создать новое объявление</h2>
             <form onSubmit={handleCreateAnnouncement} className={styles.createForm}>
               <div className={styles.textareaWrapper}>
-                <textarea value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)} placeholder="Введите текст объявления..." className={styles.textarea} rows={4} disabled={creatingAnn} />
+                <textarea value={newAnnouncement} onChange={e => setNewAnnouncement(e.target.value)} placeholder="Введите текст объявления..." className={styles.textarea} rows={4} disabled={creatingAnn} />
                 <label htmlFor="annImageInput" className={styles.attachButton} title="Прикрепить изображения"><Icon name="paperclip" size="medium" /></label>
                 <input id="annImageInput" type="file" accept="image/*" multiple onChange={handleAnnImageSelect} className={styles.hiddenFileInput} disabled={creatingAnn || selectedAnnImages.length >= 5} />
               </div>
               {annImagePreviews.length > 0 && (
                 <div className={styles.imagePreviews}>
-                  {annImagePreviews.map((preview, index) => (
-                    <div key={index} className={styles.imagePreview}>
-                      <img src={preview} alt={`Превью ${index + 1}`} />
-                      <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveAnnImage(index)} disabled={creatingAnn}><Icon name="close" size="small" /></button>
+                  {annImagePreviews.map((p, i) => (
+                    <div key={i} className={styles.imagePreview}>
+                      <img src={p} alt="" />
+                      <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveAnnImage(i)} disabled={creatingAnn}><Icon name="close" size="small" /></button>
                     </div>
                   ))}
                 </div>
               )}
-              <div className={styles.createButtons}>
-                <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
-                  {creatingAnn ? 'Создание...' : 'Создать объявление'}
-                </button>
-                <button type="button" className={styles.telegramButton} onClick={() => setShowTelegramModal(true)}>
-                  <Icon name="telegram" size="small" /> Объявление в ТГ
-                </button>
-              </div>
+              <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
+                {creatingAnn ? 'Создание...' : 'Создать объявление'}
+              </button>
             </form>
           </div>
-
-          {/* Список объявлений */}
           <div className={styles.section}>
             <h2>Все объявления</h2>
-            {loadingAnn ? <p className={styles.loading}>Загрузка...</p>
-            : announcements.length === 0 ? <p className={styles.empty}>Объявлений пока нет</p>
-            : (
+            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : announcements.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
               <div className={styles.adList}>
-                {announcements.map((announcement) => (
-                  <div key={announcement.id} className={styles.adCard}>
+                {announcements.map(a => (
+                  <div key={a.id} className={styles.adCard}>
                     <div className={styles.adHeader}>
                       <div className={styles.sentMeta}>
-                        <span className={styles.adDate}>{formatDate(announcement.createdAt)}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{announcement.creatorName || 'Администратор'}</span>
+                        <span className={styles.adDate}>{formatDate(a.createdAt)}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{a.creatorName || 'Администратор'}</span>
                       </div>
-                      {deleteConfirm === announcement.id ? (
+                      {deleteConfirm === a.id ? (
                         <div className={styles.sentActions}>
-                          <button onClick={() => handleDeleteAnnouncement(announcement.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
+                          <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
                           <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
                         </div>
-                      ) : (
-                        <button onClick={() => setDeleteConfirm(announcement.id)} className={styles.deleteButton} title="Удалить"><Icon name="delete" size="small" /></button>
-                      )}
+                      ) : <button onClick={() => setDeleteConfirm(a.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                     </div>
-                    <p className={styles.adContent}>{announcement.content}</p>
-                    {announcement.imageUrls && announcement.imageUrls.length > 0 && (
-                      <div className={styles.adImages}>
-                        {announcement.imageUrls.map((url, i) => <img key={i} src={url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`} alt="" />)}
-                      </div>
-                    )}
+                    <p className={styles.adContent}>{a.content}</p>
+                    {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   </div>
                 ))}
               </div>
@@ -611,103 +450,92 @@ const AdvertisingAdminPage = () => {
         </>
       )}
 
-      {/* ===== История (общая, фильтруется по activeTab) ===== */}
+      {/* ===== ПОДВКЛАДКА: TELEGRAM ===== */}
+      {activeSubTab === 'telegram' && (
+        <div className={styles.section}>
+          <h2>{tgTitle}</h2>
+          <p className={styles.tgDesc}>{tgDesc}</p>
+
+          <div className={styles.formattingToolbar}>
+            <button type="button" onClick={handleBold} className={styles.formatButton} disabled={sendingTg || sendingSelf}><strong>B</strong></button>
+            <button type="button" onClick={handleItalic} className={styles.formatButton} disabled={sendingTg || sendingSelf}><em>I</em></button>
+            <button type="button" onClick={handleUnderline} className={styles.formatButton} disabled={sendingTg || sendingSelf}><u>U</u></button>
+            <button type="button" onClick={handleStrikethrough} className={styles.formatButton} disabled={sendingTg || sendingSelf}><s>S</s></button>
+            <button type="button" onClick={handleCode} className={styles.formatButton} disabled={sendingTg || sendingSelf}><code>{'<>'}</code></button>
+            <button type="button" onClick={handleMonospace} className={styles.formatButton} disabled={sendingTg || sendingSelf}><code>{'{ }'}</code></button>
+            <button type="button" onClick={handleQuote} className={styles.formatButton} disabled={sendingTg || sendingSelf}><span>"</span></button>
+            <button type="button" onClick={handleLink} className={styles.formatButton} disabled={sendingTg || sendingSelf}><span>🔗</span></button>
+            <button type="button" onClick={handleBulletList} className={styles.formatButton} disabled={sendingTg || sendingSelf}><span>•</span></button>
+            <button type="button" onClick={handleNumberedList} className={styles.formatButton} disabled={sendingTg || sendingSelf}><span>1.</span></button>
+          </div>
+
+          <textarea value={tgText} onChange={e => setTgText(e.target.value)} placeholder="Введите текст для Telegram..." className={`${styles.textarea} ${styles.tgTextarea}`} rows={6} disabled={sendingTg || sendingSelf} />
+
+          <div className={styles.tgImageSection}>
+            <label className={styles.tgImageLabel}><Icon name="image" size="small" /> Изображение (необязательно)</label>
+            <input type="file" accept="image/*" onChange={handleTgImageSelect} className={styles.hiddenFileInput} id="tgImgInput" disabled={sendingTg || sendingSelf} />
+            {tgImagePreview ? (
+              <div className={styles.tgImagePreview}>
+                <img src={tgImagePreview} alt="" />
+                <button type="button" className={styles.removeImageButton} onClick={() => { setTgImage(null); setTgImagePreview(null); }} disabled={sendingTg || sendingSelf}><Icon name="close" size="small" /></button>
+              </div>
+            ) : (
+              <label htmlFor="tgImgInput" className={styles.tgImageDropzone}>
+                <Icon name="image" size="medium" /><span>Нажмите или перетащите изображение</span>
+              </label>
+            )}
+          </div>
+
+          <div className={styles.previewSection}>
+            <h4>Превью:</h4>
+            <div className={styles.tgPreview}>{renderTgPreview(tgText)}</div>
+          </div>
+
+          {tgProgress && (
+            <div className={styles.progressInfo}>
+              <p>Отправлено: {tgProgress.current} из {tgProgress.total}</p>
+              {tgProgress.failed > 0 && <p className={styles.progressError}>Не удалось: {tgProgress.failed}</p>}
+            </div>
+          )}
+
+          <div className={styles.tgButtons}>
+            <button className={styles.tgSendSelf} onClick={handleSendSelf} disabled={sendingTg || sendingSelf || !tgText.trim()}>
+              {sendingSelf ? 'Отправка...' : 'Отправить себе'}
+            </button>
+            <button className={styles.tgSendAll} onClick={handleSendTg} disabled={sendingTg || sendingSelf || !tgText.trim()}>
+              {sendingTg ? 'Отправка...' : 'Отправить'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== История ===== */}
       <div className={styles.section}>
-        <h2>История отправленных {activeTab === 'advertising' ? 'рекламных постов' : 'объявлений'}</h2>
-        {loadingHistory ? <p className={styles.loading}>Загрузка...</p>
-        : sentPosts.length === 0 ? <p className={styles.empty}>Пока ничего не отправлено</p>
-        : (
+        <h2>История отправленных {isAd ? 'рекламных постов' : 'объявлений'}</h2>
+        {loadingHistory ? <p className={styles.loading}>Загрузка...</p> : sentPosts.length === 0 ? <p className={styles.empty}>Пока ничего не отправлено</p> : (
           <div className={styles.sentList}>
-            {sentPosts.map((post) => (
-              <div key={post.id} className={styles.sentCard}>
+            {sentPosts.map(p => (
+              <div key={p.id} className={styles.sentCard}>
                 <div className={styles.sentHeader}>
                   <div className={styles.sentMeta}>
                     <span className={styles.sentChannel}>
-                      {post.channel === 'telegram' ? <><Icon name="telegram" size="small" /> Telegram</> : <><Icon name="feed" size="small" /> Сайт</>}
+                      {p.channel === 'telegram' ? <><Icon name="telegram" size="small" /> Telegram</> : <><Icon name="feed" size="small" /> Сайт</>}
                     </span>
-                    <span className={styles.sentDate}>{formatDate(post.createdAt)}</span>
-                    {post.sentTo > 0 && <span className={styles.sentCount}>→ {post.sentTo} получателей</span>}
+                    <span className={styles.sentDate}>{formatDate(p.createdAt)}</span>
+                    {p.sentTo > 0 && <span className={styles.sentCount}>→ {p.sentTo} получателей</span>}
                   </div>
                   <div className={styles.sentActions}>
-                    <button onClick={() => handleRepeatPost(post)} className={styles.repeatButton} title="Повторить"><Icon name="refresh" size="small" /> Повторить</button>
-                    <button onClick={() => handleDeleteSentPost(post.id)} className={styles.deleteButton} title="Удалить из истории"><Icon name="delete" size="small" /></button>
+                    <button onClick={() => handleRepeatPost(p)} className={styles.repeatButton}><Icon name="refresh" size="small" /> Повторить</button>
+                    <button onClick={() => handleDeleteSentPost(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
                   </div>
                 </div>
-                <p className={styles.sentContent}>{post.content}</p>
-                {post.imageUrl && (
-                  <div className={styles.sentImage}>
-                    <img src={post.imageUrl.startsWith('http') ? post.imageUrl : `${import.meta.env.VITE_API_URL || ''}${post.imageUrl}`} alt="" />
-                  </div>
-                )}
+                <p className={styles.sentContent}>{p.content}</p>
+                {p.imageUrl && <div className={styles.sentImage}><img src={p.imageUrl.startsWith('http') ? p.imageUrl : `${import.meta.env.VITE_API_URL || ''}${p.imageUrl}`} alt="" /></div>}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* ===== Модальное окно Telegram ===== */}
-      {showTelegramModal && (
-        <div className={styles.telegramModal}>
-          <div className={styles.telegramModalContent}>
-            <h3><Icon name="telegram" size="medium" /> {tgTitle}</h3>
-            <p className={styles.telegramModalDescription}>{tgDescription}</p>
-
-            <div className={styles.formattingToolbar}>
-              <button type="button" onClick={handleBold} className={styles.formatButton} title="Жирный" disabled={sendingTelegram || sendingToSelf}><strong>B</strong></button>
-              <button type="button" onClick={handleItalic} className={styles.formatButton} title="Курсив" disabled={sendingTelegram || sendingToSelf}><em>I</em></button>
-              <button type="button" onClick={handleUnderline} className={styles.formatButton} title="Подчёркнутый" disabled={sendingTelegram || sendingToSelf}><u>U</u></button>
-              <button type="button" onClick={handleStrikethrough} className={styles.formatButton} title="Зачёркнутый" disabled={sendingTelegram || sendingToSelf}><s>S</s></button>
-              <button type="button" onClick={handleCode} className={styles.formatButton} title="Код" disabled={sendingTelegram || sendingToSelf}><code>{'<>'}</code></button>
-              <button type="button" onClick={handleMonospace} className={styles.formatButton} title="Блок кода" disabled={sendingTelegram || sendingToSelf}><code>{'{ }'}</code></button>
-              <button type="button" onClick={handleQuote} className={styles.formatButton} title="Цитата" disabled={sendingTelegram || sendingToSelf}><span>"</span></button>
-              <button type="button" onClick={handleLink} className={styles.formatButton} title="Ссылка" disabled={sendingTelegram || sendingToSelf}><span>🔗</span></button>
-              <button type="button" onClick={handleBulletList} className={styles.formatButton} title="Маркированный список" disabled={sendingTelegram || sendingToSelf}><span>•</span></button>
-              <button type="button" onClick={handleNumberedList} className={styles.formatButton} title="Нумерованный список" disabled={sendingTelegram || sendingToSelf}><span>1.</span></button>
-            </div>
-
-            <textarea value={telegramText} onChange={(e) => setTelegramText(e.target.value)} placeholder={`Введите текст для Telegram...`} className={`${styles.textarea} ${styles.telegramTextarea}`} rows={6} disabled={sendingTelegram || sendingToSelf} />
-
-            <div className={styles.telegramImageSection}>
-              <label className={styles.telegramImageLabel}><Icon name="image" size="small" /> Изображение (необязательно)</label>
-              <input type="file" accept="image/*" onChange={handleTelegramImageSelect} className={styles.hiddenFileInput} id="tgImageInput" disabled={sendingTelegram || sendingToSelf} />
-              {telegramImagePreview ? (
-                <div className={styles.telegramImagePreview}>
-                  <img src={telegramImagePreview} alt="Превью" />
-                  <button type="button" className={styles.removeImageButton} onClick={() => { setTelegramImage(null); setTelegramImagePreview(null); }} disabled={sendingTelegram || sendingToSelf}><Icon name="close" size="small" /></button>
-                </div>
-              ) : (
-                <label htmlFor="tgImageInput" className={styles.telegramImageDropzone}>
-                  <Icon name="image" size="medium" /><span>Нажмите или перетащите изображение</span>
-                </label>
-              )}
-            </div>
-
-            <div className={styles.previewSection}>
-              <h4>Превью:</h4>
-              <div className={styles.telegramPreview}>{renderTelegramPreview(telegramText)}</div>
-            </div>
-
-            {telegramProgress && (
-              <div className={styles.progressInfo}>
-                <p>Отправлено: {telegramProgress.current} из {telegramProgress.total}</p>
-                {telegramProgress.failed > 0 && <p className={styles.progressError}>Не удалось: {telegramProgress.failed}</p>}
-              </div>
-            )}
-
-            <div className={styles.telegramModalButtons}>
-              <button className={styles.telegramSendToSelfButton} onClick={handleSendToSelf} disabled={sendingTelegram || sendingToSelf || !telegramText.trim()}>
-                {sendingToSelf ? 'Отправка...' : 'Отправить себе'}
-              </button>
-              <button className={styles.telegramSendButton} onClick={handleSendTelegram} disabled={sendingTelegram || sendingToSelf || !telegramText.trim()}>
-                {sendingTelegram ? 'Отправка...' : 'Отправить'}
-              </button>
-              <button className={styles.telegramCancelButton} onClick={() => { setShowTelegramModal(false); setTelegramText(''); setTelegramProgress(null); setTelegramImage(null); setTelegramImagePreview(null); }} disabled={sendingTelegram || sendingToSelf}>
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
