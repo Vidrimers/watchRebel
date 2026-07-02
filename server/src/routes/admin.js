@@ -1026,6 +1026,14 @@ router.post('/telegram-announcement', async (req, res) => {
       errors: errors.length > 0 ? errors : undefined
     });
 
+    // Сохраняем в историю отправленных постов
+    const { v4: uuidv4 } = await import('uuid');
+    await executeQuery(
+      `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
+       VALUES (?, ?, ?, ?, 'telegram', ?, ?, datetime('now', 'localtime'))`,
+      [uuidv4(), content.trim(), fullImageUrl || null, type || 'announcement', successCount, req.user.id]
+    );
+
   } catch (error) {
     console.error('Ошибка отправки в Telegram:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
@@ -1407,6 +1415,14 @@ router.post('/advertising', async (req, res) => {
       return res.status(500).json({ error: 'Ошибка создания рекламного поста', code: 'DATABASE_ERROR' });
     }
 
+    // Сохраняем в историю
+    const firstImage = (imageUrls && imageUrls.length > 0) ? imageUrls[0] : null;
+    await executeQuery(
+      `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
+       VALUES (?, ?, ?, 'advertising', 'site', 0, ?, datetime('now', 'localtime'))`,
+      [uuidv4(), content.trim(), firstImage, req.user.id]
+    );
+
     res.status(201).json({ id: postId, message: 'Рекламный пост создан' });
   } catch (error) {
     console.error('Ошибка создания рекламного поста:', error);
@@ -1461,6 +1477,68 @@ router.delete('/advertising/:id', async (req, res) => {
       return res.status(500).json({ error: 'Ошибка удаления' });
     }
     res.json({ message: 'Рекламный пост удалён' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/sent-posts
+ * Получить историю отправленных постов (ТГ + сайт)
+ * Query: type=announcement|advertising, channel=telegram|site
+ */
+router.get('/sent-posts', async (req, res) => {
+  try {
+    const { type, channel } = req.query;
+    let where = [];
+    let params = [];
+
+    if (type) { where.push('sp.type = ?'); params.push(type); }
+    if (channel) { where.push('sp.channel = ?'); params.push(channel); }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+
+    const result = await executeQuery(
+      `SELECT sp.*, u.display_name as creator_name
+       FROM sent_posts sp
+       LEFT JOIN users u ON sp.created_by = u.id
+       ${whereClause}
+       ORDER BY sp.created_at DESC
+       LIMIT 50`,
+      params
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения истории' });
+    }
+
+    res.json(result.data.map(p => ({
+      id: p.id,
+      content: p.content,
+      imageUrl: p.image_url,
+      type: p.type,
+      channel: p.channel,
+      sentTo: p.sent_to,
+      createdBy: p.created_by,
+      creatorName: p.creator_name,
+      createdAt: p.created_at
+    })));
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/admin/sent-posts/:id
+ * Удалить запись из истории
+ */
+router.delete('/sent-posts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await executeQuery('DELETE FROM sent_posts WHERE id = ?', [id]);
+    res.json({ message: 'Запись удалена' });
   } catch (error) {
     console.error('Ошибка:', error);
     res.status(500).json({ error: 'Ошибка сервера' });

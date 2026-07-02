@@ -27,6 +27,10 @@ const AnnouncementsPage = () => {
   const [telegramImage, setTelegramImage] = useState(null);
   const [telegramImagePreview, setTelegramImagePreview] = useState(null);
 
+  // История отправленных постов
+  const [sentPosts, setSentPosts] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
   // Проверка прав администратора
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -37,7 +41,35 @@ const AnnouncementsPage = () => {
   // Загрузка объявлений
   useEffect(() => {
     fetchAnnouncements();
+    loadSentPosts();
   }, []);
+
+  const loadSentPosts = async () => {
+    try {
+      setLoadingHistory(true);
+      const response = await api.get('/admin/sent-posts', { params: { type: 'announcement' } });
+      setSentPosts(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки истории:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleRepeatPost = (post) => {
+    setNewAnnouncement(post.content);
+    setShowTelegramModal(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteSentPost = async (id) => {
+    try {
+      await api.delete(`/admin/sent-posts/${id}`);
+      await loadSentPosts();
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
+    }
+  };
 
   const fetchAnnouncements = async () => {
     try {
@@ -568,6 +600,58 @@ const AnnouncementsPage = () => {
                           Отмена
                         </button>
                       </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* История отправленных постов */}
+      <div className={styles.announcementsList}>
+        <h2>История отправленных постов</h2>
+        {loadingHistory ? (
+          <div className={styles.loading}>Загрузка...</div>
+        ) : sentPosts.length === 0 ? (
+          <div className={styles.empty}>Пока ничего не отправлено</div>
+        ) : (
+          <div className={styles.announcements}>
+            {sentPosts.map((post) => (
+              <div key={post.id} className={styles.announcementCard}>
+                <div className={styles.announcementHeader}>
+                  <div className={styles.announcementMeta}>
+                    <span className={styles.creatorName}>
+                      {post.channel === 'telegram' ? '✈️ Telegram' : '🌐 Сайт'}
+                    </span>
+                    <span className={styles.date}>{formatDate(post.createdAt)}</span>
+                    {post.sentTo > 0 && (
+                      <span className={styles.sentCount}>→ {post.sentTo} получателей</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      className={styles.telegramButton}
+                      onClick={() => handleRepeatPost(post)}
+                      style={{ padding: '4px 10px', fontSize: '12px' }}
+                    >
+                      <Icon name="refresh" size="small" /> Повторить
+                    </button>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={() => handleDeleteSentPost(post.id)}
+                      title="Удалить из истории"
+                    >
+                      <Icon name="delete" size="small" />
+                    </button>
+                  </div>
+                </div>
+                <div className={styles.announcementContent}>{post.content}</div>
+                {post.imageUrl && (
+                  <div className={styles.announcementImages}>
+                    <div className={styles.announcementImage}>
+                      <img src={post.imageUrl.startsWith('http') ? post.imageUrl : `${import.meta.env.VITE_API_URL || ''}${post.imageUrl}`} alt="" />
                     </div>
                   </div>
                 )}

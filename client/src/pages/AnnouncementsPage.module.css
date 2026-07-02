@@ -858,3 +858,8 @@
   border-color: #0088cc;
   color: var(--text-primary);
 }
+
+.sentCount {
+  font-size: 12px;
+  color: var(--text-secondary);
+}

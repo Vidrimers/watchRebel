@@ -37,6 +37,10 @@ const AdvertisingAdminPage = () => {
   const [telegramImage, setTelegramImage] = useState(null);
   const [telegramImagePreview, setTelegramImagePreview] = useState(null);
 
+  // История отправленных постов
+  const [sentPosts, setSentPosts] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
   useEffect(() => {
     if (!user?.isAdmin) {
       navigate('/');
@@ -44,6 +48,7 @@ const AdvertisingAdminPage = () => {
     }
     loadContacts();
     loadAdPosts();
+    loadSentPosts();
   }, [user, navigate]);
 
   // === Контакты ===
@@ -173,6 +178,36 @@ const AdvertisingAdminPage = () => {
       setError('Не удалось сохранить контакты');
     } finally {
       setContactsSaving(false);
+    }
+  };
+
+  const loadSentPosts = async () => {
+    try {
+      setLoadingHistory(true);
+      const response = await api.get('/admin/sent-posts', { params: { type: 'advertising' } });
+      setSentPosts(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки истории:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleRepeatPost = (post) => {
+    setNewAdContent(post.content);
+    setNewAdLinkUrl('');
+    setNewAdLinkLabel('');
+    setSelectedImages([]);
+    setImagePreviews([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteSentPost = async (id) => {
+    try {
+      await api.delete(`/admin/sent-posts/${id}`);
+      await loadSentPosts();
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
     }
   };
 
@@ -543,6 +578,48 @@ const AdvertisingAdminPage = () => {
                     {post.imageUrls.map((url, i) => (
                       <img key={i} src={url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`} alt="" />
                     ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* История отправленных постов */}
+      <div className={styles.section}>
+        <h2>История отправленных постов</h2>
+        {loadingHistory ? (
+          <p className={styles.loading}>Загрузка...</p>
+        ) : sentPosts.length === 0 ? (
+          <p className={styles.empty}>Пока ничего не отправлено</p>
+        ) : (
+          <div className={styles.sentList}>
+            {sentPosts.map((post) => (
+              <div key={post.id} className={styles.sentCard}>
+                <div className={styles.sentHeader}>
+                  <div className={styles.sentMeta}>
+                    <span className={styles.sentChannel}>
+                      {post.channel === 'telegram' ? '✈️ Telegram' : '🌐 Сайт'}
+                    </span>
+                    <span className={styles.sentDate}>{formatDate(post.createdAt)}</span>
+                    {post.sentTo > 0 && (
+                      <span className={styles.sentCount}>→ {post.sentTo} получателей</span>
+                    )}
+                  </div>
+                  <div className={styles.sentActions}>
+                    <button onClick={() => handleRepeatPost(post)} className={styles.repeatButton} title="Повторить">
+                      <Icon name="refresh" size="small" /> Повторить
+                    </button>
+                    <button onClick={() => handleDeleteSentPost(post.id)} className={styles.deleteButton} title="Удалить из истории">
+                      <Icon name="delete" size="small" />
+                    </button>
+                  </div>
+                </div>
+                <p className={styles.sentContent}>{post.content}</p>
+                {post.imageUrl && (
+                  <div className={styles.sentImage}>
+                    <img src={post.imageUrl.startsWith('http') ? post.imageUrl : `${import.meta.env.VITE_API_URL || ''}${post.imageUrl}`} alt="" />
                   </div>
                 )}
               </div>
