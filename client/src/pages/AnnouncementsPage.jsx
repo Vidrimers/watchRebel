@@ -500,7 +500,7 @@ const AnnouncementsPage = () => {
                     {announcement.imageUrls.map((imageUrl, index) => (
                       <div key={index} className={styles.announcementImage}>
                         <img 
-                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${imageUrl}`} 
+                          src={imageUrl.startsWith('http') ? imageUrl : `${import.meta.env.VITE_API_URL || ''}${imageUrl}`} 
                           alt={`Изображение ${index + 1}`} 
                         />
                       </div>
