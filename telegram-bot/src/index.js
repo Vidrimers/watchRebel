@@ -714,7 +714,8 @@ async function handleMenuAction(chatId, userId, action, userFrom) {
         [{ text: '🎨 Сменить тему', callback_data: 'settings_theme' }],
         [{ text: '🔒 Приватность стены', callback_data: 'settings_privacy' }],
         [{ text: '🔔 Уведомления в тг', callback_data: 'settings_notifications' }],
-        [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings` }]
+        [{ text: '🌐 Открыть настройки на сайте', url: `${publicUrl}/settings` }],
+        [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
       ]
     },
     'menu_bug_report': {
