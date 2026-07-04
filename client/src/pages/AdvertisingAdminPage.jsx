@@ -82,6 +82,21 @@ const AdvertisingAdminPage = () => {
   const [savingInfo, setSavingInfo] = useState(false);
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [activeFormats, setActiveFormats] = useState({});
+
+  const checkActiveFormats = () => {
+    setActiveFormats({
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+      strikeThrough: document.queryCommandState('strikeThrough'),
+      insertUnorderedList: document.queryCommandState('insertUnorderedList'),
+      insertOrderedList: document.queryCommandState('insertOrderedList'),
+      justifyLeft: document.queryCommandState('justifyLeft'),
+      justifyCenter: document.queryCommandState('justifyCenter'),
+      justifyRight: document.queryCommandState('justifyRight'),
+    });
+  };
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
@@ -953,10 +968,10 @@ const AdvertisingAdminPage = () => {
             <div className={styles.formGroup}>
               <label>Контент:</label>
               <div className={styles.infoToolbar}>
-                <button type="button" onClick={() => document.execCommand('bold')} className={styles.formatButton} title="Жирный"><strong>B</strong></button>
-                <button type="button" onClick={() => document.execCommand('italic')} className={styles.formatButton} title="Курсив"><em>I</em></button>
-                <button type="button" onClick={() => document.execCommand('underline')} className={styles.formatButton} title="Подчёркивание"><u>U</u></button>
-                <button type="button" onClick={() => document.execCommand('strikeThrough')} className={styles.formatButton} title="Зачёркивание"><s>S</s></button>
+                <button type="button" onClick={() => document.execCommand('bold')} className={`${styles.formatButton} ${activeFormats.bold ? styles.formatActive : ''}`} title="Жирный"><strong>B</strong></button>
+                <button type="button" onClick={() => document.execCommand('italic')} className={`${styles.formatButton} ${activeFormats.italic ? styles.formatActive : ''}`} title="Курсив"><em>I</em></button>
+                <button type="button" onClick={() => document.execCommand('underline')} className={`${styles.formatButton} ${activeFormats.underline ? styles.formatActive : ''}`} title="Подчёркивание"><u>U</u></button>
+                <button type="button" onClick={() => document.execCommand('strikeThrough')} className={`${styles.formatButton} ${activeFormats.strikeThrough ? styles.formatActive : ''}`} title="Зачёркивание"><s>S</s></button>
                 <span className={styles.toolbarDivider}></span>
                 <select onChange={e => { if (e.target.value) document.execCommand('formatBlock', false, e.target.value); }} className={styles.fontSizeSelect} title="Заголовок">
                   <option value="">H</option>
@@ -971,12 +986,12 @@ const AdvertisingAdminPage = () => {
                 </select>
                 <input type="color" defaultValue="#000000" onChange={e => document.execCommand('foreColor', false, e.target.value)} className={styles.colorInput} title="Цвет текста" />
                 <span className={styles.toolbarDivider}></span>
-                <button type="button" onClick={() => document.execCommand('justifyLeft')} className={styles.formatButton} title="Влево">⫷</button>
-                <button type="button" onClick={() => document.execCommand('justifyCenter')} className={styles.formatButton} title="По центру">☰</button>
-                <button type="button" onClick={() => document.execCommand('justifyRight')} className={styles.formatButton} title="Вправо">⫸</button>
+                <button type="button" onClick={() => document.execCommand('justifyLeft')} className={`${styles.formatButton} ${activeFormats.justifyLeft ? styles.formatActive : ''}`} title="Влево">⫷</button>
+                <button type="button" onClick={() => document.execCommand('justifyCenter')} className={`${styles.formatButton} ${activeFormats.justifyCenter ? styles.formatActive : ''}`} title="По центру">☰</button>
+                <button type="button" onClick={() => document.execCommand('justifyRight')} className={`${styles.formatButton} ${activeFormats.justifyRight ? styles.formatActive : ''}`} title="Вправо">⫸</button>
                 <span className={styles.toolbarDivider}></span>
-                <button type="button" onClick={() => document.execCommand('insertUnorderedList')} className={styles.formatButton} title="Маркированный список">•</button>
-                <button type="button" onClick={() => document.execCommand('insertOrderedList')} className={styles.formatButton} title="Нумерованный список">1.</button>
+                <button type="button" onClick={() => document.execCommand('insertUnorderedList')} className={`${styles.formatButton} ${activeFormats.insertUnorderedList ? styles.formatActive : ''}`} title="Маркированный список">•</button>
+                <button type="button" onClick={() => document.execCommand('insertOrderedList')} className={`${styles.formatButton} ${activeFormats.insertOrderedList ? styles.formatActive : ''}`} title="Нумерованный список">1.</button>
                 <button type="button" onClick={() => document.execCommand('formatBlock', false, 'blockquote')} className={styles.formatButton} title="Цитата">"</button>
                 <button type="button" onClick={() => { const url = prompt('Введите URL ссылки:'); if (url) document.execCommand('createLink', false, url); }} className={styles.formatButton} title="Ссылка">🔗</button>
                 <button type="button" onClick={() => document.execCommand('insertHorizontalRule')} className={styles.formatButton} title="Горизонтальная линия">—</button>
@@ -984,11 +999,12 @@ const AdvertisingAdminPage = () => {
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={styles.formatButton} title="Загрузить изображение">🖼️</button>
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleInfoImageUpload} style={{ display: 'none' }} />
                 <button type="button" onClick={handleInsertSpoiler} className={styles.formatButton} title="Спойлер (скрытый текст)">⚠️</button>
-                <span className={styles.toolbarDivider}></span>
-                <button type="button" onClick={() => document.execCommand('undo')} className={styles.formatButton} title="Отменить">↩</button>
-                <button type="button" onClick={() => document.execCommand('redo')} className={styles.formatButton} title="Повторить">↪</button>
               </div>
-              <div ref={editorRef} contentEditable className={styles.infoEditor} suppressContentEditableWarning />
+              <div className={styles.infoToolbar}>
+                <button type="button" onClick={() => document.execCommand('undo')} className={styles.formatButton} title="Отменить">↩ Отменить</button>
+                <button type="button" onClick={() => document.execCommand('redo')} className={styles.formatButton} title="Повторить">↪ Повторить</button>
+              </div>
+              <div ref={editorRef} contentEditable className={styles.infoEditor} suppressContentEditableWarning onKeyUp={checkActiveFormats} onMouseUp={checkActiveFormats} />
             </div>
             <div className={styles.formButtons}>
               <button onClick={handleSaveInfo} className={styles.btnSave} disabled={savingInfo}>{savingInfo ? 'Сохранение...' : 'Сохранить'}</button>

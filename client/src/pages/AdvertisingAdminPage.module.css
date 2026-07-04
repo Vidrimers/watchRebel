@@ -687,6 +687,16 @@
   cursor: not-allowed;
 }
 
+.formatActive {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+.formatActive:hover {
+  opacity: 0.85;
+}
+
 .telegramTextarea,
 .tgTextarea {
   width: 100%;
