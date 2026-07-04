@@ -402,10 +402,162 @@ const AdvertisingAdminPage = () => {
             {contactText && <p>{contactText}</p>}
             <p><span className={styles.contactIcon}><Icon name="email" size="small" /></span> Email: {contactEmail}</p>
             <p><span className={styles.contactIcon}><Icon name="telegram" size="small" /></span> Telegram: {contactTelegram}</p>
+          </div>
+        )}
+      </div>
+
+      {/* ===== Основные вкладки ===== */}
+      <div className={styles.tabs}>
+        <button className={`${styles.tabButton} ${activeTab === 'advertising' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('advertising'); setActiveSubTab('site'); }}>
+          <Icon name="advertising" size="small" /> Реклама
+        </button>
+        <button className={`${styles.tabButton} ${activeTab === 'announcements' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('announcements'); setActiveSubTab('site'); }}>
+          <Icon name="announcement" size="small" /> Объявления
+        </button>
+      </div>
+
+      {/* ===== Подвкладки ===== */}
+      <div className={styles.subTabs}>
+        <button className={`${styles.subTabButton} ${activeSubTab === 'site' ? styles.subTabButtonActive : ''}`} onClick={() => setActiveSubTab('site')}>
+          <Icon name="feed" size="small" /> {isAd ? 'Реклама на сайте' : 'Объявления на сайте'}
+        </button>
+        <button className={`${styles.subTabButton} ${activeSubTab === 'telegram' ? styles.subTabButtonActive : ''}`} onClick={() => setActiveSubTab('telegram')}>
+          <Icon name="telegram" size="small" /> {isAd ? 'Реклама в ТГ' : 'Объявления в ТГ'}
+        </button>
+      </div>
+
+      {error && <div className={styles.error}>{error}</div>}
+
+      {/* ===== Настройки цен ===== */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Настройки рекламы и прайс</h2>
+          <button onClick={() => setShowSettings(!showSettings)} className={styles.btnEdit}>
+            {showSettings ? 'Скрыть' : 'Настроить'}
+          </button>
+        </div>
+        {showSettings && (
+          <div className={styles.editForm}>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label>Цена показа на сайте:</label>
+                <input type="number" min="0" value={adSettings.ad_price_site || ''} onChange={e => handleSaveAdSetting('ad_price_site', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за повторения:</label>
+                <input type="number" min="0" value={adSettings.ad_price_repeat || ''} onChange={e => handleSaveAdSetting('ad_price_repeat', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за интервал:</label>
+                <input type="number" min="0" value={adSettings.ad_price_interval || ''} onChange={e => handleSaveAdSetting('ad_price_interval', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за ТГ-рассылку:</label>
+                <input type="number" min="0" value={adSettings.ad_price_telegram || ''} onChange={e => handleSaveAdSetting('ad_price_telegram', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+            </div>
+            <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 50, повторений — 50, интервал — 50 часов.</p>
+            <div className={styles.toggleRow}>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={adSettings.ad_auto_delete === '1'}
+                  onChange={e => handleSaveAdSetting('ad_auto_delete', e.target.checked ? '1' : '0')}
+                  disabled={settingsSaving}
+                />
+                <span className={styles.toggleSlider}></span>
+              </label>
+              <div>
+                <div className={styles.toggleLabel}>Автоудаление рекламных постов</div>
+                <div className={styles.toggleDesc}>Посты удаляются после исчерпания повторов и/или истечения закрепления</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ===== ПОДВКЛАДКА: НА САЙТЕ ===== */}
+      {activeSubTab === 'site' && isAd && (
+        <>
+          <div className={styles.section}>
+            <h2>Создать рекламный пост</h2>
+            <form onSubmit={handleCreateAd} className={styles.createForm}>
+              <div className={styles.textareaWrapper}>
+                <textarea value={newAdContent} onChange={e => setNewAdContent(e.target.value)} placeholder="Текст рекламного поста..." className={styles.textarea} rows={4} disabled={creatingAd} />
+                <label htmlFor="adImageInput" className={styles.attachButton} title="Прикрепить изображения"><Icon name="paperclip" size="medium" /></label>
+                <input id="adImageInput" type="file" accept="image/*" multiple onChange={handleImageSelect} className={styles.hiddenFileInput} disabled={creatingAd || selectedImages.length >= 5} />
+              </div>
+              {imagePreviews.length > 0 && (
+                <div className={styles.imagePreviews}>
+                  {imagePreviews.map((p, i) => (
+                    <div key={i} className={styles.imagePreview}>
+                      <img src={p} alt="" />
+                      <button type="button" className={styles.removeImageButton} onClick={() => handleRemoveImage(i)} disabled={creatingAd}><Icon name="close" size="small" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>Ссылка (URL):</label><input type="url" value={newAdLinkUrl} onChange={e => setNewAdLinkUrl(e.target.value)} className={styles.input} placeholder="google.com" /></div>
+                <div className={styles.formGroup}><label>Текст ссылки:</label><input type="text" value={newAdLinkLabel} onChange={e => setNewAdLinkLabel(e.target.value)} className={styles.input} placeholder="Перейти" /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Показов в закреплённых:</label>
+                  <input type="number" min="0" max="50" value={adPinDuration} onChange={e => setAdPinDuration(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Повторений:</label>
+                  <input type="number" min="0" max="50" value={adRepeatCount} onChange={e => setAdRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Интервал (часы):</label>
+                  <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
+                </div>
+              </div>
+              <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
+                {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
+              </button>
+            </form>
+          </div>
+          {adPosts.length > 0 && (
+          <div className={styles.section}>
+            <h2>Опубликованные рекламные посты</h2>
+            {loadingAd ? <p className={styles.loading}>Загрузка...</p> : (
+              <div className={styles.adList}>
+                {adPosts.map(p => (
+                  <div key={p.id} className={styles.adCard}>
+                    <div className={styles.adHeader}>
+                      <span className={styles.adDate}>{formatDate(p.createdAt)}</span>
+                      {deleteConfirm === p.id ? (
+                        <div className={styles.sentActions}>
+                          <button onClick={() => handleDeleteAd(p.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>Отмена</button>
+                        </div>
+                      ) : <button onClick={() => setDeleteConfirm(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
+                    </div>
+                    <p className={styles.adContent}>{p.content}</p>
+                    {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{p.linkLabel || p.linkUrl}</a>}
+                    {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
+                    <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
+                      {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
+                      {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
+                      {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                      {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                        <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                      </span>}
+                      {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
+                      {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
           )}
+        </>
+      )}
 
       {activeSubTab === 'site' && !isAd && (
         <>
