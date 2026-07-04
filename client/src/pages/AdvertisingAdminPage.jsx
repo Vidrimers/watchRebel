@@ -1,29 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
-
-const renderMarkdown = (text) => {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/__(.+?)__/g, '<u>$1</u>')
-    .replace(/~~(.+?)~~/g, '<s>$1</s>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/^• (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-    .replace(/<spoiler>(.+?)<\/spoiler>/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
-    .replace(/\n/g, '<br/>');
-};
 import styles from './AdvertisingAdminPage.module.css';
 
 const AdvertisingAdminPage = () => {
@@ -100,8 +79,9 @@ const AdvertisingAdminPage = () => {
   const [infoContent, setInfoContent] = useState('');
   const [editingInfo, setEditingInfo] = useState(false);
   const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
   const [savingInfo, setSavingInfo] = useState(false);
+  const editorRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
@@ -150,26 +130,35 @@ const AdvertisingAdminPage = () => {
   const handleSaveInfo = async () => {
     try {
       setSavingInfo(true);
+      const html = editorRef.current?.innerHTML || '';
       await api.put('/settings/pricing_info_title', { value: editTitle });
-      await api.put('/settings/pricing_info_content', { value: editContent });
+      await api.put('/settings/pricing_info_content', { value: html });
       setInfoTitle(editTitle);
-      setInfoContent(editContent);
+      setInfoContent(html);
       setEditingInfo(false);
     } catch (err) { setError('Не удалось сохранить информационный блок'); }
     finally { setSavingInfo(false); }
   };
 
-  const insertInfoFormat = (before, after = '', placeholder = '') => {
-    const ta = document.querySelector(`.${styles.infoTextarea}`);
-    if (!ta) return;
-    const s = ta.selectionStart, e = ta.selectionEnd;
-    const sel = editContent.substring(s, e), ins = sel || placeholder;
-    setEditContent(editContent.substring(0, s) + before + ins + after + editContent.substring(e));
-    setTimeout(() => {
-      ta.focus();
-      if (sel) { const p = s + before.length + sel.length; ta.setSelectionRange(p, p); }
-      else { ta.setSelectionRange(s + before.length, s + before.length + placeholder.length); }
-    }, 0);
+  const handleInfoImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const r = await api.post('/admin/advertising/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (r.data?.url) {
+        document.execCommand('insertHTML', false, `<img src="${r.data.url}" style="max-width:100%;border-radius:6px;margin:8px 0" />`);
+      }
+    } catch (err) { setError('Не удалось загрузить изображение'); }
+    e.target.value = '';
+  };
+
+  const handleInsertSpoiler = () => {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const text = sel.toString() || 'спойлер';
+    document.execCommand('insertHTML', false, `<span class="spoiler" onclick="this.classList.toggle('revealed')" style="background:var(--text-primary);color:var(--text-primary);padding:1px 4px;border-radius:3px;cursor:pointer">${text}</span>`);
   };
 
   // ===================== НАСТРОЙКИ ЦЕН =====================
@@ -953,7 +942,7 @@ const AdvertisingAdminPage = () => {
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2>Информация о рекламе</h2>
-          {!editingInfo && <button onClick={() => { setEditTitle(infoTitle); setEditContent(infoContent); setEditingInfo(true); }} className={styles.btnEdit}>Редактировать</button>}
+          {!editingInfo && <button onClick={() => { setEditTitle(infoTitle); setEditingInfo(true); setTimeout(() => { if (editorRef.current) editorRef.current.innerHTML = infoContent; }, 0); }} className={styles.btnEdit}>Редактировать</button>}
         </div>
         {editingInfo ? (
           <div className={styles.editForm}>
@@ -962,28 +951,41 @@ const AdvertisingAdminPage = () => {
               <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={styles.input} placeholder="Заголовок блока" />
             </div>
             <div className={styles.formGroup}>
-              <label>Контент (Markdown):</label>
+              <label>Контент:</label>
               <div className={styles.infoToolbar}>
-                <button type="button" onClick={() => insertInfoFormat('**', '**', 'жирный')} className={styles.formatButton} title="Жирный"><strong>B</strong></button>
-                <button type="button" onClick={() => insertInfoFormat('*', '*', 'курсив')} className={styles.formatButton} title="Курсив"><em>I</em></button>
-                <button type="button" onClick={() => insertInfoFormat('__', '__', 'подчёркнутый')} className={styles.formatButton} title="Подчёркивание"><u>U</u></button>
-                <button type="button" onClick={() => insertInfoFormat('~~', '~~', 'зачёркнутый')} className={styles.formatButton} title="Зачёркивание"><s>S</s></button>
-                <button type="button" onClick={() => insertInfoFormat('`', '`', 'код')} className={styles.formatButton} title="Код inline">{'<>'}</button>
-                <button type="button" onClick={() => insertInfoFormat('```\n', '\n```', 'код')} className={styles.formatButton} title="Блок кода">{'{ }'}</button>
-                <button type="button" onClick={() => insertInfoFormat('\n> ', '', 'цитата')} className={styles.formatButton} title="Цитата"><span>"</span></button>
-                <button type="button" onClick={() => insertInfoFormat('[', '](https://)', 'текст')} className={styles.formatButton} title="Ссылка">🔗</button>
-                <button type="button" onClick={() => insertInfoFormat('\n• ', '', 'пункт')} className={styles.formatButton} title="Маркированный список">•</button>
-                <button type="button" onClick={() => insertInfoFormat('\n1. ', '', 'пункт')} className={styles.formatButton} title="Нумерованный список">1.</button>
-                <button type="button" onClick={() => insertInfoFormat('<spoiler>', '</spoiler>', 'спойлер')} className={styles.formatButton} title="Спойлер (скрытый текст)">⚠️</button>
+                <button type="button" onClick={() => document.execCommand('bold')} className={styles.formatButton} title="Жирный"><strong>B</strong></button>
+                <button type="button" onClick={() => document.execCommand('italic')} className={styles.formatButton} title="Курсив"><em>I</em></button>
+                <button type="button" onClick={() => document.execCommand('underline')} className={styles.formatButton} title="Подчёркивание"><u>U</u></button>
+                <button type="button" onClick={() => document.execCommand('strikeThrough')} className={styles.formatButton} title="Зачёркивание"><s>S</s></button>
                 <span className={styles.toolbarDivider}></span>
-                <select onChange={e => { if (e.target.value) insertInfoFormat(e.target.value, '', 'заголовок'); e.target.value = ''; }} className={styles.fontSizeSelect} title="Размер шрифта">
+                <select onChange={e => { if (e.target.value) { document.execCommand('formatBlock', false, e.target.value); e.target.value = ''; } }} className={styles.fontSizeSelect} title="Заголовок">
                   <option value="">H</option>
-                  <option value="# ">Заголовок 1</option>
-                  <option value="## ">Заголовок 2</option>
-                  <option value="### ">Заголовок 3</option>
+                  <option value="h1">H1</option>
+                  <option value="h2">H2</option>
+                  <option value="h3">H3</option>
+                  <option value="p">Обычный текст</option>
                 </select>
+                <input type="number" min="8" max="72" defaultValue="16" onChange={e => document.execCommand('fontSize', false, e.target.value)} className={styles.fontSizeInput} title="Размер шрифта" />
+                <input type="color" defaultValue="#000000" onChange={e => document.execCommand('foreColor', false, e.target.value)} className={styles.colorInput} title="Цвет текста" />
+                <span className={styles.toolbarDivider}></span>
+                <button type="button" onClick={() => document.execCommand('justifyLeft')} className={styles.formatButton} title="Влево">⫷</button>
+                <button type="button" onClick={() => document.execCommand('justifyCenter')} className={styles.formatButton} title="По центру">☰</button>
+                <button type="button" onClick={() => document.execCommand('justifyRight')} className={styles.formatButton} title="Вправо">⫸</button>
+                <span className={styles.toolbarDivider}></span>
+                <button type="button" onClick={() => document.execCommand('insertUnorderedList')} className={styles.formatButton} title="Маркированный список">•</button>
+                <button type="button" onClick={() => document.execCommand('insertOrderedList')} className={styles.formatButton} title="Нумерованный список">1.</button>
+                <button type="button" onClick={() => document.execCommand('formatBlock', false, 'blockquote')} className={styles.formatButton} title="Цитата">"</button>
+                <button type="button" onClick={() => { const url = prompt('Введите URL ссылки:'); if (url) document.execCommand('createLink', false, url); }} className={styles.formatButton} title="Ссылка">🔗</button>
+                <button type="button" onClick={() => document.execCommand('insertHorizontalRule')} className={styles.formatButton} title="Горизонтальная линия">—</button>
+                <span className={styles.toolbarDivider}></span>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={styles.formatButton} title="Загрузить изображение">🖼️</button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleInfoImageUpload} style={{ display: 'none' }} />
+                <button type="button" onClick={handleInsertSpoiler} className={styles.formatButton} title="Спойлер (скрытый текст)">⚠️</button>
+                <span className={styles.toolbarDivider}></span>
+                <button type="button" onClick={() => document.execCommand('undo')} className={styles.formatButton} title="Отменить">↩</button>
+                <button type="button" onClick={() => document.execCommand('redo')} className={styles.formatButton} title="Повторить">↪</button>
               </div>
-              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className={styles.infoTextarea} rows={10} placeholder="Введите информацию для /pricing..." />
+              <div ref={editorRef} contentEditable className={styles.infoEditor} suppressContentEditableWarning />
             </div>
             <div className={styles.formButtons}>
               <button onClick={handleSaveInfo} className={styles.btnSave} disabled={savingInfo}>{savingInfo ? 'Сохранение...' : 'Сохранить'}</button>
@@ -993,7 +995,7 @@ const AdvertisingAdminPage = () => {
         ) : (
           <div>
             {infoTitle && <p style={{ fontWeight: 600, marginBottom: '8px' }}>{infoTitle}</p>}
-            {infoContent ? <div className={styles.infoPreview} dangerouslySetInnerHTML={{ __html: renderMarkdown(infoContent.substring(0, 300)) + (infoContent.length > 300 ? '...' : '') }} /> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
+            {infoContent ? <div className={styles.infoPreview} dangerouslySetInnerHTML={{ __html: infoContent }} /> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
           </div>
         )}
       </div>
