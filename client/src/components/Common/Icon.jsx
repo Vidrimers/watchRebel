@@ -53,6 +53,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     pin: '📍',
     pinned: '📌',
     refresh: '🔄',
+    repeat: '🔄',
     check: '✓',
     bug: '🐛',
     theme: '🎨',

@@ -536,7 +536,7 @@ const AdvertisingAdminPage = () => {
                     {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                     <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
                       {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
-                      {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                      {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                       {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
                       {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                         <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
@@ -622,7 +622,7 @@ const AdvertisingAdminPage = () => {
                     {(a.pinDuration > 0 || a.repeatCount > 0) && (
                       <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
                         {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
-                        {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                        {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                         {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
                         {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                           <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
@@ -723,7 +723,7 @@ const AdvertisingAdminPage = () => {
                   {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
                     {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
-                    {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                    {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                     {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
                     {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                       <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
@@ -760,7 +760,7 @@ const AdvertisingAdminPage = () => {
                     {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                     <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
                       {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
-                      {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                      {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                       {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
                       {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                         <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
@@ -797,7 +797,7 @@ const AdvertisingAdminPage = () => {
                     {p.sentTo > 0 && <span className={styles.sentCount}>→ {p.sentTo} получателей</span>}
                   </div>
                   <div className={styles.sentActions}>
-                    <button onClick={() => handleRepeatPost(p)} className={styles.repeatButton}><Icon name="refresh" size="small" /> Повторить</button>
+                    <button onClick={() => handleRepeatPost(p)} className={styles.repeatButton}><Icon name="repeat" size="small" /> Повторить</button>
                     <button onClick={() => handleDeleteSentPost(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
                   </div>
                 </div>
@@ -871,7 +871,7 @@ const AdvertisingAdminPage = () => {
                 <strong>{selectedPostForDetails.pinDuration > 0 ? `${selectedPostForDetails.pinDuration} показов` : 'Выключено'}</strong>
               </div>
               <div className={styles.postDetailRow}>
-                <Icon name="refresh" size="small" />
+                <Icon name="repeat" size="small" />
                 <span>Повторы:</span>
                 <strong>{selectedPostForDetails.repeatCount > 0 ? `${selectedPostForDetails.repeatCount} осталось` : 'Выключено'}</strong>
               </div>
