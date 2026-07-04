@@ -529,7 +529,12 @@ const AdvertisingAdminPage = () => {
                   <div key={p.id} className={styles.adCard}>
                     <div className={styles.adHeader}>
                       <span className={styles.adDate}>{formatDate(p.createdAt)}</span>
-                      <button onClick={() => handleDeleteAd(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
+                      {deleteConfirm === p.id ? (
+                        <div className={styles.sentActions}>
+                          <button onClick={() => handleDeleteAd(p.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                        </div>
+                      ) : <button onClick={() => setDeleteConfirm(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                     </div>
                     <p className={styles.adContent}>{p.content}</p>
                     {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{p.linkLabel || p.linkUrl}</a>}
@@ -717,7 +722,12 @@ const AdvertisingAdminPage = () => {
                 <div key={p.id} className={styles.adCard}>
                   <div className={styles.adHeader}>
                     <span className={styles.adDate}>{formatDate(p.createdAt)}</span>
-                    <button onClick={() => handleDeleteAd(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
+                    {deleteConfirm === p.id ? (
+                      <div className={styles.sentActions}>
+                        <button onClick={() => handleDeleteAd(p.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
+                        <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                      </div>
+                    ) : <button onClick={() => setDeleteConfirm(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                   </div>
                   <p className={styles.adContent}>{p.content}</p>
                   {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
