@@ -1062,12 +1062,19 @@ router.post('/telegram-announcement', async (req, res) => {
       [postId, content.trim(), fullImageUrl || null, type || 'announcement', successCount, req.user.id]
     );
 
-    // Создаём запись в advertising_posts для отображения в "Опубликованные"
+    // Создаём запись в advertising_posts / announcements для отображения в "Опубликованные"
     if (type === 'advertising') {
       await executeQuery(
         `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel)
          VALUES (?, ?, NULL, NULL, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram')`,
         [postId, content.trim(), fullImageUrl ? JSON.stringify([fullImageUrl]) : '[]', req.user.id,
+         repeatCountNum, repeatIntervalNum]
+      );
+    } else {
+      await executeQuery(
+        `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel)
+         VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram')`,
+        [postId, content.trim(), fullImageUrl || null, req.user.id,
          repeatCountNum, repeatIntervalNum]
       );
     }
