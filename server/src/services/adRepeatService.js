@@ -46,11 +46,11 @@ async function checkAndRepeat() {
       for (const post of result.data) {
         const channel = post.repeat_channel || 'site';
 
-        if (channel === 'site' || channel === 'both') {
+        if (channel === 'site') {
           await repeatOnSite(post);
         }
 
-        if (channel === 'telegram' || channel === 'both') {
+        if (channel === 'telegram') {
           await repeatOnTelegram(post);
         }
 
