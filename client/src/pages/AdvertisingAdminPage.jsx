@@ -499,6 +499,19 @@ const AdvertisingAdminPage = () => {
           <div className={styles.editForm}>
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
+                <label>Валюта:</label>
+                <select value={adSettings.ad_currency || 'RUB'} onChange={e => handleSaveAdSetting('ad_currency', e.target.value)} className={styles.input}>
+                  <option value="RUB">₽ Рубли</option>
+                  <option value="USD">$ Доллары</option>
+                  <option value="EUR">€ Евро</option>
+                  <option value="KAS">KAS Kaspa</option>
+                  <option value="TON">TON Toncoin</option>
+                  <option value="USDT">USDT Tether</option>
+                </select>
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
                 <label>Цена показа на сайте:</label>
                 <input type="number" min="0" value={adSettings.ad_price_site || ''} onChange={e => handleSaveAdSetting('ad_price_site', e.target.value)} className={styles.input} placeholder="₽" />
               </div>

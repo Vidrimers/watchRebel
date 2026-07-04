@@ -38,6 +38,10 @@ const PricingPage = () => {
     pricing.ad_price_interval || pricing.ad_price_telegram
   );
 
+  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT' };
+  const currency = pricing?.ad_currency || 'RUB';
+  const currencySymbol = currencySymbols[currency] || '₽';
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
@@ -53,19 +57,19 @@ const PricingPage = () => {
                 {pricing.ad_price_site && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Показ в закреплённых</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_site} ₽</span>
+                    <span className={styles.priceValue}>{pricing.ad_price_site} {currencySymbol}</span>
                   </div>
                 )}
                 {pricing.ad_price_repeat && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Повторения</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_repeat} ₽</span>
+                    <span className={styles.priceValue}>{pricing.ad_price_repeat} {currencySymbol}</span>
                   </div>
                 )}
                 {pricing.ad_price_interval && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Интервал повторений</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_interval} ₽</span>
+                    <span className={styles.priceValue}>{pricing.ad_price_interval} {currencySymbol}</span>
                   </div>
                 )}
               </div>
@@ -77,7 +81,7 @@ const PricingPage = () => {
                 <div className={styles.priceList}>
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Рассылка всем пользователям</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_telegram} ₽</span>
+                    <span className={styles.priceValue}>{pricing.ad_price_telegram} {currencySymbol}</span>
                   </div>
                 </div>
               </div>
