@@ -3,6 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
+
+const renderMarkdown = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/__(.+?)__/g, '<u>$1</u>')
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^• (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/<spoiler>(.+?)<\/spoiler>/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
+    .replace(/\n/g, '<br/>');
+};
 import styles from './AdvertisingAdminPage.module.css';
 
 const AdvertisingAdminPage = () => {
@@ -965,7 +983,7 @@ const AdvertisingAdminPage = () => {
         ) : (
           <div>
             {infoTitle && <p style={{ fontWeight: 600, marginBottom: '8px' }}>{infoTitle}</p>}
-            {infoContent ? <p style={{ color: 'var(--text-secondary)', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{infoContent.substring(0, 200)}{infoContent.length > 200 ? '...' : ''}</p> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
+            {infoContent ? <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(infoContent.substring(0, 300)) + (infoContent.length > 300 ? '...' : '') }} /> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
           </div>
         )}
       </div>
