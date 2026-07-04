@@ -38,7 +38,7 @@ const PricingPage = () => {
     pricing.ad_price_interval || pricing.ad_price_telegram
   );
 
-  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT' };
+  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT', STARS: '⭐' };
   const currency = pricing?.ad_currency || 'RUB';
   const currencySymbol = currencySymbols[currency] || '₽';
 

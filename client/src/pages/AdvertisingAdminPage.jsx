@@ -507,6 +507,7 @@ const AdvertisingAdminPage = () => {
                   <option value="KAS">KAS Kaspa</option>
                   <option value="TON">TON Toncoin</option>
                   <option value="USDT">USDT Tether</option>
+                  <option value="STARS">⭐ Telegram Stars</option>
                 </select>
               </div>
             </div>
