@@ -958,25 +958,16 @@ const AdvertisingAdminPage = () => {
                 <button type="button" onClick={() => document.execCommand('underline')} className={styles.formatButton} title="Подчёркивание"><u>U</u></button>
                 <button type="button" onClick={() => document.execCommand('strikeThrough')} className={styles.formatButton} title="Зачёркивание"><s>S</s></button>
                 <span className={styles.toolbarDivider}></span>
-                <select onChange={e => { if (e.target.value) document.execCommand('formatBlock', false, e.target.value); setTimeout(() => { e.target.value = ''; }, 100); }} className={styles.fontSizeSelect} title="Заголовок">
+                <select onChange={e => { if (e.target.value) document.execCommand('formatBlock', false, e.target.value); }} className={styles.fontSizeSelect} title="Заголовок">
                   <option value="">H</option>
                   <option value="h1">H1</option>
                   <option value="h2">H2</option>
                   <option value="h3">H3</option>
                   <option value="p">Обычный текст</option>
                 </select>
-                <select onChange={e => { if (e.target.value) { const sel = window.getSelection(); if (sel.rangeCount) { const range = sel.getRangeAt(0); const span = document.createElement('span'); span.style.fontSize = e.target.value; range.surroundContents(span); } } e.target.value = ''; }} className={styles.fontSizeSelect} title="Размер шрифта">
+                <select onChange={e => { if (e.target.value) { const sel = window.getSelection(); if (sel.rangeCount) { const range = sel.getRangeAt(0); const span = document.createElement('span'); span.style.fontSize = e.target.value; range.surroundContents(span); } } }} className={styles.fontSizeSelect} title="Размер шрифта">
                   <option value="">px</option>
-                  <option value="12px">12</option>
-                  <option value="14px">14</option>
-                  <option value="16px">16</option>
-                  <option value="18px">18</option>
-                  <option value="20px">20</option>
-                  <option value="24px">24</option>
-                  <option value="28px">28</option>
-                  <option value="32px">32</option>
-                  <option value="36px">36</option>
-                  <option value="48px">48</option>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,32,36,40,44,48,56,64,72].map(s => <option key={s} value={`${s}px`}>{s}</option>)}
                 </select>
                 <input type="color" defaultValue="#000000" onChange={e => document.execCommand('foreColor', false, e.target.value)} className={styles.colorInput} title="Цвет текста" />
                 <span className={styles.toolbarDivider}></span>
