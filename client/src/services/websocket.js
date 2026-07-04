@@ -35,6 +35,7 @@ export function connectWebSocket(token) {
 
     ws.onopen = () => {
       isConnecting = false;
+      console.log('✅ WebSocket: подключение установлено');
       ws.send(JSON.stringify({
         type: 'auth',
         token
@@ -51,7 +52,7 @@ export function connectWebSocket(token) {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket ошибка:', error);
+      console.warn('⚠️ WebSocket: ошибка соединения (автоматическое переподключение через 3 сек)');
       isConnecting = false;
     };
 
@@ -64,6 +65,7 @@ export function connectWebSocket(token) {
       }
       
       reconnectTimeout = setTimeout(() => {
+        console.log('🔄 WebSocket: переподключение...');
         connectWebSocket(token);
       }, 3000);
     };
