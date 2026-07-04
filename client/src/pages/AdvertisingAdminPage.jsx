@@ -557,7 +557,8 @@ const AdvertisingAdminPage = () => {
             </div>
           )}
 
-      </>      )}
+      </>
+      )}
 
       {activeSubTab === 'site' && !isAd && (
         <>
@@ -646,7 +647,8 @@ const AdvertisingAdminPage = () => {
             </div>
           )}
 
-      </>      )}
+      </>
+      )}
 
       {/* ===== ПОДВКЛАДКА: TELEGRAM ===== */}
       {activeSubTab === 'telegram' && (<>
@@ -787,8 +789,8 @@ const AdvertisingAdminPage = () => {
               </div>
             )}
           </div>
-        )}
-      </>      )}
+        </>
+      )}
 
       {/* ===== История ===== */}
       <div className={styles.section}>
