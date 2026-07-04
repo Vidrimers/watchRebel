@@ -72,17 +72,14 @@ async function checkAndRepeat() {
       }
     }
 
-    // Проверяем посты, у которых повторы уже 0, но pin_duration тоже истёк — автоудаление
+    // Проверяем посты без повторов (repeat_count <= 0) — автоудаление если pin_duration истёк
     if (autoDelete) {
       const expiredResult = await executeQuery(
-        `SELECT * FROM advertising_posts 
-         WHERE repeat_count <= 0 
-         AND repeat_channel IS NOT NULL AND repeat_channel != ''`
+        `SELECT * FROM advertising_posts WHERE repeat_count <= 0`
       );
 
       if (expiredResult.success) {
         for (const post of expiredResult.data) {
-          // Проверяем pin_duration
           if (post.pin_duration > 0) {
             const postsSinceAd = await executeQuery(
               `SELECT COUNT(*) as cnt FROM wall_posts WHERE created_at > ?`,
@@ -93,7 +90,7 @@ async function checkAndRepeat() {
             }
           }
           await deletePost(post);
-          console.log(`🗑️ Автоудаление поста ${post.id} (условия выполнены)`);
+          console.log(`🗑️ Автоудаление поста ${post.id} (повторы исчерпаны, pin истёк)`);
         }
       }
     }
@@ -116,20 +113,17 @@ async function deletePost(post) {
 }
 
 async function repeatOnSite(post) {
-  // Создаём новый пост в advertising_posts (копия)
-  const { v4: uuidv4 } = await import('uuid');
-  const newId = uuidv4();
+  // Обновляем created_at — пост "поднимается" обратно в топ ленты
   await executeQuery(
-    `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-    [newId, post.content, post.link_url, post.link_label, post.image_urls, post.created_by]
+    `UPDATE advertising_posts SET created_at = datetime('now') WHERE id = ?`,
+    [post.id]
   );
 
   // Сохраняем в историю
   await executeQuery(
     `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
      VALUES (?, ?, ?, 'advertising', 'site', 0, ?, datetime('now'))`,
-    [newId, post.content, post.image_urls ? JSON.parse(post.image_urls)[0] || null : null, post.created_by]
+    [post.id, post.content, post.image_urls ? JSON.parse(post.image_urls)[0] || null : null, post.created_by]
   );
 }
 

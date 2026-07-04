@@ -513,7 +513,7 @@ const AdvertisingAdminPage = () => {
                 </div>
                 <div className={styles.formGroup}>
                   <label>Интервал (часы):</label>
-                  <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+                  <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
               </div>
               <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
@@ -581,7 +581,7 @@ const AdvertisingAdminPage = () => {
                 </div>
                 <div className={styles.formGroup}>
                   <label>Интервал (часы):</label>
-                  <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+                  <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Канал повтора:</label>
@@ -690,7 +690,7 @@ const AdvertisingAdminPage = () => {
             </div>
             <div className={styles.formGroup}>
               <label>Интервал (часы):</label>
-              <input type="number" min="0" max="50" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
+              <input type="number" min="0" max="50" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
             </div>
           </div>
 

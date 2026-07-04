@@ -330,10 +330,17 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
 
     // Проверяем, что есть хотя бы контент или изображения
     if ((!content || content.trim().length === 0) && (!req.files || req.files.length === 0)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Необходимо добавить текст или изображения',
-        code: 'EMPTY_ANNOUNCEMENT' 
+        code: 'EMPTY_ANNOUNCEMENT'
       });
+    }
+
+    // Валидация: если повторы включены, интервал обязателен
+    const repeatCountNum = parseInt(repeatCount) || 0;
+    const repeatIntervalNum = parseInt(repeatIntervalHours) || 0;
+    if (repeatCountNum > 0 && repeatIntervalNum <= 0) {
+      return res.status(400).json({ error: 'Интервал повтора должен быть больше 0', code: 'INVALID_INTERVAL' });
     }
 
     // Создаем объявление
@@ -1415,6 +1422,13 @@ router.post('/advertising', async (req, res) => {
 
     if (!hasContent && !hasImages) {
       return res.status(400).json({ error: 'Добавьте текст или изображения', code: 'EMPTY_CONTENT' });
+    }
+
+    // Валидация: если повторы включены, интервал обязателен
+    const repeatCountNum = parseInt(repeatCount) || 0;
+    const repeatIntervalNum = parseInt(repeatIntervalHours) || 0;
+    if (repeatCountNum > 0 && repeatIntervalNum <= 0) {
+      return res.status(400).json({ error: 'Интервал повтора должен быть больше 0', code: 'INVALID_INTERVAL' });
     }
 
     const { v4: uuidv4 } = await import('uuid');
