@@ -54,19 +54,19 @@ const PricingPage = () => {
             <div className={styles.section}>
               <h2>Реклама на сайте</h2>
               <div className={styles.priceList}>
-                {pricing.ad_price_site && (
+                {pricing.ad_price_site && pricing.ad_price_site !== '0' && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Показ в закреплённых</span>
                     <span className={styles.priceValue}>{pricing.ad_price_site} {currencySymbol}</span>
                   </div>
                 )}
-                {pricing.ad_price_repeat && (
+                {pricing.ad_price_repeat && pricing.ad_price_repeat !== '0' && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Повторения</span>
                     <span className={styles.priceValue}>{pricing.ad_price_repeat} {currencySymbol}</span>
                   </div>
                 )}
-                {pricing.ad_price_interval && (
+                {pricing.ad_price_interval && pricing.ad_price_interval !== '0' && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Интервал повторений</span>
                     <span className={styles.priceValue}>{pricing.ad_price_interval} {currencySymbol}</span>
@@ -75,7 +75,7 @@ const PricingPage = () => {
               </div>
             </div>
 
-            {pricing.ad_price_telegram && (
+            {pricing.ad_price_telegram && pricing.ad_price_telegram !== '0' && (
               <div className={styles.section}>
                 <h2>Реклама в Telegram</h2>
                 <div className={styles.priceList}>
