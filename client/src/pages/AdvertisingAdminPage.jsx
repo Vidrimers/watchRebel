@@ -634,7 +634,7 @@ const AdvertisingAdminPage = () => {
       )}
 
       {/* ===== ПОДВКЛАДКА: TELEGRAM ===== */}
-      {activeSubTab === 'telegram' && (
+      {activeSubTab === 'telegram' && (<>
         <div className={styles.section}>
           <h2>{tgTitle}</h2>
           <p className={styles.tgDesc}>{tgDesc}</p>
@@ -756,6 +756,7 @@ const AdvertisingAdminPage = () => {
             </div>
           </div>
         )}
+      </>)}
 
       {/* ===== История ===== */}
       <div className={styles.section}>
