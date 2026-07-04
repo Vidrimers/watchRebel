@@ -74,9 +74,17 @@ const AdvertisingAdminPage = () => {
   const [selectedPostForDetails, setSelectedPostForDetails] = useState(null);
   const [cleanupResult, setCleanupResult] = useState(null);
 
+  // === Блок "Информация о рекламе" ===
+  const [infoTitle, setInfoTitle] = useState('');
+  const [infoContent, setInfoContent] = useState('');
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [savingInfo, setSavingInfo] = useState(false);
+
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
-    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts(); loadAdSettings();
+    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts(); loadAdSettings(); loadInfoBlock();
   }, [user, navigate]);
 
   useEffect(() => { loadSentPosts(); }, [activeTab]);
@@ -107,6 +115,40 @@ const AdvertisingAdminPage = () => {
       setIsEditingContacts(false);
     } catch (err) { setError('Не удалось сохранить контакты'); }
     finally { setContactsSaving(false); }
+  };
+
+  // ===================== ИНФОРМАЦИЯ О РЕКЛАМЕ =====================
+  const loadInfoBlock = async () => {
+    try {
+      const r = await api.get('/settings/ad-pricing');
+      setInfoTitle(r.data.pricing_info_title || '');
+      setInfoContent(r.data.pricing_info_content || '');
+    } catch (err) { console.error('Ошибка загрузки инфо-блока:', err); }
+  };
+
+  const handleSaveInfo = async () => {
+    try {
+      setSavingInfo(true);
+      await api.put('/settings/pricing_info_title', { value: editTitle });
+      await api.put('/settings/pricing_info_content', { value: editContent });
+      setInfoTitle(editTitle);
+      setInfoContent(editContent);
+      setEditingInfo(false);
+    } catch (err) { setError('Не удалось сохранить информационный блок'); }
+    finally { setSavingInfo(false); }
+  };
+
+  const insertInfoFormat = (before, after = '', placeholder = '') => {
+    const ta = document.querySelector(`.${styles.infoTextarea}`);
+    if (!ta) return;
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = editContent.substring(s, e), ins = sel || placeholder;
+    setEditContent(editContent.substring(0, s) + before + ins + after + editContent.substring(e));
+    setTimeout(() => {
+      ta.focus();
+      if (sel) { const p = s + before.length + sel.length; ta.setSelectionRange(p, p); }
+      else { ta.setSelectionRange(s + before.length, s + before.length + placeholder.length); }
+    }, 0);
   };
 
   // ===================== НАСТРОЙКИ ЦЕН =====================
@@ -885,6 +927,48 @@ const AdvertisingAdminPage = () => {
           </div>
         </div>
       )}
+
+      {/* ===== Информация о рекламе ===== */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Информация о рекламе</h2>
+          {!editingInfo && <button onClick={() => { setEditTitle(infoTitle); setEditContent(infoContent); setEditingInfo(true); }} className={styles.btnEdit}>Редактировать</button>}
+        </div>
+        {editingInfo ? (
+          <div className={styles.editForm}>
+            <div className={styles.formGroup}>
+              <label>Заголовок:</label>
+              <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={styles.input} placeholder="Заголовок блока" />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Контент (Markdown):</label>
+              <div className={styles.infoToolbar}>
+                <button type="button" onClick={() => insertInfoFormat('**', '**', 'жирный')} className={styles.formatButton}><strong>B</strong></button>
+                <button type="button" onClick={() => insertInfoFormat('*', '*', 'курсив')} className={styles.formatButton}><em>I</em></button>
+                <button type="button" onClick={() => insertInfoFormat('__', '__', 'подчёркнутый')} className={styles.formatButton}><u>U</u></button>
+                <button type="button" onClick={() => insertInfoFormat('~~', '~~', 'зачёркнутый')} className={styles.formatButton}><s>S</s></button>
+                <button type="button" onClick={() => insertInfoFormat('`', '`', 'код')} className={styles.formatButton}>{'<>'}</button>
+                <button type="button" onClick={() => insertInfoFormat('```\n', '\n```', 'код')} className={styles.formatButton}>{'{ }'}</button>
+                <button type="button" onClick={() => insertInfoFormat('\n> ', '', 'цитата')} className={styles.formatButton}>"</button>
+                <button type="button" onClick={() => insertInfoFormat('[', '](https://)', 'текст')} className={styles.formatButton}>🔗</button>
+                <button type="button" onClick={() => insertInfoFormat('\n• ', '', 'пункт')} className={styles.formatButton}>•</button>
+                <button type="button" onClick={() => insertInfoFormat('\n1. ', '', 'пункт')} className={styles.formatButton}>1.</button>
+                <button type="button" onClick={() => insertInfoFormat('<spoiler>', '</spoiler>', 'спойлер')} className={styles.formatButton}>⚠️</button>
+              </div>
+              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className={styles.infoTextarea} rows={10} placeholder="Введите информацию для /pricing..." />
+            </div>
+            <div className={styles.formButtons}>
+              <button onClick={handleSaveInfo} className={styles.btnSave} disabled={savingInfo}>{savingInfo ? 'Сохранение...' : 'Сохранить'}</button>
+              <button onClick={() => setEditingInfo(false)} className={styles.btnCancel}>Отмена</button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {infoTitle && <p style={{ fontWeight: 600, marginBottom: '8px' }}>{infoTitle}</p>}
+            {infoContent ? <p style={{ color: 'var(--text-secondary)', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{infoContent.substring(0, 200)}{infoContent.length > 200 ? '...' : ''}</p> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
+          </div>
+        )}
+      </div>
 
       {/* ===== Контакты для рекламы ===== */}
       <div className={styles.section}>
