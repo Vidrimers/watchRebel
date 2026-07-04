@@ -1070,6 +1070,29 @@
   border: 1px solid var(--border-color);
   border-radius: 6px 6px 0 0;
   border-bottom: none;
+  align-items: center;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+.fontSizeSelect {
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.fontSizeSelect:focus {
+  border-color: var(--accent-primary);
 }
 
 .infoTextarea {
@@ -1096,6 +1119,15 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+.infoPreview h1, .infoPreview h2, .infoPreview h3 {
+  color: var(--text-primary);
+  margin: 12px 0 6px 0;
+}
+
+.infoPreview h1 { font-size: 20px; }
+.infoPreview h2 { font-size: 17px; }
+.infoPreview h3 { font-size: 15px; }
 
 .infoPreview a {
   color: var(--accent-primary);

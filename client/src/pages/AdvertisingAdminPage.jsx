@@ -8,6 +8,9 @@ const renderMarkdown = (text) => {
   if (!text) return '';
   return text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/__(.+?)__/g, '<u>$1</u>')
@@ -961,17 +964,24 @@ const AdvertisingAdminPage = () => {
             <div className={styles.formGroup}>
               <label>Контент (Markdown):</label>
               <div className={styles.infoToolbar}>
-                <button type="button" onClick={() => insertInfoFormat('**', '**', 'жирный')} className={styles.formatButton}><strong>B</strong></button>
-                <button type="button" onClick={() => insertInfoFormat('*', '*', 'курсив')} className={styles.formatButton}><em>I</em></button>
-                <button type="button" onClick={() => insertInfoFormat('__', '__', 'подчёркнутый')} className={styles.formatButton}><u>U</u></button>
-                <button type="button" onClick={() => insertInfoFormat('~~', '~~', 'зачёркнутый')} className={styles.formatButton}><s>S</s></button>
-                <button type="button" onClick={() => insertInfoFormat('`', '`', 'код')} className={styles.formatButton}>{'<>'}</button>
-                <button type="button" onClick={() => insertInfoFormat('```\n', '\n```', 'код')} className={styles.formatButton}>{'{ }'}</button>
-                <button type="button" onClick={() => insertInfoFormat('\n> ', '', 'цитата')} className={styles.formatButton}>"</button>
-                <button type="button" onClick={() => insertInfoFormat('[', '](https://)', 'текст')} className={styles.formatButton}>🔗</button>
-                <button type="button" onClick={() => insertInfoFormat('\n• ', '', 'пункт')} className={styles.formatButton}>•</button>
-                <button type="button" onClick={() => insertInfoFormat('\n1. ', '', 'пункт')} className={styles.formatButton}>1.</button>
-                <button type="button" onClick={() => insertInfoFormat('<spoiler>', '</spoiler>', 'спойлер')} className={styles.formatButton}>⚠️</button>
+                <button type="button" onClick={() => insertInfoFormat('**', '**', 'жирный')} className={styles.formatButton} title="Жирный"><strong>B</strong></button>
+                <button type="button" onClick={() => insertInfoFormat('*', '*', 'курсив')} className={styles.formatButton} title="Курсив"><em>I</em></button>
+                <button type="button" onClick={() => insertInfoFormat('__', '__', 'подчёркнутый')} className={styles.formatButton} title="Подчёркивание"><u>U</u></button>
+                <button type="button" onClick={() => insertInfoFormat('~~', '~~', 'зачёркнутый')} className={styles.formatButton} title="Зачёркивание"><s>S</s></button>
+                <button type="button" onClick={() => insertInfoFormat('`', '`', 'код')} className={styles.formatButton} title="Код inline">{'<>'}</button>
+                <button type="button" onClick={() => insertInfoFormat('```\n', '\n```', 'код')} className={styles.formatButton} title="Блок кода">{'{ }'}</button>
+                <button type="button" onClick={() => insertInfoFormat('\n> ', '', 'цитата')} className={styles.formatButton} title="Цитата"><span>"</span></button>
+                <button type="button" onClick={() => insertInfoFormat('[', '](https://)', 'текст')} className={styles.formatButton} title="Ссылка">🔗</button>
+                <button type="button" onClick={() => insertInfoFormat('\n• ', '', 'пункт')} className={styles.formatButton} title="Маркированный список">•</button>
+                <button type="button" onClick={() => insertInfoFormat('\n1. ', '', 'пункт')} className={styles.formatButton} title="Нумерованный список">1.</button>
+                <button type="button" onClick={() => insertInfoFormat('<spoiler>', '</spoiler>', 'спойлер')} className={styles.formatButton} title="Спойлер (скрытый текст)">⚠️</button>
+                <span className={styles.toolbarDivider}></span>
+                <select onChange={e => { if (e.target.value) insertInfoFormat(e.target.value, '', 'заголовок'); e.target.value = ''; }} className={styles.fontSizeSelect} title="Размер шрифта">
+                  <option value="">H</option>
+                  <option value="# ">Заголовок 1</option>
+                  <option value="## ">Заголовок 2</option>
+                  <option value="### ">Заголовок 3</option>
+                </select>
               </div>
               <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className={styles.infoTextarea} rows={10} placeholder="Введите информацию для /pricing..." />
             </div>
