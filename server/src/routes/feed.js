@@ -355,6 +355,12 @@ router.get('/:userId', authenticateToken, async (req, res) => {
        ORDER BY ap.created_at DESC`
     );
 
+    // Получаем настройку автоудаления
+    const autoDeleteResult = await executeQuery(
+      "SELECT value FROM site_settings WHERE key = 'ad_auto_delete'"
+    );
+    const autoDelete = autoDeleteResult.success && autoDeleteResult.data[0]?.value === '1';
+
     const adPosts = [];
     if (adResult.success) {
       for (const a of adResult.data) {
@@ -365,7 +371,18 @@ router.get('/:userId', authenticateToken, async (req, res) => {
             [a.created_at]
           );
           if (postsSinceAd.success && postsSinceAd.data[0].cnt >= a.pin_duration) {
-            continue; // Пропускаем — реклама уже "сползла" вниз
+            // Если включено автоудаление и повторы исчерпаны — удаляем
+            if (autoDelete && a.repeat_count <= 0) {
+              const imageUrls = JSON.parse(a.image_urls || '[]');
+              const fs = await import('fs/promises');
+              const path = await import('path');
+              for (const imageUrl of imageUrls) {
+                await fs.unlink(path.join(process.cwd(), imageUrl)).catch(() => {});
+              }
+              await executeQuery('DELETE FROM advertising_posts WHERE id = ?', [a.id]);
+              console.log(`🗑️ Автоудаление поста ${a.id} (pin_duration истёк)`);
+            }
+            continue;
           }
         }
 

@@ -68,6 +68,9 @@ const AdvertisingAdminPage = () => {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
   const [cleanupStats, setCleanupStats] = useState(null);
+
+  // === Модалка деталей поста ===
+  const [selectedPostForDetails, setSelectedPostForDetails] = useState(null);
   const [cleanupResult, setCleanupResult] = useState(null);
 
   useEffect(() => {
@@ -452,6 +455,22 @@ const AdvertisingAdminPage = () => {
               </div>
             </div>
             <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 50, повторений — 50, интервал — 50 часов.</p>
+            <div className={styles.toggleRow}>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={adSettings.ad_auto_delete === '1'}
+                  onChange={e => handleSaveAdSetting('ad_auto_delete', e.target.checked ? '1' : '0')}
+                  disabled={settingsSaving}
+                />
+                <span className={styles.toggleSlider}></span>
+              </label>
+              <div>
+                <div className={styles.toggleLabel}>Автоудаление рекламных постов</div>
+                <div className={styles.toggleDesc}>Посты удаляются после исчерпания повторов и/или истечения закрепления</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -513,6 +532,14 @@ const AdvertisingAdminPage = () => {
                     <p className={styles.adContent}>{p.content}</p>
                     {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{p.linkLabel || p.linkUrl}</a>}
                     {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
+                    <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
+                      {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
+                      {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                      {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                      {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'both' ? 'сайт + ТГ' : p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}><Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" /></span>}
+                      {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
+                      {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -736,6 +763,45 @@ const AdvertisingAdminPage = () => {
             <p className={styles.tgDesc}>{cleanupResult.message}</p>
             <div className={styles.tgButtons}>
               <button className={styles.tgSendSelf} onClick={() => setCleanupResult(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка деталей опций поста */}
+      {selectedPostForDetails && (
+        <div className={styles.telegramModal} onClick={() => setSelectedPostForDetails(null)}>
+          <div className={styles.telegramModalContent} onClick={e => e.stopPropagation()}>
+            <h3>Опции поста</h3>
+            <div className={styles.postDetailsList}>
+              <div className={styles.postDetailRow}>
+                <Icon name="pin" size="small" />
+                <span>Закрепление:</span>
+                <strong>{selectedPostForDetails.pinDuration > 0 ? `${selectedPostForDetails.pinDuration} показов` : 'Выключено'}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
+                <Icon name="refresh" size="small" />
+                <span>Повторы:</span>
+                <strong>{selectedPostForDetails.repeatCount > 0 ? `${selectedPostForDetails.repeatCount} осталось` : 'Выключено'}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
+                <Icon name="clock" size="small" />
+                <span>Интервал:</span>
+                <strong>{selectedPostForDetails.repeatIntervalHours > 0 ? `${selectedPostForDetails.repeatIntervalHours} часов` : 'Выключено'}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
+                <Icon name={selectedPostForDetails.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                <span>Канал:</span>
+                <strong>{selectedPostForDetails.repeatChannel === 'both' ? 'Сайт + Телеграм' : selectedPostForDetails.repeatChannel === 'telegram' ? 'Телеграм' : selectedPostForDetails.repeatChannel === 'site' ? 'Сайт' : 'Не задан'}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
+                <Icon name="delete" size="small" />
+                <span>Автоудаление:</span>
+                <strong className={adSettings.ad_auto_delete === '1' ? styles.statusOn : styles.statusOff}>{adSettings.ad_auto_delete === '1' ? 'Включено' : 'Выключено'}</strong>
+              </div>
+            </div>
+            <div className={styles.tgButtons}>
+              <button className={styles.tgSendSelf} onClick={() => setSelectedPostForDetails(null)}>Закрыть</button>
             </div>
           </div>
         </div>

@@ -1463,7 +1463,11 @@ router.get('/advertising', async (req, res) => {
       imageUrls: p.image_urls ? JSON.parse(p.image_urls) : [],
       createdBy: p.created_by,
       creatorName: p.creator_name,
-      createdAt: p.created_at
+      createdAt: p.created_at,
+      pinDuration: p.pin_duration,
+      repeatCount: p.repeat_count,
+      repeatIntervalHours: p.repeat_interval_hours,
+      repeatChannel: p.repeat_channel
     }));
 
     res.json(posts);
@@ -1660,7 +1664,7 @@ router.post('/advertising/cleanup-images', async (req, res) => {
 router.get('/ad-settings', async (req, res) => {
   try {
     const result = await executeQuery(
-      "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram')"
+      "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'ad_auto_delete')"
     );
     if (!result.success) return res.status(500).json({ error: 'Ошибка' });
     const settings = {};
@@ -1680,7 +1684,7 @@ router.get('/ad-settings', async (req, res) => {
 router.put('/ad-settings', async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowedKeys = ['ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram'];
+    const allowedKeys = ['ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'ad_auto_delete'];
     if (!allowedKeys.includes(key)) {
       return res.status(400).json({ error: 'Недопустимый ключ' });
     }

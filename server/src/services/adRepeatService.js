@@ -28,6 +28,12 @@ async function checkAndRepeat() {
   try {
     const now = new Date().toISOString();
 
+    // Получаем настройку автоудаления
+    const autoDeleteResult = await executeQuery(
+      "SELECT value FROM site_settings WHERE key = 'ad_auto_delete'"
+    );
+    const autoDelete = autoDeleteResult.success && autoDeleteResult.data[0]?.value === '1';
+
     // Находим посты, которые нужно повторить
     const result = await executeQuery(
       `SELECT * FROM advertising_posts 
@@ -36,34 +42,77 @@ async function checkAndRepeat() {
        AND (last_repeated_at IS NULL OR datetime(last_repeated_at, '+' || repeat_interval_hours || ' hours') <= datetime('now'))`
     );
 
-    if (!result.success || result.data.length === 0) return;
+    if (result.success && result.data.length > 0) {
+      for (const post of result.data) {
+        const channel = post.repeat_channel || 'site';
 
-    for (const post of result.data) {
-      const channel = post.repeat_channel || 'site';
+        if (channel === 'site' || channel === 'both') {
+          await repeatOnSite(post);
+        }
 
-      // Повтор на сайте — создаём копию поста
-      if (channel === 'site' || channel === 'both') {
-        await repeatOnSite(post);
+        if (channel === 'telegram' || channel === 'both') {
+          await repeatOnTelegram(post);
+        }
+
+        const newCount = post.repeat_count - 1;
+        await executeQuery(
+          `UPDATE advertising_posts 
+           SET repeat_count = ?, last_repeated_at = datetime('now') 
+           WHERE id = ?`,
+          [newCount, post.id]
+        );
+
+        console.log(`🔄 Повтор рекламного поста ${post.id}, осталось повторов: ${newCount}`);
+
+        // Автоудаление если повторы закончились и включено автоудаление
+        if (newCount <= 0 && autoDelete) {
+          await deletePost(post);
+          console.log(`🗑️ Автоудаление поста ${post.id} (повторы исчерпаны)`);
+        }
       }
+    }
 
-      // Повтор в ТГ — отправляем сообщение
-      if (channel === 'telegram' || channel === 'both') {
-        await repeatOnTelegram(post);
-      }
-
-      // Обновляем счётчик и время
-      await executeQuery(
-        `UPDATE advertising_posts 
-         SET repeat_count = repeat_count - 1, last_repeated_at = datetime('now') 
-         WHERE id = ?`,
-        [post.id]
+    // Проверяем посты, у которых повторы уже 0, но pin_duration тоже истёк — автоудаление
+    if (autoDelete) {
+      const expiredResult = await executeQuery(
+        `SELECT * FROM advertising_posts 
+         WHERE repeat_count <= 0 
+         AND repeat_channel IS NOT NULL AND repeat_channel != ''`
       );
 
-      console.log(`🔄 Повтор рекламного поста ${post.id}, осталось повторов: ${post.repeat_count - 1}`);
+      if (expiredResult.success) {
+        for (const post of expiredResult.data) {
+          // Проверяем pin_duration
+          if (post.pin_duration > 0) {
+            const postsSinceAd = await executeQuery(
+              `SELECT COUNT(*) as cnt FROM wall_posts WHERE created_at > ?`,
+              [post.created_at]
+            );
+            if (postsSinceAd.success && postsSinceAd.data[0].cnt < post.pin_duration) {
+              continue; // pin ещё не истёк
+            }
+          }
+          await deletePost(post);
+          console.log(`🗑️ Автоудаление поста ${post.id} (условия выполнены)`);
+        }
+      }
     }
   } catch (error) {
     console.error('Ошибка AdRepeatService:', error);
   }
+}
+
+async function deletePost(post) {
+  // Удаляем файлы изображений
+  const imageUrls = JSON.parse(post.image_urls || '[]');
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  for (const imageUrl of imageUrls) {
+    const filePath = path.join(process.cwd(), imageUrl);
+    await fs.unlink(filePath).catch(() => {});
+  }
+  // Удаляем пост
+  await executeQuery('DELETE FROM advertising_posts WHERE id = ?', [post.id]);
 }
 
 async function repeatOnSite(post) {
