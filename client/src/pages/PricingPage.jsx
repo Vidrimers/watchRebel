@@ -83,13 +83,13 @@ const PricingPage = () => {
                     <span className={styles.priceLabel}>Рассылка всем пользователям</span>
                     <span className={styles.priceValue}>{pricing.ad_price_telegram} {currencySymbol}</span>
                   </div>
-                  {pricing.ad_price_tg_repeat && (
+                  {pricing.ad_price_tg_repeat && pricing.ad_price_tg_repeat !== '0' && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Повторения в ТГ</span>
                       <span className={styles.priceValue}>{pricing.ad_price_tg_repeat} {currencySymbol}</span>
                     </div>
                   )}
-                  {pricing.ad_price_tg_interval && (
+                  {pricing.ad_price_tg_interval && pricing.ad_price_tg_interval !== '0' && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Интервал повторений в ТГ</span>
                       <span className={styles.priceValue}>{pricing.ad_price_tg_interval} {currencySymbol}</span>
