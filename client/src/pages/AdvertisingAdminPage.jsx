@@ -380,32 +380,6 @@ const AdvertisingAdminPage = () => {
         <Icon name="advertising" size="medium" /> Объявления и реклама
       </h1>
 
-      {/* ===== Контакты для рекламы ===== */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2>Контакты для рекламы</h2>
-          {!isEditingContacts && <button onClick={() => setIsEditingContacts(true)} className={styles.btnEdit}>Редактировать</button>}
-        </div>
-        {contactsLoading ? <p className={styles.loading}>Загрузка...</p>
-        : isEditingContacts ? (
-          <div className={styles.editForm}>
-            <div className={styles.formGroup}><label>Текст:</label><textarea value={contactText} onChange={e => setContactText(e.target.value)} className={styles.textarea} rows={3} /></div>
-            <div className={styles.formGroup}><label>Email:</label><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className={styles.input} /></div>
-            <div className={styles.formGroup}><label>Telegram:</label><input type="text" value={contactTelegram} onChange={e => setContactTelegram(e.target.value)} className={styles.input} /></div>
-            <div className={styles.formButtons}>
-              <button onClick={handleSaveContacts} className={styles.btnSave} disabled={contactsSaving}>{contactsSaving ? 'Сохранение...' : 'Сохранить'}</button>
-              <button onClick={() => { setIsEditingContacts(false); loadContacts(); }} className={styles.btnCancel}>Отмена</button>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.contactsDisplay}>
-            {contactText && <p>{contactText}</p>}
-            <p><span className={styles.contactIcon}><Icon name="email" size="small" /></span> Email: {contactEmail}</p>
-            <p><span className={styles.contactIcon}><Icon name="telegram" size="small" /></span> Telegram: {contactTelegram}</p>
-          </div>
-        )}
-      </div>
-
       {/* ===== Основные вкладки ===== */}
       <div className={styles.tabs}>
         <button className={`${styles.tabButton} ${activeTab === 'advertising' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('advertising'); setActiveSubTab('site'); }}>
@@ -911,6 +885,32 @@ const AdvertisingAdminPage = () => {
           </div>
         </div>
       )}
+
+      {/* ===== Контакты для рекламы ===== */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Контакты для рекламы</h2>
+          {!isEditingContacts && <button onClick={() => setIsEditingContacts(true)} className={styles.btnEdit}>Редактировать</button>}
+        </div>
+        {contactsLoading ? <p className={styles.loading}>Загрузка...</p>
+        : isEditingContacts ? (
+          <div className={styles.editForm}>
+            <div className={styles.formGroup}><label>Текст:</label><textarea value={contactText} onChange={e => setContactText(e.target.value)} className={styles.textarea} rows={3} /></div>
+            <div className={styles.formGroup}><label>Email:</label><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className={styles.input} /></div>
+            <div className={styles.formGroup}><label>Telegram:</label><input type="text" value={contactTelegram} onChange={e => setContactTelegram(e.target.value)} className={styles.input} /></div>
+            <div className={styles.formButtons}>
+              <button onClick={handleSaveContacts} className={styles.btnSave} disabled={contactsSaving}>{contactsSaving ? 'Сохранение...' : 'Сохранить'}</button>
+              <button onClick={() => { setIsEditingContacts(false); loadContacts(); }} className={styles.btnCancel}>Отмена</button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.contactsDisplay}>
+            {contactText && <p>{contactText}</p>}
+            <p><span className={styles.contactIcon}><Icon name="email" size="small" /></span> Email: {contactEmail}</p>
+            <p><span className={styles.contactIcon}><Icon name="telegram" size="small" /></span> Telegram: {contactTelegram}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
