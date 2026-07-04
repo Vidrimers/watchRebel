@@ -326,7 +326,7 @@ router.post('/users/:id/block', async (req, res) => {
  */
 router.post('/announcements', uploadAnnouncement.array('images', 5), async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, pinDuration, repeatCount, repeatIntervalHours, repeatChannel } = req.body;
 
     // Проверяем, что есть хотя бы контент или изображения
     if ((!content || content.trim().length === 0) && (!req.files || req.files.length === 0)) {
@@ -352,9 +352,10 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
     const announcementContent = content && content.trim().length > 0 ? content : ' ';
 
     const insertAnnouncementResult = await executeQuery(
-      `INSERT INTO announcements (id, content, image_url, created_by, created_at) 
-       VALUES (?, ?, ?, ?, datetime('now', 'localtime'))`,
-      [announcementId, announcementContent, imageUrl, req.user.id]
+      `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel)
+       VALUES (?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`,
+      [announcementId, announcementContent, imageUrl, req.user.id,
+       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0, repeatChannel || null]
     );
 
     if (!insertAnnouncementResult.success) {
@@ -844,11 +845,15 @@ router.get('/announcements', async (req, res) => {
       announcements.push({
         id: announcement.id,
         content: announcement.content,
-        imageUrl: announcement.image_url, // Для обратной совместимости
-        imageUrls, // Массив всех изображений
+        imageUrl: announcement.image_url,
+        imageUrls,
         createdBy: announcement.created_by,
         creatorName: announcement.creator_name,
-        createdAt: announcement.created_at
+        createdAt: announcement.created_at,
+        pinDuration: announcement.pin_duration,
+        repeatCount: announcement.repeat_count,
+        repeatIntervalHours: announcement.repeat_interval_hours,
+        repeatChannel: announcement.repeat_channel
       });
     }
 

@@ -47,6 +47,7 @@ const AdvertisingAdminPage = () => {
   const [annPinDuration, setAnnPinDuration] = useState(0);
   const [annRepeatCount, setAnnRepeatCount] = useState(0);
   const [annRepeatInterval, setAnnRepeatInterval] = useState(0);
+  const [annRepeatChannel, setAnnRepeatChannel] = useState('site');
 
   // === Telegram (общий) ===
   const [tgText, setTgText] = useState('');
@@ -176,10 +177,11 @@ const AdvertisingAdminPage = () => {
       fd.append('pinDuration', annPinDuration);
       fd.append('repeatCount', annRepeatCount);
       fd.append('repeatIntervalHours', annRepeatInterval);
+      fd.append('repeatChannel', annRepeatChannel);
       selectedAnnImages.forEach(img => fd.append('images', img));
       await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
-      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0);
+      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0); setAnnRepeatChannel('site');
       await loadAnnouncements();
     } catch (err) { setError('Не удалось создать объявление'); }
     finally { setCreatingAnn(false); }
@@ -581,6 +583,14 @@ const AdvertisingAdminPage = () => {
                   <label>Интервал (часы):</label>
                   <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0" />
                 </div>
+                <div className={styles.formGroup}>
+                  <label>Канал повтора:</label>
+                  <select value={annRepeatChannel} onChange={e => setAnnRepeatChannel(e.target.value)} className={styles.input}>
+                    <option value="site">Сайт</option>
+                    <option value="telegram">Телеграм</option>
+                    <option value="both">Сайт + Телеграм</option>
+                  </select>
+                </div>
               </div>
               <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
                 {creatingAnn ? 'Создание...' : 'Создать объявление'}
@@ -607,6 +617,16 @@ const AdvertisingAdminPage = () => {
                     </div>
                     <p className={styles.adContent}>{a.content}</p>
                     {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
+                    {(a.pinDuration > 0 || a.repeatCount > 0) && (
+                      <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
+                        {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
+                        {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                        {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                        {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'сайт + ТГ' : a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}><Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" /></span>}
+                        {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
+                        {adSettings.ad_auto_delete !== '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
