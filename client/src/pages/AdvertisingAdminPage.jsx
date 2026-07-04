@@ -702,8 +702,8 @@ const AdvertisingAdminPage = () => {
           </div>
         </div>
 
-        {/* Опубликованные рекламные посты */}
-        {adPosts.length > 0 && (
+        {/* Опубликованные — зависит от вкладки */}
+        {isAd && adPosts.length > 0 && (
           <div className={styles.section}>
             <h2>Опубликованные рекламные посты</h2>
             <div className={styles.adList}>
@@ -731,7 +731,7 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
 
-        {announcements.length > 0 && (
+        {!isAd && announcements.length > 0 && (
           <div className={styles.section}>
             <h2>Опубликованные объявления</h2>
             <div className={styles.adList}>
