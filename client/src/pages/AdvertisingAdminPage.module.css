@@ -1090,3 +1090,55 @@
 .infoTextarea:focus {
   border-color: var(--accent-primary);
 }
+
+.infoPreview {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.infoPreview a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.infoPreview blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+.infoPreview pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.infoPreview code {
+  background: var(--bg-tertiary);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.infoPreview pre code {
+  background: none;
+  padding: 0;
+}
+
+.infoPreview .spoiler {
+  background: var(--text-primary);
+  color: var(--text-primary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.infoPreview .spoiler.revealed {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}

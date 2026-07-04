@@ -983,7 +983,7 @@ const AdvertisingAdminPage = () => {
         ) : (
           <div>
             {infoTitle && <p style={{ fontWeight: 600, marginBottom: '8px' }}>{infoTitle}</p>}
-            {infoContent ? <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(infoContent.substring(0, 300)) + (infoContent.length > 300 ? '...' : '') }} /> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
+            {infoContent ? <div className={styles.infoPreview} dangerouslySetInnerHTML={{ __html: renderMarkdown(infoContent.substring(0, 300)) + (infoContent.length > 300 ? '...' : '') }} /> : <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Пока нет контента</p>}
           </div>
         )}
       </div>
