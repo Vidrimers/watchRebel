@@ -557,7 +557,7 @@ const AdvertisingAdminPage = () => {
             </div>
           )}
 
-      </>)}
+      </>      )}
 
       {activeSubTab === 'site' && !isAd && (
         <>
@@ -646,7 +646,7 @@ const AdvertisingAdminPage = () => {
             </div>
           )}
 
-      </>)}
+      </>      )}
 
       {/* ===== ПОДВКЛАДКА: TELEGRAM ===== */}
       {activeSubTab === 'telegram' && (<>
@@ -788,7 +788,7 @@ const AdvertisingAdminPage = () => {
             )}
           </div>
         )}
-      </>)}
+      </>      )}
 
       {/* ===== История ===== */}
       <div className={styles.section}>
@@ -858,9 +858,10 @@ const AdvertisingAdminPage = () => {
             )}
           </div>
         </div>
-      </>)}
+        </>
+      )}
 
-      {/* Диалог результата очистки */}
+        {/* Диалог результата очистки */}
       {cleanupResult && (
         <div className={styles.telegramModal}>
           <div className={styles.telegramModalContent}>
