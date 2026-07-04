@@ -260,6 +260,10 @@ if (process.env.NODE_ENV !== 'test') {
   const { startAdRepeatService } = await import('./services/adRepeatService.js');
   startAdRepeatService();
 
+  // Запуск планировщика отложенных публикаций
+  const { startSchedulerService } = await import('./services/schedulerService.js');
+  startSchedulerService();
+
   server.listen(PORT, () => {
     logger.info(`Сервер запущен на порту ${PORT}`, { 
       port: PORT, 

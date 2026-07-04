@@ -347,11 +347,12 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       })
     );
 
-    // Получаем рекламные посты
+    // Получаем рекламные посты (скрываем отложенные)
     const adResult = await executeQuery(
       `SELECT ap.*, u.display_name, u.avatar_url
        FROM advertising_posts ap
        LEFT JOIN users u ON ap.created_by = u.id
+       WHERE ap.scheduled_at IS NULL OR ap.scheduled_at <= datetime('now')
        ORDER BY ap.created_at DESC`
     );
 

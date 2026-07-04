@@ -35,6 +35,7 @@ const AdvertisingAdminPage = () => {
   const [adPinDuration, setAdPinDuration] = useState(0);
   const [adRepeatCount, setAdRepeatCount] = useState(0);
   const [adRepeatInterval, setAdRepeatInterval] = useState(0);
+  const [adScheduledAt, setAdScheduledAt] = useState('');
 
   // === Объявления (сайт) ===
   const [announcements, setAnnouncements] = useState([]);
@@ -48,11 +49,13 @@ const AdvertisingAdminPage = () => {
   const [annRepeatCount, setAnnRepeatCount] = useState(0);
   const [annRepeatInterval, setAnnRepeatInterval] = useState(0);
   const [annRepeatChannel, setAnnRepeatChannel] = useState('site');
+  const [annScheduledAt, setAnnScheduledAt] = useState('');
 
   // === Telegram (общий) ===
   const [tgText, setTgText] = useState('');
   const [tgRepeatCount, setTgRepeatCount] = useState(0);
   const [tgRepeatInterval, setTgRepeatInterval] = useState(0);
+  const [tgScheduledAt, setTgScheduledAt] = useState('');
 
   // === Настройки цен ===
   const [adSettings, setAdSettings] = useState({});
@@ -214,11 +217,12 @@ const AdvertisingAdminPage = () => {
         content: newAdContent.trim(),
         linkUrl: newAdLinkUrl.trim() !== 'https://' ? (newAdLinkUrl.startsWith('http') ? newAdLinkUrl : `https://${newAdLinkUrl}`) : null,
         linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls,
-        pinDuration: adPinDuration, repeatCount: adRepeatCount, repeatIntervalHours: adRepeatInterval
+        pinDuration: adPinDuration, repeatCount: adRepeatCount, repeatIntervalHours: adRepeatInterval,
+        scheduledAt: adScheduledAt || null
       });
       setNewAdContent(''); setNewAdLinkUrl('https://'); setNewAdLinkLabel('');
       setSelectedImages([]); setImagePreviews([]); setError(null);
-      setAdPinDuration(0); setAdRepeatCount(0); setAdRepeatInterval(0);
+      setAdPinDuration(0); setAdRepeatCount(0); setAdRepeatInterval(0); setAdScheduledAt('');
       await loadAdPosts();
     } catch (err) { setError('Не удалось создать рекламный пост'); }
     finally { setCreatingAd(false); }
@@ -245,10 +249,11 @@ const AdvertisingAdminPage = () => {
       fd.append('repeatCount', annRepeatCount);
       fd.append('repeatIntervalHours', annRepeatInterval);
       fd.append('repeatChannel', annRepeatChannel);
+      fd.append('scheduledAt', annScheduledAt || '');
       selectedAnnImages.forEach(img => fd.append('images', img));
       await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
-      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0); setAnnRepeatChannel('site');
+      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0); setAnnRepeatChannel('site'); setAnnScheduledAt('');
       await loadAnnouncements();
     } catch (err) { setError('Не удалось создать объявление'); }
     finally { setCreatingAnn(false); }
@@ -295,10 +300,11 @@ const AdvertisingAdminPage = () => {
       const imageUrl = await uploadTgImage();
       const r = await api.post('/admin/telegram-announcement', {
         content: tgText.trim(), imageUrl, type: tgType,
-        repeatCount: tgRepeatCount, repeatIntervalHours: tgRepeatInterval
+        repeatCount: tgRepeatCount, repeatIntervalHours: tgRepeatInterval,
+        scheduledAt: tgScheduledAt || null
       });
       setTgProgress({ current: r.data.success, total: r.data.total, failed: r.data.failed });
-      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); }, 3000);
+      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); setTgScheduledAt(''); }, 3000);
     } catch (err) { setError('Не удалось отправить в Telegram'); setTgProgress(null); }
     finally { setSendingTg(false); }
   };
@@ -556,6 +562,11 @@ const AdvertisingAdminPage = () => {
                   <label>Интервал (часы):</label>
                   <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
+                <div className={styles.formGroup}>
+                  <label>Отложенная публикация:</label>
+                  <input type="datetime-local" value={adScheduledAt} onChange={e => setAdScheduledAt(e.target.value)} className={styles.input} />
+                  {adScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
+                </div>
               </div>
               <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
                 {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
@@ -634,12 +645,9 @@ const AdvertisingAdminPage = () => {
                   <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Канал повтора:</label>
-                  <select value={annRepeatChannel} onChange={e => setAnnRepeatChannel(e.target.value)} className={styles.input}>
-                    <option value="site">Сайт</option>
-                    <option value="telegram">Телеграм</option>
-                    <option value="telegram">Телеграм</option>
-                  </select>
+                  <label>Отложенная публикация:</label>
+                  <input type="datetime-local" value={annScheduledAt} onChange={e => setAnnScheduledAt(e.target.value)} className={styles.input} />
+                  {annScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
                 </div>
               </div>
               <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
@@ -745,6 +753,11 @@ const AdvertisingAdminPage = () => {
             <div className={styles.formGroup}>
               <label>Интервал (часы):</label>
               <input type="number" min="0" max="50" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Отложенная публикация:</label>
+              <input type="datetime-local" value={tgScheduledAt} onChange={e => setTgScheduledAt(e.target.value)} className={styles.input} />
+              {tgScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
             </div>
           </div>
 
