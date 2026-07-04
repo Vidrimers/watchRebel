@@ -83,7 +83,7 @@ const PricingPage = () => {
               </div>
             )}
 
-            {infoContent && (
+            {infoContent && infoContent.replace(/<[^>]*>/g, '').trim() && (
               <div className={styles.section}>
                 <h2>{infoTitle || 'Информация'}</h2>
                 <div className={styles.infoContent} dangerouslySetInnerHTML={{ __html: infoContent }} />
