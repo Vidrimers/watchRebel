@@ -1001,8 +1001,8 @@ const AdvertisingAdminPage = () => {
                 <button type="button" onClick={handleInsertSpoiler} className={styles.formatButton} title="Спойлер (скрытый текст)">⚠️</button>
               </div>
               <div className={styles.infoToolbar}>
-                <button type="button" onClick={() => document.execCommand('undo')} className={styles.formatButton} title="Отменить">↩ Отменить</button>
-                <button type="button" onClick={() => document.execCommand('redo')} className={styles.formatButton} title="Повторить">↪ Повторить</button>
+                <button type="button" onClick={() => document.execCommand('undo')} className={`${styles.formatButton} ${styles.formatButtonWide}`} title="Отменить">↩</button>
+                <button type="button" onClick={() => document.execCommand('redo')} className={`${styles.formatButton} ${styles.formatButtonWide}`} title="Повторить">↪</button>
               </div>
               <div ref={editorRef} contentEditable className={styles.infoEditor} suppressContentEditableWarning onKeyUp={checkActiveFormats} onMouseUp={checkActiveFormats} />
             </div>

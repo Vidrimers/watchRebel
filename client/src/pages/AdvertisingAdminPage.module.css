@@ -697,6 +697,11 @@
   opacity: 0.85;
 }
 
+.formatButtonWide {
+  width: auto;
+  padding: 0 10px;
+}
+
 .telegramTextarea,
 .tgTextarea {
   width: 100%;
