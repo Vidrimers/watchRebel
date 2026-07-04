@@ -881,6 +881,11 @@ const AdvertisingAdminPage = () => {
                 <strong>{selectedPostForDetails.repeatIntervalHours > 0 ? `${selectedPostForDetails.repeatIntervalHours} часов` : 'Выключено'}</strong>
               </div>
               <div className={styles.postDetailRow}>
+                <Icon name={selectedPostForDetails.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                <span>Канал:</span>
+                <strong>{selectedPostForDetails.repeatChannel === 'both' ? 'Сайт + Телеграм' : selectedPostForDetails.repeatChannel === 'telegram' ? 'Телеграм' : selectedPostForDetails.repeatChannel === 'site' ? 'Сайт' : 'Не задан'}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
                 <Icon name="delete" size="small" />
                 <span>Автоудаление:</span>
                 <strong className={adSettings.ad_auto_delete === '1' ? styles.statusOn : styles.statusOff}>{adSettings.ad_auto_delete === '1' ? 'Включено' : 'Выключено'}</strong>
