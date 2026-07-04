@@ -28,12 +28,6 @@ async function checkAndRepeat() {
   try {
     const now = new Date().toISOString();
 
-    // Получаем настройку автоудаления
-    const autoDeleteResult = await executeQuery(
-      "SELECT value FROM site_settings WHERE key = 'ad_auto_delete'"
-    );
-    const autoDelete = autoDeleteResult.success && autoDeleteResult.data[0]?.value === '1';
-
     // Находим посты, которые нужно повторить
     const result = await executeQuery(
       `SELECT * FROM advertising_posts 
@@ -64,8 +58,8 @@ async function checkAndRepeat() {
 
         console.log(`🔄 Повтор рекламного поста ${post.id}, осталось повторов: ${newCount}`);
 
-        // Автоудаление если повторы закончились и включено автоудаление
-        if (newCount <= 0 && autoDelete) {
+        // Автоудаление если повторы закончились и автоудаление включено для этого поста
+        if (newCount <= 0 && post.auto_delete) {
           await deletePost(post);
           console.log(`🗑️ Автоудаление поста ${post.id} (повторы исчерпаны)`);
         }
@@ -73,25 +67,23 @@ async function checkAndRepeat() {
     }
 
     // Проверяем посты без повторов (repeat_count <= 0) — автоудаление если pin_duration истёк
-    if (autoDelete) {
-      const expiredResult = await executeQuery(
-        `SELECT * FROM advertising_posts WHERE repeat_count <= 0`
-      );
+    const expiredResult = await executeQuery(
+      `SELECT * FROM advertising_posts WHERE repeat_count <= 0 AND auto_delete = 1`
+    );
 
-      if (expiredResult.success) {
-        for (const post of expiredResult.data) {
-          if (post.pin_duration > 0) {
-            const postsSinceAd = await executeQuery(
-              `SELECT COUNT(*) as cnt FROM wall_posts WHERE created_at > ?`,
-              [post.created_at]
-            );
-            if (postsSinceAd.success && postsSinceAd.data[0].cnt < post.pin_duration) {
-              continue; // pin ещё не истёк
-            }
+    if (expiredResult.success) {
+      for (const post of expiredResult.data) {
+        if (post.pin_duration > 0) {
+          const postsSinceAd = await executeQuery(
+            `SELECT COUNT(*) as cnt FROM wall_posts WHERE created_at > ?`,
+            [post.created_at]
+          );
+          if (postsSinceAd.success && postsSinceAd.data[0].cnt < post.pin_duration) {
+            continue; // pin ещё не истёк
           }
-          await deletePost(post);
-          console.log(`🗑️ Автоудаление поста ${post.id} (повторы исчерпаны, pin истёк)`);
         }
+        await deletePost(post);
+        console.log(`🗑️ Автоудаление поста ${post.id} (повторы исчерпаны, pin истёк)`);
       }
     }
   } catch (error) {

@@ -42,6 +42,7 @@ const AdvertisingAdminPage = () => {
   const [adRepeatCount, setAdRepeatCount] = useState(0);
   const [adRepeatInterval, setAdRepeatInterval] = useState(0);
   const [adScheduledAt, setAdScheduledAt] = useState('');
+  const [adAutoDelete, setAdAutoDelete] = useState(false);
 
   // === Объявления (сайт) ===
   const [announcements, setAnnouncements] = useState([]);
@@ -56,12 +57,14 @@ const AdvertisingAdminPage = () => {
   const [annRepeatInterval, setAnnRepeatInterval] = useState(0);
   const [annRepeatChannel, setAnnRepeatChannel] = useState('site');
   const [annScheduledAt, setAnnScheduledAt] = useState('');
+  const [annAutoDelete, setAnnAutoDelete] = useState(false);
 
   // === Telegram (общий) ===
   const [tgText, setTgText] = useState('');
   const [tgRepeatCount, setTgRepeatCount] = useState(0);
   const [tgRepeatInterval, setTgRepeatInterval] = useState(0);
   const [tgScheduledAt, setTgScheduledAt] = useState('');
+  const [tgAutoDelete, setTgAutoDelete] = useState(false);
 
   // === Настройки цен ===
   const [adSettings, setAdSettings] = useState({});
@@ -224,11 +227,12 @@ const AdvertisingAdminPage = () => {
         linkUrl: newAdLinkUrl.trim() !== 'https://' ? (newAdLinkUrl.startsWith('http') ? newAdLinkUrl : `https://${newAdLinkUrl}`) : null,
         linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls,
         pinDuration: adPinDuration, repeatCount: adRepeatCount, repeatIntervalHours: adRepeatInterval,
-        scheduledAt: toISOString(adScheduledAt)
+        scheduledAt: toISOString(adScheduledAt),
+        autoDelete: adAutoDelete
       });
       setNewAdContent(''); setNewAdLinkUrl('https://'); setNewAdLinkLabel('');
       setSelectedImages([]); setImagePreviews([]); setError(null);
-      setAdPinDuration(0); setAdRepeatCount(0); setAdRepeatInterval(0); setAdScheduledAt('');
+      setAdPinDuration(0); setAdRepeatCount(0); setAdRepeatInterval(0); setAdScheduledAt(''); setAdAutoDelete(false);
       await loadAdPosts();
     } catch (err) { setError('Не удалось создать рекламный пост'); }
     finally { setCreatingAd(false); }
@@ -256,10 +260,11 @@ const AdvertisingAdminPage = () => {
       fd.append('repeatIntervalHours', annRepeatInterval);
       fd.append('repeatChannel', annRepeatChannel);
       fd.append('scheduledAt', toISOString(annScheduledAt) || '');
+      fd.append('autoDelete', annAutoDelete ? '1' : '0');
       selectedAnnImages.forEach(img => fd.append('images', img));
       await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
-      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0); setAnnRepeatChannel('site'); setAnnScheduledAt('');
+      setAnnPinDuration(0); setAnnRepeatCount(0); setAnnRepeatInterval(0); setAnnRepeatChannel('site'); setAnnScheduledAt(''); setAnnAutoDelete(false);
       await loadAnnouncements();
     } catch (err) { setError('Не удалось создать объявление'); }
     finally { setCreatingAnn(false); }
@@ -307,10 +312,11 @@ const AdvertisingAdminPage = () => {
       const r = await api.post('/admin/telegram-announcement', {
         content: tgText.trim(), imageUrl, type: tgType,
         repeatCount: tgRepeatCount, repeatIntervalHours: tgRepeatInterval,
-        scheduledAt: toISOString(tgScheduledAt)
+        scheduledAt: toISOString(tgScheduledAt),
+        autoDelete: tgAutoDelete
       });
       setTgProgress({ current: r.data.success, total: r.data.total, failed: r.data.failed });
-      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); setTgScheduledAt(''); }, 3000);
+      setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); setTgScheduledAt(''); setTgAutoDelete(false); }, 3000);
     } catch (err) { setError('Не удалось отправить в Telegram'); setTgProgress(null); }
     finally { setSendingTg(false); }
   };
@@ -574,6 +580,16 @@ const AdvertisingAdminPage = () => {
                   {adScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
                 </div>
               </div>
+              <div className={styles.toggleRow}>
+                <label className={styles.toggle}>
+                  <input type="checkbox" className={styles.toggleInput} checked={adAutoDelete} onChange={e => setAdAutoDelete(e.target.checked)} />
+                  <span className={styles.toggleSlider}></span>
+                </label>
+                <div>
+                  <div className={styles.toggleLabel}>Автоудаление после исчерпания</div>
+                  <div className={styles.toggleDesc}>Пост удалится когда повторы/закрепление исчерпаны</div>
+                </div>
+              </div>
               <button type="submit" className={styles.createButton} disabled={creatingAd || (!newAdContent.trim() && selectedImages.length === 0)}>
                 {creatingAd ? 'Публикация...' : 'Опубликовать рекламу'}
               </button>
@@ -606,8 +622,7 @@ const AdvertisingAdminPage = () => {
                       {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                         <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
                       </span>}
-                      {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                      {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                      {p.autoDelete && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                     </div>
                   </div>
                 ))}
@@ -657,6 +672,16 @@ const AdvertisingAdminPage = () => {
                   {annScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
                 </div>
               </div>
+              <div className={styles.toggleRow}>
+                <label className={styles.toggle}>
+                  <input type="checkbox" className={styles.toggleInput} checked={annAutoDelete} onChange={e => setAnnAutoDelete(e.target.checked)} />
+                  <span className={styles.toggleSlider}></span>
+                </label>
+                <div>
+                  <div className={styles.toggleLabel}>Автоудаление после исчерпания</div>
+                  <div className={styles.toggleDesc}>Объявление удалится когда повторы/закрепление исчерпаны</div>
+                </div>
+              </div>
               <button type="submit" className={styles.createButton} disabled={creatingAnn || (!newAnnouncement.trim() && selectedAnnImages.length === 0)}>
                 {creatingAnn ? 'Создание...' : 'Создать объявление'}
               </button>
@@ -689,8 +714,7 @@ const AdvertisingAdminPage = () => {
                         {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                         {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                         {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                        {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                        {adSettings.ad_auto_delete !== '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                        {a.autoDelete && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                       </div>
                     )}
                   </div>
@@ -763,6 +787,17 @@ const AdvertisingAdminPage = () => {
               <label>Отложенная публикация:</label>
               <input type="datetime-local" value={tgScheduledAt} onChange={e => setTgScheduledAt(e.target.value)} className={styles.input} />
               {tgScheduledAt && <span className={styles.tgDesc}>Опубликуется автоматически</span>}
+            </div>
+          </div>
+
+          <div className={styles.toggleRow}>
+            <label className={styles.toggle}>
+              <input type="checkbox" className={styles.toggleInput} checked={tgAutoDelete} onChange={e => setTgAutoDelete(e.target.checked)} />
+              <span className={styles.toggleSlider}></span>
+            </label>
+            <div>
+              <div className={styles.toggleLabel}>Автоудаление после исчерпания</div>
+              <div className={styles.toggleDesc}>Пост удалится когда повторы/закрепление исчерпаны</div>
             </div>
           </div>
 
@@ -967,7 +1002,7 @@ const AdvertisingAdminPage = () => {
               <div className={styles.postDetailRow}>
                 <Icon name="delete" size="small" />
                 <span>Автоудаление:</span>
-                <strong className={adSettings.ad_auto_delete === '1' ? styles.statusOn : styles.statusOff}>{adSettings.ad_auto_delete === '1' ? 'Включено' : 'Выключено'}</strong>
+                <strong className={selectedPostForDetails.autoDelete ? styles.statusOn : styles.statusOff}>{selectedPostForDetails.autoDelete ? 'Включено' : 'Выключено'}</strong>
               </div>
             </div>
             <div className={styles.tgButtons}>

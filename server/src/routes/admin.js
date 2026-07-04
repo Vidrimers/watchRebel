@@ -326,7 +326,7 @@ router.post('/users/:id/block', async (req, res) => {
  */
 router.post('/announcements', uploadAnnouncement.array('images', 5), async (req, res) => {
   try {
-    const { content, pinDuration, repeatCount, repeatIntervalHours, repeatChannel, scheduledAt } = req.body;
+    const { content, pinDuration, repeatCount, repeatIntervalHours, repeatChannel, scheduledAt, autoDelete } = req.body;
 
     // Проверяем, что есть хотя бы контент или изображения
     if ((!content || content.trim().length === 0) && (!req.files || req.files.length === 0)) {
@@ -359,10 +359,10 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
     const announcementContent = content && content.trim().length > 0 ? content : ' ';
 
     const insertAnnouncementResult = await executeQuery(
-      `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at)
-       VALUES (?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?, ?)`,
+      `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at, auto_delete)
+       VALUES (?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?, ?, ?)`,
       [announcementId, announcementContent, imageUrl, req.user.id,
-       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0, repeatChannel || null, scheduledAt || null]
+       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0, repeatChannel || null, scheduledAt || null, autoDelete ? 1 : 0]
     );
 
     if (!insertAnnouncementResult.success) {
@@ -861,7 +861,8 @@ router.get('/announcements', async (req, res) => {
         repeatCount: announcement.repeat_count,
         repeatIntervalHours: announcement.repeat_interval_hours,
         repeatChannel: announcement.repeat_channel,
-        scheduledAt: announcement.scheduled_at
+        scheduledAt: announcement.scheduled_at,
+        autoDelete: !!announcement.auto_delete
       });
     }
 
@@ -981,7 +982,7 @@ router.delete('/announcements/:id', async (req, res) => {
  */
 router.post('/telegram-announcement', async (req, res) => {
   try {
-    const { content, imageUrl, type, repeatCount, repeatIntervalHours, scheduledAt } = req.body;
+    const { content, imageUrl, type, repeatCount, repeatIntervalHours, scheduledAt, autoDelete } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({
@@ -1066,17 +1067,17 @@ router.post('/telegram-announcement', async (req, res) => {
     // Создаём запись в advertising_posts / announcements для отображения в "Опубликованные"
     if (type === 'advertising') {
       await executeQuery(
-        `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at)
-         VALUES (?, ?, NULL, NULL, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram', ?)`,
+        `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at, auto_delete)
+         VALUES (?, ?, NULL, NULL, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram', ?, ?)`,
         [postId, content.trim(), fullImageUrl ? JSON.stringify([fullImageUrl]) : '[]', req.user.id,
-         repeatCountNum, repeatIntervalNum, scheduledAt || null]
+         repeatCountNum, repeatIntervalNum, scheduledAt || null, autoDelete ? 1 : 0]
       );
     } else {
       await executeQuery(
-        `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at)
-         VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram', ?)`,
+        `INSERT INTO announcements (id, content, image_url, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel, scheduled_at, auto_delete)
+         VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram', ?, ?)`,
         [postId, content.trim(), fullImageUrl || null, req.user.id,
-         repeatCountNum, repeatIntervalNum, scheduledAt || null]
+         repeatCountNum, repeatIntervalNum, scheduledAt || null, autoDelete ? 1 : 0]
       );
     }
 
@@ -1441,7 +1442,7 @@ router.post('/advertising/upload', uploadAdvertisingImages.single('image'), asyn
  */
 router.post('/advertising', async (req, res) => {
   try {
-    const { content, linkUrl, linkLabel, imageUrls, pinDuration, repeatCount, repeatIntervalHours, scheduledAt } = req.body;
+    const { content, linkUrl, linkLabel, imageUrls, pinDuration, repeatCount, repeatIntervalHours, scheduledAt, autoDelete } = req.body;
 
     const hasContent = content && content.trim() !== '';
     const hasImages = imageUrls && imageUrls.length > 0;
@@ -1462,10 +1463,10 @@ router.post('/advertising', async (req, res) => {
 
     // Сохраняем рекламный пост
     const result = await executeQuery(
-      `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, scheduled_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`,
+      `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, scheduled_at, auto_delete)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?, ?)`,
       [postId, hasContent ? content.trim() : ' ', linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id,
-       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0, scheduledAt || null]
+       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0, scheduledAt || null, autoDelete ? 1 : 0]
     );
 
     if (!result.success) {
@@ -1517,7 +1518,8 @@ router.get('/advertising', async (req, res) => {
       repeatCount: p.repeat_count,
       repeatIntervalHours: p.repeat_interval_hours,
       repeatChannel: p.repeat_channel,
-      scheduledAt: p.scheduled_at
+      scheduledAt: p.scheduled_at,
+      autoDelete: !!p.auto_delete
     }));
 
     res.json(posts);
