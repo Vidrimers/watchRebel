@@ -980,13 +980,20 @@ router.delete('/announcements/:id', async (req, res) => {
  */
 router.post('/telegram-announcement', async (req, res) => {
   try {
-    const { content, imageUrl, type } = req.body;
+    const { content, imageUrl, type, repeatCount, repeatIntervalHours } = req.body;
 
     if (!content || content.trim().length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Содержание не может быть пустым',
-        code: 'EMPTY_CONTENT' 
+        code: 'EMPTY_CONTENT'
       });
+    }
+
+    // Валидация: если повторы включены, интервал обязателен
+    const repeatCountNum = parseInt(repeatCount) || 0;
+    const repeatIntervalNum = parseInt(repeatIntervalHours) || 0;
+    if (repeatCountNum > 0 && repeatIntervalNum <= 0) {
+      return res.status(400).json({ error: 'Интервал повтора должен быть больше 0', code: 'INVALID_INTERVAL' });
     }
 
     // Формируем сообщение с заголовком
@@ -1048,11 +1055,22 @@ router.post('/telegram-announcement', async (req, res) => {
 
     // Сохраняем в историю отправленных постов
     const { v4: uuidv4 } = await import('uuid');
+    const postId = uuidv4();
     await executeQuery(
       `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
        VALUES (?, ?, ?, ?, 'telegram', ?, ?, datetime('now', 'localtime'))`,
-      [uuidv4(), content.trim(), fullImageUrl || null, type || 'announcement', successCount, req.user.id]
+      [postId, content.trim(), fullImageUrl || null, type || 'announcement', successCount, req.user.id]
     );
+
+    // Создаём запись в advertising_posts для отображения в "Опубликованные"
+    if (type === 'advertising') {
+      await executeQuery(
+        `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours, repeat_channel)
+         VALUES (?, ?, NULL, NULL, ?, ?, datetime('now', 'localtime'), 0, ?, ?, 'telegram')`,
+        [postId, content.trim(), fullImageUrl ? JSON.stringify([fullImageUrl]) : '[]', req.user.id,
+         repeatCountNum, repeatIntervalNum]
+      );
+    }
 
   } catch (error) {
     console.error('Ошибка отправки в Telegram:', error);

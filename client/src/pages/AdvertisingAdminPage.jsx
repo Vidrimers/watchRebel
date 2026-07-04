@@ -702,12 +702,12 @@ const AdvertisingAdminPage = () => {
           </div>
         </div>
 
-        {/* Опубликованные посты с ТГ-повторами */}
-        {adPosts.filter(p => p.repeatChannel === 'telegram' || p.repeatChannel === 'both').length > 0 && (
+        {/* Опубликованные рекламные посты */}
+        {adPosts.length > 0 && (
           <div className={styles.section}>
             <h2>Опубликованные рекламные посты</h2>
             <div className={styles.adList}>
-              {adPosts.filter(p => p.repeatChannel === 'telegram' || p.repeatChannel === 'both').map(p => (
+              {adPosts.map(p => (
                 <div key={p.id} className={styles.adCard}>
                   <div className={styles.adHeader}>
                     <span className={styles.adDate}>{formatDate(p.createdAt)}</span>
@@ -716,13 +716,14 @@ const AdvertisingAdminPage = () => {
                   <p className={styles.adContent}>{p.content}</p>
                   {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
+                    {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                     {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
                     {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                    <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'both' ? 'Сайт + Телеграм' : 'Телеграм'}`}>
-                      <Icon name={p.repeatChannel === 'both' ? 'feed' : 'telegram'} size="small" />
-                    </span>
+                    {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'both' ? 'Сайт + Телеграм' : p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                      <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                    </span>}
                     {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                    {adSettings.ad_auto_delete !== '1' && p.repeatCount > 0 && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                   </div>
                 </div>
               ))}
@@ -730,11 +731,11 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
 
-        {announcements.filter(a => a.repeatChannel === 'telegram' || a.repeatChannel === 'both').length > 0 && (
+        {announcements.length > 0 && (
           <div className={styles.section}>
             <h2>Опубликованные объявления</h2>
             <div className={styles.adList}>
-              {announcements.filter(a => a.repeatChannel === 'telegram' || a.repeatChannel === 'both').map(a => (
+              {announcements.map(a => (
                 <div key={a.id} className={styles.adCard}>
                   <div className={styles.adHeader}>
                     <span className={styles.adDate}>{formatDate(a.createdAt)}</span>
@@ -743,13 +744,14 @@ const AdvertisingAdminPage = () => {
                   <p className={styles.adContent}>{a.content}</p>
                   {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
+                    {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                     {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
                     {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                    <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'Сайт + Телеграм' : 'Телеграм'}`}>
-                      <Icon name={a.repeatChannel === 'both' ? 'feed' : 'telegram'} size="small" />
-                    </span>
+                    {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'Сайт + Телеграм' : a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                      <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                    </span>}
                     {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                    {adSettings.ad_auto_delete !== '1' && a.repeatCount > 0 && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    {adSettings.ad_auto_delete !== '1' && (a.pinDuration > 0 || a.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                   </div>
                 </div>
               ))}
