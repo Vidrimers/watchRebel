@@ -1410,8 +1410,11 @@ router.post('/advertising', async (req, res) => {
   try {
     const { content, linkUrl, linkLabel, imageUrls } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ error: 'Текст обязателен', code: 'EMPTY_CONTENT' });
+    const hasContent = content && content.trim() !== '';
+    const hasImages = imageUrls && imageUrls.length > 0;
+
+    if (!hasContent && !hasImages) {
+      return res.status(400).json({ error: 'Добавьте текст или изображения', code: 'EMPTY_CONTENT' });
     }
 
     const { v4: uuidv4 } = await import('uuid');
@@ -1421,7 +1424,7 @@ router.post('/advertising', async (req, res) => {
     const result = await executeQuery(
       `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at)
        VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-      [postId, content.trim(), linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id]
+      [postId, hasContent ? content.trim() : ' ', linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id]
     );
 
     if (!result.success) {
@@ -1433,7 +1436,7 @@ router.post('/advertising', async (req, res) => {
     await executeQuery(
       `INSERT INTO sent_posts (id, content, image_url, type, channel, sent_to, created_by, created_at)
        VALUES (?, ?, ?, 'advertising', 'site', 0, ?, datetime('now', 'localtime'))`,
-      [uuidv4(), content.trim(), firstImage, req.user.id]
+      [uuidv4(), hasContent ? content.trim() : ' ', firstImage, req.user.id]
     );
 
     res.status(201).json({ id: postId, message: 'Рекламный пост создан' });
