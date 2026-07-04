@@ -516,22 +516,6 @@ const AdvertisingAdminPage = () => {
               </div>
             </div>
             <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 50, повторений — 50, интервал — 50 часов.</p>
-            <div className={styles.toggleRow}>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={adSettings.ad_auto_delete === '1'}
-                  onChange={e => handleSaveAdSetting('ad_auto_delete', e.target.checked ? '1' : '0')}
-                  disabled={settingsSaving}
-                />
-                <span className={styles.toggleSlider}></span>
-              </label>
-              <div>
-                <div className={styles.toggleLabel}>Автоудаление рекламных постов</div>
-                <div className={styles.toggleDesc}>Посты удаляются после исчерпания повторов и/или истечения закрепления</div>
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -837,8 +821,7 @@ const AdvertisingAdminPage = () => {
                     {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
                       <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
                     </span>}
-                    {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                    {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    {p.autoDelete && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                   </div>
                 </div>
               ))}
@@ -872,8 +855,7 @@ const AdvertisingAdminPage = () => {
                       {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                       {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                       {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                      {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                      {adSettings.ad_auto_delete !== '1' && (a.pinDuration > 0 || a.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                      {a.autoDelete && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                     </div>
                   </div>
                 ))}

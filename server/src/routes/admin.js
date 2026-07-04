@@ -1716,7 +1716,7 @@ router.post('/advertising/cleanup-images', async (req, res) => {
 router.get('/ad-settings', async (req, res) => {
   try {
     const result = await executeQuery(
-      "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'ad_auto_delete')"
+      "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram')"
     );
     if (!result.success) return res.status(500).json({ error: 'Ошибка' });
     const settings = {};
@@ -1736,7 +1736,7 @@ router.get('/ad-settings', async (req, res) => {
 router.put('/ad-settings', async (req, res) => {
   try {
     const { key, value } = req.body;
-    const allowedKeys = ['ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'ad_auto_delete'];
+    const allowedKeys = ['ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram'];
     if (!allowedKeys.includes(key)) {
       return res.status(400).json({ error: 'Недопустимый ключ' });
     }
