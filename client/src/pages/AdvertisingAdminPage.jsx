@@ -557,6 +557,8 @@ const AdvertisingAdminPage = () => {
             </div>
           )}
 
+      </>)}
+
       {activeSubTab === 'site' && !isAd && (
         <>
           <div className={styles.section}>
@@ -643,6 +645,8 @@ const AdvertisingAdminPage = () => {
               )}
             </div>
           )}
+
+      </>)}
 
       {/* ===== ПОДВКЛАДКА: TELEGRAM ===== */}
       {activeSubTab === 'telegram' && (<>
@@ -854,7 +858,7 @@ const AdvertisingAdminPage = () => {
             )}
           </div>
         </div>
-      )}
+      </>)}
 
       {/* Диалог результата очистки */}
       {cleanupResult && (
