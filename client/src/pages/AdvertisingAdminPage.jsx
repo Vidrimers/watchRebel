@@ -5,6 +5,12 @@ import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './AdvertisingAdminPage.module.css';
 
+const toISOString = (localDatetime) => {
+  if (!localDatetime) return null;
+  const d = new Date(localDatetime);
+  return d.toISOString();
+};
+
 const AdvertisingAdminPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
@@ -218,7 +224,7 @@ const AdvertisingAdminPage = () => {
         linkUrl: newAdLinkUrl.trim() !== 'https://' ? (newAdLinkUrl.startsWith('http') ? newAdLinkUrl : `https://${newAdLinkUrl}`) : null,
         linkLabel: newAdLinkLabel.trim() || null, imageUrls: urls,
         pinDuration: adPinDuration, repeatCount: adRepeatCount, repeatIntervalHours: adRepeatInterval,
-        scheduledAt: adScheduledAt || null
+        scheduledAt: toISOString(adScheduledAt)
       });
       setNewAdContent(''); setNewAdLinkUrl('https://'); setNewAdLinkLabel('');
       setSelectedImages([]); setImagePreviews([]); setError(null);
@@ -249,7 +255,7 @@ const AdvertisingAdminPage = () => {
       fd.append('repeatCount', annRepeatCount);
       fd.append('repeatIntervalHours', annRepeatInterval);
       fd.append('repeatChannel', annRepeatChannel);
-      fd.append('scheduledAt', annScheduledAt || '');
+      fd.append('scheduledAt', toISOString(annScheduledAt) || '');
       selectedAnnImages.forEach(img => fd.append('images', img));
       await api.post('/admin/announcements', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setNewAnnouncement(''); setSelectedAnnImages([]); setAnnImagePreviews([]); setError(null);
@@ -301,7 +307,7 @@ const AdvertisingAdminPage = () => {
       const r = await api.post('/admin/telegram-announcement', {
         content: tgText.trim(), imageUrl, type: tgType,
         repeatCount: tgRepeatCount, repeatIntervalHours: tgRepeatInterval,
-        scheduledAt: tgScheduledAt || null
+        scheduledAt: toISOString(tgScheduledAt)
       });
       setTgProgress({ current: r.data.success, total: r.data.total, failed: r.data.failed });
       setTimeout(() => { setTgText(''); setTgProgress(null); setTgImage(null); setTgImagePreview(null); setTgRepeatCount(0); setTgRepeatInterval(0); setTgScheduledAt(''); }, 3000);
@@ -593,6 +599,7 @@ const AdvertisingAdminPage = () => {
                     {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noopener noreferrer" className={styles.adLink}>{p.linkLabel || p.linkUrl}</a>}
                     {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                     <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
+                      {p.scheduledAt && <span className={`${styles.postOptionIcon} ${styles.scheduledIcon}`} title={`Отложено до: ${new Date(p.scheduledAt).toLocaleString('ru-RU')}`}><Icon name="clock" size="small" /></span>}
                       {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                       {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                       {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
@@ -676,14 +683,12 @@ const AdvertisingAdminPage = () => {
                     </div>
                     <p className={styles.adContent}>{a.content}</p>
                     {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
-                    {(a.pinDuration > 0 || a.repeatCount > 0) && (
+                    {(a.pinDuration > 0 || a.repeatCount > 0 || a.scheduledAt) && (
                       <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
+                        {a.scheduledAt && <span className={`${styles.postOptionIcon} ${styles.scheduledIcon}`} title={`Отложено до: ${new Date(a.scheduledAt).toLocaleString('ru-RU')}`}><Icon name="clock" size="small" /></span>}
                         {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                         {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                         {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                        {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
-                          <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
-                        </span>}
                         {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                         {adSettings.ad_auto_delete !== '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                       </div>
@@ -790,6 +795,7 @@ const AdvertisingAdminPage = () => {
                   <p className={styles.adContent}>{p.content}</p>
                   {p.imageUrls?.length > 0 && <div className={styles.adImages}>{p.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                   <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(p)}>
+                    {p.scheduledAt && <span className={`${styles.postOptionIcon} ${styles.scheduledIcon}`} title={`Отложено до: ${new Date(p.scheduledAt).toLocaleString('ru-RU')}`}><Icon name="clock" size="small" /></span>}
                     {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                     {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                     {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
@@ -827,12 +833,10 @@ const AdvertisingAdminPage = () => {
                     <p className={styles.adContent}>{a.content}</p>
                     {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
                     <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
+                      {a.scheduledAt && <span className={`${styles.postOptionIcon} ${styles.scheduledIcon}`} title={`Отложено до: ${new Date(a.scheduledAt).toLocaleString('ru-RU')}`}><Icon name="clock" size="small" /></span>}
                       {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                       {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="repeat" size="small" /></span>}
                       {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                      {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
-                        <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
-                      </span>}
                       {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                       {adSettings.ad_auto_delete !== '1' && (a.pinDuration > 0 || a.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                     </div>
@@ -933,6 +937,13 @@ const AdvertisingAdminPage = () => {
           <div className={styles.telegramModalContent} onClick={e => e.stopPropagation()}>
             <h3>Опции поста</h3>
             <div className={styles.postDetailsList}>
+              {selectedPostForDetails.scheduledAt && (
+                <div className={styles.postDetailRow}>
+                  <Icon name="clock" size="small" />
+                  <span>Отложенная публикация:</span>
+                  <strong style={{ color: 'var(--accent-primary)' }}>{new Date(selectedPostForDetails.scheduledAt).toLocaleString('ru-RU')}</strong>
+                </div>
+              )}
               <div className={styles.postDetailRow}>
                 <Icon name="pin" size="small" />
                 <span>Закрепление:</span>

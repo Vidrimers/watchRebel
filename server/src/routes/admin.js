@@ -860,7 +860,8 @@ router.get('/announcements', async (req, res) => {
         pinDuration: announcement.pin_duration,
         repeatCount: announcement.repeat_count,
         repeatIntervalHours: announcement.repeat_interval_hours,
-        repeatChannel: announcement.repeat_channel
+        repeatChannel: announcement.repeat_channel,
+        scheduledAt: announcement.scheduled_at
       });
     }
 
@@ -1515,7 +1516,8 @@ router.get('/advertising', async (req, res) => {
       pinDuration: p.pin_duration,
       repeatCount: p.repeat_count,
       repeatIntervalHours: p.repeat_interval_hours,
-      repeatChannel: p.repeat_channel
+      repeatChannel: p.repeat_channel,
+      scheduledAt: p.scheduled_at
     }));
 
     res.json(posts);
