@@ -731,31 +731,41 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
 
-        {!isAd && announcements.length > 0 && (
+        {!isAd && (
           <div className={styles.section}>
-            <h2>Опубликованные объявления</h2>
-            <div className={styles.adList}>
-              {announcements.map(a => (
-                <div key={a.id} className={styles.adCard}>
-                  <div className={styles.adHeader}>
-                    <span className={styles.adDate}>{formatDate(a.createdAt)}</span>
-                    <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>
+            <h2>Все объявления</h2>
+            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : announcements.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
+              <div className={styles.adList}>
+                {announcements.map(a => (
+                  <div key={a.id} className={styles.adCard}>
+                    <div className={styles.adHeader}>
+                      <div className={styles.sentMeta}>
+                        <span className={styles.adDate}>{formatDate(a.createdAt)}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{a.creatorName || 'Администратор'}</span>
+                      </div>
+                      {deleteConfirm === a.id ? (
+                        <div className={styles.sentActions}>
+                          <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                        </div>
+                      ) : <button onClick={() => setDeleteConfirm(a.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
+                    </div>
+                    <p className={styles.adContent}>{a.content}</p>
+                    {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
+                    <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
+                      {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
+                      {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
+                      {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                      {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'Сайт + Телеграм' : a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                        <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                      </span>}
+                      {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
+                      {adSettings.ad_auto_delete !== '1' && (a.pinDuration > 0 || a.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
+                    </div>
                   </div>
-                  <p className={styles.adContent}>{a.content}</p>
-                  {a.imageUrls?.length > 0 && <div className={styles.adImages}>{a.imageUrls.map((u, i) => <img key={i} src={u.startsWith('http') ? u : `${import.meta.env.VITE_API_URL || ''}${u}`} alt="" />)}</div>}
-                  <div className={styles.postOptions} onClick={() => setSelectedPostForDetails(a)}>
-                    {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
-                    {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
-                    {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
-                    {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'Сайт + Телеграм' : a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
-                      <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
-                    </span>}
-                    {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
-                    {adSettings.ad_auto_delete !== '1' && (a.pinDuration > 0 || a.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </>)}
