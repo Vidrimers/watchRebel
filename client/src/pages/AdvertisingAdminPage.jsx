@@ -517,16 +517,26 @@ const AdvertisingAdminPage = () => {
                 <input type="number" min="0" value={adSettings.ad_price_site || ''} onChange={e => handleSaveAdSetting('ad_price_site', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
               <div className={styles.formGroup}>
-                <label>Цена за повторения:</label>
+                <label>Цена за повторения (сайт):</label>
                 <input type="number" min="0" value={adSettings.ad_price_repeat || ''} onChange={e => handleSaveAdSetting('ad_price_repeat', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
               <div className={styles.formGroup}>
-                <label>Цена за интервал:</label>
+                <label>Цена за интервал (сайт):</label>
                 <input type="number" min="0" value={adSettings.ad_price_interval || ''} onChange={e => handleSaveAdSetting('ad_price_interval', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
               <div className={styles.formGroup}>
                 <label>Цена за ТГ-рассылку:</label>
                 <input type="number" min="0" value={adSettings.ad_price_telegram || ''} onChange={e => handleSaveAdSetting('ad_price_telegram', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label>Цена за ТГ-повторения:</label>
+                <input type="number" min="0" value={adSettings.ad_price_tg_repeat || ''} onChange={e => handleSaveAdSetting('ad_price_tg_repeat', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Цена за ТГ-интервал:</label>
+                <input type="number" min="0" value={adSettings.ad_price_tg_interval || ''} onChange={e => handleSaveAdSetting('ad_price_tg_interval', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
             </div>
             <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 100, повторений — 100, интервал — 100 часов.</p>

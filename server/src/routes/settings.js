@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/ad-pricing', (req, res) => {
   const db = getDatabase();
   db.all(
-    "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'advertising_contacts', 'pricing_info_title', 'pricing_info_content', 'ad_currency')",
+    "SELECT key, value FROM site_settings WHERE key IN ('ad_price_site', 'ad_price_repeat', 'ad_price_interval', 'ad_price_telegram', 'ad_price_tg_repeat', 'ad_price_tg_interval', 'advertising_contacts', 'pricing_info_title', 'pricing_info_content', 'ad_currency')",
     [],
     (err, rows) => {
       if (err) {
