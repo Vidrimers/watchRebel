@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
+import { TELEGRAM_ADMIN_ID } from '../constants';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import BanIndicator from '../components/User/BanIndicator';
 import UserModerationModal from '../components/Settings/UserModerationModal';
@@ -30,7 +31,7 @@ const UsersManagementPage = () => {
   const USERS_PER_PAGE = 25;
 
   // Проверяем, является ли пользователь админом
-  const isAdmin = currentUser?.isAdmin || currentUser?.id === '137981675';
+  const isAdmin = currentUser?.isAdmin || currentUser?.id === TELEGRAM_ADMIN_ID;
 
   // Если не админ, перенаправляем на главную
   useEffect(() => {

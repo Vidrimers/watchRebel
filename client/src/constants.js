@@ -1,0 +1,1 @@
+export const TELEGRAM_ADMIN_ID = '137981675';

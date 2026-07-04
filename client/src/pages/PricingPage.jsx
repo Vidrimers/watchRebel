@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
+import { TELEGRAM_ADMIN_ID } from '../constants';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './PricingPage.module.css';
@@ -25,7 +26,7 @@ const renderMarkdown = (text) => {
 
 const PricingPage = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.isAdmin || user?.id === '137981675';
+  const isAdmin = user?.isAdmin || user?.id === TELEGRAM_ADMIN_ID;
 
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import { TELEGRAM_ADMIN_ID } from '../../constants';
 import { updateProfile } from '../../store/slices/authSlice';
 import { fetchWall } from '../../store/slices/wallSlice';
 import UserAvatar from '../User/UserAvatar';
@@ -30,7 +31,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   
   // Читаем user напрямую из Redux store
   const user = useAppSelector((state) => state.auth.user);
-  const isAdmin = user?.isAdmin || user?.id === '137981675';
+  const isAdmin = user?.isAdmin || user?.id === TELEGRAM_ADMIN_ID;
 
   const isSearchPage = location.pathname === '/search';
 

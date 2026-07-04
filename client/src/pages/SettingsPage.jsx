@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
+import { TELEGRAM_ADMIN_ID } from '../constants';
 import { logout, updateProfile } from '../store/slices/authSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import ThemeDropdown from '../components/Settings/ThemeDropdown';
@@ -30,7 +31,7 @@ const SettingsPage = () => {
   const [saveError, setSaveError] = useState(null);
   const [openSection, setOpenSection] = useState(null);
 
-  const isAdmin = user?.isAdmin || user?.id === '137981675';
+  const isAdmin = user?.isAdmin || user?.id === TELEGRAM_ADMIN_ID;
 
   const handleLogout = async () => {
     const confirmed = await showConfirm({

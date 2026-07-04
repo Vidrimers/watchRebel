@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
+import { TELEGRAM_ADMIN_ID } from '../constants';
 import Icon from '../components/Common/Icon';
 import useAlert from '../hooks/useAlert.jsx';
 import useConfirm from '../hooks/useConfirm.jsx';
@@ -20,7 +21,7 @@ const DatabaseManagementPage = () => {
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
-  const isAdmin = user?.isAdmin || user?.id === '137981675';
+  const isAdmin = user?.isAdmin || user?.id === TELEGRAM_ADMIN_ID;
 
   useEffect(() => {
     if (!isAdmin) {
