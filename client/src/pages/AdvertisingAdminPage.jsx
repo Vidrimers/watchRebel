@@ -532,7 +532,7 @@ const AdvertisingAdminPage = () => {
                       {deleteConfirm === p.id ? (
                         <div className={styles.sentActions}>
                           <button onClick={() => handleDeleteAd(p.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
-                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>Отмена</button>
                         </div>
                       ) : <button onClick={() => setDeleteConfirm(p.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                     </div>
@@ -618,7 +618,7 @@ const AdvertisingAdminPage = () => {
                       {deleteConfirm === a.id ? (
                         <div className={styles.sentActions}>
                           <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
-                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>Отмена</button>
                         </div>
                       ) : <button onClick={() => setDeleteConfirm(a.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                     </div>
@@ -762,7 +762,7 @@ const AdvertisingAdminPage = () => {
                       {deleteConfirm === a.id ? (
                         <div className={styles.sentActions}>
                           <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }}>Удалить</button>
-                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)' }}>Отмена</button>
+                          <button onClick={() => setDeleteConfirm(null)} className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>Отмена</button>
                         </div>
                       ) : <button onClick={() => setDeleteConfirm(a.id)} className={styles.deleteButton}><Icon name="delete" size="small" /></button>}
                     </div>
