@@ -1408,7 +1408,7 @@ router.post('/advertising/upload', uploadAdvertisingImages.single('image'), asyn
  */
 router.post('/advertising', async (req, res) => {
   try {
-    const { content, linkUrl, linkLabel, imageUrls } = req.body;
+    const { content, linkUrl, linkLabel, imageUrls, pinDuration, repeatCount, repeatIntervalHours } = req.body;
 
     const hasContent = content && content.trim() !== '';
     const hasImages = imageUrls && imageUrls.length > 0;
@@ -1422,9 +1422,10 @@ router.post('/advertising', async (req, res) => {
 
     // Сохраняем рекламный пост
     const result = await executeQuery(
-      `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-      [postId, hasContent ? content.trim() : ' ', linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id]
+      `INSERT INTO advertising_posts (id, content, link_url, link_label, image_urls, created_by, created_at, pin_duration, repeat_count, repeat_interval_hours)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+      [postId, hasContent ? content.trim() : ' ', linkUrl || null, linkLabel || null, JSON.stringify(imageUrls || []), req.user.id,
+       parseInt(pinDuration) || 0, parseInt(repeatCount) || 0, parseInt(repeatIntervalHours) || 0]
     );
 
     if (!result.success) {
