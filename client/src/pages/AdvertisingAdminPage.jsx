@@ -529,7 +529,7 @@ const AdvertisingAdminPage = () => {
                 <input type="number" min="0" value={adSettings.ad_price_telegram || ''} onChange={e => handleSaveAdSetting('ad_price_telegram', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
             </div>
-            <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 50, повторений — 50, интервал — 50 часов.</p>
+            <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 100, повторений — 100, интервал — 100 часов.</p>
           </div>
         )}
       </div>
@@ -562,15 +562,15 @@ const AdvertisingAdminPage = () => {
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>Показов в закреплённых:</label>
-                  <input type="number" min="0" max="50" value={adPinDuration} onChange={e => setAdPinDuration(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
+                  <input type="number" min="0" max="100" value={adPinDuration} onChange={e => setAdPinDuration(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Повторений:</label>
-                  <input type="number" min="0" max="50" value={adRepeatCount} onChange={e => setAdRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+                  <input type="number" min="0" max="100" value={adRepeatCount} onChange={e => setAdRepeatCount(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Интервал (часы):</label>
-                  <input type="number" min="0" max="50" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
+                  <input type="number" min="0" max="100" value={adRepeatInterval} onChange={e => setAdRepeatInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Отложенная публикация:</label>
@@ -654,15 +654,15 @@ const AdvertisingAdminPage = () => {
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>Показов в закреплённых:</label>
-                  <input type="number" min="0" max="50" value={annPinDuration} onChange={e => setAnnPinDuration(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
+                  <input type="number" min="0" max="100" value={annPinDuration} onChange={e => setAnnPinDuration(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = всегда в топе" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Повторений:</label>
-                  <input type="number" min="0" max="50" value={annRepeatCount} onChange={e => setAnnRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+                  <input type="number" min="0" max="100" value={annRepeatCount} onChange={e => setAnnRepeatCount(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Интервал (часы):</label>
-                  <input type="number" min="0" max="50" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
+                  <input type="number" min="0" max="100" value={annRepeatInterval} onChange={e => setAnnRepeatInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Отложенная публикация:</label>
@@ -775,11 +775,11 @@ const AdvertisingAdminPage = () => {
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Повторений:</label>
-              <input type="number" min="0" max="50" value={tgRepeatCount} onChange={e => setTgRepeatCount(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
+              <input type="number" min="0" max="100" value={tgRepeatCount} onChange={e => setTgRepeatCount(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="0 = без повторов" />
             </div>
             <div className={styles.formGroup}>
               <label>Интервал (часы):</label>
-              <input type="number" min="0" max="50" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(50, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
+              <input type="number" min="0" max="100" value={tgRepeatInterval} onChange={e => setTgRepeatInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.input} placeholder="обязательно при повторах" />
             </div>
             <div className={styles.formGroup}>
               <label>Отложенная публикация:</label>
