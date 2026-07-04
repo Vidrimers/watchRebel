@@ -521,9 +521,10 @@ const AdvertisingAdminPage = () => {
               </button>
             </form>
           </div>
+          {adPosts.length > 0 && (
           <div className={styles.section}>
             <h2>Опубликованные рекламные посты</h2>
-            {loadingAd ? <p className={styles.loading}>Загрузка...</p> : adPosts.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
+            {loadingAd ? <p className={styles.loading}>Загрузка...</p> : (
               <div className={styles.adList}>
                 {adPosts.map(p => (
                   <div key={p.id} className={styles.adCard}>
@@ -604,9 +605,10 @@ const AdvertisingAdminPage = () => {
               </button>
             </form>
           </div>
+          {announcements.length > 0 && (
           <div className={styles.section}>
             <h2>Все объявления</h2>
-            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : announcements.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
+            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : (
               <div className={styles.adList}>
                 {announcements.map(a => (
                   <div key={a.id} className={styles.adCard}>
@@ -635,8 +637,9 @@ const AdvertisingAdminPage = () => {
                         {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                         {adSettings.ad_auto_delete !== '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                       </div>
-                    )}
-                  </div>
+            )}
+          </div>
+          )}
                 ))}
               </div>
             )}
@@ -747,10 +750,10 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
 
-        {!isAd && (
+        {!isAd && announcements.length > 0 && (
           <div className={styles.section}>
             <h2>Все объявления</h2>
-            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : announcements.length === 0 ? <p className={styles.empty}>Пока нет</p> : (
+            {loadingAnn ? <p className={styles.loading}>Загрузка...</p> : (
               <div className={styles.adList}>
                 {announcements.map(a => (
                   <div key={a.id} className={styles.adCard}>
