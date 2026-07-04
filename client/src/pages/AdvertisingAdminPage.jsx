@@ -538,6 +538,9 @@ const AdvertisingAdminPage = () => {
                       {p.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${p.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                       {p.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${p.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
                       {p.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${p.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                      {p.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${p.repeatChannel === 'both' ? 'Сайт + Телеграм' : p.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                        <Icon name={p.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                      </span>}
                       {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                       {adSettings.ad_auto_delete !== '1' && (p.pinDuration > 0 || p.repeatCount > 0) && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                     </div>
@@ -621,6 +624,9 @@ const AdvertisingAdminPage = () => {
                         {a.pinDuration > 0 && <span className={styles.postOptionIcon} title={`Закрепление: ${a.pinDuration} показов`}><Icon name="pin" size="small" /></span>}
                         {a.repeatCount > 0 && <span className={styles.postOptionIcon} title={`Повторы: ${a.repeatCount} осталось`}><Icon name="refresh" size="small" /></span>}
                         {a.repeatIntervalHours > 0 && <span className={styles.postOptionIcon} title={`Интервал: ${a.repeatIntervalHours}ч`}><Icon name="clock" size="small" /></span>}
+                        {a.repeatChannel && <span className={styles.postOptionIcon} title={`Канал: ${a.repeatChannel === 'both' ? 'Сайт + Телеграм' : a.repeatChannel === 'telegram' ? 'Телеграм' : 'Сайт'}`}>
+                          <Icon name={a.repeatChannel === 'telegram' ? 'telegram' : 'feed'} size="small" />
+                        </span>}
                         {adSettings.ad_auto_delete === '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOn}`} title="Автоудаление включено"><Icon name="delete" size="small" /></span>}
                         {adSettings.ad_auto_delete !== '1' && <span className={`${styles.postOptionIcon} ${styles.autoDeleteOff}`} title="Автоудаление выключено"><Icon name="delete" size="small" /></span>}
                       </div>
