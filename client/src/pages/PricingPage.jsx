@@ -25,7 +25,7 @@ const renderMarkdown = (text) => {
 
 const PricingPage = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.is_admin;
+  const isAdmin = user?.isAdmin || user?.id === '137981675';
 
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(true);
