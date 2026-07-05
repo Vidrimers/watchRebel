@@ -144,19 +144,19 @@ const PricingPage = () => {
                 {price('ad_price_site') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Показ в закреплённых</span>
-                    <span className={styles.priceValue}>{price('ad_price_site')} {sym} / шт.</span>
+                    <span className={styles.priceValue}>{price('ad_price_site')} {sym}</span>
                   </div>
                 )}
                 {price('ad_price_repeat') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Повторения</span>
-                    <span className={styles.priceValue}>{price('ad_price_repeat')} {sym} / шт.</span>
+                    <span className={styles.priceValue}>{price('ad_price_repeat')} {sym}</span>
                   </div>
                 )}
                 {price('ad_price_interval') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Интервал повторений</span>
-                    <span className={styles.priceValue}>{price('ad_price_interval')} {sym} / ч.</span>
+                    <span className={styles.priceValue}>{price('ad_price_interval')} {sym}</span>
                   </div>
                 )}
                 {price('ad_price_auto_delete_off') > 0 && (
@@ -177,18 +177,18 @@ const PricingPage = () => {
                 <div className={styles.priceList}>
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Рассылка всем пользователям</span>
-                    <span className={styles.priceValue}>{price('ad_price_telegram')} {sym} / шт.</span>
+                    <span className={styles.priceValue}>{price('ad_price_telegram')} {sym}</span>
                   </div>
                   {price('ad_price_tg_repeat') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Повторения в ТГ</span>
-                      <span className={styles.priceValue}>{price('ad_price_tg_repeat')} {sym} / шт.</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_repeat')} {sym}</span>
                     </div>
                   )}
                   {price('ad_price_tg_interval') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Интервал повторений в ТГ</span>
-                      <span className={styles.priceValue}>{price('ad_price_tg_interval')} {sym} / ч.</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_interval')} {sym}</span>
                     </div>
                   )}
                 </div>
