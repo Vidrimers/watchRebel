@@ -1,12 +1,33 @@
 import { useState, useEffect } from 'react';
+import { useAppSelector } from '../hooks/useAppSelector';
 import api from '../services/api';
 import styles from './PricingPage.module.css';
 
 const PricingPage = () => {
+  const { user } = useAppSelector((state) => state.auth);
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [infoTitle, setInfoTitle] = useState('');
   const [infoContent, setInfoContent] = useState('');
+  const [sendingTg, setSendingTg] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
+
+  // Каналы
+  const [channelSite, setChannelSite] = useState(false);
+  const [channelTg, setChannelTg] = useState(false);
+
+  // Калькулятор — сайт
+  const [sitePinQty, setSitePinQty] = useState(0);
+  const [siteRepeatQty, setSiteRepeatQty] = useState(0);
+  const [siteInterval, setSiteInterval] = useState(0);
+
+  // Калькулятор — ТГ
+  const [tgMailingQty, setTgMailingQty] = useState(0);
+  const [tgRepeatQty, setTgRepeatQty] = useState(0);
+  const [tgInterval, setTgInterval] = useState(0);
+
+  // Дополнительно
+  const [autoDeleteOffQty, setAutoDeleteOffQty] = useState(0);
 
   useEffect(() => { loadPricing(); }, []);
 
@@ -33,14 +54,84 @@ const PricingPage = () => {
     );
   }
 
+  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT', STARS: '⭐' };
+  const currency = pricing?.ad_currency || 'RUB';
+  const sym = currencySymbols[currency] || '₽';
+
+  const price = (key) => parseInt(pricing?.[key]) || 0;
+
+  // Расчёт стоимости
+  const sitePinCost = price('ad_price_site') * sitePinQty;
+  const siteRepeatCost = price('ad_price_repeat') * siteRepeatQty;
+  const tgMailingCost = price('ad_price_telegram') * tgMailingQty;
+  const tgRepeatCost = price('ad_price_tg_repeat') * tgRepeatQty;
+  const autoDeleteOffCost = price('ad_price_auto_delete_off') * autoDeleteOffQty;
+
+  const total = sitePinCost + siteRepeatCost + tgMailingCost + tgRepeatCost + autoDeleteOffCost;
+
+  // Формирование текста для копирования
+  const buildOrderText = () => {
+    const lines = ['Заказ рекламы на watchRebel', ''];
+
+    if (channelSite) {
+      lines.push('Реклама на сайте:');
+      if (sitePinQty > 0) lines.push(`  Показы в закреплённых: ${sitePinQty} шт. × ${price('ad_price_site')} ${sym} = ${sitePinCost} ${sym}`);
+      if (siteRepeatQty > 0) lines.push(`  Повторения: ${siteRepeatQty} шт. × ${price('ad_price_repeat')} ${sym} = ${siteRepeatCost} ${sym}`);
+      if (siteInterval > 0) lines.push(`  Интервал: ${siteInterval} ч.`);
+      lines.push('');
+    }
+
+    if (channelTg) {
+      lines.push('Реклама в Telegram:');
+      if (tgMailingQty > 0) lines.push(`  Рассылка: ${tgMailingQty} шт. × ${price('ad_price_telegram')} ${sym} = ${tgMailingCost} ${sym}`);
+      if (tgRepeatQty > 0) lines.push(`  Повторения: ${tgRepeatQty} шт. × ${price('ad_price_tg_repeat')} ${sym} = ${tgRepeatCost} ${sym}`);
+      if (tgInterval > 0) lines.push(`  Интервал: ${tgInterval} ч.`);
+      lines.push('');
+    }
+
+    if (autoDeleteOffQty > 0) {
+      lines.push('Дополнительно:');
+      lines.push(`  Отключение автоудаления: ${autoDeleteOffQty} шт. × ${price('ad_price_auto_delete_off')} ${sym} = ${autoDeleteOffCost} ${sym}`);
+      lines.push('');
+    }
+
+    lines.push(`Итого: ${total} ${sym}`);
+    return lines.join('\n');
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(buildOrderText()).then(() => {
+      setSendResult('Скопировано в буфер обмена!');
+      setTimeout(() => setSendResult(null), 3000);
+    });
+  };
+
+  const handleSendTg = async () => {
+    if (!user?.telegramId) {
+      setSendResult('Для отправки необходимо привязать Telegram в настройках');
+      setTimeout(() => setSendResult(null), 5000);
+      return;
+    }
+    try {
+      setSendingTg(true);
+      await api.post('/admin/telegram-announcement-self', {
+        content: buildOrderText(),
+        type: 'advertising'
+      });
+      setSendResult('Запрос отправлен вам в Telegram!');
+      setTimeout(() => setSendResult(null), 5000);
+    } catch (err) {
+      setSendResult('Ошибка отправки. Попробуйте скопировать текст вручную.');
+      setTimeout(() => setSendResult(null), 5000);
+    } finally {
+      setSendingTg(false);
+    }
+  };
+
   const hasAnyPrice = pricing && (
     pricing.ad_price_site || pricing.ad_price_repeat ||
     pricing.ad_price_interval || pricing.ad_price_telegram
   );
-
-  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT', STARS: '⭐' };
-  const currency = pricing?.ad_currency || 'RUB';
-  const currencySymbol = currencySymbols[currency] || '₽';
 
   return (
     <div className={styles.container}>
@@ -51,61 +142,62 @@ const PricingPage = () => {
           <p className={styles.noData}>Прайс ещё не настроен. Свяжитесь с администрацией для получения информации.</p>
         ) : (
           <>
+            {/* ===== Прайс ===== */}
             <div className={styles.section}>
               <h2>Реклама на сайте</h2>
               <div className={styles.priceList}>
-                {pricing.ad_price_site && pricing.ad_price_site !== '0' && (
+                {price('ad_price_site') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Показ в закреплённых</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_site} {currencySymbol}</span>
+                    <span className={styles.priceValue}>{price('ad_price_site')} {sym} / шт.</span>
                   </div>
                 )}
-                {pricing.ad_price_repeat && pricing.ad_price_repeat !== '0' && (
+                {price('ad_price_repeat') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Повторения</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_repeat} {currencySymbol}</span>
+                    <span className={styles.priceValue}>{price('ad_price_repeat')} {sym} / шт.</span>
                   </div>
                 )}
-                {pricing.ad_price_interval && pricing.ad_price_interval !== '0' && (
+                {price('ad_price_interval') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Интервал повторений</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_interval} {currencySymbol}</span>
+                    <span className={styles.priceValue}>{price('ad_price_interval')} {sym} / ч.</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {pricing.ad_price_telegram && pricing.ad_price_telegram !== '0' && (
+            {price('ad_price_telegram') > 0 && (
               <div className={styles.section}>
                 <h2>Реклама в Telegram</h2>
                 <div className={styles.priceList}>
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Рассылка всем пользователям</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_telegram} {currencySymbol}</span>
+                    <span className={styles.priceValue}>{price('ad_price_telegram')} {sym} / шт.</span>
                   </div>
-                  {pricing.ad_price_tg_repeat && pricing.ad_price_tg_repeat !== '0' && (
+                  {price('ad_price_tg_repeat') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Повторения в ТГ</span>
-                      <span className={styles.priceValue}>{pricing.ad_price_tg_repeat} {currencySymbol}</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_repeat')} {sym} / шт.</span>
                     </div>
                   )}
-                  {pricing.ad_price_tg_interval && pricing.ad_price_tg_interval !== '0' && (
+                  {price('ad_price_tg_interval') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Интервал повторений в ТГ</span>
-                      <span className={styles.priceValue}>{pricing.ad_price_tg_interval} {currencySymbol}</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_interval')} {sym} / ч.</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {pricing.ad_price_auto_delete_off && pricing.ad_price_auto_delete_off !== '0' && (
+            {price('ad_price_auto_delete_off') > 0 && (
               <div className={styles.section}>
                 <h2>Дополнительно</h2>
                 <div className={styles.priceList}>
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Отключение автоудаления</span>
-                    <span className={styles.priceValue}>{pricing.ad_price_auto_delete_off} {currencySymbol}</span>
+                    <span className={styles.priceValue}>{price('ad_price_auto_delete_off')} {sym} / шт.</span>
                   </div>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '12px' }}>
@@ -114,6 +206,105 @@ const PricingPage = () => {
               </div>
             )}
 
+            {/* ===== Калькулятор ===== */}
+            <div className={styles.section}>
+              <h2>Калькулятор заказа</h2>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                Выберите каналы и укажите количество:
+              </p>
+
+              <div className={styles.calcChannels}>
+                <label className={styles.calcCheckbox}>
+                  <input type="checkbox" checked={channelSite} onChange={e => setChannelSite(e.target.checked)} />
+                  <span>Реклама на сайте</span>
+                </label>
+                <label className={styles.calcCheckbox}>
+                  <input type="checkbox" checked={channelTg} onChange={e => setChannelTg(e.target.checked)} />
+                  <span>Реклама в Telegram</span>
+                </label>
+              </div>
+
+              {channelSite && (
+                <div className={styles.calcSection}>
+                  <h3>Реклама на сайте</h3>
+                  {price('ad_price_site') > 0 && (
+                    <div className={styles.calcRow}>
+                      <label>Показы в закреплённых:</label>
+                      <input type="number" min="0" max="100" value={sitePinQty} onChange={e => setSitePinQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                      <span className={styles.calcPrice}>{sitePinCost} {sym}</span>
+                    </div>
+                  )}
+                  {price('ad_price_repeat') > 0 && (
+                    <div className={styles.calcRow}>
+                      <label>Повторения:</label>
+                      <input type="number" min="0" max="100" value={siteRepeatQty} onChange={e => setSiteRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                      <span className={styles.calcPrice}>{siteRepeatCost} {sym}</span>
+                    </div>
+                  )}
+                  <div className={styles.calcRow}>
+                    <label>Интервал (часы):</label>
+                    <input type="number" min="0" max="100" value={siteInterval} onChange={e => setSiteInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>бесплатно</span>
+                  </div>
+                </div>
+              )}
+
+              {channelTg && (
+                <div className={styles.calcSection}>
+                  <h3>Реклама в Telegram</h3>
+                  {price('ad_price_telegram') > 0 && (
+                    <div className={styles.calcRow}>
+                      <label>Рассылка:</label>
+                      <input type="number" min="0" max="100" value={tgMailingQty} onChange={e => setTgMailingQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                      <span className={styles.calcPrice}>{tgMailingCost} {sym}</span>
+                    </div>
+                  )}
+                  {price('ad_price_tg_repeat') > 0 && (
+                    <div className={styles.calcRow}>
+                      <label>Повторения:</label>
+                      <input type="number" min="0" max="100" value={tgRepeatQty} onChange={e => setTgRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                      <span className={styles.calcPrice}>{tgRepeatCost} {sym}</span>
+                    </div>
+                  )}
+                  <div className={styles.calcRow}>
+                    <label>Интервал (часы):</label>
+                    <input type="number" min="0" max="100" value={tgInterval} onChange={e => setTgInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>бесплатно</span>
+                  </div>
+                </div>
+              )}
+
+              {price('ad_price_auto_delete_off') > 0 && (
+                <div className={styles.calcSection}>
+                  <h3>Дополнительно</h3>
+                  <div className={styles.calcRow}>
+                    <label>Отключение автоудаления:</label>
+                    <input type="number" min="0" max="100" value={autoDeleteOffQty} onChange={e => setAutoDeleteOffQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                    <span className={styles.calcPrice}>{autoDeleteOffCost} {sym}</span>
+                  </div>
+                </div>
+              )}
+
+              {(channelSite || channelTg) && (
+                <div className={styles.calcTotal}>
+                  <span>Итого:</span>
+                  <strong>{total} {sym}</strong>
+                </div>
+              )}
+
+              {(channelSite || channelTg) && (
+                <div className={styles.calcButtons}>
+                  <button onClick={handleCopy} className={styles.calcCopyBtn}>Скопировать</button>
+                  <button onClick={handleSendTg} className={styles.calcSendBtn} disabled={sendingTg || !user?.telegramId}>
+                    {sendingTg ? 'Отправка...' : 'Отправить запрос в ТГ'}
+                  </button>
+                </div>
+              )}
+
+              {sendResult && <p className={styles.sendResult}>{sendResult}</p>}
+            </div>
+
+            {/* ===== Информация ===== */}
             {infoContent && infoContent.replace(/<[^>]*>/g, '').trim() && (
               <div className={styles.section}>
                 <h2>{infoTitle || 'Информация'}</h2>
@@ -121,6 +312,7 @@ const PricingPage = () => {
               </div>
             )}
 
+            {/* ===== Контакты ===== */}
             {pricing.advertising_contacts && (
               <div className={styles.section}>
                 <h2>Контакты</h2>
