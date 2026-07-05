@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
+import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './PricingPage.module.css';
 
@@ -54,9 +55,11 @@ const PricingPage = () => {
     );
   }
 
-  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT', STARS: '⭐' };
+  const currencySymbols = { RUB: '₽', USD: '$', EUR: '€', KAS: 'KAS', TON: 'TON', USDT: 'USDT', STARS: 'STARS' };
   const currency = pricing?.ad_currency || 'RUB';
   const sym = currencySymbols[currency] || '₽';
+
+  const renderCurrency = () => currency === 'STARS' ? <><Icon name="stars" size="small" /> STARS</> : sym;
 
   const price = (key) => parseInt(pricing?.[key]) || 0;
 
@@ -75,22 +78,22 @@ const PricingPage = () => {
 
     if (channelSite) {
       lines.push('Реклама на сайте:');
-      if (sitePinQty > 0) lines.push(`  Показы в закреплённых: ${sitePinQty} шт. × ${price('ad_price_site')} ${sym} = ${sitePinCost} ${sym}`);
-      if (siteRepeatQty > 0) lines.push(`  Повторения: ${siteRepeatQty} шт. × ${price('ad_price_repeat')} ${sym} = ${siteRepeatCost} ${sym}`);
+      if (sitePinQty > 0) lines.push(`  Показы в закреплённых: ${sitePinQty} шт. × ${price('ad_price_site')} ${renderCurrency()} = ${sitePinCost} ${renderCurrency()}`);
+      if (siteRepeatQty > 0) lines.push(`  Повторения: ${siteRepeatQty} шт. × ${price('ad_price_repeat')} ${renderCurrency()} = ${siteRepeatCost} ${renderCurrency()}`);
       if (siteInterval > 0) lines.push(`  Интервал: ${siteInterval} ч.`);
-      if (autoDeleteOff && price('ad_price_auto_delete_off') > 0) lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${sym}`);
+      if (autoDeleteOff && price('ad_price_auto_delete_off') > 0) lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${renderCurrency()}`);
       lines.push('');
     }
 
     if (channelTg) {
       lines.push('Реклама в Telegram:');
-      if (tgMailingQty > 0) lines.push(`  Рассылка: ${tgMailingQty} шт. × ${price('ad_price_telegram')} ${sym} = ${tgMailingCost} ${sym}`);
-      if (tgRepeatQty > 0) lines.push(`  Повторения: ${tgRepeatQty} шт. × ${price('ad_price_tg_repeat')} ${sym} = ${tgRepeatCost} ${sym}`);
+      if (tgMailingQty > 0) lines.push(`  Рассылка: ${tgMailingQty} шт. × ${price('ad_price_telegram')} ${renderCurrency()} = ${tgMailingCost} ${renderCurrency()}`);
+      if (tgRepeatQty > 0) lines.push(`  Повторения: ${tgRepeatQty} шт. × ${price('ad_price_tg_repeat')} ${renderCurrency()} = ${tgRepeatCost} ${renderCurrency()}`);
       if (tgInterval > 0) lines.push(`  Интервал: ${tgInterval} ч.`);
       lines.push('');
     }
 
-    lines.push(`Итого: ${total} ${sym}`);
+    lines.push(`Итого: ${total} ${renderCurrency()}`);
     return lines.join('\n');
   };
 
@@ -144,25 +147,25 @@ const PricingPage = () => {
                 {price('ad_price_site') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Показ в закреплённых</span>
-                    <span className={styles.priceValue}>{price('ad_price_site')} {sym}</span>
+                    <span className={styles.priceValue}>{price('ad_price_site')} {renderCurrency()}</span>
                   </div>
                 )}
                 {price('ad_price_repeat') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Повторения</span>
-                    <span className={styles.priceValue}>{price('ad_price_repeat')} {sym}</span>
+                    <span className={styles.priceValue}>{price('ad_price_repeat')} {renderCurrency()}</span>
                   </div>
                 )}
                 {price('ad_price_interval') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Интервал повторений</span>
-                    <span className={styles.priceValue}>{price('ad_price_interval')} {sym}</span>
+                    <span className={styles.priceValue}>{price('ad_price_interval')} {renderCurrency()}</span>
                   </div>
                 )}
                 {price('ad_price_auto_delete_off') > 0 && (
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Отключение автоудаления</span>
-                    <span className={styles.priceValue}>{price('ad_price_auto_delete_off')} {sym}</span>
+                    <span className={styles.priceValue}>{price('ad_price_auto_delete_off')} {renderCurrency()}</span>
                   </div>
                 )}
               </div>
@@ -177,18 +180,18 @@ const PricingPage = () => {
                 <div className={styles.priceList}>
                   <div className={styles.priceItem}>
                     <span className={styles.priceLabel}>Рассылка всем пользователям</span>
-                    <span className={styles.priceValue}>{price('ad_price_telegram')} {sym}</span>
+                    <span className={styles.priceValue}>{price('ad_price_telegram')} {renderCurrency()}</span>
                   </div>
                   {price('ad_price_tg_repeat') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Повторения в ТГ</span>
-                      <span className={styles.priceValue}>{price('ad_price_tg_repeat')} {sym}</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_repeat')} {renderCurrency()}</span>
                     </div>
                   )}
                   {price('ad_price_tg_interval') > 0 && (
                     <div className={styles.priceItem}>
                       <span className={styles.priceLabel}>Интервал повторений в ТГ</span>
-                      <span className={styles.priceValue}>{price('ad_price_tg_interval')} {sym}</span>
+                      <span className={styles.priceValue}>{price('ad_price_tg_interval')} {renderCurrency()}</span>
                     </div>
                   )}
                 </div>
@@ -220,7 +223,7 @@ const PricingPage = () => {
                     <div className={styles.calcRow}>
                       <label>Показы в закреплённых:</label>
                       <input type="number" min="0" max="100" value={sitePinQty} onChange={e => setSitePinQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                      <span className={styles.calcPrice}>{sitePinCost} {sym}</span>
+                      <span className={styles.calcPrice}>{sitePinCost} {renderCurrency()}</span>
                     </div>
                   )}
                   {price('ad_price_repeat') > 0 && (
@@ -241,7 +244,7 @@ const PricingPage = () => {
                         <input type="checkbox" checked={autoDeleteOff} onChange={e => setAutoDeleteOff(e.target.checked)} disabled={sitePinQty === 0} />
                         <span>Отключение автоудаления</span>
                       </label>
-                      <span className={styles.calcPrice}>{autoDeleteOffCost} {sym}</span>
+                      <span className={styles.calcPrice}>{autoDeleteOffCost} {renderCurrency()}</span>
                     </div>
                   )}
                 </div>
@@ -254,7 +257,7 @@ const PricingPage = () => {
                     <div className={styles.calcRow}>
                       <label>Рассылка:</label>
                       <input type="number" min="0" max="100" value={tgMailingQty} onChange={e => setTgMailingQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                      <span className={styles.calcPrice}>{tgMailingCost} {sym}</span>
+                      <span className={styles.calcPrice}>{tgMailingCost} {renderCurrency()}</span>
                     </div>
                   )}
                   {price('ad_price_tg_repeat') > 0 && (
@@ -275,7 +278,7 @@ const PricingPage = () => {
               {(channelSite || channelTg) && (
                 <div className={styles.calcTotal}>
                   <span>Итого:</span>
-                  <strong>{total} {sym}</strong>
+                  <strong>{total} {renderCurrency()}</strong>
                 </div>
               )}
 
