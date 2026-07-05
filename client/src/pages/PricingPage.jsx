@@ -159,7 +159,16 @@ const PricingPage = () => {
                     <span className={styles.priceValue}>{price('ad_price_interval')} {sym} / ч.</span>
                   </div>
                 )}
+                {price('ad_price_auto_delete_off') > 0 && (
+                  <div className={styles.priceItem}>
+                    <span className={styles.priceLabel}>Отключение автоудаления</span>
+                    <span className={styles.priceValue}>{price('ad_price_auto_delete_off')} {sym}</span>
+                  </div>
+                )}
               </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '12px' }}>
+                При отключении автоудаления рекламный пост не удаляется после исчерпания повторов/закрепления и продолжает двигаться в ленте, как обычный пост.
+              </p>
             </div>
 
             {price('ad_price_telegram') > 0 && (
@@ -183,21 +192,6 @@ const PricingPage = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {price('ad_price_auto_delete_off') > 0 && (
-              <div className={styles.section}>
-                <h2>Дополнительно</h2>
-                <div className={styles.priceList}>
-                  <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>Отключение автоудаления</span>
-                    <span className={styles.priceValue}>{price('ad_price_auto_delete_off')} {sym} / шт.</span>
-                  </div>
-                </div>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '12px' }}>
-                  При отключении автоудаления рекламный пост не удаляется после исчерпания повторов/закрепления и продолжает двигаться в ленте, как обычный пост.
-                </p>
               </div>
             )}
 
