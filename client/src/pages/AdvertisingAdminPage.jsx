@@ -1049,7 +1049,7 @@ const AdvertisingAdminPage = () => {
                   <option value="h3">H3</option>
                   <option value="p">Обычный текст</option>
                 </select>
-                <select onChange={e => { if (e.target.value) { const sel = window.getSelection(); if (sel.rangeCount) { const range = sel.getRangeAt(0); const span = document.createElement('span'); span.style.fontSize = e.target.value; range.extractContents(); range.insertNode(span); } } }} className={styles.fontSizeSelect} title="Размер шрифта">
+                <select onChange={e => { if (e.target.value) { const sel = window.getSelection(); if (sel.rangeCount) { const range = sel.getRangeAt(0); const span = document.createElement('span'); span.style.fontSize = e.target.value; const fragment = range.extractContents(); span.appendChild(fragment); range.insertNode(span); } } }} className={styles.fontSizeSelect} title="Размер шрифта">
                   <option value="">px</option>
                   {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,32,36,40,44,48,56,64,72].map(s => <option key={s} value={`${s}px`}>{s}</option>)}
                 </select>
