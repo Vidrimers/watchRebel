@@ -210,11 +210,11 @@ const PricingPage = () => {
 
               <div className={styles.calcChannels}>
                 <label className={styles.calcCheckbox}>
-                  <input type="checkbox" checked={channelSite} onChange={e => setChannelSite(e.target.checked)} />
+                  <input type="checkbox" checked={channelSite} onChange={e => { setChannelSite(e.target.checked); if (!e.target.checked) { setSitePinQty(0); setSiteRepeatQty(0); setSiteInterval(0); setAutoDeleteOff(false); } }} />
                   <span>Реклама на сайте</span>
                 </label>
                 <label className={styles.calcCheckbox}>
-                  <input type="checkbox" checked={channelTg} onChange={e => setChannelTg(e.target.checked)} />
+                  <input type="checkbox" checked={channelTg} onChange={e => { setChannelTg(e.target.checked); if (!e.target.checked) { setTgMailingQty(0); setTgRepeatQty(0); setTgInterval(0); } }} />
                   <span>Реклама в Telegram</span>
                 </label>
               </div>
