@@ -325,6 +325,20 @@
   opacity: 1;
 }
 
+@keyframes pulse-orange {
+  0%, 100% { color: #f97316; transform: scale(1); }
+  50% { color: #fb923c; transform: scale(1.15); }
+}
+
+.settingsButtonAdRequest {
+  animation: pulse-orange 1.5s ease-in-out infinite !important;
+  opacity: 1 !important;
+}
+
+.settingsButtonAdRequest:hover {
+  animation: none;
+}
+
 .settingsLink {
   display: flex;
   align-items: center;

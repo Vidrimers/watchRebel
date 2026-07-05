@@ -86,6 +86,11 @@ const AdvertisingAdminPage = () => {
   const [selectedPostForDetails, setSelectedPostForDetails] = useState(null);
   const [cleanupResult, setCleanupResult] = useState(null);
 
+  // === Заявки на рекламу ===
+  const [adRequests, setAdRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
   // === Блок "Информация о рекламе" ===
   const [infoTitle, setInfoTitle] = useState('');
   const [infoContent, setInfoContent] = useState('');
@@ -125,10 +130,50 @@ const AdvertisingAdminPage = () => {
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return; }
-    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts(); loadAdSettings(); loadInfoBlock();
+    loadContacts(); loadAdPosts(); loadAnnouncements(); loadSentPosts(); loadAdSettings(); loadInfoBlock(); loadAdRequests();
   }, [user, navigate]);
 
   useEffect(() => { loadSentPosts(); }, [activeTab]);
+
+  // ===================== ЗАЯВКИ НА РЕКЛАМУ =====================
+  const loadAdRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      const r = await api.get('/admin/ad-requests');
+      setAdRequests(r.data);
+    } catch (err) { console.error(err); }
+    finally { setLoadingRequests(false); }
+  };
+
+  const handleDeleteAdRequest = async (id) => {
+    try {
+      await api.delete(`/admin/ad-requests/${id}`);
+      setSelectedRequest(null);
+      await loadAdRequests();
+    } catch (err) { setError('Не удалось удалить заявку'); }
+  };
+
+  const handleInsertRequestToSite = (req) => {
+    setNewAdContent(req.ad_text || req.ad_description || '');
+    setNewAdLinkUrl(req.ad_link || 'https://');
+    setNewAdLinkLabel('');
+    setSelectedRequest(null);
+    setActiveTab('advertising');
+    setActiveSubTab('site');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleInsertRequestToTg = (req) => {
+    setTgText(req.ad_text || req.ad_description || '');
+    if (req.image_url) {
+      const fullUrl = req.image_url.startsWith('http') ? req.image_url : `${import.meta.env.VITE_API_URL || ''}${req.image_url}`;
+      setTgImagePreview(fullUrl);
+    }
+    setSelectedRequest(null);
+    setActiveTab('advertising');
+    setActiveSubTab('telegram');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // ===================== КОНТАКТЫ =====================
   const loadContacts = async () => {
@@ -485,6 +530,9 @@ const AdvertisingAdminPage = () => {
         </button>
         <button className={`${styles.tabButton} ${activeTab === 'announcements' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('announcements'); setActiveSubTab('site'); }}>
           <Icon name="announcement" size="small" /> Объявления
+        </button>
+        <button className={`${styles.tabButton} ${activeTab === 'requests' ? styles.tabButtonActive : ''}`} onClick={() => { setActiveTab('requests'); loadAdRequests(); }}>
+          <Icon name="advertising" size="small" /> Заявки {adRequests.length > 0 && <span className={styles.requestBadge}>{adRequests.length}</span>}
         </button>
       </div>
 
@@ -906,6 +954,34 @@ const AdvertisingAdminPage = () => {
         )}
       </>)}
 
+      {/* ===== ВКЛАДКА: ЗАЯВКИ ===== */}
+      {activeTab === 'requests' && (
+        <div className={styles.section}>
+          <h2>Заявки на рекламу</h2>
+          {loadingRequests ? <p className={styles.loading}>Загрузка...</p> : adRequests.length === 0 ? (
+            <p className={styles.empty}>Пока нет заявок</p>
+          ) : (
+            <div className={styles.adList}>
+              {adRequests.map(r => (
+                <div key={r.id} className={styles.adCard} onClick={() => setSelectedRequest(r)} style={{ cursor: 'pointer' }}>
+                  <div className={styles.adHeader}>
+                    <div className={styles.sentMeta}>
+                      <span className={styles.adDate}>{formatDate(r.created_at)}</span>
+                      <strong>{r.name}</strong>
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>@{r.telegram}</span>
+                    </div>
+                    <span className={styles.requestChannels}>
+                      {r.channel_site ? '🌐 Сайт' : ''} {r.channel_tg ? '✈️ ТГ' : ''}
+                    </span>
+                  </div>
+                  {r.ad_description && <p className={styles.adContent}>{r.ad_description}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ===== История ===== */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
@@ -1030,6 +1106,95 @@ const AdvertisingAdminPage = () => {
             </div>
             <div className={styles.tgButtons}>
               <button className={styles.tgSendSelf} onClick={() => setSelectedPostForDetails(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка деталей заявки */}
+      {selectedRequest && (
+        <div className={styles.telegramModal} onClick={() => setSelectedRequest(null)}>
+          <div className={styles.telegramModalContent} onClick={e => e.stopPropagation()}>
+            <h3>Заявка на рекламу</h3>
+            <div className={styles.requestDetailsList}>
+              <div className={styles.postDetailRow}>
+                <span>Имя:</span>
+                <strong>{selectedRequest.name}</strong>
+              </div>
+              <div className={styles.postDetailRow}>
+                <span>Telegram:</span>
+                <strong>@{selectedRequest.telegram}</strong>
+              </div>
+              {selectedRequest.extra_contact && (
+                <div className={styles.postDetailRow}>
+                  <span>Доп. связь:</span>
+                  <strong>{selectedRequest.extra_contact}</strong>
+                </div>
+              )}
+              <div className={styles.postDetailRow}>
+                <span>Каналы:</span>
+                <strong>
+                  {selectedRequest.channel_site ? '🌐 Сайт' : ''} {selectedRequest.channel_tg ? '✈️ Telegram' : ''}
+                </strong>
+              </div>
+              {selectedRequest.total_cost > 0 && (
+                <div className={styles.postDetailRow}>
+                  <span>Сумма:</span>
+                  <strong>{selectedRequest.total_cost} {selectedRequest.currency}</strong>
+                </div>
+              )}
+              {selectedRequest.site_pin_qty > 0 && (
+                <div className={styles.postDetailRow}>
+                  <span>Показы:</span>
+                  <strong>{selectedRequest.site_pin_qty} шт.</strong>
+                </div>
+              )}
+              {selectedRequest.tg_mailing_qty > 0 && (
+                <div className={styles.postDetailRow}>
+                  <span>Рассылка:</span>
+                  <strong>{selectedRequest.tg_mailing_qty} шт.</strong>
+                </div>
+              )}
+              {selectedRequest.ad_description && (
+                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                  <span>Описание:</span>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedRequest.ad_description}</p>
+                </div>
+              )}
+              {selectedRequest.ad_link && (
+                <div className={styles.postDetailRow}>
+                  <span>Ссылка:</span>
+                  <strong style={{ color: 'var(--accent-primary)', wordBreak: 'break-all' }}>{selectedRequest.ad_link}</strong>
+                </div>
+              )}
+              {selectedRequest.ad_text && (
+                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                  <span>Желаемый текст:</span>
+                  <p style={{ margin: 0, fontSize: '14px', whiteSpace: 'pre-wrap' }}>{selectedRequest.ad_text}</p>
+                </div>
+              )}
+              {selectedRequest.image_url && (
+                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                  <span>Изображение:</span>
+                  <img src={selectedRequest.image_url.startsWith('http') ? selectedRequest.image_url : `${import.meta.env.VITE_API_URL || ''}${selectedRequest.image_url}`} alt="" style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '300px', objectFit: 'contain' }} />
+                </div>
+              )}
+            </div>
+            <div className={styles.tgButtons}>
+              {selectedRequest.channel_site > 0 && (
+                <button className={styles.tgSendAll} onClick={() => handleInsertRequestToSite(selectedRequest)}>
+                  Создать на сайте
+                </button>
+              )}
+              {selectedRequest.channel_tg > 0 && (
+                <button className={styles.tgSendAll} onClick={() => handleInsertRequestToTg(selectedRequest)}>
+                  Создать в ТГ
+                </button>
+              )}
+              <button className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }} onClick={() => handleDeleteAdRequest(selectedRequest.id)}>
+                Удалить
+              </button>
+              <button className={styles.tgSendSelf} onClick={() => setSelectedRequest(null)}>Закрыть</button>
             </div>
           </div>
         </div>

@@ -25,6 +25,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [feedCount, setFeedCount] = useState(0);
   const [bugStats, setBugStats] = useState({ new: 0, in_progress: 0 });
+  const [adRequestCount, setAdRequestCount] = useState(0);
   const notificationButtonRef = useRef(null);
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -123,6 +124,24 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
     return () => clearInterval(interval);
   }, [isAdmin]);
 
+  // Загружаем количество заявок на рекламу для админа
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchAdRequests = async () => {
+      try {
+        const response = await api.get('/admin/ad-requests/count');
+        setAdRequestCount(response.data.count || 0);
+      } catch (error) {
+        console.error('Ошибка загрузки заявок на рекламу:', error);
+      }
+    };
+
+    fetchAdRequests();
+    const interval = setInterval(fetchAdRequests, 30000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
+
   // Закрытие сайдбара при клике на ссылку (для мобильных)
   const handleLinkClick = () => {
     if (onClose && window.innerWidth < 768) {
@@ -197,21 +216,22 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
             <div className={styles.userInfo}>
               {/* Настройки - в левом верхнем углу */}
               <div className={`${styles.settingsContainer} ${
-                bugStats.new > 0 || bugStats.in_progress > 0 ? styles.settingsContainerHasAlerts : ''
+                bugStats.new > 0 || bugStats.in_progress > 0 || adRequestCount > 0 ? styles.settingsContainerHasAlerts : ''
               }`}>
-                <a 
-                  href="/settings" 
+                <a
+                  href="/settings"
                   className={`${styles.settingsButton} ${
                     bugStats.new > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonNew}` :
-                    bugStats.in_progress > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonInProgress}` : ''
+                    bugStats.in_progress > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonInProgress}` :
+                    adRequestCount > 0 ? styles.settingsButtonAdRequest : ''
                   }`}
                   title="Настройки"
                   onClick={handleLinkClick}
                 >
-                  <Icon 
-                    name="settings" 
-                    size="medium" 
-                    color={bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : undefined}
+                  <Icon
+                    name="settings"
+                    size="medium"
+                    color={bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : adRequestCount > 0 ? '#f97316' : undefined}
                   />
                 </a>
               </div>

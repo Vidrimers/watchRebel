@@ -199,5 +199,31 @@ const uploadAdvertisingImages = multer({
   }
 });
 
-export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage, uploadBugReportImages, uploadAdvertisingImages };
+// Настройка хранилища для изображений заявок на рекламу
+const adRequestsDir = path.join(__dirname, '../../uploads/ad-requests');
+if (!fs.existsSync(adRequestsDir)) {
+  fs.mkdirSync(adRequestsDir, { recursive: true });
+}
+
+const adRequestStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, adRequestsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `adreq_${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const uploadAdRequestImages = multer({
+  storage: adRequestStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1
+  }
+});
+
+export { uploadAvatar, uploadAnnouncement, uploadMessageFiles, uploadPostImages, uploadCommentImage, uploadBugReportImages, uploadAdvertisingImages, uploadAdRequestImages };
 export default uploadAvatar;

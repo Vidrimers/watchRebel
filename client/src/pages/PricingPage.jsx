@@ -10,8 +10,6 @@ const PricingPage = () => {
   const [loading, setLoading] = useState(true);
   const [infoTitle, setInfoTitle] = useState('');
   const [infoContent, setInfoContent] = useState('');
-  const [sendingTg, setSendingTg] = useState(false);
-  const [sendResult, setSendResult] = useState(null);
 
   // Каналы
   const [channelSite, setChannelSite] = useState(false);
@@ -29,6 +27,13 @@ const PricingPage = () => {
 
   // Дополнительно
   const [autoDeleteOff, setAutoDeleteOff] = useState(false);
+
+  // Модалка заявки
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestForm, setRequestForm] = useState({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '' });
+  const [requestImage, setRequestImage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null);
 
   useEffect(() => { loadPricing(); }, []);
 
@@ -72,57 +77,40 @@ const PricingPage = () => {
 
   const total = sitePinCost + siteRepeatCost + tgMailingCost + tgRepeatCost + autoDeleteOffCost;
 
-  // Формирование текста для копирования
-  const buildOrderText = () => {
-    const lines = ['Заказ рекламы на watchRebel', ''];
-
-    if (channelSite) {
-      lines.push('Реклама на сайте:');
-      if (sitePinQty > 0) lines.push(`  Показы в закреплённых: ${sitePinQty} шт. × ${price('ad_price_site')} ${renderCurrency()} = ${sitePinCost} ${renderCurrency()}`);
-      if (siteRepeatQty > 0) lines.push(`  Повторения: ${siteRepeatQty} шт. × ${price('ad_price_repeat')} ${renderCurrency()} = ${siteRepeatCost} ${renderCurrency()}`);
-      if (siteInterval > 0) lines.push(`  Интервал: ${siteInterval} ч.`);
-      if (autoDeleteOff && price('ad_price_auto_delete_off') > 0) lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${renderCurrency()}`);
-      lines.push('');
-    }
-
-    if (channelTg) {
-      lines.push('Реклама в Telegram:');
-      if (tgMailingQty > 0) lines.push(`  Рассылка: ${tgMailingQty} шт. × ${price('ad_price_telegram')} ${renderCurrency()} = ${tgMailingCost} ${renderCurrency()}`);
-      if (tgRepeatQty > 0) lines.push(`  Повторения: ${tgRepeatQty} шт. × ${price('ad_price_tg_repeat')} ${renderCurrency()} = ${tgRepeatCost} ${renderCurrency()}`);
-      if (tgInterval > 0) lines.push(`  Интервал: ${tgInterval} ч.`);
-      lines.push('');
-    }
-
-    lines.push(`Итого: ${total} ${renderCurrency()}`);
-    return lines.join('\n');
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(buildOrderText()).then(() => {
-      setSendResult('Скопировано в буфер обмена!');
-      setTimeout(() => setSendResult(null), 3000);
-    });
-  };
-
-  const handleSendTg = async () => {
-    if (!user?.telegramId) {
-      setSendResult('Для отправки необходимо привязать Telegram в настройках');
-      setTimeout(() => setSendResult(null), 5000);
+  const handleSubmitRequest = async () => {
+    if (!requestForm.name.trim() || !requestForm.telegram.trim()) {
+      setSubmitResult('Заполните имя и Telegram');
       return;
     }
     try {
-      setSendingTg(true);
-      await api.post('/admin/telegram-announcement-self', {
-        content: buildOrderText(),
-        type: 'advertising'
-      });
-      setSendResult('Запрос отправлен вам в Telegram!');
-      setTimeout(() => setSendResult(null), 5000);
+      setSubmitting(true);
+      const fd = new FormData();
+      fd.append('name', requestForm.name.trim());
+      fd.append('telegram', requestForm.telegram.trim());
+      fd.append('extraContact', requestForm.extraContact.trim());
+      fd.append('calculatorData', JSON.stringify({
+        channelSite, channelTg,
+        sitePinQty, siteRepeatQty, siteInterval,
+        tgMailingQty, tgRepeatQty, tgInterval,
+        autoDeleteOff, total, currency
+      }));
+      fd.append('adDescription', requestForm.adDescription.trim());
+      fd.append('adLink', requestForm.adLink.trim());
+      fd.append('adText', requestForm.adText.trim());
+      if (requestImage) fd.append('image', requestImage);
+
+      await api.post('/ad-requests', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setSubmitResult('ok');
+      setTimeout(() => {
+        setShowRequestModal(false);
+        setSubmitResult(null);
+        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '' });
+        setRequestImage(null);
+      }, 1500);
     } catch (err) {
-      setSendResult('Ошибка отправки. Попробуйте скопировать текст вручную.');
-      setTimeout(() => setSendResult(null), 5000);
+      setSubmitResult('Ошибка отправки. Попробуйте позже.');
     } finally {
-      setSendingTg(false);
+      setSubmitting(false);
     }
   };
 
@@ -284,14 +272,9 @@ const PricingPage = () => {
 
               {(channelSite || channelTg) && (
                 <div className={styles.calcButtons}>
-                  <button onClick={handleCopy} className={styles.calcCopyBtn}>Скопировать</button>
-                  <button onClick={handleSendTg} className={styles.calcSendBtn} disabled={sendingTg || !user?.telegramId}>
-                    {sendingTg ? 'Отправка...' : 'Отправить запрос в ТГ'}
-                  </button>
+                  <button onClick={() => setShowRequestModal(true)} className={styles.calcRequestBtn}>Оставить заявку</button>
                 </div>
               )}
-
-              {sendResult && <p className={styles.sendResult}>{sendResult}</p>}
             </div>
 
             {/* ===== Информация ===== */}
@@ -317,6 +300,54 @@ const PricingPage = () => {
           </>
         )}
       </div>
+
+      {/* Модалка заявки на рекламу */}
+      {showRequestModal && (
+        <div className={styles.requestModal} onClick={() => { if (!submitting) { setShowRequestModal(false); setSubmitResult(null); } }}>
+          <div className={styles.requestModalContent} onClick={e => e.stopPropagation()}>
+            <h3>Заявка на рекламу</h3>
+            <div className={styles.requestForm}>
+              <div className={styles.formGroup}>
+                <label>Имя *</label>
+                <input type="text" value={requestForm.name} onChange={e => setRequestForm(p => ({ ...p, name: e.target.value }))} className={styles.formInput} placeholder="Ваше имя" disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Telegram *</label>
+                <input type="text" value={requestForm.telegram} onChange={e => setRequestForm(p => ({ ...p, telegram: e.target.value }))} className={styles.formInput} placeholder="@username" disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Доп. способ связи</label>
+                <input type="text" value={requestForm.extraContact} onChange={e => setRequestForm(p => ({ ...p, extraContact: e.target.value }))} className={styles.formInput} placeholder="Телефон, Discord и т.д." disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Описание рекламы</label>
+                <textarea value={requestForm.adDescription} onChange={e => setRequestForm(p => ({ ...p, adDescription: e.target.value }))} className={styles.formTextarea} placeholder="Что нужно продвинуть?" rows={3} disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Ссылка на сайт/ТГ</label>
+                <input type="text" value={requestForm.adLink} onChange={e => setRequestForm(p => ({ ...p, adLink: e.target.value }))} className={styles.formInput} placeholder="https://..." disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Какой текст хочет пользователь</label>
+                <textarea value={requestForm.adText} onChange={e => setRequestForm(p => ({ ...p, adText: e.target.value }))} className={styles.formTextarea} placeholder="Текст рекламного поста..." rows={4} disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Изображение (необязательно)</label>
+                <input type="file" accept="image/*" onChange={e => setRequestImage(e.target.files?.[0] || null)} className={styles.formInput} disabled={submitting} />
+                {requestImage && <p className={styles.imageName}>{requestImage.name}</p>}
+              </div>
+              <div className={styles.formButtons}>
+                <button onClick={handleSubmitRequest} className={styles.submitBtn} disabled={submitting || !requestForm.name.trim() || !requestForm.telegram.trim()}>
+                  {submitting ? 'Отправка...' : 'Отправить'}
+                </button>
+                <button onClick={() => { setShowRequestModal(false); setSubmitResult(null); }} className={styles.cancelBtn} disabled={submitting}>Отмена</button>
+              </div>
+              {submitResult === 'ok' && <p className={styles.submitSuccess}>Заявка отправлена!</p>}
+              {submitResult && submitResult !== 'ok' && <p className={styles.submitError}>{submitResult}</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

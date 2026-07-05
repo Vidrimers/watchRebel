@@ -1771,3 +1771,69 @@ router.delete('/reports/:id', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+// ==========================================
+// Заявки на рекламу (только админ-эндпоинты)
+// ==========================================
+
+/**
+ * GET /api/admin/ad-requests
+ * Получить все заявки (только админ)
+ */
+router.get('/ad-requests', async (req, res) => {
+  try {
+    const result = await executeQuery(
+      'SELECT * FROM ad_requests ORDER BY created_at DESC'
+    );
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка получения заявок' });
+    }
+    res.json(result.data);
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/ad-requests/count
+ * Получить количество заявок (только админ)
+ */
+router.get('/ad-requests/count', async (req, res) => {
+  try {
+    const result = await executeQuery('SELECT COUNT(*) as count FROM ad_requests');
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка' });
+    }
+    res.json({ count: result.data[0]?.count || 0 });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/admin/ad-requests/:id
+ * Удалить заявку (только админ)
+ */
+router.delete('/ad-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Удаляем изображение если есть
+    const request = await executeQuery('SELECT image_url FROM ad_requests WHERE id = ?', [id]);
+    if (request.success && request.data[0]?.image_url) {
+      const filePath = path.join(__dirname, '../..', request.data[0].image_url);
+      try { await fs.unlink(filePath); } catch (e) {}
+    }
+
+    const result = await executeQuery('DELETE FROM ad_requests WHERE id = ?', [id]);
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка удаления заявки' });
+    }
+    res.json({ message: 'Заявка удалена' });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});

@@ -452,3 +452,150 @@
   font-size: 14px;
   color: var(--color-success, #22c55e);
 }
+
+/* Кнопка заявки */
+.calcRequestBtn {
+  flex: 1;
+  padding: 12px 20px;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calcRequestBtn:hover {
+  opacity: 0.9;
+}
+
+/* Модалка заявки */
+.requestModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.requestModalContent {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.requestModalContent h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.requestForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.formInput, .formTextarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.formInput:focus, .formTextarea:focus {
+  border-color: var(--accent-primary);
+}
+
+.formInput:disabled, .formTextarea:disabled {
+  opacity: 0.5;
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.imageName {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.formButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.submitBtn {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitBtn:hover { opacity: 0.9; }
+.submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cancelBtn {
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover { background: var(--bg-secondary); }
+.cancelBtn:disabled { opacity: 0.5; }
+
+.submitSuccess {
+  text-align: center;
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-success, #22c55e);
+  font-weight: 600;
+}
+
+.submitError {
+  text-align: center;
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-error, #ef4444);
+}

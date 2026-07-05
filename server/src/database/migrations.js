@@ -459,11 +459,45 @@ export async function runMigrations() {
           }
         });
 
+        // Таблица заявок на рекламу
+        db.run(`
+          CREATE TABLE IF NOT EXISTS ad_requests (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            name TEXT NOT NULL,
+            telegram TEXT NOT NULL,
+            extra_contact TEXT,
+            channel_site INTEGER DEFAULT 0,
+            channel_tg INTEGER DEFAULT 0,
+            site_pin_qty INTEGER DEFAULT 0,
+            site_repeat_qty INTEGER DEFAULT 0,
+            site_interval INTEGER DEFAULT 0,
+            tg_mailing_qty INTEGER DEFAULT 0,
+            tg_repeat_qty INTEGER DEFAULT 0,
+            tg_interval INTEGER DEFAULT 0,
+            auto_delete_off INTEGER DEFAULT 0,
+            total_cost INTEGER DEFAULT 0,
+            currency TEXT DEFAULT 'RUB',
+            ad_description TEXT,
+            ad_link TEXT,
+            ad_text TEXT,
+            image_url TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+          );
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы ad_requests:', err.message);
+          } else {
+            console.log('✓ Таблица ad_requests создана');
+          }
+        });
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())
           .catch(err => console.error('Ошибка миграции шаблонов уведомлений:', err));
-        
+
         resolve({ success: true });
       }
     });
