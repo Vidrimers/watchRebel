@@ -99,6 +99,21 @@ const PricingPage = () => {
               </div>
             )}
 
+            {pricing.ad_price_auto_delete_off && pricing.ad_price_auto_delete_off !== '0' && (
+              <div className={styles.section}>
+                <h2>Дополнительно</h2>
+                <div className={styles.priceList}>
+                  <div className={styles.priceItem}>
+                    <span className={styles.priceLabel}>Отключение автоудаления</span>
+                    <span className={styles.priceValue}>{pricing.ad_price_auto_delete_off} {currencySymbol}</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '12px' }}>
+                  При отключении автоудаления рекламный пост не удаляется после исчерпания повторов/закрепления и продолжает двигаться в ленте, как обычный пост.
+                </p>
+              </div>
+            )}
+
             {infoContent && infoContent.replace(/<[^>]*>/g, '').trim() && (
               <div className={styles.section}>
                 <h2>{infoTitle || 'Информация'}</h2>

@@ -538,6 +538,10 @@ const AdvertisingAdminPage = () => {
                 <label>Цена за ТГ-интервал:</label>
                 <input type="number" min="0" value={adSettings.ad_price_tg_interval || ''} onChange={e => handleSaveAdSetting('ad_price_tg_interval', e.target.value)} className={styles.input} placeholder="₽" />
               </div>
+              <div className={styles.formGroup}>
+                <label>Цена за отключение автоудаления:</label>
+                <input type="number" min="0" value={adSettings.ad_price_auto_delete_off || ''} onChange={e => handleSaveAdSetting('ad_price_auto_delete_off', e.target.value)} className={styles.input} placeholder="₽" />
+              </div>
             </div>
             <p className={styles.tgDesc}>Максимальные значения: показов в закреплённых — 100, повторений — 100, интервал — 100 часов.</p>
           </div>
