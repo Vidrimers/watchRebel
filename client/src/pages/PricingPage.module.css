@@ -370,6 +370,11 @@
   border-color: var(--accent-primary);
 }
 
+.calcInput:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .calcPrice {
   font-size: 14px;
   font-weight: 600;

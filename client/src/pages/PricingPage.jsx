@@ -27,7 +27,7 @@ const PricingPage = () => {
   const [tgInterval, setTgInterval] = useState(0);
 
   // Дополнительно
-  const [autoDeleteOffQty, setAutoDeleteOffQty] = useState(0);
+  const [autoDeleteOff, setAutoDeleteOff] = useState(false);
 
   useEffect(() => { loadPricing(); }, []);
 
@@ -65,7 +65,7 @@ const PricingPage = () => {
   const siteRepeatCost = price('ad_price_repeat') * siteRepeatQty;
   const tgMailingCost = price('ad_price_telegram') * tgMailingQty;
   const tgRepeatCost = price('ad_price_tg_repeat') * tgRepeatQty;
-  const autoDeleteOffCost = price('ad_price_auto_delete_off') * autoDeleteOffQty;
+  const autoDeleteOffCost = autoDeleteOff ? price('ad_price_auto_delete_off') : 0;
 
   const total = sitePinCost + siteRepeatCost + tgMailingCost + tgRepeatCost + autoDeleteOffCost;
 
@@ -89,9 +89,9 @@ const PricingPage = () => {
       lines.push('');
     }
 
-    if (autoDeleteOffQty > 0) {
+    if (autoDeleteOff) {
       lines.push('Дополнительно:');
-      lines.push(`  Отключение автоудаления: ${autoDeleteOffQty} шт. × ${price('ad_price_auto_delete_off')} ${sym} = ${autoDeleteOffCost} ${sym}`);
+      lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${sym}`);
       lines.push('');
     }
 
@@ -243,8 +243,8 @@ const PricingPage = () => {
                   )}
                   <div className={styles.calcRow}>
                     <label>Интервал (часы):</label>
-                    <input type="number" min="0" max="100" value={siteInterval} onChange={e => setSiteInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>бесплатно</span>
+                    <input type="number" min="0" max="100" value={siteInterval} onChange={e => setSiteInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={siteRepeatQty === 0} />
+                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{siteRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
                   </div>
                 </div>
               )}
@@ -268,8 +268,8 @@ const PricingPage = () => {
                   )}
                   <div className={styles.calcRow}>
                     <label>Интервал (часы):</label>
-                    <input type="number" min="0" max="100" value={tgInterval} onChange={e => setTgInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>бесплатно</span>
+                    <input type="number" min="0" max="100" value={tgInterval} onChange={e => setTgInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={tgRepeatQty === 0} />
+                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{tgRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
                   </div>
                 </div>
               )}
@@ -278,8 +278,10 @@ const PricingPage = () => {
                 <div className={styles.calcSection}>
                   <h3>Дополнительно</h3>
                   <div className={styles.calcRow}>
-                    <label>Отключение автоудаления:</label>
-                    <input type="number" min="0" max="100" value={autoDeleteOffQty} onChange={e => setAutoDeleteOffQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
+                    <label className={styles.calcCheckbox}>
+                      <input type="checkbox" checked={autoDeleteOff} onChange={e => setAutoDeleteOff(e.target.checked)} />
+                      <span>Отключение автоудаления</span>
+                    </label>
                     <span className={styles.calcPrice}>{autoDeleteOffCost} {sym}</span>
                   </div>
                 </div>
