@@ -78,6 +78,7 @@ const PricingPage = () => {
       if (sitePinQty > 0) lines.push(`  Показы в закреплённых: ${sitePinQty} шт. × ${price('ad_price_site')} ${sym} = ${sitePinCost} ${sym}`);
       if (siteRepeatQty > 0) lines.push(`  Повторения: ${siteRepeatQty} шт. × ${price('ad_price_repeat')} ${sym} = ${siteRepeatCost} ${sym}`);
       if (siteInterval > 0) lines.push(`  Интервал: ${siteInterval} ч.`);
+      if (autoDeleteOff && price('ad_price_auto_delete_off') > 0) lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${sym}`);
       lines.push('');
     }
 
@@ -86,12 +87,6 @@ const PricingPage = () => {
       if (tgMailingQty > 0) lines.push(`  Рассылка: ${tgMailingQty} шт. × ${price('ad_price_telegram')} ${sym} = ${tgMailingCost} ${sym}`);
       if (tgRepeatQty > 0) lines.push(`  Повторения: ${tgRepeatQty} шт. × ${price('ad_price_tg_repeat')} ${sym} = ${tgRepeatCost} ${sym}`);
       if (tgInterval > 0) lines.push(`  Интервал: ${tgInterval} ч.`);
-      lines.push('');
-    }
-
-    if (autoDeleteOff) {
-      lines.push('Дополнительно:');
-      lines.push(`  Отключение автоудаления: ${price('ad_price_auto_delete_off')} ${sym}`);
       lines.push('');
     }
 
@@ -237,8 +232,8 @@ const PricingPage = () => {
                   {price('ad_price_repeat') > 0 && (
                     <div className={styles.calcRow}>
                       <label>Повторения:</label>
-                      <input type="number" min="0" max="100" value={siteRepeatQty} onChange={e => setSiteRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                      <span className={styles.calcPrice}>{siteRepeatCost} {sym}</span>
+                      <input type="number" min="0" max="100" value={siteRepeatQty} onChange={e => setSiteRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={sitePinQty === 0} />
+                      <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{sitePinQty === 0 ? 'выберите показы' : siteRepeatCost + ' ' + sym}</span>
                     </div>
                   )}
                   <div className={styles.calcRow}>
@@ -246,6 +241,15 @@ const PricingPage = () => {
                     <input type="number" min="0" max="100" value={siteInterval} onChange={e => setSiteInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={siteRepeatQty === 0} />
                     <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{siteRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
                   </div>
+                  {price('ad_price_auto_delete_off') > 0 && (
+                    <div className={styles.calcRow}>
+                      <label className={styles.calcCheckbox}>
+                        <input type="checkbox" checked={autoDeleteOff} onChange={e => setAutoDeleteOff(e.target.checked)} disabled={sitePinQty === 0} />
+                        <span>Отключение автоудаления</span>
+                      </label>
+                      <span className={styles.calcPrice}>{autoDeleteOffCost} {sym}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -262,27 +266,14 @@ const PricingPage = () => {
                   {price('ad_price_tg_repeat') > 0 && (
                     <div className={styles.calcRow}>
                       <label>Повторения:</label>
-                      <input type="number" min="0" max="100" value={tgRepeatQty} onChange={e => setTgRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} />
-                      <span className={styles.calcPrice}>{tgRepeatCost} {sym}</span>
+                      <input type="number" min="0" max="100" value={tgRepeatQty} onChange={e => setTgRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={tgMailingQty === 0} />
+                      <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{tgMailingQty === 0 ? 'выберите рассылку' : tgRepeatCost + ' ' + sym}</span>
                     </div>
                   )}
                   <div className={styles.calcRow}>
                     <label>Интервал (часы):</label>
                     <input type="number" min="0" max="100" value={tgInterval} onChange={e => setTgInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={tgRepeatQty === 0} />
                     <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{tgRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
-                  </div>
-                </div>
-              )}
-
-              {price('ad_price_auto_delete_off') > 0 && (
-                <div className={styles.calcSection}>
-                  <h3>Дополнительно</h3>
-                  <div className={styles.calcRow}>
-                    <label className={styles.calcCheckbox}>
-                      <input type="checkbox" checked={autoDeleteOff} onChange={e => setAutoDeleteOff(e.target.checked)} />
-                      <span>Отключение автоудаления</span>
-                    </label>
-                    <span className={styles.calcPrice}>{autoDeleteOffCost} {sym}</span>
                   </div>
                 </div>
               )}
