@@ -178,6 +178,14 @@ const AdvertisingAdminPage = () => {
     setNewAdContent(req.ad_text || req.ad_description || '');
     setNewAdLinkUrl(req.ad_link || 'https://');
     setNewAdLinkLabel('');
+    setAdPinDuration(req.site_pin_qty || 0);
+    setAdRepeatCount(req.site_repeat_qty || 0);
+    setAdRepeatInterval(req.site_interval || 0);
+    setAdAutoDelete(req.auto_delete_off ? true : false);
+    if (req.image_url) {
+      const fullUrl = req.image_url.startsWith('http') ? req.image_url : `${import.meta.env.VITE_API_URL || ''}${req.image_url}`;
+      setImagePreviews([fullUrl]);
+    }
     setSelectedRequest(null);
     setActiveTab('advertising');
     setActiveSubTab('site');
