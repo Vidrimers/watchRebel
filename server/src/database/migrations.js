@@ -494,6 +494,13 @@ export async function runMigrations() {
           }
         });
 
+        // Добавляем is_archived если его нет (для существующих БД)
+        db.run(`ALTER TABLE ad_requests ADD COLUMN is_archived INTEGER DEFAULT 0`, (err) => {
+          if (err && !err.message.includes('duplicate column')) {
+            console.error('Ошибка добавления is_archived:', err.message);
+          }
+        });
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())

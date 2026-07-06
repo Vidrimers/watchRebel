@@ -1785,7 +1785,7 @@ router.get('/ad-requests', async (req, res) => {
     const { archived } = req.query;
     let query = 'SELECT * FROM ad_requests';
     if (archived === '1') query += ' WHERE is_archived = 1';
-    else if (archived === '0') query += ' WHERE is_archived = 0';
+    else if (archived === '0') query += ' WHERE is_archived = 0 OR is_archived IS NULL';
     query += ' ORDER BY created_at DESC';
     const result = await executeQuery(query);
     if (!result.success) {
@@ -1804,7 +1804,7 @@ router.get('/ad-requests', async (req, res) => {
  */
 router.get('/ad-requests/count', async (req, res) => {
   try {
-    const result = await executeQuery('SELECT COUNT(*) as count FROM ad_requests WHERE is_archived = 0');
+    const result = await executeQuery('SELECT COUNT(*) as count FROM ad_requests WHERE is_archived = 0 OR is_archived IS NULL');
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка' });
     }
