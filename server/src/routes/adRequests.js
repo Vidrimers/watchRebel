@@ -56,11 +56,9 @@ router.post('/send-code', async (req, res) => {
     );
 
     // Пытаемся отправить код через бота
-    // Для этого нужно найти chat_id пользователя по telegram username
-    // Используем sendTelegramNotification с chat_id из БД
     const userResult = await executeQuery(
-      'SELECT id FROM users WHERE telegram_username = ? OR id = ?',
-      [cleanTelegram, cleanTelegram]
+      `SELECT id FROM users WHERE telegram_username = ? OR telegram_username = ? OR id = ? OR display_name = ?`,
+      [cleanTelegram, telegram.replace('@', '').trim(), cleanTelegram, cleanTelegram]
     );
 
     if (userResult.success && userResult.data.length > 0) {
