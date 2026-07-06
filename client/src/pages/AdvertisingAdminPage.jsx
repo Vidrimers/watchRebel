@@ -167,6 +167,7 @@ const AdvertisingAdminPage = () => {
   };
 
   const handleDeleteAdRequest = async (id) => {
+    if (!confirm('Удалить заявку? Это действие нельзя отменить.')) return;
     try {
       await api.delete(`/admin/ad-requests/${id}`);
       setSelectedRequest(null);
@@ -1375,9 +1376,15 @@ const AdvertisingAdminPage = () => {
                   <span>Ссылка:</span>
                   <strong>
                     <a href={selectedRequest.ad_link.startsWith('http') ? selectedRequest.ad_link : `https://${selectedRequest.ad_link}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
-                      {selectedRequest.ad_link_label || selectedRequest.ad_link}
+                      {selectedRequest.ad_link}
                     </a>
                   </strong>
+                </div>
+              )}
+              {selectedRequest.ad_link_label && (
+                <div className={styles.postDetailRow}>
+                  <span>Текст ссылки:</span>
+                  <strong>{selectedRequest.ad_link_label}</strong>
                 </div>
               )}
               {selectedRequest.ad_text && (
