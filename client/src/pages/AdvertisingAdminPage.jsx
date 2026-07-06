@@ -985,6 +985,7 @@ const AdvertisingAdminPage = () => {
       )}
 
       {/* ===== История ===== */}
+      {activeTab !== 'requests' && (<>
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2>История отправленных {isAd ? 'рекламных постов' : 'объявлений'}</h2>
@@ -1295,6 +1296,7 @@ const AdvertisingAdminPage = () => {
           </div>
         )}
       </div>
+      </>)}
     </div>
   );
 };
