@@ -354,3 +354,22 @@ export async function notifyPostDeleted(authorId, postId) {
     console.error('Ошибка отправки уведомления об удалении поста:', error);
   }
 }
+
+/**
+ * Отправить уведомление о новом рекламном посте всем онлайн-пользователям
+ */
+export function notifyFeedNewAdPost(adPost) {
+  try {
+    clients.forEach((ws, userId) => {
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'feed_new_ad_post',
+          post: adPost
+        }));
+      }
+    });
+    console.log(`📢 Уведомление о новом рекламном посте отправлено ${clients.size} пользователям`);
+  } catch (error) {
+    console.error('Ошибка отправки уведомления о рекламном посте:', error);
+  }
+}

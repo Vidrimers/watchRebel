@@ -56,6 +56,14 @@ const FeedPage = () => {
         // Для постов друзей - увеличиваем счетчик
         setNewPostsCount(prev => prev + 1);
       }
+    } else if (data.type === 'feed_new_ad_post') {
+      // Новый рекламный пост - добавляем в начало ленты
+      const newAdPost = data.post;
+      setItems(prevPosts => {
+        const postExists = prevPosts.some(p => p.id === newAdPost.id);
+        if (postExists) return prevPosts;
+        return [newAdPost, ...prevPosts];
+      });
     } else if (data.type === 'post_updated') {
       // Обновление содержимого поста (редактирование)
       const updatedPost = data.post;

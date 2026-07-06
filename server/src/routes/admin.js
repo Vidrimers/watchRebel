@@ -2,6 +2,7 @@ import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { notifyModeration, sendTelegramNotification } from '../services/notificationService.js';
+import { notifyFeedNewAdPost } from '../services/websocketService.js';
 import { uploadAnnouncement, uploadAdvertisingImages } from '../middleware/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -1480,6 +1481,30 @@ router.post('/advertising', async (req, res) => {
        VALUES (?, ?, ?, 'advertising', 'site', 0, ?, datetime('now', 'localtime'))`,
       [uuidv4(), hasContent ? content.trim() : ' ', firstImage, req.user.id]
     );
+
+    // Уведомление о новом рекламном посте через WebSocket
+    if (!scheduledAt) {
+      const adPost = {
+        id: postId,
+        userId: req.user.id,
+        postType: 'advertising',
+        content: hasContent ? content.trim() : '',
+        linkUrl: linkUrl || null,
+        linkLabel: linkLabel || null,
+        imageUrls: imageUrls || [],
+        createdAt: new Date().toISOString(),
+        author: {
+          id: req.user.id,
+          displayName: req.user.displayName || req.user.display_name,
+          avatarUrl: req.user.avatarUrl || req.user.avatar_url
+        },
+        pinDuration: parseInt(pinDuration) || 0,
+        repeatCount: parseInt(repeatCount) || 0,
+        repeatIntervalHours: parseInt(repeatIntervalHours) || 0,
+        autoDelete: autoDelete || false
+      };
+      notifyFeedNewAdPost(adPost);
+    }
 
     res.status(201).json({ id: postId, message: 'Рекламный пост создан' });
   } catch (error) {
