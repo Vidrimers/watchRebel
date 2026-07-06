@@ -1830,6 +1830,26 @@ router.patch('/ad-requests/:id/archive', async (req, res) => {
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка' });
     }
+
+    if (archived) {
+      try {
+        const adminId = process.env.TELEGRAM_ADMIN_ID;
+        if (adminId) {
+          const reqResult = await executeQuery('SELECT name, telegram FROM ad_requests WHERE id = ?', [id]);
+          if (reqResult.success && reqResult.data[0]) {
+            const { name, telegram } = reqResult.data[0];
+            await sendTelegramNotification(
+              adminId,
+              `📦 <b>Заявка архивирована</b>\n\n👤 ${name} (${telegram})`,
+              { parse_mode: 'HTML' }
+            );
+          }
+        }
+      } catch (tgErr) {
+        console.error('Ошибка TG уведомления:', tgErr);
+      }
+    }
+
     res.json({ message: archived ? 'Заявка архивирована' : 'Заявка восстановлена' });
   } catch (error) {
     console.error('Ошибка:', error);
