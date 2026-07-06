@@ -6,6 +6,7 @@ import { searchMedia } from '../store/slices/mediaSlice';
 import { fetchLists, addToList, addToWatchlist } from '../store/slices/listsSlice';
 import { clearSearch } from '../store/slices/mediaSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import UserAvatar from '../components/User/UserAvatar';
 import Icon from '../components/Common/Icon';
 import { resolveDisplayNameWithTooltip } from '../utils/nicknameResolver';
 import useAlert from '../hooks/useAlert';
@@ -436,15 +437,7 @@ const SearchPage = () => {
                   {result.type === 'user' ? (
                     // Карточка пользователя
                     <div className={styles.userCard}>
-                      <img
-                        src={
-                          result.data.avatarUrl?.startsWith('/uploads/')
-                            ? `${import.meta.env.VITE_API_URL || ''}${result.data.avatarUrl}`
-                            : result.data.avatarUrl || '/default-avatar.png'
-                        }
-                        alt={result.data.displayName}
-                        className={styles.userAvatar}
-                      />
+                      <UserAvatar user={result.data} size="medium" />
                       <div className={styles.userCardInfo}>
                         <h3 className={`${styles.userCardName} ${resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).isNickname ? 'displayNameNickname' : ''}`} title={resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).tooltip}>{resolveDisplayNameWithTooltip(result.data.id, result.data.displayName).text}</h3>
                         <p className={styles.userCardType}>Пользователь</p>

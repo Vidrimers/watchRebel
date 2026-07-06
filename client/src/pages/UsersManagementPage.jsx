@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { TELEGRAM_ADMIN_ID } from '../constants';
 import UserPageLayout from '../components/Layout/UserPageLayout';
+import UserAvatar from '../components/User/UserAvatar';
 import BanIndicator from '../components/User/BanIndicator';
 import UserModerationModal from '../components/Settings/UserModerationModal';
 import Icon from '../components/Common/Icon';
@@ -200,21 +201,7 @@ const UsersManagementPage = () => {
               <div key={user.id} className={styles.userCard}>
                 {/* Аватар с индикатором блокировки */}
                 <div className={styles.avatarContainer}>
-                  <img
-                    src={
-                      user.avatarUrl?.startsWith('/uploads/')
-                        ? `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`
-                        : user.avatarUrl || '/default-avatar.png'
-                    }
-                    alt={user.displayName}
-                    className={styles.avatar}
-                  />
-                  {user.isBlocked && (
-                    <BanIndicator
-                      banReason={user.banReason}
-                      postBanUntil={user.postBanUntil}
-                    />
-                  )}
+                  <UserAvatar user={user} size="medium" showBanIndicator={user.isBlocked} />
                 </div>
 
                 {/* Информация о пользователе */}

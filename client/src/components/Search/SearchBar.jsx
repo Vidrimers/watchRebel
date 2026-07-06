@@ -5,6 +5,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { searchMedia, setSearchQuery, clearError } from '../../store/slices/mediaSlice';
 import { ErrorMessageInline } from '../ErrorMessage';
 import Icon from '../Common/Icon';
+import UserAvatar from '../User/UserAvatar';
 import styles from './SearchBar.module.css';
 
 /**
@@ -159,15 +160,7 @@ const SearchBar = () => {
                   >
                     {result.type === 'user' ? (
                       <div className={styles.userResult}>
-                        <img
-                          src={
-                            result.data.avatarUrl?.startsWith('/uploads/')
-                              ? `${import.meta.env.VITE_API_URL || ''}${result.data.avatarUrl}`
-                              : result.data.avatarUrl || '/default-avatar.png'
-                          }
-                          alt={result.data.displayName}
-                          className={styles.userAvatar}
-                        />
+                        <UserAvatar user={result.data} size="small" />
                         <div className={styles.userInfo}>
                           <span className={styles.userName}>{result.data.displayName}</span>
                           <span className={styles.userType}>Пользователь</span>

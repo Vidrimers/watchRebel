@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '../Common/Icon';
+import UserAvatar from '../User/UserAvatar';
 import styles from './UserModerationModal.module.css';
 import api from '../../services/api';
 import useAlert from '../../hooks/useAlert.jsx';
@@ -292,15 +293,7 @@ function UserModerationModal({ user, onClose, onUpdate }) {
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           {/* Шапка с аватаркой и именем */}
           <div className={styles.header}>
-            <img
-              src={
-                user.avatarUrl?.startsWith('/uploads/')
-                  ? `${import.meta.env.VITE_API_URL || ''}${user.avatarUrl}`
-                  : user.avatarUrl || '/default-avatar.png'
-              }
-              alt={user.displayName}
-              className={styles.avatar}
-            />
+            <UserAvatar user={user} size="medium" />
             <div className={styles.userInfo}>
               <h3 className={styles.userName}>{user.displayName}</h3>
               <p className={styles.userUsername}>@{user.telegramUsername || 'нет username'}</p>
