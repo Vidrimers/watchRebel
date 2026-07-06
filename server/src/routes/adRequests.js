@@ -56,18 +56,14 @@ router.post('/send-code', async (req, res) => {
     );
 
     // Пытаемся отправить код через бота
-    // Ищем по telegram_username (без @), id (числовой Telegram ID) или display_name
-    const searchVariants = [
-      cleanTelegram,
-      cleanTelegram.toLowerCase(),
-      cleanTelegram.toUpperCase()
-    ];
+    // Ищем по telegram_username (без @, регистронезависимо), id или display_name
+    const cleanLower = cleanTelegram.toLowerCase();
     const userResult = await executeQuery(
       `SELECT id, telegram_username, display_name FROM users 
-       WHERE telegram_username IN (${searchVariants.map(() => '?').join(',')}) 
+       WHERE LOWER(telegram_username) = LOWER(?)
        OR id = ? 
        OR LOWER(display_name) = LOWER(?)`,
-      [...searchVariants, cleanTelegram, cleanTelegram]
+      [cleanTelegram, cleanTelegram, cleanTelegram]
     );
 
     if (userResult.success && userResult.data.length > 0) {
