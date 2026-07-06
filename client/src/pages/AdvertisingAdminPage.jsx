@@ -1266,7 +1266,11 @@ const AdvertisingAdminPage = () => {
               </div>
               <div className={styles.postDetailRow}>
                 <span>Telegram:</span>
-                <strong>{selectedRequest.telegram}</strong>
+                <strong>
+                  <a href={`https://t.me/${selectedRequest.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
+                    {selectedRequest.telegram}
+                  </a>
+                </strong>
               </div>
               {selectedRequest.extra_contact && (
                 <div className={styles.postDetailRow}>
@@ -1307,7 +1311,9 @@ const AdvertisingAdminPage = () => {
               {selectedRequest.ad_link && (
                 <div className={styles.postDetailRow}>
                   <span>Ссылка:</span>
-                  <strong style={{ color: 'var(--accent-primary)', wordBreak: 'break-all' }}>{selectedRequest.ad_link}</strong>
+                  <a href={selectedRequest.ad_link.startsWith('http') ? selectedRequest.ad_link : `https://${selectedRequest.ad_link}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
+                    {selectedRequest.ad_link}
+                  </a>
                 </div>
               )}
               {selectedRequest.ad_text && (
