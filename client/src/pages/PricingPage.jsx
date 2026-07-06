@@ -30,7 +30,7 @@ const PricingPage = () => {
 
   // Модалка заявки
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [requestForm, setRequestForm] = useState({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '', scheduledAt: '' });
+  const [requestForm, setRequestForm] = useState({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adLinkLabel: '', adText: '', scheduledAt: '' });
   const [requestImage, setRequestImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
@@ -97,6 +97,7 @@ const PricingPage = () => {
       }));
       fd.append('adDescription', requestForm.adDescription.trim());
       fd.append('adLink', requestForm.adLink.trim());
+      fd.append('adLinkLabel', requestForm.adLinkLabel.trim());
       fd.append('adText', requestForm.adText.trim());
       if (requestImage) fd.append('image', requestImage);
 
@@ -105,7 +106,7 @@ const PricingPage = () => {
       setTimeout(() => {
         setShowRequestModal(false);
         setSubmitResult(null);
-        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '', scheduledAt: '' });
+        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adLinkLabel: '', adText: '', scheduledAt: '' });
         setRequestImage(null);
       }, 1500);
     } catch (err) {
@@ -327,6 +328,10 @@ const PricingPage = () => {
               <div className={styles.formGroup}>
                 <label>Ссылка на сайт/ТГ</label>
                 <input type="text" value={requestForm.adLink} onChange={e => setRequestForm(p => ({ ...p, adLink: e.target.value }))} className={styles.formInput} placeholder="https://..." disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Текст ссылки: <span style={{ fontWeight: 400, color: 'var(--text-tertiary)' }}>(будет отображаться вместо ссылки)</span></label>
+                <input type="text" value={requestForm.adLinkLabel} onChange={e => setRequestForm(p => ({ ...p, adLinkLabel: e.target.value }))} className={styles.formInput} placeholder="Например: Перейти на сайт" disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
                 <label>Текст поста</label>

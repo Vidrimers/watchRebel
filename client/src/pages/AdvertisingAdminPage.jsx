@@ -177,7 +177,7 @@ const AdvertisingAdminPage = () => {
   const handleInsertRequestToSite = (req) => {
     setNewAdContent(req.ad_text || req.ad_description || '');
     setNewAdLinkUrl(req.ad_link || 'https://');
-    setNewAdLinkLabel('');
+    setNewAdLinkLabel(req.ad_link_label || '');
     setAdPinDuration(req.site_pin_qty || 0);
     setAdRepeatCount(req.site_repeat_qty || 0);
     setAdRepeatInterval(req.site_interval || 0);
@@ -1375,7 +1375,7 @@ const AdvertisingAdminPage = () => {
                   <span>Ссылка:</span>
                   <strong>
                     <a href={selectedRequest.ad_link.startsWith('http') ? selectedRequest.ad_link : `https://${selectedRequest.ad_link}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
-                      {selectedRequest.ad_link}
+                      {selectedRequest.ad_link_label || selectedRequest.ad_link}
                     </a>
                   </strong>
                 </div>

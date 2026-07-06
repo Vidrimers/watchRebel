@@ -13,7 +13,7 @@ const router = express.Router();
 router.post('/', uploadAdRequestImages.single('image'), async (req, res) => {
   try {
     const id = uuidv4();
-    const { name, telegram, extraContact, calculatorData, adDescription, adLink, adText } = req.body;
+    const { name, telegram, extraContact, calculatorData, adDescription, adLink, adLinkLabel, adText } = req.body;
 
     if (!name || !telegram) {
       return res.status(400).json({ error: 'Имя и Telegram обязательны' });
@@ -28,15 +28,15 @@ router.post('/', uploadAdRequestImages.single('image'), async (req, res) => {
       `INSERT INTO ad_requests (id, user_id, name, telegram, extra_contact,
         channel_site, channel_tg, site_pin_qty, site_repeat_qty, site_interval,
         tg_mailing_qty, tg_repeat_qty, tg_interval, auto_delete_off, total_cost, currency,
-        ad_description, ad_link, ad_text, image_url, scheduled_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ad_description, ad_link, ad_link_label, ad_text, image_url, scheduled_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, req.user?.id || null, name, telegram, extraContact || null,
         calcData.channelSite ? 1 : 0, calcData.channelTg ? 1 : 0,
         calcData.sitePinQty || 0, calcData.siteRepeatQty || 0, calcData.siteInterval || 0,
         calcData.tgMailingQty || 0, calcData.tgRepeatQty || 0, calcData.tgInterval || 0,
         calcData.autoDeleteOff ? 1 : 0, calcData.total || 0, calcData.currency || 'RUB',
-        adDescription || null, adLink || null, adText || null, imageUrl,
+        adDescription || null, adLink || null, adLinkLabel || null, adText || null, imageUrl,
         calcData.scheduledAt || null
       ]
     );

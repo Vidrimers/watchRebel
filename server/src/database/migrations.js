@@ -480,6 +480,7 @@ export async function runMigrations() {
             currency TEXT DEFAULT 'RUB',
             ad_description TEXT,
             ad_link TEXT,
+            ad_link_label TEXT,
             ad_text TEXT,
             image_url TEXT,
             is_archived INTEGER DEFAULT 0,
@@ -506,6 +507,13 @@ export async function runMigrations() {
         db.run(`ALTER TABLE ad_requests ADD COLUMN scheduled_at TEXT`, (err) => {
           if (err && !err.message.includes('duplicate column')) {
             console.error('Ошибка добавления scheduled_at:', err.message);
+          }
+        });
+
+        // Добавляем ad_link_label если его нет
+        db.run(`ALTER TABLE ad_requests ADD COLUMN ad_link_label TEXT`, (err) => {
+          if (err && !err.message.includes('duplicate column')) {
+            console.error('Ошибка добавления ad_link_label:', err.message);
           }
         });
 
