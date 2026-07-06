@@ -389,7 +389,7 @@ const PricingPage = () => {
                   />
                   {!tgVerified && requestForm.telegram.trim() && (
                     <button type="button" onClick={handleSendVerifyCode} className={styles.verifyInline} disabled={tgVerifying || tgCodeSent}>
-                      {tgVerifying ? '...' : tgCodeSent ? 'Код отправлен' : 'Верифицировать'}
+                      {tgVerifying ? '...' : tgCodeSent ? 'Код отправлен' : 'Проверка'}
                     </button>
                   )}
                 </div>
