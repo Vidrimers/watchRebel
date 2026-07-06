@@ -483,6 +483,7 @@ export async function runMigrations() {
             ad_text TEXT,
             image_url TEXT,
             is_archived INTEGER DEFAULT 0,
+            scheduled_at TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
           );
@@ -498,6 +499,13 @@ export async function runMigrations() {
         db.run(`ALTER TABLE ad_requests ADD COLUMN is_archived INTEGER DEFAULT 0`, (err) => {
           if (err && !err.message.includes('duplicate column')) {
             console.error('Ошибка добавления is_archived:', err.message);
+          }
+        });
+
+        // Добавляем scheduled_at если его нет
+        db.run(`ALTER TABLE ad_requests ADD COLUMN scheduled_at TEXT`, (err) => {
+          if (err && !err.message.includes('duplicate column')) {
+            console.error('Ошибка добавления scheduled_at:', err.message);
           }
         });
 

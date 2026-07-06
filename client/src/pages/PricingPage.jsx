@@ -30,7 +30,7 @@ const PricingPage = () => {
 
   // Модалка заявки
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [requestForm, setRequestForm] = useState({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '' });
+  const [requestForm, setRequestForm] = useState({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '', scheduledAt: '' });
   const [requestImage, setRequestImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
@@ -92,7 +92,8 @@ const PricingPage = () => {
         channelSite, channelTg,
         sitePinQty, siteRepeatQty, siteInterval,
         tgMailingQty, tgRepeatQty, tgInterval,
-        autoDeleteOff, total, currency
+        autoDeleteOff, total, currency,
+        scheduledAt: requestForm.scheduledAt || null
       }));
       fd.append('adDescription', requestForm.adDescription.trim());
       fd.append('adLink', requestForm.adLink.trim());
@@ -104,7 +105,7 @@ const PricingPage = () => {
       setTimeout(() => {
         setShowRequestModal(false);
         setSubmitResult(null);
-        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '' });
+        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adText: '', scheduledAt: '' });
         setRequestImage(null);
       }, 1500);
     } catch (err) {
@@ -330,6 +331,10 @@ const PricingPage = () => {
               <div className={styles.formGroup}>
                 <label>Текст поста</label>
                 <textarea value={requestForm.adText} onChange={e => setRequestForm(p => ({ ...p, adText: e.target.value }))} className={styles.formTextarea} placeholder="Текст рекламного поста..." rows={10} disabled={submitting} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Дата публикации (необязательно)</label>
+                <input type="datetime-local" value={requestForm.scheduledAt} onChange={e => setRequestForm(p => ({ ...p, scheduledAt: e.target.value }))} className={styles.formInput} disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
                 <label>Изображение (необязательно)</label>

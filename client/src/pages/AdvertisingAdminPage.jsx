@@ -182,6 +182,11 @@ const AdvertisingAdminPage = () => {
     setAdRepeatCount(req.site_repeat_qty || 0);
     setAdRepeatInterval(req.site_interval || 0);
     setAdAutoDelete(req.auto_delete_off ? true : false);
+    if (req.scheduled_at) {
+      const d = new Date(req.scheduled_at);
+      const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      setAdScheduledAt(local);
+    }
     if (req.image_url) {
       const fullUrl = req.image_url.startsWith('http') ? req.image_url : `${import.meta.env.VITE_API_URL || ''}${req.image_url}`;
       setImagePreviews([fullUrl]);
@@ -194,6 +199,11 @@ const AdvertisingAdminPage = () => {
 
   const handleInsertRequestToTg = (req) => {
     setTgText(req.ad_text || req.ad_description || '');
+    if (req.scheduled_at) {
+      const d = new Date(req.scheduled_at);
+      const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      setTgScheduledAt(local);
+    }
     if (req.image_url) {
       const fullUrl = req.image_url.startsWith('http') ? req.image_url : `${import.meta.env.VITE_API_URL || ''}${req.image_url}`;
       setTgImagePreview(fullUrl);
@@ -1340,6 +1350,12 @@ const AdvertisingAdminPage = () => {
                 <div className={styles.postDetailRow}>
                   <span>Автоудаление:</span>
                   <strong>Отключено</strong>
+                </div>
+              )}
+              {selectedRequest.scheduled_at && (
+                <div className={styles.postDetailRow}>
+                  <span>Дата публикации:</span>
+                  <strong style={{ color: 'var(--accent-primary)' }}>{new Date(selectedRequest.scheduled_at).toLocaleString('ru-RU')}</strong>
                 </div>
               )}
               {selectedRequest.total_cost > 0 && (
