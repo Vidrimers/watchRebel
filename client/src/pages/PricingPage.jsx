@@ -116,6 +116,11 @@ const PricingPage = () => {
     }
   };
 
+  const handleOpenRequestModal = () => {
+    setShowRequestModal(true);
+    api.post('/ad-requests/notify-open').catch(() => {});
+  };
+
   const hasAnyPrice = pricing && (
     pricing.ad_price_site || pricing.ad_price_repeat ||
     pricing.ad_price_interval || pricing.ad_price_telegram
@@ -274,7 +279,7 @@ const PricingPage = () => {
 
               {(channelSite || channelTg) && (
                 <div className={styles.calcButtons}>
-                  <button onClick={() => setShowRequestModal(true)} className={styles.calcRequestBtn}>Оставить заявку</button>
+                  <button onClick={handleOpenRequestModal} className={styles.calcRequestBtn}>Оставить заявку</button>
                 </div>
               )}
             </div>

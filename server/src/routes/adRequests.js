@@ -7,6 +7,27 @@ import { sendTelegramNotification } from '../services/notificationService.js';
 const router = express.Router();
 
 /**
+ * POST /api/ad-requests/notify-open
+ * Уведомить админа что кто-то открыл форму заявки
+ */
+router.post('/notify-open', async (req, res) => {
+  try {
+    const adminId = process.env.TELEGRAM_ADMIN_ID;
+    if (adminId) {
+      await sendTelegramNotification(
+        adminId,
+        `👀 Кто-то открыл форму заявки на рекламу на сайте`,
+        { parse_mode: 'HTML' }
+      );
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Ошибка TG уведомления:', err);
+    res.json({ ok: true });
+  }
+});
+
+/**
  * POST /api/ad-requests
  * Отправить заявку на рекламу (публичный)
  */
