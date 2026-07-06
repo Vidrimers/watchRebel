@@ -537,6 +537,7 @@ const AdvertisingAdminPage = () => {
       </div>
 
       {/* ===== Подвкладки ===== */}
+      {activeTab !== 'requests' && (<>
       <div className={styles.subTabs}>
         <button className={`${styles.subTabButton} ${activeSubTab === 'site' ? styles.subTabButtonActive : ''}`} onClick={() => setActiveSubTab('site')}>
           <Icon name="feed" size="small" /> {isAd ? 'Реклама на сайте' : 'Объявления на сайте'}
@@ -952,6 +953,7 @@ const AdvertisingAdminPage = () => {
             )}
           </div>
         )}
+      </>)}
       </>)}
 
       {/* ===== ВКЛАДКА: ЗАЯВКИ ===== */}

@@ -216,14 +216,14 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
             <div className={styles.userInfo}>
               {/* Настройки - в левом верхнем углу */}
               <div className={`${styles.settingsContainer} ${
-                bugStats.new > 0 || bugStats.in_progress > 0 || adRequestCount > 0 ? styles.settingsContainerHasAlerts : ''
+                adRequestCount > 0 || bugStats.new > 0 || bugStats.in_progress > 0 ? styles.settingsContainerHasAlerts : ''
               }`}>
                 <a
                   href="/settings"
                   className={`${styles.settingsButton} ${
+                    adRequestCount > 0 ? styles.settingsButtonAdRequest :
                     bugStats.new > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonNew}` :
-                    bugStats.in_progress > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonInProgress}` :
-                    adRequestCount > 0 ? styles.settingsButtonAdRequest : ''
+                    bugStats.in_progress > 0 ? `${styles.settingsButtonSpin} ${styles.settingsButtonInProgress}` : ''
                   }`}
                   title="Настройки"
                   onClick={handleLinkClick}
@@ -231,7 +231,7 @@ const Sidebar = ({ narrow = false, isOpen = true, onClose }) => {
                   <Icon
                     name="settings"
                     size="medium"
-                    color={bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : adRequestCount > 0 ? '#f97316' : undefined}
+                    color={adRequestCount > 0 ? '#f97316' : bugStats.new > 0 ? '#ef4444' : bugStats.in_progress > 0 ? '#10b981' : undefined}
                   />
                 </a>
               </div>

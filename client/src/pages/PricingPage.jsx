@@ -218,13 +218,13 @@ const PricingPage = () => {
                     <div className={styles.calcRow}>
                       <label>Повторения:</label>
                       <input type="number" min="0" max="100" value={siteRepeatQty} onChange={e => setSiteRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={sitePinQty === 0} />
-                      <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{sitePinQty === 0 ? 'выберите показы' : siteRepeatCost + ' ' + sym}</span>
+                      <span className={styles.calcPrice} style={sitePinQty === 0 ? { color: 'var(--text-tertiary)' } : undefined}>{sitePinQty === 0 ? 'выберите показы' : siteRepeatCost + ' ' + sym}</span>
                     </div>
                   )}
                   <div className={styles.calcRow}>
                     <label>Интервал (часы):</label>
                     <input type="number" min="0" max="100" value={siteInterval} onChange={e => setSiteInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={siteRepeatQty === 0} />
-                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{siteRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
+                    <span className={styles.calcPrice} style={siteRepeatQty === 0 ? { color: 'var(--text-tertiary)' } : undefined}>{siteRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
                   </div>
                   {price('ad_price_auto_delete_off') > 0 && (
                     <div className={styles.calcRow}>
@@ -252,13 +252,13 @@ const PricingPage = () => {
                     <div className={styles.calcRow}>
                       <label>Повторения:</label>
                       <input type="number" min="0" max="100" value={tgRepeatQty} onChange={e => setTgRepeatQty(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={tgMailingQty === 0} />
-                      <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{tgMailingQty === 0 ? 'выберите рассылку' : tgRepeatCost + ' ' + sym}</span>
+                      <span className={styles.calcPrice} style={tgMailingQty === 0 ? { color: 'var(--text-tertiary)' } : undefined}>{tgMailingQty === 0 ? 'выберите рассылку' : tgRepeatCost + ' ' + sym}</span>
                     </div>
                   )}
                   <div className={styles.calcRow}>
                     <label>Интервал (часы):</label>
                     <input type="number" min="0" max="100" value={tgInterval} onChange={e => setTgInterval(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} className={styles.calcInput} disabled={tgRepeatQty === 0} />
-                    <span className={styles.calcPrice} style={{ color: 'var(--text-tertiary)' }}>{tgRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
+                    <span className={styles.calcPrice} style={tgRepeatQty === 0 ? { color: 'var(--text-tertiary)' } : undefined}>{tgRepeatQty === 0 ? 'выберите повторения' : 'бесплатно'}</span>
                   </div>
                 </div>
               )}
@@ -320,16 +320,16 @@ const PricingPage = () => {
                 <input type="text" value={requestForm.extraContact} onChange={e => setRequestForm(p => ({ ...p, extraContact: e.target.value }))} className={styles.formInput} placeholder="Телефон, Discord и т.д." disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
-                <label>Описание рекламы</label>
-                <textarea value={requestForm.adDescription} onChange={e => setRequestForm(p => ({ ...p, adDescription: e.target.value }))} className={styles.formTextarea} placeholder="Что нужно продвинуть?" rows={3} disabled={submitting} />
+                <label>Описание рекламы, доп. информация</label>
+                <textarea value={requestForm.adDescription} onChange={e => setRequestForm(p => ({ ...p, adDescription: e.target.value }))} className={styles.formTextarea} placeholder="Что нужно продвинуть?" rows={5} disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
                 <label>Ссылка на сайт/ТГ</label>
                 <input type="text" value={requestForm.adLink} onChange={e => setRequestForm(p => ({ ...p, adLink: e.target.value }))} className={styles.formInput} placeholder="https://..." disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
-                <label>Какой текст хочет пользователь</label>
-                <textarea value={requestForm.adText} onChange={e => setRequestForm(p => ({ ...p, adText: e.target.value }))} className={styles.formTextarea} placeholder="Текст рекламного поста..." rows={4} disabled={submitting} />
+                <label>Текст поста</label>
+                <textarea value={requestForm.adText} onChange={e => setRequestForm(p => ({ ...p, adText: e.target.value }))} className={styles.formTextarea} placeholder="Текст рекламного поста..." rows={10} disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
                 <label>Изображение (необязательно)</label>
