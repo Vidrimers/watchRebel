@@ -43,6 +43,7 @@ const PricingPage = () => {
   const [tgCode, setTgCode] = useState('');
   const [tgVerifying, setTgVerifying] = useState(false);
   const [tgVerifyMessage, setTgVerifyMessage] = useState('');
+  const [tgBotUsername, setTgBotUsername] = useState('');
 
   useEffect(() => { loadPricing(); }, []);
 
@@ -150,8 +151,10 @@ const PricingPage = () => {
       if (r.data.success) {
         setTgCodeSent(true);
         setTgVerifyMessage('Код отправлен в Telegram');
+        setTgBotUsername('');
       } else {
         setTgVerifyMessage(r.data.message || 'Не удалось отправить код');
+        setTgBotUsername(r.data.botUsername || '');
       }
     } catch (err) {
       setTgVerifyMessage('Ошибка отправки');
@@ -409,7 +412,13 @@ const PricingPage = () => {
                     </button>
                   </div>
                 )}
-                {tgVerifyMessage && <p className={tgVerified ? styles.verifySuccess : styles.verifyError}>{tgVerifyMessage}</p>}
+                {tgVerifyMessage && (
+                  <p className={tgVerified ? styles.verifySuccess : styles.verifyError}>
+                    {tgBotUsername ? (
+                      <>Пользователь не найден. Убедитесь, что вы нажали /start в <a href={`https://t.me/${tgBotUsername}`} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>боте</a>.</>
+                    ) : tgVerifyMessage}
+                  </p>
+                )}
               </div>
               <div className={styles.formGroup}>
                 <label>Доп. способ связи</label>

@@ -79,7 +79,8 @@ router.post('/send-code', async (req, res) => {
           // Пока просто сообщаем что пользователь должен нажать /start
           res.json({
             success: false,
-            message: 'Пользователь не найден. Убедитесь, что вы нажали /start в боте.'
+            message: 'Пользователь не найден. Убедитесь, что вы нажали /start в боте.',
+            botUsername: process.env.TELEGRAM_BOT_USERNAME || 'watchRebel_bot'
           });
         } else {
           res.json({ success: false, message: 'Бот не настроен' });
