@@ -369,33 +369,33 @@ const PricingPage = () => {
               </div>
               <div className={styles.formGroup}>
                 <label>Telegram * {tgVerified && <span style={{ color: 'var(--color-success, #22c55e)', fontWeight: 400 }}>✓ Подтверждён</span>}</label>
-                <div className={styles.tgVerifyRow}>
+                <div className={styles.tgInputWrapper}>
                   <input
                     type="text"
                     value={requestForm.telegram}
                     onChange={e => { setRequestForm(p => ({ ...p, telegram: e.target.value })); setTgVerified(false); setTgCodeSent(false); setTgCode(''); setTgVerifyMessage(''); }}
-                    className={`${styles.formInput} ${tgVerified ? styles.inputVerified : ''}`}
+                    className={`${styles.formInput} ${tgVerified ? styles.inputVerified : ''} ${!tgVerified && requestForm.telegram.trim() ? styles.inputWithAction : ''}`}
                     placeholder="@username"
                     disabled={submitting || tgVerified}
                   />
                   {!tgVerified && requestForm.telegram.trim() && (
-                    <button type="button" onClick={handleSendVerifyCode} className={styles.verifyBtn} disabled={tgVerifying || tgCodeSent}>
+                    <button type="button" onClick={handleSendVerifyCode} className={styles.verifyInline} disabled={tgVerifying || tgCodeSent}>
                       {tgVerifying ? '...' : tgCodeSent ? 'Код отправлен' : 'Верифицировать'}
                     </button>
                   )}
                 </div>
                 {tgCodeSent && !tgVerified && (
-                  <div className={styles.tgCodeRow}>
+                  <div className={styles.tgInputWrapper} style={{ marginTop: '8px' }}>
                     <input
                       type="text"
                       value={tgCode}
                       onChange={e => setTgCode(e.target.value)}
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${styles.inputWithAction}`}
                       placeholder="Введите 6-значный код"
                       maxLength={6}
                       disabled={submitting}
                     />
-                    <button type="button" onClick={handleVerifyCode} className={styles.verifyBtn} disabled={tgVerifying || !tgCode.trim()}>
+                    <button type="button" onClick={handleVerifyCode} className={styles.verifyInline} disabled={tgVerifying || !tgCode.trim()}>
                       {tgVerifying ? '...' : 'Проверить'}
                     </button>
                   </div>
