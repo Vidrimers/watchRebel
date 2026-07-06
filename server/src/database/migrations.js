@@ -517,6 +517,24 @@ export async function runMigrations() {
           }
         });
 
+        // Таблица кодов верификации Telegram
+        db.run(`
+          CREATE TABLE IF NOT EXISTS telegram_verification_codes (
+            id TEXT PRIMARY KEY,
+            telegram TEXT NOT NULL,
+            code TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            verified INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы telegram_verification_codes:', err.message);
+          } else {
+            console.log('✓ Таблица telegram_verification_codes создана');
+          }
+        });
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())

@@ -599,3 +599,61 @@
   font-size: 14px;
   color: var(--color-error, #ef4444);
 }
+
+/* Верификация Telegram */
+.tgVerifyRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tgVerifyRow .formInput {
+  flex: 1;
+}
+
+.inputVerified {
+  border-color: var(--color-success, #22c55e) !important;
+  background: rgba(34, 197, 94, 0.05) !important;
+}
+
+.verifyBtn {
+  padding: 10px 14px;
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.verifyBtn:hover { opacity: 0.9; }
+.verifyBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tgCodeRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.tgCodeRow .formInput {
+  flex: 1;
+  letter-spacing: 2px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.verifySuccess {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--color-success, #22c55e);
+}
+
+.verifyError {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--color-error, #ef4444);
+}

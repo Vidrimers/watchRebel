@@ -37,6 +37,13 @@ const PricingPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
 
+  // Верификация Telegram
+  const [tgVerified, setTgVerified] = useState(false);
+  const [tgCodeSent, setTgCodeSent] = useState(false);
+  const [tgCode, setTgCode] = useState('');
+  const [tgVerifying, setTgVerifying] = useState(false);
+  const [tgVerifyMessage, setTgVerifyMessage] = useState('');
+
   useEffect(() => { loadPricing(); }, []);
 
   const loadPricing = async () => {
@@ -118,7 +125,49 @@ const PricingPage = () => {
 
   const handleOpenRequestModal = () => {
     setShowRequestModal(true);
+    setTgVerified(false);
+    setTgCodeSent(false);
+    setTgCode('');
+    setTgVerifyMessage('');
     api.post('/ad-requests/notify-open').catch(() => {});
+  };
+
+  const handleSendVerifyCode = async () => {
+    if (!requestForm.telegram.trim()) return;
+    try {
+      setTgVerifying(true);
+      setTgVerifyMessage('');
+      const r = await api.post('/ad-requests/send-code', { telegram: requestForm.telegram.trim() });
+      if (r.data.success) {
+        setTgCodeSent(true);
+        setTgVerifyMessage('Код отправлен в Telegram');
+      } else {
+        setTgVerifyMessage(r.data.message || 'Не удалось отправить код');
+      }
+    } catch (err) {
+      setTgVerifyMessage('Ошибка отправки');
+    } finally {
+      setTgVerifying(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!tgCode.trim()) return;
+    try {
+      setTgVerifying(true);
+      setTgVerifyMessage('');
+      const r = await api.post('/ad-requests/verify-code', { telegram: requestForm.telegram.trim(), code: tgCode.trim() });
+      if (r.data.success) {
+        setTgVerified(true);
+        setTgVerifyMessage('');
+      } else {
+        setTgVerifyMessage(r.data.message || 'Неверный код');
+      }
+    } catch (err) {
+      setTgVerifyMessage('Ошибка проверки');
+    } finally {
+      setTgVerifying(false);
+    }
   };
 
   const hasAnyPrice = pricing && (
@@ -319,8 +368,39 @@ const PricingPage = () => {
                 <input type="text" value={requestForm.name} onChange={e => setRequestForm(p => ({ ...p, name: e.target.value }))} className={styles.formInput} placeholder="Ваше имя" disabled={submitting} />
               </div>
               <div className={styles.formGroup}>
-                <label>Telegram *</label>
-                <input type="text" value={requestForm.telegram} onChange={e => setRequestForm(p => ({ ...p, telegram: e.target.value }))} className={styles.formInput} placeholder="@username" disabled={submitting} />
+                <label>Telegram * {tgVerified && <span style={{ color: 'var(--color-success, #22c55e)', fontWeight: 400 }}>✓ Подтверждён</span>}</label>
+                <div className={styles.tgVerifyRow}>
+                  <input
+                    type="text"
+                    value={requestForm.telegram}
+                    onChange={e => { setRequestForm(p => ({ ...p, telegram: e.target.value })); setTgVerified(false); setTgCodeSent(false); setTgCode(''); setTgVerifyMessage(''); }}
+                    className={`${styles.formInput} ${tgVerified ? styles.inputVerified : ''}`}
+                    placeholder="@username"
+                    disabled={submitting || tgVerified}
+                  />
+                  {!tgVerified && requestForm.telegram.trim() && (
+                    <button type="button" onClick={handleSendVerifyCode} className={styles.verifyBtn} disabled={tgVerifying || tgCodeSent}>
+                      {tgVerifying ? '...' : tgCodeSent ? 'Код отправлен' : 'Верифицировать'}
+                    </button>
+                  )}
+                </div>
+                {tgCodeSent && !tgVerified && (
+                  <div className={styles.tgCodeRow}>
+                    <input
+                      type="text"
+                      value={tgCode}
+                      onChange={e => setTgCode(e.target.value)}
+                      className={styles.formInput}
+                      placeholder="Введите 6-значный код"
+                      maxLength={6}
+                      disabled={submitting}
+                    />
+                    <button type="button" onClick={handleVerifyCode} className={styles.verifyBtn} disabled={tgVerifying || !tgCode.trim()}>
+                      {tgVerifying ? '...' : 'Проверить'}
+                    </button>
+                  </div>
+                )}
+                {tgVerifyMessage && <p className={tgVerified ? styles.verifySuccess : styles.verifyError}>{tgVerifyMessage}</p>}
               </div>
               <div className={styles.formGroup}>
                 <label>Доп. способ связи</label>
@@ -352,7 +432,7 @@ const PricingPage = () => {
                 {requestImage && <p className={styles.imageName}>{requestImage.name}</p>}
               </div>
               <div className={styles.formButtons}>
-                <button onClick={handleSubmitRequest} className={styles.submitBtn} disabled={submitting || !requestForm.name.trim() || !requestForm.telegram.trim()}>
+                <button onClick={handleSubmitRequest} className={styles.submitBtn} disabled={submitting || !requestForm.name.trim() || !requestForm.telegram.trim() || !tgVerified}>
                   {submitting ? 'Отправка...' : 'Отправить'}
                 </button>
                 <button onClick={() => { setShowRequestModal(false); setSubmitResult(null); }} className={styles.cancelBtn} disabled={submitting}>Отмена</button>
