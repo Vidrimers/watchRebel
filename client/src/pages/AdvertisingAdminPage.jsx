@@ -1284,26 +1284,64 @@ const AdvertisingAdminPage = () => {
                   {selectedRequest.channel_site ? <><Icon name="feed" size="small" /> Сайт</> : ''} {selectedRequest.channel_tg ? <><Icon name="telegram" size="small" /> Telegram</> : ''}
                 </strong>
               </div>
+              {selectedRequest.channel_site > 0 && (
+                <>
+                  {selectedRequest.site_pin_qty > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Показы в закреплённых:</span>
+                      <strong>{selectedRequest.site_pin_qty} шт.</strong>
+                    </div>
+                  )}
+                  {selectedRequest.site_repeat_qty > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Повторения (сайт):</span>
+                      <strong>{selectedRequest.site_repeat_qty} шт.</strong>
+                    </div>
+                  )}
+                  {selectedRequest.site_interval > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Интервал (сайт):</span>
+                      <strong>{selectedRequest.site_interval} ч.</strong>
+                    </div>
+                  )}
+                </>
+              )}
+              {selectedRequest.channel_tg > 0 && (
+                <>
+                  {selectedRequest.tg_mailing_qty > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Рассылка (ТГ):</span>
+                      <strong>{selectedRequest.tg_mailing_qty} шт.</strong>
+                    </div>
+                  )}
+                  {selectedRequest.tg_repeat_qty > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Повторения (ТГ):</span>
+                      <strong>{selectedRequest.tg_repeat_qty} шт.</strong>
+                    </div>
+                  )}
+                  {selectedRequest.tg_interval > 0 && (
+                    <div className={styles.postDetailRow}>
+                      <span>Интервал (ТГ):</span>
+                      <strong>{selectedRequest.tg_interval} ч.</strong>
+                    </div>
+                  )}
+                </>
+              )}
+              {selectedRequest.auto_delete_off > 0 && (
+                <div className={styles.postDetailRow}>
+                  <span>Автоудаление:</span>
+                  <strong>Отключено</strong>
+                </div>
+              )}
               {selectedRequest.total_cost > 0 && (
                 <div className={styles.postDetailRow}>
-                  <span>Сумма:</span>
+                  <span>Итого:</span>
                   <strong>{selectedRequest.total_cost} {selectedRequest.currency}</strong>
                 </div>
               )}
-              {selectedRequest.site_pin_qty > 0 && (
-                <div className={styles.postDetailRow}>
-                  <span>Показы:</span>
-                  <strong>{selectedRequest.site_pin_qty} шт.</strong>
-                </div>
-              )}
-              {selectedRequest.tg_mailing_qty > 0 && (
-                <div className={styles.postDetailRow}>
-                  <span>Рассылка:</span>
-                  <strong>{selectedRequest.tg_mailing_qty} шт.</strong>
-                </div>
-              )}
               {selectedRequest.ad_description && (
-                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                <div className={`${styles.postDetailRow} ${styles.postDetailRowNoBorder}`} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                   <span>Описание:</span>
                   <p style={{ margin: 0, fontSize: '14px' }}>{selectedRequest.ad_description}</p>
                 </div>
@@ -1311,19 +1349,21 @@ const AdvertisingAdminPage = () => {
               {selectedRequest.ad_link && (
                 <div className={styles.postDetailRow}>
                   <span>Ссылка:</span>
-                  <a href={selectedRequest.ad_link.startsWith('http') ? selectedRequest.ad_link : `https://${selectedRequest.ad_link}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
-                    {selectedRequest.ad_link}
-                  </a>
+                  <strong>
+                    <a href={selectedRequest.ad_link.startsWith('http') ? selectedRequest.ad_link : `https://${selectedRequest.ad_link}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
+                      {selectedRequest.ad_link}
+                    </a>
+                  </strong>
                 </div>
               )}
               {selectedRequest.ad_text && (
-                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                <div className={`${styles.postDetailRow} ${styles.postDetailRowNoBorder}`} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                   <span>Текст поста:</span>
                   <p style={{ margin: 0, fontSize: '14px', whiteSpace: 'pre-wrap' }}>{selectedRequest.ad_text}</p>
                 </div>
               )}
               {selectedRequest.image_url && (
-                <div className={styles.postDetailRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                <div className={`${styles.postDetailRow} ${styles.postDetailRowNoBorder}`} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                   <span>Изображение:</span>
                   <img src={selectedRequest.image_url.startsWith('http') ? selectedRequest.image_url : `${import.meta.env.VITE_API_URL || ''}${selectedRequest.image_url}`} alt="" style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '300px', objectFit: 'contain' }} />
                 </div>
