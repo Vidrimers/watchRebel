@@ -1314,3 +1314,55 @@
   gap: 10px;
   margin-bottom: 8px;
 }
+
+.requestGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.requestCard {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.requestCard:hover {
+  border-color: var(--accent-primary);
+}
+
+.requestCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.requestCardHeader strong {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.requestTg {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.requestDate {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.requestDesc {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

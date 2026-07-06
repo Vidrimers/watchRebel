@@ -88,8 +88,10 @@ const AdvertisingAdminPage = () => {
 
   // === Заявки на рекламу ===
   const [adRequests, setAdRequests] = useState([]);
+  const [archivedRequests, setArchivedRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   // === Блок "Информация о рекламе" ===
   const [infoTitle, setInfoTitle] = useState('');
@@ -139,10 +141,29 @@ const AdvertisingAdminPage = () => {
   const loadAdRequests = async () => {
     try {
       setLoadingRequests(true);
-      const r = await api.get('/admin/ad-requests');
-      setAdRequests(r.data);
+      const [active, archived] = await Promise.all([
+        api.get('/admin/ad-requests', { params: { archived: '0' } }),
+        api.get('/admin/ad-requests', { params: { archived: '1' } })
+      ]);
+      setAdRequests(active.data);
+      setArchivedRequests(archived.data);
     } catch (err) { console.error(err); }
     finally { setLoadingRequests(false); }
+  };
+
+  const handleArchiveRequest = async (id) => {
+    try {
+      await api.patch(`/admin/ad-requests/${id}/archive`, { archived: true });
+      setSelectedRequest(null);
+      await loadAdRequests();
+    } catch (err) { setError('Не удалось архивировать заявку'); }
+  };
+
+  const handleUnarchiveRequest = async (id) => {
+    try {
+      await api.patch(`/admin/ad-requests/${id}/archive`, { archived: false });
+      await loadAdRequests();
+    } catch (err) { setError('Не удалось восстановить заявку'); }
   };
 
   const handleDeleteAdRequest = async (id) => {
@@ -960,26 +981,50 @@ const AdvertisingAdminPage = () => {
       {activeTab === 'requests' && (
         <div className={styles.section}>
           <h2>Заявки на рекламу</h2>
-          {loadingRequests ? <p className={styles.loading}>Загрузка...</p> : adRequests.length === 0 ? (
+          {loadingRequests ? <p className={styles.loading}>Загрузка...</p> : adRequests.length === 0 && archivedRequests.length === 0 ? (
             <p className={styles.empty}>Пока нет заявок</p>
           ) : (
-            <div className={styles.adList}>
-              {adRequests.map(r => (
-                <div key={r.id} className={styles.adCard} onClick={() => setSelectedRequest(r)} style={{ cursor: 'pointer' }}>
-                  <div className={styles.adHeader}>
-                    <div className={styles.sentMeta}>
-                      <span className={styles.adDate}>{formatDate(r.created_at)}</span>
+            <>
+              <div className={styles.requestGrid}>
+                {adRequests.map(r => (
+                  <div key={r.id} className={styles.requestCard} onClick={() => setSelectedRequest(r)}>
+                    <div className={styles.requestCardHeader}>
                       <strong>{r.name}</strong>
-                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>@{r.telegram}</span>
+                      <span className={styles.requestChannels}>
+                        {r.channel_site ? '🌐' : ''} {r.channel_tg ? '✈️' : ''}
+                      </span>
                     </div>
-                    <span className={styles.requestChannels}>
-                      {r.channel_site ? '🌐 Сайт' : ''} {r.channel_tg ? '✈️ ТГ' : ''}
-                    </span>
+                    <span className={styles.requestTg}>{r.telegram}</span>
+                    <span className={styles.requestDate}>{formatDate(r.created_at)}</span>
+                    {r.ad_description && <p className={styles.requestDesc}>{r.ad_description}</p>}
                   </div>
-                  {r.ad_description && <p className={styles.adContent}>{r.ad_description}</p>}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {archivedRequests.length > 0 && (
+                <>
+                  <button onClick={() => setShowArchived(!showArchived)} className={styles.btnEdit} style={{ marginTop: '16px' }}>
+                    {showArchived ? 'Скрыть архив' : `Архив (${archivedRequests.length})`}
+                  </button>
+                  {showArchived && (
+                    <div className={styles.requestGrid} style={{ marginTop: '12px', opacity: 0.7 }}>
+                      {archivedRequests.map(r => (
+                        <div key={r.id} className={styles.requestCard} onClick={() => setSelectedRequest(r)}>
+                          <div className={styles.requestCardHeader}>
+                            <strong>{r.name}</strong>
+                            <span className={styles.requestChannels}>
+                              {r.channel_site ? '🌐' : ''} {r.channel_tg ? '✈️' : ''}
+                            </span>
+                          </div>
+                          <span className={styles.requestTg}>{r.telegram}</span>
+                          <span className={styles.requestDate}>{formatDate(r.created_at)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1126,7 +1171,7 @@ const AdvertisingAdminPage = () => {
               </div>
               <div className={styles.postDetailRow}>
                 <span>Telegram:</span>
-                <strong>@{selectedRequest.telegram}</strong>
+                <strong>{selectedRequest.telegram}</strong>
               </div>
               {selectedRequest.extra_contact && (
                 <div className={styles.postDetailRow}>
@@ -1192,6 +1237,15 @@ const AdvertisingAdminPage = () => {
               {selectedRequest.channel_tg > 0 && (
                 <button className={styles.tgSendAll} onClick={() => handleInsertRequestToTg(selectedRequest)}>
                   Создать в ТГ
+                </button>
+              )}
+              {selectedRequest.is_archived ? (
+                <button className={styles.repeatButton} style={{ background: '#10b981' }} onClick={() => handleUnarchiveRequest(selectedRequest.id)}>
+                  Восстановить
+                </button>
+              ) : (
+                <button className={styles.repeatButton} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }} onClick={() => handleArchiveRequest(selectedRequest.id)}>
+                  В архив
                 </button>
               )}
               <button className={styles.repeatButton} style={{ background: 'var(--color-error, #ef4444)' }} onClick={() => handleDeleteAdRequest(selectedRequest.id)}>

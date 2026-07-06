@@ -1782,9 +1782,12 @@ router.delete('/reports/:id', async (req, res) => {
  */
 router.get('/ad-requests', async (req, res) => {
   try {
-    const result = await executeQuery(
-      'SELECT * FROM ad_requests ORDER BY created_at DESC'
-    );
+    const { archived } = req.query;
+    let query = 'SELECT * FROM ad_requests';
+    if (archived === '1') query += ' WHERE is_archived = 1';
+    else if (archived === '0') query += ' WHERE is_archived = 0';
+    query += ' ORDER BY created_at DESC';
+    const result = await executeQuery(query);
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка получения заявок' });
     }
@@ -1801,11 +1804,33 @@ router.get('/ad-requests', async (req, res) => {
  */
 router.get('/ad-requests/count', async (req, res) => {
   try {
-    const result = await executeQuery('SELECT COUNT(*) as count FROM ad_requests');
+    const result = await executeQuery('SELECT COUNT(*) as count FROM ad_requests WHERE is_archived = 0');
     if (!result.success) {
       return res.status(500).json({ error: 'Ошибка' });
     }
     res.json({ count: result.data[0]?.count || 0 });
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PATCH /api/admin/ad-requests/:id/archive
+ * Архивировать/разархивировать заявку
+ */
+router.patch('/ad-requests/:id/archive', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { archived } = req.body;
+    const result = await executeQuery(
+      'UPDATE ad_requests SET is_archived = ? WHERE id = ?',
+      [archived ? 1 : 0, id]
+    );
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка' });
+    }
+    res.json({ message: archived ? 'Заявка архивирована' : 'Заявка восстановлена' });
   } catch (error) {
     console.error('Ошибка:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
