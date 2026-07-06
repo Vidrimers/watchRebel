@@ -46,6 +46,15 @@ const PricingPage = () => {
 
   useEffect(() => { loadPricing(); }, []);
 
+  useEffect(() => {
+    if (showRequestModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showRequestModal]);
+
   const loadPricing = async () => {
     try {
       const r = await api.get('/settings/ad-pricing');
