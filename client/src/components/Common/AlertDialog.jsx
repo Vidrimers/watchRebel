@@ -17,7 +17,9 @@ const AlertDialog = ({
   message,
   type = 'info',
   buttonText = 'ОК',
-  onClose
+  cancelText,
+  onClose,
+  onConfirm
 }) => {
   if (!isOpen) return null;
 
@@ -29,6 +31,10 @@ const AlertDialog = ({
 
   const handleClose = () => {
     onClose();
+  };
+
+  const handleConfirm = () => {
+    onConfirm();
   };
 
   // Иконки для разных типов
@@ -70,12 +76,19 @@ const AlertDialog = ({
         </div>
         {title && <h2 className={styles.title}>{title}</h2>}
         <p className={styles.message}>{message}</p>
-        <button
-          className={`${styles.button} ${styles[`${type}Button`]}`}
-          onClick={handleClose}
-        >
-          {buttonText}
-        </button>
+        <div className={styles.buttons}>
+          {cancelText && (
+            <button className={`${styles.button} ${styles.cancelButton}`} onClick={handleClose}>
+              {cancelText}
+            </button>
+          )}
+          <button
+            className={`${styles.button} ${styles[`${type}Button`]}`}
+            onClick={onConfirm ? handleConfirm : handleClose}
+          >
+            {buttonText}
+          </button>
+        </div>
       </div>
     </div>
   );

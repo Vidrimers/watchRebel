@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
+import useAlert from '../hooks/useAlert';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './AdvertisingAdminPage.module.css';
@@ -14,6 +15,7 @@ const toISOString = (localDatetime) => {
 const AdvertisingAdminPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
+  const { alertDialog, showConfirm } = useAlert();
 
   // === Вкладки ===
   const [activeTab, setActiveTab] = useState('advertising');
@@ -167,7 +169,8 @@ const AdvertisingAdminPage = () => {
   };
 
   const handleDeleteAdRequest = async (id) => {
-    if (!confirm('Удалить заявку? Это действие нельзя отменить.')) return;
+    const confirmed = await showConfirm({ title: 'Удалить заявку?', message: 'Это действие нельзя отменить.', type: 'warning', confirmText: 'Удалить' });
+    if (!confirmed) return;
     try {
       await api.delete(`/admin/ad-requests/${id}`);
       setSelectedRequest(null);
@@ -1430,6 +1433,7 @@ const AdvertisingAdminPage = () => {
       )}
 
     </div>
+    {alertDialog}
   );
 };
 
