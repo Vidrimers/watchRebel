@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
+import useAlert from '../hooks/useAlert';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import styles from './PricingPage.module.css';
 
 const PricingPage = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const { alertDialog, showAlert } = useAlert();
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [infoTitle, setInfoTitle] = useState('');
@@ -102,13 +104,11 @@ const PricingPage = () => {
       if (requestImage) fd.append('image', requestImage);
 
       await api.post('/ad-requests', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setSubmitResult('ok');
-      setTimeout(() => {
-        setShowRequestModal(false);
-        setSubmitResult(null);
-        setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adLinkLabel: '', adText: '', scheduledAt: '' });
-        setRequestImage(null);
-      }, 1500);
+      setShowRequestModal(false);
+      setRequestForm({ name: '', telegram: '', extraContact: '', adDescription: '', adLink: '', adLinkLabel: '', adText: '', scheduledAt: '' });
+      setRequestImage(null);
+      setSubmitResult(null);
+      await showAlert({ title: 'Заявка отправлена', message: 'Мы свяжемся с вами в ближайшее время!', type: 'success' });
     } catch (err) {
       setSubmitResult('Ошибка отправки. Попробуйте позже.');
     } finally {
@@ -357,12 +357,12 @@ const PricingPage = () => {
                 </button>
                 <button onClick={() => { setShowRequestModal(false); setSubmitResult(null); }} className={styles.cancelBtn} disabled={submitting}>Отмена</button>
               </div>
-              {submitResult === 'ok' && <p className={styles.submitSuccess}>Заявка отправлена!</p>}
               {submitResult && submitResult !== 'ok' && <p className={styles.submitError}>{submitResult}</p>}
             </div>
           </div>
         </div>
       )}
+      {alertDialog}
     </div>
   );
 };
