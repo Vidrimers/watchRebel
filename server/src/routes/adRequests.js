@@ -56,13 +56,23 @@ router.post('/send-code', async (req, res) => {
     );
 
     // Пытаемся отправить код через бота
+    // Ищем по telegram_username (без @), id (числовой Telegram ID) или display_name
+    const searchVariants = [
+      cleanTelegram,
+      cleanTelegram.toLowerCase(),
+      cleanTelegram.toUpperCase()
+    ];
     const userResult = await executeQuery(
-      `SELECT id FROM users WHERE telegram_username = ? OR telegram_username = ? OR id = ? OR display_name = ?`,
-      [cleanTelegram, telegram.replace('@', '').trim(), cleanTelegram, cleanTelegram]
+      `SELECT id, telegram_username, display_name FROM users 
+       WHERE telegram_username IN (${searchVariants.map(() => '?').join(',')}) 
+       OR id = ? 
+       OR LOWER(display_name) = LOWER(?)`,
+      [...searchVariants, cleanTelegram, cleanTelegram]
     );
 
     if (userResult.success && userResult.data.length > 0) {
       const userId = userResult.data[0].id;
+      console.log(`✅ Найден пользователь для верификации: ${userId} (${userResult.data[0].telegram_username || userResult.data[0].display_name})`);
       await sendTelegramNotification(
         userId,
         `🔐 <b>Код верификации</b>\n\nВаш код: <code>${code}</code>\n\nВведите его на сайте для подтверждения Telegram.`,
@@ -70,8 +80,16 @@ router.post('/send-code', async (req, res) => {
       );
       res.json({ success: true, message: 'Код отправлен в Telegram' });
     } else {
-      // Пользователь не найден в БД — возможно не зарегистрирован
-      // Попробуем отправить по username напрямую
+      // Пользователь не найден в БД
+      console.log(`❌ Пользователь не найден для верификации: "${cleanTelegram}"`);
+      // Проверяем есть ли вообще такой username в БД
+      const debugResult = await executeQuery(
+        'SELECT id, telegram_username, display_name FROM users WHERE telegram_username LIKE ? OR id = ?',
+        [`%${cleanTelegram}%`, cleanTelegram]
+      );
+      if (debugResult.success && debugResult.data.length > 0) {
+        console.log(`🔍 Найдены похожие пользователи:`, debugResult.data);
+      }
       try {
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (botToken) {
