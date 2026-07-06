@@ -373,3 +373,22 @@ export function notifyFeedNewAdPost(adPost) {
     console.error('Ошибка отправки уведомления о рекламном посте:', error);
   }
 }
+
+/**
+ * Отправить уведомление о новом объявлении всем онлайн-пользователям
+ */
+export function notifyFeedNewAnnouncement(announcement) {
+  try {
+    clients.forEach((ws, userId) => {
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'feed_new_announcement',
+          post: announcement
+        }));
+      }
+    });
+    console.log(`📢 Уведомление о новом объявлении отправлено ${clients.size} пользователям`);
+  } catch (error) {
+    console.error('Ошибка отправки уведомления об объявлении:', error);
+  }
+}

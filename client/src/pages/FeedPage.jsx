@@ -64,6 +64,14 @@ const FeedPage = () => {
         if (postExists) return prevPosts;
         return [newAdPost, ...prevPosts];
       });
+    } else if (data.type === 'feed_new_announcement') {
+      // Новое объявление - добавляем в начало ленты
+      const newAnnouncement = data.post;
+      setItems(prevPosts => {
+        const postExists = prevPosts.some(p => p.id === newAnnouncement.id);
+        if (postExists) return prevPosts;
+        return [newAnnouncement, ...prevPosts];
+      });
     } else if (data.type === 'post_updated') {
       // Обновление содержимого поста (редактирование)
       const updatedPost = data.post;

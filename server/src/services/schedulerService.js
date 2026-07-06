@@ -1,5 +1,5 @@
 import { executeQuery } from '../database/db.js';
-import { notifyFeedNewAdPost } from './websocketService.js';
+import { notifyFeedNewAdPost, notifyFeedNewAnnouncement } from './websocketService.js';
 
 let intervalId = null;
 
@@ -57,7 +57,7 @@ async function checkScheduledPosts() {
 
     // Объявления — публикуем
     const annResult = await executeQuery(
-      `SELECT id, content FROM announcements WHERE scheduled_at IS NOT NULL AND scheduled_at <= ?`,
+      `SELECT * FROM announcements WHERE scheduled_at IS NOT NULL AND scheduled_at <= ?`,
       [now]
     );
     if (annResult.success && annResult.data.length > 0) {
@@ -67,6 +67,14 @@ async function checkScheduledPosts() {
           [post.id]
         );
         console.log(`📢 Опубликовано отложенный объявление ${post.id}`);
+
+        // Отправляем WebSocket уведомление
+        notifyFeedNewAnnouncement({
+          id: post.id,
+          content: post.content,
+          imageUrls: post.image_url ? [post.image_url] : [],
+          createdAt: new Date().toISOString()
+        });
       }
     }
   } catch (error) {

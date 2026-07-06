@@ -2,7 +2,7 @@ import express from 'express';
 import { executeQuery } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { notifyModeration, sendTelegramNotification } from '../services/notificationService.js';
-import { notifyFeedNewAdPost } from '../services/websocketService.js';
+import { notifyFeedNewAdPost, notifyFeedNewAnnouncement } from '../services/websocketService.js';
 import { uploadAnnouncement, uploadAdvertisingImages } from '../middleware/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -430,6 +430,16 @@ router.post('/announcements', uploadAnnouncement.array('images', 5), async (req,
        VALUES (?, ?, ?, 'announcement', 'site', ?, ?, datetime('now', 'localtime'))`,
       [uuidv4(), announcementContent.trim(), firstImage, usersResult.success ? usersResult.data.length : 0, req.user.id]
     );
+
+    // WebSocket уведомление (только для неотложенных)
+    if (!scheduledAt) {
+      notifyFeedNewAnnouncement({
+        id: announcementId,
+        content: announcementContent.trim(),
+        imageUrls: imageUrls,
+        createdAt: new Date().toISOString()
+      });
+    }
 
     res.status(201).json({
       id: announcementId,
