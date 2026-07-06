@@ -178,7 +178,7 @@ const AdvertisingAdminPage = () => {
     } catch (err) { setError('Не удалось удалить заявку'); }
   };
 
-  const handleInsertRequestToSite = (req) => {
+  const handleInsertRequestToSite = async (req) => {
     setNewAdContent(req.ad_text || req.ad_description || '');
     setNewAdLinkUrl(req.ad_link || 'https://');
     setNewAdLinkLabel(req.ad_link_label || '');
