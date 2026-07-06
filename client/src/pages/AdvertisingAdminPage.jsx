@@ -991,7 +991,7 @@ const AdvertisingAdminPage = () => {
                     <div className={styles.requestCardHeader}>
                       <strong>{r.name}</strong>
                       <span className={styles.requestChannels}>
-                        {r.channel_site ? '🌐' : ''} {r.channel_tg ? '✈️' : ''}
+                        {r.channel_site ? <Icon name="feed" size="small" /> : ''} {r.channel_tg ? <Icon name="telegram" size="small" /> : ''}
                       </span>
                     </div>
                     <span className={styles.requestTg}>{r.telegram}</span>
@@ -1013,7 +1013,7 @@ const AdvertisingAdminPage = () => {
                           <div className={styles.requestCardHeader}>
                             <strong>{r.name}</strong>
                             <span className={styles.requestChannels}>
-                              {r.channel_site ? '🌐' : ''} {r.channel_tg ? '✈️' : ''}
+                              {r.channel_site ? <Icon name="feed" size="small" /> : ''} {r.channel_tg ? <Icon name="telegram" size="small" /> : ''}
                             </span>
                           </div>
                           <span className={styles.requestTg}>{r.telegram}</span>
@@ -1281,7 +1281,7 @@ const AdvertisingAdminPage = () => {
               <div className={styles.postDetailRow}>
                 <span>Каналы:</span>
                 <strong>
-                  {selectedRequest.channel_site ? '🌐 Сайт' : ''} {selectedRequest.channel_tg ? '✈️ Telegram' : ''}
+                  {selectedRequest.channel_site ? <><Icon name="feed" size="small" /> Сайт</> : ''} {selectedRequest.channel_tg ? <><Icon name="telegram" size="small" /> Telegram</> : ''}
                 </strong>
               </div>
               {selectedRequest.total_cost > 0 && (
