@@ -1,4 +1,5 @@
 import { executeQuery } from '../database/db.js';
+import { notifyFeedNewAdPost } from './websocketService.js';
 
 let intervalId = null;
 
@@ -23,7 +24,7 @@ async function checkScheduledPosts() {
 
     // Рекламные посты — публикуем (ставим scheduled_at = NULL)
     const adResult = await executeQuery(
-      `SELECT id, content FROM advertising_posts WHERE scheduled_at IS NOT NULL AND scheduled_at <= ?`,
+      `SELECT * FROM advertising_posts WHERE scheduled_at IS NOT NULL AND scheduled_at <= ?`,
       [now]
     );
     if (adResult.success && adResult.data.length > 0) {
@@ -33,6 +34,24 @@ async function checkScheduledPosts() {
           [post.id]
         );
         console.log(`📢 Опубликован отложенный рекламный пост ${post.id}`);
+
+        // Отправляем WebSocket уведомление
+        const adPost = {
+          id: post.id,
+          userId: post.created_by,
+          postType: 'advertising',
+          content: post.content,
+          linkUrl: post.link_url,
+          linkLabel: post.link_label,
+          imageUrls: post.image_urls ? JSON.parse(post.image_urls) : [],
+          createdAt: new Date().toISOString(),
+          author: { id: post.created_by },
+          pinDuration: post.pin_duration,
+          repeatCount: post.repeat_count,
+          repeatIntervalHours: post.repeat_interval_hours,
+          autoDelete: post.auto_delete
+        };
+        notifyFeedNewAdPost(adPost);
       }
     }
 
