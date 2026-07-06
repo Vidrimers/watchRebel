@@ -557,6 +557,7 @@ const AdvertisingAdminPage = () => {
   const tgDesc = isAd ? 'Реклама будет отправлена всем пользователям' : 'Объявление будет отправлено всем пользователям';
 
   return (
+    <>
     <div className={styles.page}>
       <button className={styles.backButton} onClick={() => navigate('/settings')}>
         <Icon name="arrow-left" size="medium" /><span>Назад</span>
@@ -1434,6 +1435,7 @@ const AdvertisingAdminPage = () => {
 
     </div>
     {alertDialog}
+    </>
   );
 };
 
