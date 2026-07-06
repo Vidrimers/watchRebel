@@ -194,6 +194,15 @@ const AdvertisingAdminPage = () => {
     if (req.image_url) {
       const fullUrl = req.image_url.startsWith('http') ? req.image_url : `${import.meta.env.VITE_API_URL || ''}${req.image_url}`;
       setImagePreviews([fullUrl]);
+      // Конвертируем URL в File для отправки
+      try {
+        const response = await fetch(fullUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'image.jpg', { type: blob.type });
+        setSelectedImages([file]);
+      } catch (e) {
+        console.error('Ошибка загрузки изображения:', e);
+      }
     }
     setSelectedRequest(null);
     setActiveTab('advertising');
