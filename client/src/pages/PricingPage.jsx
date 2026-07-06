@@ -422,14 +422,16 @@ const PricingPage = () => {
                 <label>Текст поста</label>
                 <textarea value={requestForm.adText} onChange={e => setRequestForm(p => ({ ...p, adText: e.target.value }))} className={styles.formTextarea} placeholder="Текст рекламного поста..." rows={10} disabled={submitting} />
               </div>
-              <div className={styles.formGroup}>
-                <label>Дата публикации (необязательно)</label>
-                <input type="datetime-local" value={requestForm.scheduledAt} onChange={e => setRequestForm(p => ({ ...p, scheduledAt: e.target.value }))} className={styles.formInput} disabled={submitting} />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Изображение (необязательно)</label>
-                <input type="file" accept="image/*" onChange={e => setRequestImage(e.target.files?.[0] || null)} className={styles.formInput} disabled={submitting} />
-                {requestImage && <p className={styles.imageName}>{requestImage.name}</p>}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Дата публикации (необязательно)</label>
+                  <input type="datetime-local" value={requestForm.scheduledAt} onChange={e => setRequestForm(p => ({ ...p, scheduledAt: e.target.value }))} className={styles.formInput} disabled={submitting} />
+                </div>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Изображение (необязательно)</label>
+                  <input type="file" accept="image/*" onChange={e => setRequestImage(e.target.files?.[0] || null)} className={styles.formInput} disabled={submitting} />
+                  {requestImage && <p className={styles.imageName}>{requestImage.name}</p>}
+                </div>
               </div>
               <div className={styles.formButtons}>
                 <button onClick={handleSubmitRequest} className={styles.submitBtn} disabled={submitting || !requestForm.name.trim() || !requestForm.telegram.trim() || !tgVerified}>

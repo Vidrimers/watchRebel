@@ -509,6 +509,11 @@
   gap: 14px;
 }
 
+.formRow {
+  display: flex;
+  gap: 12px;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;
