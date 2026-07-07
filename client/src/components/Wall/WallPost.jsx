@@ -39,6 +39,7 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector((state) => state.auth.user);
+  const customLists = useAppSelector((state) => state.lists.customLists);
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -627,7 +628,10 @@ const WallPost = ({ post, isOwnProfile, onReactionChange, onPostDeleted, onPostU
         
         // Извлекаем название списка из текста
         const listNameMatch = listText.match(/Добавил в список:\s*(.+)/);
-        const listName = listNameMatch ? listNameMatch[1] : '';
+        const parsedListName = listNameMatch ? listNameMatch[1] : '';
+        // Используем актуальное название из Redux, если список найден
+        const currentList = post.listId ? customLists.find(l => l.id === post.listId) : null;
+        const listName = currentList ? currentList.name : parsedListName;
         
         return (
           <div 
