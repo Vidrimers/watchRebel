@@ -209,8 +209,8 @@ const PricingPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
-          <Icon name="arrow-left" size="medium" /><span>Назад</span>
+        <button onClick={() => navigate('/')} className={styles.backButton}>
+          <Icon name="arrow-left" size="medium" /><span>На главную</span>
         </button>
 
         {pricing.advertising_contacts && (

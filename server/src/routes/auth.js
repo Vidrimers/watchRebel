@@ -8,6 +8,15 @@ import { verifyTelegramAuth, extractUserData } from '../utils/telegramAuth.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
 import passport from '../config/passport.js';
+
+// Инкремент счётчика зарегистрированных пользователей
+async function incrementTotalRegistered() {
+  await executeQuery(
+    `INSERT INTO site_settings (id, key, value, updated_at) VALUES (?, 'total_registered_users', '1', datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT), updated_at = datetime('now')`,
+    [uuidv4()]
+  ).catch(() => {});
+}
 import { 
   loginRateLimiter, 
   registerRateLimiter, 
@@ -103,6 +112,8 @@ router.post('/telegram', async (req, res) => {
           code: 'DATABASE_ERROR' 
         });
       }
+
+      incrementTotalRegistered();
 
       // Получаем созданного пользователя
       const newUserResult = await executeQuery(
@@ -313,6 +324,8 @@ router.post('/telegram-referral', async (req, res) => {
           code: 'DATABASE_ERROR' 
         });
       }
+
+      incrementTotalRegistered();
 
       // Если есть реферер, создаем запись в таблице referrals и добавляем в друзья
       if (referrerId) {
@@ -548,6 +561,8 @@ router.post('/telegram-widget', async (req, res) => {
           code: 'DATABASE_ERROR' 
         });
       }
+
+      incrementTotalRegistered();
 
       // Получаем созданного пользователя
       const newUserResult = await executeQuery(
@@ -1053,6 +1068,8 @@ router.post('/register-email', registerRateLimiter, async (req, res) => {
         code: 'DATABASE_ERROR' 
       });
     }
+
+    incrementTotalRegistered();
 
     // Генерируем токен подтверждения email
     const verificationToken = crypto.randomBytes(32).toString('hex');

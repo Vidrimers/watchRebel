@@ -23,7 +23,7 @@ const AboutPage = () => {
         {userCount !== null && (
           <div className={styles.statsBadge}>
             <Icon name="friends" size="small" />
-            <span>{userCount.toLocaleString('ru-RU')} пользователей</span>
+            <span>Общее количество зарегистрированных пользователей: {userCount.toLocaleString('ru-RU')}</span>
           </div>
         )}
 
