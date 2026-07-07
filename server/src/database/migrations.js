@@ -535,6 +535,18 @@ export async function runMigrations() {
           }
         });
 
+        // Инициализируем счётчик зарегистрированных пользователей (если ещё нет)
+        db.run(
+          `INSERT OR IGNORE INTO site_settings (id, key, value, updated_at)
+           SELECT 'total_registered_users_seed', 'total_registered_users', CAST(COUNT(*) AS TEXT), datetime('now')
+           FROM users WHERE (SELECT COUNT(*) FROM site_settings WHERE key = 'total_registered_users') = 0`,
+          [],
+          (err) => {
+            if (err) console.error('Ошибка инициализации счётчика:', err.message);
+            else console.log('✓ Счётчик регистраций инициализирован');
+          }
+        );
+
         // Запускаем миграцию шаблонов уведомлений (убираем встроенные имена)
         import('./migrations/update-notification-content-templates.js')
           .then(module => module.updateNotificationContentTemplates())
