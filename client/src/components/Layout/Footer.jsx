@@ -38,7 +38,7 @@ const Footer = () => {
               Условия использования
             </Link>
             <span className={styles.separator}>•</span>
-            <Link to="/advertising-contacts" className={styles.link}>
+            <Link to="/pricing" className={styles.link}>
               Контакты для рекламы
             </Link>
           </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import useAlert from '../hooks/useAlert';
 import Icon from '../components/Common/Icon';
@@ -6,6 +7,7 @@ import api from '../services/api';
 import styles from './PricingPage.module.css';
 
 const PricingPage = () => {
+  const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const { alertDialog, showAlert } = useAlert();
   const [pricing, setPricing] = useState(null);
@@ -187,9 +189,39 @@ const PricingPage = () => {
     pricing.ad_price_interval || pricing.ad_price_telegram
   );
 
+  // Рендер кликабельных контактов
+  const renderContactLine = (line, index) => {
+    if (!line.trim()) return null;
+    const emailMatch = line.match(/Email:\s*(.+)/i);
+    if (emailMatch) {
+      const email = emailMatch[1].trim();
+      return <p key={index}><Icon name="email" size="small" /> Email: <a href={`mailto:${email}`} className={styles.contactLink}>{email}</a></p>;
+    }
+    const telegramMatch = line.match(/Telegram:\s*(.+)/i);
+    if (telegramMatch) {
+      const telegram = telegramMatch[1].trim();
+      const url = telegram.startsWith('@') ? `https://t.me/${telegram.substring(1)}` : `https://t.me/${telegram}`;
+      return <p key={index}><Icon name="telegram" size="small" /> Telegram: <a href={url} target="_blank" rel="noopener noreferrer" className={styles.contactLink}>{telegram}</a></p>;
+    }
+    return <p key={index}>{line}</p>;
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
+        <button onClick={() => navigate(-1)} className={styles.backButton}>
+          <Icon name="arrow-left" size="medium" /><span>Назад</span>
+        </button>
+
+        {pricing.advertising_contacts && (
+          <div className={styles.section}>
+            <h2>Контакты</h2>
+            <div className={styles.contacts}>
+              {pricing.advertising_contacts.split('\n').map((line, i) => renderContactLine(line, i))}
+            </div>
+          </div>
+        )}
+
         <h1 className={styles.title}>Прайс на рекламу</h1>
 
         {!hasAnyPrice ? (
@@ -350,19 +382,6 @@ const PricingPage = () => {
               <div className={styles.section}>
                 <h2>{infoTitle || 'Информация'}</h2>
                 <div className={styles.infoContent} dangerouslySetInnerHTML={{ __html: infoContent }} />
-              </div>
-            )}
-
-            {/* ===== Контакты ===== */}
-            {pricing.advertising_contacts && (
-              <div className={styles.section}>
-                <h2>Контакты</h2>
-                <div className={styles.contacts}>
-                  {pricing.advertising_contacts.split('\n').map((line, i) => {
-                    if (!line.trim()) return null;
-                    return <p key={i}>{line}</p>;
-                  })}
-                </div>
               </div>
             )}
           </>

@@ -1,170 +1,78 @@
 .container {
   min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 40px 20px;
   background: var(--bg-primary);
 }
 
-.content {
-  max-width: 800px;
-  margin: 0 auto;
+.card {
+  max-width: 400px;
+  width: 100%;
   background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.backButton {
-  background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.backButton:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+.logoLink {
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.logo {
+  height: 48px;
+  width: auto;
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0 0 30px 0;
-  color: var(--text-primary);
-  text-align: center;
-}
-
-.loading {
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 16px;
-}
-
-.error {
-  color: var(--error-color, #ef4444);
-  text-align: center;
-  font-size: 16px;
-  margin-bottom: 20px;
-}
-
-.fallback {
-  margin-top: 30px;
-  padding: 20px;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
-}
-
-.fallback h2 {
   font-size: 20px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
+  font-weight: 700;
+  margin: 0 0 24px 0;
   color: var(--text-primary);
 }
 
-.fallback p {
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--text-secondary);
+.contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.contactLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
   margin: 0;
 }
 
-.contactsText {
-  font-size: 16px;
-  line-height: 1.8;
-  color: var(--text-primary);
-}
-
-.contactsText p {
-  margin: 0 0 12px 0;
-}
-
-.contactsText p:last-child {
-  margin-bottom: 0;
-}
-
 .contactIcon {
-  font-size: 18px;
-  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
 }
 
 .contactLink {
-  color: var(--primary-color, #6366f1);
+  color: var(--accent-primary);
   text-decoration: none;
   font-weight: 500;
-  transition: all 0.2s ease;
 }
 
 .contactLink:hover {
-  color: var(--primary-color-hover, #4f46e5);
   text-decoration: underline;
 }
 
-/* Темная тема */
-:global(.dark) .container {
-  background: var(--bg-primary-dark);
+.loading {
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
-:global(.dark) .content {
-  background: var(--bg-secondary-dark);
-}
-
-:global(.dark) .backButton {
-  background: var(--bg-tertiary-dark);
-  border-color: var(--border-color-dark);
-  color: var(--text-primary-dark);
-}
-
-:global(.dark) .backButton:hover {
-  background: var(--bg-hover-dark);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-:global(.dark) .title {
-  color: var(--text-primary-dark);
-}
-
-:global(.dark) .loading {
-  color: var(--text-secondary-dark);
-}
-
-:global(.dark) .fallback {
-  background: var(--bg-tertiary-dark);
-}
-
-:global(.dark) .fallback h2 {
-  color: var(--text-primary-dark);
-}
-
-:global(.dark) .fallback p {
-  color: var(--text-secondary-dark);
-}
-
-:global(.dark) .contactsText {
-  color: var(--text-primary-dark);
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .content {
-    padding: 24px;
-  }
-
-  .title {
-    font-size: 24px;
-  }
-
-  .contactsText {
-    font-size: 14px;
-  }
+.error {
+  color: var(--color-error, #ef4444);
+  font-size: 14px;
 }
