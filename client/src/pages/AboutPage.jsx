@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Common/Icon';
+import api from '../services/api';
 import styles from './AboutPage.module.css';
 
 /**
@@ -8,16 +9,29 @@ import styles from './AboutPage.module.css';
  * Информация о watchRebel и его возможностях
  */
 const AboutPage = () => {
+  const [userCount, setUserCount] = useState(null);
+
+  useEffect(() => {
+    api.get('/settings/stats').then(r => setUserCount(r.data.userCount)).catch(() => {});
+  }, []);
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
         <h1 className={styles.title}>О проекте watchRebel</h1>
-        
+
+        {userCount !== null && (
+          <div className={styles.statsBadge}>
+            <Icon name="friends" size="small" />
+            <span>{userCount.toLocaleString('ru-RU')} пользователей</span>
+          </div>
+        )}
+
         <section className={styles.section}>
           <h2>Что такое watchRebel?</h2>
           <p>
-            watchRebel — это социальная сеть для любителей кино и сериалов. 
-            Здесь вы можете вести учет просмотренного контента, делиться впечатлениями 
+            watchRebel — это социальная сеть для любителей кино и сериалов.
+            Здесь вы можете вести учет просмотренного контента, делиться впечатлениями
             с друзьями и находить новые фильмы для просмотра.
           </p>
         </section>
@@ -39,7 +53,7 @@ const AboutPage = () => {
         <section className={styles.section}>
           <h2>Технологии</h2>
           <p>
-            Проект построен на современном стеке технологий: React, Redux Toolkit, 
+            Проект построен на современном стеке технологий: React, Redux Toolkit,
             Node.js, Express, SQLite.
           </p>
         </section>
@@ -50,13 +64,13 @@ const AboutPage = () => {
             Данные о фильмах и сериалах получаем из TMDb API.
           </p>
           <div className={styles.tmdbInfo}>
-            <a 
-              href="https://www.themoviedb.org/" 
-              target="_blank" 
+            <a
+              href="https://www.themoviedb.org/"
+              target="_blank"
               rel="noopener noreferrer"
               className={styles.tmdbLink}
             >
-              <img 
+              <img
                 src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg"
                 alt="TMDb Logo"
                 className={styles.tmdbLogo}

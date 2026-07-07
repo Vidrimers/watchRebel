@@ -27,6 +27,21 @@ router.get('/ad-pricing', (req, res) => {
 });
 
 /**
+ * GET /api/settings/stats (публичный)
+ * Получить общую статистику сайта
+ */
+router.get('/stats', (req, res) => {
+  const db = getDatabase();
+  db.get('SELECT COUNT(*) as count FROM users', [], (err, row) => {
+    if (err) {
+      console.error('Ошибка:', err);
+      return res.status(500).json({ error: 'Ошибка сервера' });
+    }
+    res.json({ userCount: row?.count || 0 });
+  });
+});
+
+/**
  * GET /api/settings/:key
  * Получить значение настройки по ключу (публичный endpoint)
  */
