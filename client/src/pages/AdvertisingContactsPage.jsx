@@ -69,7 +69,7 @@ const AdvertisingContactsPage = () => {
     <div className={styles.container}>
       <div className={styles.card}>
         <a href="https://watchrebel.ru" target="_blank" rel="noopener noreferrer" className={styles.logoLink}>
-          <img src="/logo.svg" alt="watchRebel" className={styles.logo} />
+          <img src="/images/logo5.png" alt="watchRebel" className={styles.logo} />
         </a>
         <h1 className={styles.title}>Контакты для рекламы</h1>
         {error ? (
