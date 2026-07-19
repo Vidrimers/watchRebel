@@ -1,7 +1,7 @@
 import { executeQuery } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { clients } from './websocketService.js';
-import { sendReactionEmail, sendCommentEmail, sendNewFriendEmail } from './emailService.js';
+import { sendReactionEmail, sendCommentEmail, sendNewFriendEmail, sendBugReportEmail, sendBugReportStatusEmail } from './emailService.js';
 
 /**
  * Получить email пользователя и отправить email-уведомление
@@ -1278,6 +1278,29 @@ export async function notifyAdminNewBugReport(bugReportId, bugReportTitle, autho
       console.error(`❌ [notifyAdminNewBugReport] Ошибка отправки Telegram уведомления:`, error.message);
     }
 
+    // Отправляем email-копию на help@watchrebel.ru
+    try {
+      const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+      const imagesResult = await executeQuery(
+        'SELECT image_path FROM bug_report_images WHERE bug_report_id = ?',
+        [bugReportId]
+      );
+      const imageUrls = imagesResult.success
+        ? imagesResult.data.map(img => `${publicUrl}${img.image_path}`)
+        : [];
+
+      await sendBugReportEmail({
+        title: bugReportTitle,
+        description: '', // Описание не передаётся в notify, берём из заголовка
+        authorName,
+        reportUrl: `${publicUrl}/admin/bug-reports`,
+        imageUrls,
+      });
+      console.log(`✅ [notifyAdminNewBugReport] Email-копия отправлена на help@watchrebel.ru`);
+    } catch (error) {
+      console.error(`❌ [notifyAdminNewBugReport] Ошибка отправки email:`, error.message);
+    }
+
     console.log(`✅ [notifyAdminNewBugReport] ЗАВЕРШЕНО`);
 
     return {
@@ -1360,6 +1383,22 @@ export async function notifyBugReportStatusChanged(userId, bugReportTitle, newSt
       console.log(`✅ [notifyBugReportStatusChanged] Telegram уведомление отправлено`);
     } catch (error) {
       console.error(`❌ [notifyBugReportStatusChanged] Ошибка отправки Telegram уведомления:`, error.message);
+    }
+
+    // Отправляем email-уведомление пользователю (если почта привязана)
+    try {
+      const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+      await sendEmailNotification(userId, (email) =>
+        sendBugReportStatusEmail({
+          toEmail: email,
+          title: bugReportTitle,
+          newStatus,
+          reportUrl: `${publicUrl}/my-bug-reports`,
+        })
+      , 'admin_announcement');
+      console.log(`✅ [notifyBugReportStatusChanged] Email-уведомление отправлено`);
+    } catch (error) {
+      console.error(`❌ [notifyBugReportStatusChanged] Ошибка отправки email:`, error.message);
     }
 
     console.log(`✅ [notifyBugReportStatusChanged] ЗАВЕРШЕНО`);

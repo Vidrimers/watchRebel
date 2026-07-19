@@ -329,6 +329,58 @@ export async function sendWelcomeEmail({ toEmail, displayName }) {
   });
 }
 
+/**
+ * Отправить email-копию багрепорта админу (help@watchrebel.ru)
+ */
+export async function sendBugReportEmail({ title, description, authorName, reportUrl, imageUrls }) {
+  const imagesHtml = imageUrls && imageUrls.length > 0
+    ? `<p><strong>Скриншоты:</strong></p>${imageUrls.map(url => `<p><a href="${url}">${url}</a></p>`).join('')}`
+    : '';
+
+  return sendEmail({
+    to: 'help@watchrebel.ru',
+    subject: `[Багрепорт] ${title}`,
+    html: notificationTemplate({
+      title: `🐛 Новый багрепорт`,
+      content: `
+        <strong>Автор:</strong> ${authorName}<br>
+        <strong>Заголовок:</strong> ${title}<br><br>
+        <strong>Описание:</strong><br>
+        ${description || '(без описания)'}
+        ${imagesHtml}
+      `,
+      buttonText: 'Посмотреть на сайте',
+      buttonUrl: reportUrl,
+    }),
+  });
+}
+
+/**
+ * Отправить email-уведомление пользователю об изменении статуса багрепорта
+ */
+export async function sendBugReportStatusEmail({ toEmail, displayName, title, newStatus, reportUrl }) {
+  if (!toEmail) return { success: false, error: 'Email не указан' };
+
+  const statusMap = {
+    'in_progress': '🟢 В работе',
+    'resolved': '✅ Решён',
+    'closed': '🔒 Закрыт',
+    'open': '🔵 Открыт',
+  };
+  const statusText = statusMap[newStatus] || newStatus;
+
+  return sendEmail({
+    to: toEmail,
+    subject: `Статус багрепорта изменён: ${title} — watchRebel`,
+    html: notificationTemplate({
+      title: 'Изменение статуса багрепорта',
+      content: `Статус вашего багрепорта <strong>"${title}"</strong> изменён на: <strong>${statusText}</strong>`,
+      buttonText: 'Посмотреть',
+      buttonUrl: reportUrl,
+    }),
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -336,4 +388,6 @@ export default {
   sendCommentEmail,
   sendNewFriendEmail,
   sendWelcomeEmail,
+  sendBugReportEmail,
+  sendBugReportStatusEmail,
 };
