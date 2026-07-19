@@ -3,14 +3,16 @@
  * (SMTP заблокирован файрволом VDSina, используется HTTP API)
  * 
  * Переменные окружения загружаются в index.js (.env.production в продакшене)
+ * Читаем их лениво — при вызове sendEmail, а не при загрузке модуля
  */
 
-const RESEND_API_KEY = process.env.SMTP_PASS;
 const RESEND_API_URL = 'https://api.resend.com/emails';
-const FROM_EMAIL = process.env.SMTP_FROM || 'watchRebel <noreply@watchrebel.ru>';
 
 async function sendEmail({ to, subject, html, text }) {
-  if (!RESEND_API_KEY) {
+  const apiKey = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM || 'watchRebel <noreply@watchrebel.ru>';
+  
+  if (!apiKey) {
     console.warn('⚠️ RESEND API ключ не найден (SMTP_PASS). Email отправка отключена.');
     return { success: false, error: 'API ключ не настроен' };
   }
@@ -19,11 +21,11 @@ async function sendEmail({ to, subject, html, text }) {
     const response = await fetch(RESEND_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: FROM_EMAIL,
+        from: fromEmail,
         to: Array.isArray(to) ? to : [to],
         subject,
         html,
