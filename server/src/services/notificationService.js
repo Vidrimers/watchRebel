@@ -5,10 +5,16 @@ import { sendReactionEmail, sendCommentEmail, sendNewFriendEmail } from './email
 
 /**
  * Получить email пользователя и отправить email-уведомление
- * Пропускает если email не привязан или не подтверждён
+ * Пропускает если email не привязан, не подтверждён, или уведомление отключено
  */
-async function sendEmailNotification(userId, emailFn) {
+async function sendEmailNotification(userId, emailFn, notificationType) {
   try {
+    // Проверяем настройки email-уведомлений
+    if (notificationType) {
+      const isEnabled = await checkNotificationEnabled(userId, notificationType, 'email');
+      if (!isEnabled) return;
+    }
+
     const result = await executeQuery(
       'SELECT email, email_verified FROM users WHERE id = ?',
       [userId]
@@ -26,9 +32,10 @@ async function sendEmailNotification(userId, emailFn) {
  * Проверить, включено ли уведомление для пользователя
  * @param {string} userId - ID пользователя
  * @param {string} notificationType - Тип уведомления
+ * @param {string} channel - Канал: 'telegram' (по умолчанию) или 'email'
  * @returns {Promise<boolean>} - true если уведомление включено, false если выключено
  */
-export async function checkNotificationEnabled(userId, notificationType) {
+export async function checkNotificationEnabled(userId, notificationType, channel = 'telegram') {
   try {
     // Получаем настройки уведомлений пользователя
     const settingsResult = await executeQuery(
@@ -38,7 +45,6 @@ export async function checkNotificationEnabled(userId, notificationType) {
 
     // Если настроек нет, считаем что все уведомления включены (дефолт)
     if (!settingsResult.success || settingsResult.data.length === 0) {
-      console.log(`ℹ️ Настройки уведомлений не найдены для пользователя ${userId}, используем дефолтные (все включены)`);
       return true;
     }
 
@@ -58,20 +64,16 @@ export async function checkNotificationEnabled(userId, notificationType) {
     const fieldName = typeMapping[notificationType];
 
     if (!fieldName) {
-      console.warn(`⚠️ Неизвестный тип уведомления: ${notificationType}`);
       return true; // По умолчанию разрешаем неизвестные типы
     }
 
-    const isEnabled = Boolean(settings[fieldName]);
-
-    if (!isEnabled) {
-      console.log(`🔕 Уведомление типа "${notificationType}" отключено для пользователя ${userId}`);
-    }
+    // Для email используем префикс email_
+    const dbField = channel === 'email' ? `email_${fieldName}` : fieldName;
+    const isEnabled = settings[dbField] !== undefined ? Boolean(settings[dbField]) : true;
 
     return isEnabled;
   } catch (error) {
     console.error('Ошибка проверки настроек уведомлений:', error);
-    // В случае ошибки разрешаем отправку уведомления
     return true;
   }
 }
@@ -326,7 +328,7 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
           actorName: reactorName,
           postUrl: `${publicUrl}/post/${postId}`,
         })
-      );
+      , 'friend_reacted_to_post');
     }
 
     return notificationResult;
@@ -756,7 +758,7 @@ export async function notifyImageComment(postId, imageId, commentAuthorId) {
         actorName: authorName,
         postUrl: `${publicUrl}/post/${postId}`,
       })
-    );
+    , 'friend_reacted_to_post');
 
     console.log(`✅ Уведомление о комментарии к изображению отправлено пользователю ${postOwnerId}`);
 
@@ -894,7 +896,7 @@ export async function notifyPostComment(postAuthorId, commentAuthorId, postId, c
         actorName: authorName,
         postUrl: `${publicUrl}/post/${postId}`,
       })
-    );
+    , 'friend_reacted_to_post');
 
     console.log(`✅ Уведомление о комментарии к посту отправлено пользователю ${postAuthorId}`);
 

@@ -57,6 +57,7 @@ import { addWallPrivacyMigration } from './database/migrations/add_wall_privacy.
 import { addUserNicknamesTable } from './database/migrations/add_user_nicknames_table.js';
 import { addShowNicknameColumn } from './database/migrations/add_show_nickname_column.js';
 import { addNicknameDisplayColumn } from './database/migrations/add_nickname_display_column.js';
+import { addEmailNotificationSettingsMigration } from './database/migrations/add_email_notification_settings.js';
 import { getMediaDatabase } from './database/mediaDb.js';
 import { 
   configureHelmet, 
@@ -232,6 +233,12 @@ if (process.env.NODE_ENV !== 'test') {
       await addNicknameDisplayColumn();
     } catch (err) {
       logger.error('Ошибка миграции nickname_display:', err);
+    }
+
+    try {
+      await addEmailNotificationSettingsMigration();
+    } catch (err) {
+      logger.error('Ошибка миграции email_notification_settings:', err);
     }
 
     // Инициализация media.db (кэш фильмов)

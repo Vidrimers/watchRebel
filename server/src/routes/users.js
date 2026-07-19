@@ -876,7 +876,14 @@ router.get('/:id/notification-settings', authenticateToken, async (req, res) => 
         friendReactedToPost: true,
         newMessage: true,
         newFriendRequest: true,
-        adminAnnouncement: true
+        adminAnnouncement: true,
+        emailFriendAddedToList: true,
+        emailFriendRatedMedia: true,
+        emailFriendPostedReview: true,
+        emailFriendReactedToPost: true,
+        emailNewMessage: true,
+        emailNewFriendRequest: true,
+        emailAdminAnnouncement: true
       });
     }
 
@@ -890,7 +897,14 @@ router.get('/:id/notification-settings', authenticateToken, async (req, res) => 
       friendReactedToPost: Boolean(settings.friend_reacted_to_post),
       newMessage: Boolean(settings.new_message),
       newFriendRequest: Boolean(settings.new_friend_request),
-      adminAnnouncement: Boolean(settings.admin_announcement)
+      adminAnnouncement: Boolean(settings.admin_announcement),
+      emailFriendAddedToList: settings.email_friend_added_to_list !== undefined ? Boolean(settings.email_friend_added_to_list) : true,
+      emailFriendRatedMedia: settings.email_friend_rated_media !== undefined ? Boolean(settings.email_friend_rated_media) : true,
+      emailFriendPostedReview: settings.email_friend_posted_review !== undefined ? Boolean(settings.email_friend_posted_review) : true,
+      emailFriendReactedToPost: settings.email_friend_reacted_to_post !== undefined ? Boolean(settings.email_friend_reacted_to_post) : true,
+      emailNewMessage: settings.email_new_message !== undefined ? Boolean(settings.email_new_message) : true,
+      emailNewFriendRequest: settings.email_new_friend_request !== undefined ? Boolean(settings.email_new_friend_request) : true,
+      emailAdminAnnouncement: settings.email_admin_announcement !== undefined ? Boolean(settings.email_admin_announcement) : true
     });
 
   } catch (error) {
@@ -925,7 +939,14 @@ router.put('/:id/notification-settings', authenticateToken, async (req, res) => 
       friendReactedToPost,
       newMessage,
       newFriendRequest,
-      adminAnnouncement
+      adminAnnouncement,
+      emailFriendAddedToList,
+      emailFriendRatedMedia,
+      emailFriendPostedReview,
+      emailFriendReactedToPost,
+      emailNewMessage,
+      emailNewFriendRequest,
+      emailAdminAnnouncement
     } = req.body;
 
     // Проверяем права: пользователь может обновить только свои настройки (или админ любые)
@@ -1024,6 +1045,41 @@ router.put('/:id/notification-settings', authenticateToken, async (req, res) => 
       params.push(adminAnnouncement ? 1 : 0);
     }
 
+    if (emailFriendAddedToList !== undefined) {
+      updates.push('email_friend_added_to_list = ?');
+      params.push(emailFriendAddedToList ? 1 : 0);
+    }
+
+    if (emailFriendRatedMedia !== undefined) {
+      updates.push('email_friend_rated_media = ?');
+      params.push(emailFriendRatedMedia ? 1 : 0);
+    }
+
+    if (emailFriendPostedReview !== undefined) {
+      updates.push('email_friend_posted_review = ?');
+      params.push(emailFriendPostedReview ? 1 : 0);
+    }
+
+    if (emailFriendReactedToPost !== undefined) {
+      updates.push('email_friend_reacted_to_post = ?');
+      params.push(emailFriendReactedToPost ? 1 : 0);
+    }
+
+    if (emailNewMessage !== undefined) {
+      updates.push('email_new_message = ?');
+      params.push(emailNewMessage ? 1 : 0);
+    }
+
+    if (emailNewFriendRequest !== undefined) {
+      updates.push('email_new_friend_request = ?');
+      params.push(emailNewFriendRequest ? 1 : 0);
+    }
+
+    if (emailAdminAnnouncement !== undefined) {
+      updates.push('email_admin_announcement = ?');
+      params.push(emailAdminAnnouncement ? 1 : 0);
+    }
+
     if (updates.length === 0) {
       return res.status(400).json({ 
         error: 'Нет данных для обновления',
@@ -1062,7 +1118,14 @@ router.put('/:id/notification-settings', authenticateToken, async (req, res) => 
       friendReactedToPost: Boolean(settings.friend_reacted_to_post),
       newMessage: Boolean(settings.new_message),
       newFriendRequest: Boolean(settings.new_friend_request),
-      adminAnnouncement: Boolean(settings.admin_announcement)
+      adminAnnouncement: Boolean(settings.admin_announcement),
+      emailFriendAddedToList: settings.email_friend_added_to_list !== undefined ? Boolean(settings.email_friend_added_to_list) : true,
+      emailFriendRatedMedia: settings.email_friend_rated_media !== undefined ? Boolean(settings.email_friend_rated_media) : true,
+      emailFriendPostedReview: settings.email_friend_posted_review !== undefined ? Boolean(settings.email_friend_posted_review) : true,
+      emailFriendReactedToPost: settings.email_friend_reacted_to_post !== undefined ? Boolean(settings.email_friend_reacted_to_post) : true,
+      emailNewMessage: settings.email_new_message !== undefined ? Boolean(settings.email_new_message) : true,
+      emailNewFriendRequest: settings.email_new_friend_request !== undefined ? Boolean(settings.email_new_friend_request) : true,
+      emailAdminAnnouncement: settings.email_admin_announcement !== undefined ? Boolean(settings.email_admin_announcement) : true
     });
 
   } catch (error) {

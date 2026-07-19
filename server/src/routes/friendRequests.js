@@ -111,18 +111,21 @@ router.post('/', authenticateToken, async (req, res) => {
               console.error('Ошибка отправки уведомления о запросе в друзья:', err);
             });
 
-            // Отправляем email-уведомление
-            const { sendNewFriendEmail } = await import('../services/emailService.js');
-            const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
-            const toUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [toUserId]);
-            if (toUserResult.success && toUserResult.data.length > 0) {
-              const toUser = toUserResult.data[0];
-              if (toUser.email && toUser.email_verified) {
-                sendNewFriendEmail({
-                  toEmail: toUser.email,
-                  actorName: senderName,
-                  profileUrl: `${publicUrl}/user/${fromUserId}`,
-                }).catch(err => console.warn('⚠️ Email-уведомление о заявке в друзья:', err.message));
+            // Отправляем email-уведомление (если включено)
+            const isEmailEnabled = await checkNotificationEnabled(toUserId, 'new_friend_request', 'email');
+            if (isEmailEnabled) {
+              const { sendNewFriendEmail } = await import('../services/emailService.js');
+              const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+              const toUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [toUserId]);
+              if (toUserResult.success && toUserResult.data.length > 0) {
+                const toUser = toUserResult.data[0];
+                if (toUser.email && toUser.email_verified) {
+                  sendNewFriendEmail({
+                    toEmail: toUser.email,
+                    actorName: senderName,
+                    profileUrl: `${publicUrl}/user/${fromUserId}`,
+                  }).catch(err => console.warn('⚠️ Email-уведомление о заявке в друзья:', err.message));
+                }
               }
             }
           }
@@ -182,18 +185,21 @@ router.post('/', authenticateToken, async (req, res) => {
           console.error('Ошибка отправки уведомления о запросе в друзья:', err);
         });
 
-        // Отправляем email-уведомление
-        const { sendNewFriendEmail } = await import('../services/emailService.js');
-        const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
-        const toUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [toUserId]);
-        if (toUserResult.success && toUserResult.data.length > 0) {
-          const toUser = toUserResult.data[0];
-          if (toUser.email && toUser.email_verified) {
-            sendNewFriendEmail({
-              toEmail: toUser.email,
-              actorName: senderName,
-              profileUrl: `${publicUrl}/user/${fromUserId}`,
-            }).catch(err => console.warn('⚠️ Email-уведомление о заявке в друзья:', err.message));
+        // Отправляем email-уведомление (если включено)
+        const isEmailEnabled = await checkNotificationEnabled(toUserId, 'new_friend_request', 'email');
+        if (isEmailEnabled) {
+          const { sendNewFriendEmail } = await import('../services/emailService.js');
+          const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+          const toUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [toUserId]);
+          if (toUserResult.success && toUserResult.data.length > 0) {
+            const toUser = toUserResult.data[0];
+            if (toUser.email && toUser.email_verified) {
+              sendNewFriendEmail({
+                toEmail: toUser.email,
+                actorName: senderName,
+                profileUrl: `${publicUrl}/user/${fromUserId}`,
+              }).catch(err => console.warn('⚠️ Email-уведомление о заявке в друзья:', err.message));
+            }
           }
         }
       } else {
@@ -383,18 +389,21 @@ router.put('/:id/accept', authenticateToken, async (req, res) => {
           console.error('Ошибка отправки уведомления о принятии запроса:', err);
         });
 
-        // Отправляем email-уведомление
-        const { sendNewFriendEmail } = await import('../services/emailService.js');
-        const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
-        const fromUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [fromUserId]);
-        if (fromUserResult.success && fromUserResult.data.length > 0) {
-          const fromUser = fromUserResult.data[0];
-          if (fromUser.email && fromUser.email_verified) {
-            sendNewFriendEmail({
-              toEmail: fromUser.email,
-              actorName: accepterName,
-              profileUrl: `${publicUrl}/user/${userId}`,
-            }).catch(err => console.warn('⚠️ Email-уведомление о новом друге:', err.message));
+        // Отправляем email-уведомление (если включено)
+        const isEmailEnabled = await checkNotificationEnabled(fromUserId, 'new_friend_request', 'email');
+        if (isEmailEnabled) {
+          const { sendNewFriendEmail } = await import('../services/emailService.js');
+          const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+          const fromUserResult = await executeQuery('SELECT email, email_verified FROM users WHERE id = ?', [fromUserId]);
+          if (fromUserResult.success && fromUserResult.data.length > 0) {
+            const fromUser = fromUserResult.data[0];
+            if (fromUser.email && fromUser.email_verified) {
+              sendNewFriendEmail({
+                toEmail: fromUser.email,
+                actorName: accepterName,
+                profileUrl: `${publicUrl}/user/${userId}`,
+              }).catch(err => console.warn('⚠️ Email-уведомление о новом друге:', err.message));
+            }
           }
         }
       } else {

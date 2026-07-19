@@ -2,6 +2,18 @@
   width: 100%;
 }
 
+.section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
 .header {
   margin-bottom: 24px;
 }
