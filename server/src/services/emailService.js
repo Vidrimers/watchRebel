@@ -1,10 +1,8 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 /**
  * Сервис для отправки email уведомлений через Resend HTTP API
  * (SMTP заблокирован файрволом VDSina, используется HTTP API)
+ * 
+ * Переменные окружения загружаются в index.js (.env.production в продакшене)
  */
 
 const RESEND_API_KEY = process.env.SMTP_PASS;
