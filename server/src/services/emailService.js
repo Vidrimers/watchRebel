@@ -1,68 +1,61 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 /**
- * Сервис для отправки email уведомлений
+ * Сервис для отправки email уведомлений через Resend HTTP API
+ * (SMTP заблокирован файрволом VDSina, используется HTTP API)
  */
 
-// Создаем транспорт для отправки писем
-let transporter = null;
+const RESEND_API_KEY = process.env.SMTP_PASS;
+const RESEND_API_URL = 'https://api.resend.com/emails';
+const FROM_EMAIL = process.env.SMTP_FROM || 'watchRebel <noreply@watchrebel.ru>';
 
-/**
- * Инициализация транспорта для отправки email
- */
-function initTransporter() {
-  if (transporter) {
-    return transporter;
+async function sendEmail({ to, subject, html, text }) {
+  if (!RESEND_API_KEY) {
+    console.warn('⚠️ RESEND API ключ не найден (SMTP_PASS). Email отправка отключена.');
+    return { success: false, error: 'API ключ не настроен' };
   }
 
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = process.env.SMTP_PORT || 587;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpFrom = process.env.SMTP_FROM || smtpUser;
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+        text,
+      }),
+    });
 
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    console.warn('⚠️ SMTP настройки не найдены в .env файле. Email отправка отключена.');
-    console.warn('Добавьте SMTP_HOST, SMTP_USER, SMTP_PASS в .env для включения email отправки.');
-    return null;
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ Resend API ошибка:', data);
+      return { success: false, error: data.message || JSON.stringify(data) };
+    }
+
+    console.log('✅ Письмо отправлено:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('❌ Ошибка отправки письма:', error.message);
+    return { success: false, error: error.message };
   }
-
-  transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465, // true для 465, false для других портов
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
-
-  console.log('✅ Email транспорт инициализирован');
-  return transporter;
 }
 
 /**
  * Отправить письмо с подтверждением email
- * @param {string} email - Email получателя
- * @param {string} displayName - Имя пользователя
- * @param {string} verificationToken - Токен подтверждения
  */
 export async function sendVerificationEmail(email, displayName, verificationToken) {
-  const transport = initTransporter();
-  
-  if (!transport) {
-    console.warn('⚠️ Email транспорт не инициализирован. Письмо не отправлено.');
-    return { success: false, error: 'Email транспорт не настроен' };
-  }
-
   const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
   const verificationUrl = `${publicUrl}/verify-email/${verificationToken}`;
 
-  const mailOptions = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  return sendEmail({
     to: email,
     subject: 'Подтверждение регистрации на watchRebel',
     html: `
@@ -71,42 +64,11 @@ export async function sendVerificationEmail(email, displayName, verificationToke
       <head>
         <meta charset="UTF-8">
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-          }
-          .button {
-            display: inline-block;
-            padding: 15px 30px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 20px 0;
-            font-weight: bold;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 12px;
-          }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; padding: 15px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
         </style>
       </head>
       <body>
@@ -121,9 +83,7 @@ export async function sendVerificationEmail(email, displayName, verificationToke
             <a href="${verificationUrl}" class="button">Подтвердить Email</a>
           </p>
           <p>Или скопируйте и вставьте эту ссылку в браузер:</p>
-          <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px;">
-            ${verificationUrl}
-          </p>
+          <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px;">${verificationUrl}</p>
           <p><strong>Важно:</strong> Ссылка действительна в течение 24 часов.</p>
           <p>Если вы не регистрировались на watchRebel, просто проигнорируйте это письмо.</p>
         </div>
@@ -136,47 +96,25 @@ export async function sendVerificationEmail(email, displayName, verificationToke
     text: `
       Привет, ${displayName}!
       
-      Спасибо за регистрацию на watchRebel! Для завершения регистрации, пожалуйста, подтвердите свой email адрес.
+      Спасибо за регистрацию на watchRebel! Для завершения регистрации подтвердите свой email адрес.
       
       Перейдите по ссылке: ${verificationUrl}
       
       Ссылка действительна в течение 24 часов.
       
-      Если вы не регистрировались на watchRebel, просто проигнорируйте это письмо.
-      
       © 2024 watchRebel
     `,
-  };
-
-  try {
-    const info = await transport.sendMail(mailOptions);
-    console.log('✅ Письмо с подтверждением отправлено:', info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Ошибка отправки письма:', error);
-    return { success: false, error: error.message };
-  }
+  });
 }
 
 /**
  * Отправить письмо для сброса пароля
- * @param {string} email - Email получателя
- * @param {string} displayName - Имя пользователя
- * @param {string} resetToken - Токен сброса пароля
  */
 export async function sendPasswordResetEmail(email, displayName, resetToken) {
-  const transport = initTransporter();
-  
-  if (!transport) {
-    console.warn('⚠️ Email транспорт не инициализирован. Письмо не отправлено.');
-    return { success: false, error: 'Email транспорт не настроен' };
-  }
-
   const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
   const resetUrl = `${publicUrl}/reset-password/${resetToken}`;
 
-  const mailOptions = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  return sendEmail({
     to: email,
     subject: 'Сброс пароля на watchRebel',
     html: `
@@ -185,48 +123,12 @@ export async function sendPasswordResetEmail(email, displayName, resetToken) {
       <head>
         <meta charset="UTF-8">
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-          }
-          .button {
-            display: inline-block;
-            padding: 15px 30px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 20px 0;
-            font-weight: bold;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 12px;
-          }
-          .warning {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 10px;
-            margin: 15px 0;
-          }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; padding: 15px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 15px 0; }
         </style>
       </head>
       <body>
@@ -241,9 +143,7 @@ export async function sendPasswordResetEmail(email, displayName, resetToken) {
             <a href="${resetUrl}" class="button">Сбросить пароль</a>
           </p>
           <p>Или скопируйте и вставьте эту ссылку в браузер:</p>
-          <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px;">
-            ${resetUrl}
-          </p>
+          <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px;">${resetUrl}</p>
           <div class="warning">
             <strong>⚠️ Важно:</strong>
             <ul>
@@ -262,44 +162,22 @@ export async function sendPasswordResetEmail(email, displayName, resetToken) {
     text: `
       Привет, ${displayName}!
       
-      Мы получили запрос на сброс пароля для вашего аккаунта на watchRebel.
+      Мы получили запрос на сброс пароля для вашего аккаунта.
       
-      Перейдите по ссылке для сброса пароля: ${resetUrl}
+      Перейдите по ссылке: ${resetUrl}
       
       Ссылка действительна в течение 1 часа.
       
-      Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо. Ваш пароль останется без изменений.
-      
       © 2024 watchRebel
     `,
-  };
-
-  try {
-    const info = await transport.sendMail(mailOptions);
-    console.log('✅ Письмо для сброса пароля отправлено:', info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Ошибка отправки письма:', error);
-    return { success: false, error: error.message };
-  }
+  });
 }
 
 /**
  * Отправить код подтверждения для привязки email
- * @param {string} email - Email получателя
- * @param {string} displayName - Имя пользователя
- * @param {string} code - Код подтверждения (6 цифр)
  */
 export async function sendLinkVerificationEmail(email, displayName, code) {
-  const transport = initTransporter();
-  
-  if (!transport) {
-    console.warn('⚠️ Email транспорт не инициализирован. Письмо не отправлено.');
-    return { success: false, error: 'Email транспорт не настроен' };
-  }
-
-  const mailOptions = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  return sendEmail({
     to: email,
     subject: 'Код подтверждения email — watchRebel',
     html: `
@@ -337,26 +215,13 @@ export async function sendLinkVerificationEmail(email, displayName, code) {
     text: `
       Привет, ${displayName}!
       
-      Вы запросили привязку email к аккаунту на watchRebel.
-      
       Ваш код подтверждения: ${code}
       
       Код действителен в течение 15 минут.
       
-      Если вы не запрашивали привязку email, просто проигнорируйте это письмо.
-      
       © 2024 watchRebel
     `,
-  };
-
-  try {
-    const info = await transport.sendMail(mailOptions);
-    console.log('✅ Код подтверждения email отправлен:', info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Ошибка отправки кода подтверждения:', error);
-    return { success: false, error: error.message };
-  }
+  });
 }
 
 export default {
