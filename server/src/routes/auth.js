@@ -1078,9 +1078,9 @@ router.post('/register-email', registerRateLimiter, async (req, res) => {
     expiresAt.setHours(expiresAt.getHours() + 24); // Токен действителен 24 часа
 
     const tokenResult = await executeQuery(
-      `INSERT INTO email_verification_tokens (id, user_id, token, expires_at)
-       VALUES (?, ?, ?, ?)`,
-      [tokenId, userId, verificationToken, expiresAt.toISOString()]
+      `INSERT INTO email_verification_tokens (id, user_id, token, email, expires_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [tokenId, userId, verificationToken, normalizedEmail, expiresAt.toISOString()]
     );
 
     if (!tokenResult.success) {
