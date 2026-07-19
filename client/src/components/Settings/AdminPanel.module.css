@@ -371,3 +371,95 @@
 :global(.dark) .formLabel {
   color: var(--text-secondary-dark, #aaa);
 }
+
+/* Почтовые адреса */
+.emailList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--item-background, #f5f5f5);
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.emailInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.emailAddress {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  white-space: nowrap;
+}
+
+.emailDesc {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.emailStatus {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.emailBidirectional {
+  background: #d4edda;
+  color: #155724;
+}
+
+.emailOutgoing {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.emailNote {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin-top: 12px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+:global(.dark) .emailItem {
+  background: var(--item-background-dark, #333);
+}
+
+:global(.dark) .emailAddress {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+:global(.dark) .emailDesc {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+:global(.dark) .emailBidirectional {
+  background: #1a4731;
+  color: #86cfac;
+}
+
+:global(.dark) .emailOutgoing {
+  background: #4a3c0a;
+  color: #ffd666;
+}
+
+:global(.dark) .emailNote {
+  color: var(--text-secondary-dark, #aaa);
+}

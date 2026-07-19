@@ -112,6 +112,59 @@ const AdminPanel = () => {
           </button>
         </div>
       </div>
+
+      {/* Почтовые адреса */}
+      <div className={styles.section}>
+        <h4 className={styles.sectionTitle}>Почтовые адреса</h4>
+        <div className={styles.emailList}>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>ad@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Контакты для рекламы</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailBidirectional}`}>Обе стороны</span>
+          </div>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>admin@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Связь с администрацией</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailBidirectional}`}>Обе стороны</span>
+          </div>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>help@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Багрепорты и поддержка</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailBidirectional}`}>Обе стороны</span>
+          </div>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>support@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Техническая поддержка</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailBidirectional}`}>Обе стороны</span>
+          </div>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>noreply@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Системные письма (регистрация, пароль)</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailOutgoing}`}>Только исходящие</span>
+          </div>
+          <div className={styles.emailItem}>
+            <div className={styles.emailInfo}>
+              <span className={styles.emailAddress}>notifications@watchrebel.ru</span>
+              <span className={styles.emailDesc}>Уведомления о активности</span>
+            </div>
+            <span className={`${styles.emailStatus} ${styles.emailOutgoing}`}>Только исходящие</span>
+          </div>
+        </div>
+        <p className={styles.emailNote}>
+          Все входящие письма пересылаются на admin-почтку через Cloudflare Email Routing.
+          Исходящие — через Resend (облачный сервис).
+        </p>
+      </div>
     </div>
     </>
   );
