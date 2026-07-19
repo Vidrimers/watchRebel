@@ -1,5 +1,5 @@
 import validator from 'validator';
-import dns from 'dns-lookup-promise';
+import { promises as dnsPromises } from 'dns';
 import zxcvbn from 'zxcvbn';
 
 /**
@@ -48,7 +48,7 @@ export async function validateEmailDomain(email) {
     }
 
     // Проверяем MX записи домена
-    const mxRecords = await dns.resolveMx(domain);
+    const mxRecords = await dnsPromises.resolveMx(domain);
     
     if (!mxRecords || mxRecords.length === 0) {
       return { valid: false, error: 'Домен email не существует или не принимает почту' };
