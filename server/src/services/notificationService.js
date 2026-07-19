@@ -1,6 +1,26 @@
 import { executeQuery } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { clients } from './websocketService.js';
+import { sendReactionEmail, sendCommentEmail, sendNewFriendEmail } from './emailService.js';
+
+/**
+ * Получить email пользователя и отправить email-уведомление
+ * Пропускает если email не привязан или не подтверждён
+ */
+async function sendEmailNotification(userId, emailFn) {
+  try {
+    const result = await executeQuery(
+      'SELECT email, email_verified FROM users WHERE id = ?',
+      [userId]
+    );
+    if (!result.success || result.data.length === 0) return;
+    const user = result.data[0];
+    if (!user.email || !user.email_verified) return;
+    await emailFn(user.email);
+  } catch (err) {
+    console.warn('⚠️ Email-уведомление не отправлено:', err.message);
+  }
+}
 
 /**
  * Проверить, включено ли уведомление для пользователя
@@ -296,6 +316,18 @@ export async function notifyReaction(postOwnerId, reactorId, emoji, postId, isSe
 
     // Отправляем уведомление в Telegram
     await sendTelegramNotification(postOwnerId, telegramMessage);
+
+    // Отправляем email-уведомление
+    if (!isSelfReaction) {
+      const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+      await sendEmailNotification(postOwnerId, (email) =>
+        sendReactionEmail({
+          toEmail: email,
+          actorName: reactorName,
+          postUrl: `${publicUrl}/post/${postId}`,
+        })
+      );
+    }
 
     return notificationResult;
   } catch (error) {
@@ -716,6 +748,16 @@ export async function notifyImageComment(postId, imageId, commentAuthorId) {
     // Отправляем уведомление в Telegram
     await sendTelegramNotification(postOwnerId, telegramMessage);
 
+    // Отправляем email-уведомление
+    const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+    await sendEmailNotification(postOwnerId, (email) =>
+      sendCommentEmail({
+        toEmail: email,
+        actorName: authorName,
+        postUrl: `${publicUrl}/post/${postId}`,
+      })
+    );
+
     console.log(`✅ Уведомление о комментарии к изображению отправлено пользователю ${postOwnerId}`);
 
     return notificationResult;
@@ -843,6 +885,16 @@ export async function notifyPostComment(postAuthorId, commentAuthorId, postId, c
 
     // Отправляем уведомление в Telegram
     await sendTelegramNotification(postAuthorId, telegramMessage);
+
+    // Отправляем email-уведомление
+    const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+    await sendEmailNotification(postAuthorId, (email) =>
+      sendCommentEmail({
+        toEmail: email,
+        actorName: authorName,
+        postUrl: `${publicUrl}/post/${postId}`,
+      })
+    );
 
     console.log(`✅ Уведомление о комментарии к посту отправлено пользователю ${postAuthorId}`);
 

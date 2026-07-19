@@ -1098,9 +1098,13 @@ router.post('/register-email', registerRateLimiter, async (req, res) => {
 
     if (!emailResult.success) {
       console.error('Ошибка отправки письма:', emailResult.error);
-      // Не удаляем пользователя, просто логируем ошибку
-      // Пользователь сможет запросить повторную отправку письма
     }
+
+    // Отправляем приветственное письмо
+    const { sendWelcomeEmail } = await import('../services/emailService.js');
+    sendWelcomeEmail({ toEmail: email, displayName }).catch(err =>
+      console.warn('⚠️ Приветственное письмо не отправлено:', err.message)
+    );
 
     console.log(`✅ Пользователь зарегистрирован: ${displayName} (${email})`);
 

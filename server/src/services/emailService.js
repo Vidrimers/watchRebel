@@ -224,7 +224,116 @@ export async function sendLinkVerificationEmail(email, displayName, code) {
   });
 }
 
+/**
+ * Общий HTML-шаблон для email-уведомлений
+ */
+function notificationTemplate({ title, content, buttonText, buttonUrl, footerText }) {
+  const buttonHtml = buttonText && buttonUrl
+    ? `<p style="text-align:center;"><a href="${buttonUrl}" style="display:inline-block;padding:12px 28px;background:#667eea;color:white;text-decoration:none;border-radius:5px;font-weight:bold;">${buttonText}</a></p>`
+    : '';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:24px;text-align:center;border-radius:10px 10px 0 0;">
+        <h1 style="margin:0;font-size:22px;">🎬 watchRebel</h1>
+      </div>
+      <div style="background:#f9f9f9;padding:28px;border-radius:0 0 10px 10px;">
+        <h2 style="margin-top:0;">${title}</h2>
+        <p>${content}</p>
+        ${buttonHtml}
+        <p style="color:#999;font-size:12px;margin-top:24px;">${footerText || '© 2026 watchRebel. Все права защищены.'}</p>
+      </div>
+    </body>
+    </html>`;
+}
+
+/**
+ * Отправить email-уведомление о реакции на пост
+ */
+export async function sendReactionEmail({ toEmail, displayName, actorName, postUrl }) {
+  if (!toEmail) return { success: false, error: 'Email не указан' };
+  return sendEmail({
+    to: toEmail,
+    subject: `${actorName} отреагировал на ваш пост — watchRebel`,
+    html: notificationTemplate({
+      title: 'Новая реакция на вашем посте',
+      content: `<strong>${actorName}</strong> поставил реакцию на ваш пост.`,
+      buttonText: 'Посмотреть',
+      buttonUrl: postUrl,
+    }),
+  });
+}
+
+/**
+ * Отправить email-уведомление о комментарии к посту
+ */
+export async function sendCommentEmail({ toEmail, displayName, actorName, postUrl, commentPreview }) {
+  if (!toEmail) return { success: false, error: 'Email не указан' };
+  return sendEmail({
+    to: toEmail,
+    subject: `${actorName} прокомментировал ваш пост — watchRebel`,
+    html: notificationTemplate({
+      title: 'Новый комментарий к вашему посту',
+      content: `<strong>${actorName}</strong> написал: <em>"${commentPreview || ''}"</em>`,
+      buttonText: 'Ответить',
+      buttonUrl: postUrl,
+    }),
+  });
+}
+
+/**
+ * Отправить email-уведомление о новом друге
+ */
+export async function sendNewFriendEmail({ toEmail, displayName, actorName, profileUrl }) {
+  if (!toEmail) return { success: false, error: 'Email не указан' };
+  return sendEmail({
+    to: toEmail,
+    subject: `${actorName} добавил вас в друзья — watchRebel`,
+    html: notificationTemplate({
+      title: 'Новый друг',
+      content: `<strong>${actorName}</strong> добавил вас в друзья. Теперь вы можете видеть посты друг друга в ленте.`,
+      buttonText: 'Перейти в профиль',
+      buttonUrl: profileUrl,
+    }),
+  });
+}
+
+/**
+ * Отправить приветственное письмо
+ */
+export async function sendWelcomeEmail({ toEmail, displayName }) {
+  if (!toEmail) return { success: false, error: 'Email не указан' };
+  const publicUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+  return sendEmail({
+    to: toEmail,
+    subject: 'Добро пожаловать в watchRebel! 🎬',
+    html: notificationTemplate({
+      title: `Добро пожаловать, ${displayName}!`,
+      content: `
+        Рады приветствовать вас на watchRebel — социальной сети для любителей кино и сериалов.
+        <br><br>
+        Вот что можно делать здесь:
+        <ul style="padding-left:20px;">
+          <li>Вести дневники просмотра фильмов и сериалов</li>
+          <li>Писать рецензии и делиться мнением</li>
+          <li>Находить единомышленников по вкусам</li>
+          <li>Составлять списки и делиться рекомендациями</li>
+        </ul>
+      `,
+      buttonText: 'Перейти на главную',
+      buttonUrl: publicUrl,
+    }),
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendReactionEmail,
+  sendCommentEmail,
+  sendNewFriendEmail,
+  sendWelcomeEmail,
 };
