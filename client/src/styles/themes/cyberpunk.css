@@ -222,28 +222,4 @@
     0 0 30px rgba(255, 0, 255, 0.3);
 }
 
-/* Эффект сканирующей линии */
-@keyframes scan-line {
-  0% {
-    top: 0;
-  }
-  100% {
-    top: 100%;
-  }
-}
 
-[data-theme="cyberpunk"] body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(0, 255, 255, 0.8) 50%, 
-    transparent 100%);
-  animation: scan-line 8s linear infinite;
-  pointer-events: none;
-  z-index: 9999;
-}
