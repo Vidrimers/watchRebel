@@ -176,6 +176,7 @@ router.post('/telegram', async (req, res) => {
         avatarUrl: user.avatar_url,
         isAdmin: Boolean(user.is_admin),
         theme: user.theme,
+        hasPassword: Boolean(user.password_hash),
         createdAt: user.created_at
       }
     });
@@ -439,6 +440,7 @@ router.post('/telegram-referral', async (req, res) => {
         avatarUrl: user.avatar_url,
         isAdmin: Boolean(user.is_admin),
         theme: user.theme,
+        hasPassword: Boolean(user.password_hash),
         createdAt: user.created_at
       },
       referralUsed: !!referrerId
@@ -629,6 +631,7 @@ router.post('/telegram-widget', async (req, res) => {
         avatarUrl: user.avatar_url,
         isAdmin: Boolean(user.is_admin),
         theme: user.theme,
+        hasPassword: Boolean(user.password_hash),
         createdAt: user.created_at
       }
     });
@@ -919,6 +922,7 @@ router.get('/verify-email/:token', async (req, res) => {
         avatarUrl: user.avatar_url,
         isAdmin: Boolean(user.is_admin),
         theme: user.theme,
+        hasPassword: Boolean(user.password_hash),
         createdAt: user.created_at
       }
     });
@@ -1267,6 +1271,7 @@ router.post('/login-email', loginRateLimiter, async (req, res) => {
         avatarUrl: user.avatar_url,
         isAdmin: Boolean(user.is_admin),
         theme: user.theme,
+        hasPassword: Boolean(user.password_hash),
         createdAt: user.created_at
       }
     });
@@ -2211,6 +2216,90 @@ router.delete('/unlink-email', authenticateToken, async (req, res) => {
     res.status(500).json({ 
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
+    });
+  }
+});
+
+/**
+ * POST /api/auth/set-password
+ * Установка пароля для существующего пользователя (например, telegram-юзера, привязавшего email)
+ */
+router.post('/set-password', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        error: 'Пароль обязателен',
+        code: 'PASSWORD_REQUIRED'
+      });
+    }
+
+    // Проверяем, что у пользователя уже привязан email
+    const userResult = await executeQuery(
+      'SELECT email, password_hash FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!userResult.success || userResult.data.length === 0) {
+      return res.status(404).json({
+        error: 'Пользователь не найден',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    const user = userResult.data[0];
+
+    if (!user.email) {
+      return res.status(400).json({
+        error: 'Сначала привяжите email, прежде чем задавать пароль',
+        code: 'EMAIL_REQUIRED'
+      });
+    }
+
+    if (user.password_hash) {
+      return res.status(400).json({
+        error: 'Пароль уже задан. Используйте смену пароля.',
+        code: 'PASSWORD_ALREADY_SET'
+      });
+    }
+
+    // Валидация пароля
+    const passwordValidation = validatePassword(password, [user.email]);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        error: passwordValidation.error,
+        code: 'INVALID_PASSWORD'
+      });
+    }
+
+    // Хешируем пароль
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Сохраняем пароль
+    const updateResult = await executeQuery(
+      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [passwordHash, userId]
+    );
+
+    if (!updateResult.success) {
+      return res.status(500).json({
+        error: 'Ошибка сохранения пароля',
+        code: 'DATABASE_ERROR'
+      });
+    }
+
+    res.json({
+      message: 'Пароль успешно установлен. Теперь вы можете входить по email и паролю.'
+    });
+
+  } catch (error) {
+    console.error('Ошибка установки пароля:', error);
+    res.status(500).json({
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR'
     });
   }
 });

@@ -71,6 +71,7 @@ export async function authenticateToken(req, res, next) {
       authMethod: session.auth_method || 'telegram',
       email: session.email,
       emailVerified: Boolean(session.email_verified),
+      hasPassword: Boolean(session.password_hash),
       googleId: session.google_id,
       discordId: session.discord_id,
       nicknameDisplay: session.nickname_display || 'name'
@@ -214,6 +215,7 @@ export async function optionalAuth(req, res, next) {
           authMethod: session.auth_method || 'telegram',
           email: session.email,
           emailVerified: Boolean(session.email_verified),
+          hasPassword: Boolean(session.password_hash),
           googleId: session.google_id,
           discordId: session.discord_id,
           nicknameDisplay: session.nickname_display || 'name'
