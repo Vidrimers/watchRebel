@@ -1820,19 +1820,62 @@ router.get('/discord', passport.authenticate('discord', {
  * GET /api/auth/discord/callback
  * Обработка ответа от Discord OAuth
  */
-router.get('/discord/callback', 
-  passport.authenticate('discord', { 
+router.get('/discord/callback',
+  passport.authenticate('discord', {
     session: false,
     failureRedirect: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/login?error=discord_auth_failed`
   }),
   async (req, res) => {
     try {
       const user = req.user;
+      const frontendUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
 
       if (!user) {
-        return res.redirect(`${process.env.PUBLIC_URL || 'http://localhost:3000'}/login?error=no_user`);
+        return res.redirect(`${frontendUrl}/login?error=no_user`);
       }
 
+      // Проверяем, это привязка или обычный вход
+      const linkToken = req.cookies?.link_token;
+      const isLink = req.query.state === 'link' || req.query.link === 'true';
+
+      if (isLink && linkToken) {
+        // Режим привязки: привязываем Discord к текущему залогиненному пользователю
+        const sessionCheck = await executeQuery(
+          'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')',
+          [linkToken]
+        );
+
+        if (!sessionCheck.success || sessionCheck.data.length === 0) {
+          res.clearCookie('link_token');
+          return res.redirect(`${frontendUrl}/settings?error=session_expired`);
+        }
+
+        const currentUserId = sessionCheck.data[0].user_id;
+        const discordId = user.discord_id || user.id;
+
+        // Проверяем, не привязан ли этот Discord к другому пользователю
+        const conflictCheck = await executeQuery(
+          'SELECT id FROM users WHERE discord_id = ? AND id != ?',
+          [discordId, currentUserId]
+        );
+
+        if (conflictCheck.success && conflictCheck.data.length > 0) {
+          res.clearCookie('link_token');
+          return res.redirect(`${frontendUrl}/settings?error=discord_already_linked`);
+        }
+
+        // Привязываем Discord к текущему пользователю
+        await executeQuery(
+          'UPDATE users SET discord_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [discordId, currentUserId]
+        );
+
+        console.log(`✅ Discord аккаунт привязан к пользователю ${currentUserId}`);
+        res.clearCookie('link_token');
+        return res.redirect(`${frontendUrl}/settings?success=discord_linked`);
+      }
+
+      // Обычный вход через Discord
       // Создаем новую сессию
       const sessionId = uuidv4();
       const token = uuidv4();
@@ -1847,13 +1890,13 @@ router.get('/discord/callback',
 
       if (!sessionResult.success) {
         console.error('Ошибка создания сессии:', sessionResult.error);
-        return res.redirect(`${process.env.PUBLIC_URL || 'http://localhost:3000'}/login?error=session_error`);
+        return res.redirect(`${frontendUrl}/login?error=session_error`);
       }
 
       console.log(`✅ Сессия создана для пользователя ${user.display_name} через Discord OAuth`);
 
       // Редирект на главную страницу с токеном
-      const redirectUrl = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/?token=${token}`;
+      const redirectUrl = `${frontendUrl}/?token=${token}`;
       res.redirect(redirectUrl);
 
     } catch (error) {

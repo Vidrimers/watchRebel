@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import Icon from '../Common/Icon';
 import useConfirm from '../../hooks/useConfirm.jsx';
 import useAlert from '../../hooks/useAlert.jsx';
 import api from '../../services/api';
-import styles from './TelegramConnectionBlock.module.css'; // Используем те же стили
+import styles from './TelegramConnectionBlock.module.css';
 
 /**
  * Компонент для управления привязкой Discord аккаунта
@@ -15,9 +16,36 @@ const DiscordConnectionBlock = () => {
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Проверяем, привязан ли Discord (по наличию discord_id в user)
   const isDiscordLinked = Boolean(user?.discordId || user?.hasDiscordLinked);
+
+  // Обработка редиректа после привязки Discord
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'discord_linked') {
+      showAlert({
+        title: 'Успешно',
+        message: 'Discord аккаунт успешно привязан!',
+        type: 'success'
+      });
+      setSearchParams({}, { replace: true });
+    } else if (error) {
+      const errorMessages = {
+        'session_expired': 'Сессия истекла. Войдите заново.',
+        'discord_already_linked': 'Этот Discord аккаунт уже привязан к другому пользователю.',
+        'discord_auth_failed': 'Не удалось авторизоваться через Discord.'
+      };
+      showAlert({
+        title: 'Ошибка',
+        message: errorMessages[error] || 'Произошла ошибка при привязке Discord.',
+        type: 'error'
+      });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, showAlert]);
 
   const handleUnlinkDiscord = async () => {
     const confirmed = await showConfirm({
@@ -40,7 +68,6 @@ const DiscordConnectionBlock = () => {
         type: 'success'
       });
 
-      // Перезагружаем страницу чтобы обновить данные пользователя
       window.location.reload();
     } catch (error) {
       console.error('Ошибка отвязки Discord:', error);
@@ -55,10 +82,11 @@ const DiscordConnectionBlock = () => {
   };
 
   const handleLinkDiscord = () => {
-    // Сохраняем текущий URL для возврата после OAuth
     sessionStorage.setItem('oauth_return_url', window.location.pathname);
-    
-    // Редирект на Discord OAuth с параметром link=true
+
+    const token = localStorage.getItem('authToken');
+    document.cookie = `link_token=${token}; path=/; max-age=300; SameSite=Lax`;
+
     window.location.href = '/api/auth/discord?link=true';
   };
 
@@ -68,14 +96,14 @@ const DiscordConnectionBlock = () => {
       {alertDialog}
       <div className={styles.settingsCard}>
         <h3 className={styles.cardTitle}><Icon name="discord" size="medium" /> Discord</h3>
-        
+
         {isDiscordLinked ? (
           <div className={styles.linkedContainer}>
             <div className={styles.statusRow}>
               <span className={styles.statusLabel}>Статус:</span>
               <span className={styles.statusLinked}>✅ Привязан</span>
             </div>
-            
+
             {user.discordUsername && (
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Username:</span>
@@ -83,8 +111,8 @@ const DiscordConnectionBlock = () => {
               </div>
             )}
 
-            <button 
-              onClick={handleUnlinkDiscord} 
+            <button
+              onClick={handleUnlinkDiscord}
               className={styles.unlinkButton}
               disabled={loading}
             >
@@ -102,8 +130,8 @@ const DiscordConnectionBlock = () => {
               Привяжите Discord аккаунт для возможности входа через Discord.
             </p>
 
-            <button 
-              onClick={handleLinkDiscord} 
+            <button
+              onClick={handleLinkDiscord}
               className={styles.linkButton}
               disabled={loading}
             >
