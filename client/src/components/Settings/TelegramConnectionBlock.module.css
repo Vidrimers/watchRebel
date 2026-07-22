@@ -156,6 +156,14 @@
   cursor: not-allowed;
 }
 
+.telegramWidgetContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
 /* Темная тема */
 :global(.dark) .settingsCard {
   background: var(--card-background-dark, #2a2a2a);
