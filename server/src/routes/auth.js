@@ -1555,9 +1555,9 @@ router.get('/google/callback',
       // Проверяем, это привязка или обычный вход
       // Токен текущего пользователя передаётся через cookie
       const linkToken = req.cookies?.link_token;
-      const isLink = req.query.state === 'link' || req.query.link === 'true';
+      const isLink = Boolean(linkToken);
 
-      if (isLink && linkToken) {
+      if (isLink) {
         // Режим привязки: привязываем Google к текущему залогиненному пользователю
         const sessionCheck = await executeQuery(
           'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')',
@@ -1836,9 +1836,9 @@ router.get('/discord/callback',
 
       // Проверяем, это привязка или обычный вход
       const linkToken = req.cookies?.link_token;
-      const isLink = req.query.state === 'link' || req.query.link === 'true';
+      const isLink = Boolean(linkToken);
 
-      if (isLink && linkToken) {
+      if (isLink) {
         // Режим привязки: привязываем Discord к текущему залогиненному пользователю
         const sessionCheck = await executeQuery(
           'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')',
