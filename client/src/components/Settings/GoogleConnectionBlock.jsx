@@ -19,7 +19,7 @@ const GoogleConnectionBlock = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Проверяем, привязан ли Google (по наличию google_id в user)
-  const isGoogleLinked = Boolean(user?.googleId || user?.hasGoogleLinked);
+  const isGoogleLinked = Boolean(user?.googleId);
 
   // Обработка редиректа после привязки Google
   useEffect(() => {

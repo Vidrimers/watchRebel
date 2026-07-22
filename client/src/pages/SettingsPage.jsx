@@ -186,10 +186,10 @@ const SettingsPage = () => {
                   {user.email && (
                     <span className={styles.authMethod}><Icon name="email" size="small" /> Email</span>
                   )}
-                  {user.hasGoogleLinked && (
+                  {user.googleId && (
                     <span className={styles.authMethod}><Icon name="google" size="small" /> Google</span>
                   )}
-                  {user.hasDiscordLinked && (
+                  {user.discordId && (
                     <span className={styles.authMethod}><Icon name="discord" size="small" /> Discord</span>
                   )}
                 </div>

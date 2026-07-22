@@ -18,7 +18,7 @@ const DiscordConnectionBlock = () => {
   const [loading, setLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const isDiscordLinked = Boolean(user?.discordId || user?.hasDiscordLinked);
+  const isDiscordLinked = Boolean(user?.discordId);
 
   // Обработка редиректа после привязки Discord
   useEffect(() => {
