@@ -152,6 +152,28 @@
   margin-bottom: 8px;
 }
 
+.userAuthMethods {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.authBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.noUsername {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
 .userMeta {
   font-size: 13px;
   color: var(--text-secondary);

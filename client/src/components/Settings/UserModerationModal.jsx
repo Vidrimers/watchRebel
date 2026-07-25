@@ -296,7 +296,25 @@ function UserModerationModal({ user, onClose, onUpdate }) {
             <UserAvatar user={user} size="medium" />
             <div className={styles.userInfo}>
               <h3 className={styles.userName}>{user.displayName}</h3>
-              <p className={styles.userUsername}>@{user.telegramUsername || 'нет username'}</p>
+              <div className={styles.userAuthMethods}>
+                {user.authMethod === 'telegram' && (
+                  <span className={styles.authBadge}><Icon name="telegram" size="small" /> Telegram</span>
+                )}
+                {user.authMethod === 'email' && (
+                  <span className={styles.authBadge}><Icon name="email" size="small" /> Email</span>
+                )}
+                {user.authMethod === 'google' && (
+                  <span className={styles.authBadge}><Icon name="google" size="small" /> Google</span>
+                )}
+                {user.authMethod === 'discord' && (
+                  <span className={styles.authBadge}><Icon name="discord" size="small" /> Discord</span>
+                )}
+              </div>
+              <p className={styles.userUsername}>
+                {user.telegramUsername && `@${user.telegramUsername}`}
+                {!user.telegramUsername && user.email && user.email}
+                {!user.telegramUsername && !user.email && <span className={styles.noUsername}>—</span>}
+              </p>
             </div>
             <button className={styles.closeButton} onClick={onClose}>
               ✕

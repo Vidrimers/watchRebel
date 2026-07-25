@@ -25,7 +25,7 @@ router.use(requireAdmin);
 router.get('/users', async (req, res) => {
   try {
     const usersResult = await executeQuery(
-      `SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, theme, created_at, updated_at
+      `SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, theme, created_at, updated_at, email, auth_method
        FROM users
        ORDER BY created_at DESC`
     );
@@ -46,7 +46,9 @@ router.get('/users', async (req, res) => {
       isBlocked: Boolean(user.is_blocked),
       theme: user.theme,
       createdAt: user.created_at,
-      updatedAt: user.updated_at
+      updatedAt: user.updated_at,
+      email: user.email,
+      authMethod: user.auth_method
     }));
 
     res.json(users);

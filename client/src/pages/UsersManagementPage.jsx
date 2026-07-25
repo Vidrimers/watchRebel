@@ -215,8 +215,24 @@ const UsersManagementPage = () => {
                       <span className={styles.blockedBadge}>Заблокирован</span>
                     )}
                   </div>
+                  <div className={styles.userAuthMethods}>
+                    {user.authMethod === 'telegram' && (
+                      <span className={styles.authBadge}><Icon name="telegram" size="small" /> Telegram</span>
+                    )}
+                    {user.authMethod === 'email' && (
+                      <span className={styles.authBadge}><Icon name="email" size="small" /> Email</span>
+                    )}
+                    {user.authMethod === 'google' && (
+                      <span className={styles.authBadge}><Icon name="google" size="small" /> Google</span>
+                    )}
+                    {user.authMethod === 'discord' && (
+                      <span className={styles.authBadge}><Icon name="discord" size="small" /> Discord</span>
+                    )}
+                  </div>
                   <div className={styles.userUsername}>
-                    @{user.telegramUsername || 'нет username'}
+                    {user.telegramUsername && `@${user.telegramUsername}`}
+                    {!user.telegramUsername && user.email && user.email}
+                    {!user.telegramUsername && !user.email && <span className={styles.noUsername}>—</span>}
                   </div>
                   <div className={styles.userMeta}>
                     <span>Регистрация: {formatDate(user.createdAt)}</span>
