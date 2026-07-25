@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import zxcvbn from 'zxcvbn';
 import api from '../services/api';
 import styles from './ResetPasswordPage.module.css';
 
@@ -17,6 +18,15 @@ function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Оценка сложности пароля через zxcvbn
+  const passwordStrength = useMemo(() => {
+    if (!formData.password) return null;
+    return zxcvbn(formData.password);
+  }, [formData.password]);
+
+  const strengthLabels = ['Очень слабый', 'Слабый', 'Средний', 'Сильный', 'Очень сильный'];
+  const strengthColors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#27ae60'];
+
   // Валидация формы
   const validateForm = () => {
     const newErrors = {};
@@ -30,6 +40,9 @@ function ResetPasswordPage() {
       newErrors.password = 'Пароль должен содержать хотя бы одну букву';
     } else if (!/[0-9]/.test(formData.password)) {
       newErrors.password = 'Пароль должен содержать хотя бы одну цифру';
+    } else if (passwordStrength && passwordStrength.score < 2) {
+      const feedback = passwordStrength.feedback.warning || passwordStrength.feedback.suggestions?.[0] || '';
+      newErrors.password = `Пароль слишком простой. ${feedback}`;
     }
 
     // Подтверждение пароля
@@ -85,13 +98,15 @@ function ResetPasswordPage() {
 
     } catch (error) {
       console.error('Ошибка сброса пароля:', error);
-      
-      if (error.response?.data?.code === 'INVALID_TOKEN') {
+
+      const serverError = error.data?.error || error.data?.message || error.message;
+
+      if (error.data?.code === 'INVALID_TOKEN') {
         setErrors({ general: 'Неверный или недействительный токен сброса пароля' });
-      } else if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+      } else if (error.data?.code === 'TOKEN_EXPIRED') {
         setErrors({ general: 'Токен сброса пароля истек. Пожалуйста, запросите новую ссылку.' });
-      } else if (error.response?.data?.error) {
-        setErrors({ general: error.response.data.error });
+      } else if (serverError) {
+        setErrors({ general: serverError });
       } else {
         setErrors({ general: 'Ошибка сброса пароля. Попробуйте позже.' });
       }
@@ -146,10 +161,37 @@ function ResetPasswordPage() {
             {errors.password && (
               <span className={styles.error}>{errors.password}</span>
             )}
-            
-            {/* Требования к паролю */}
+
+            {/* Индикатор сложности пароля */}
+            {formData.password && passwordStrength && (
+              <div className={styles.strengthMeter}>
+                <div className={styles.strengthBar}>
+                  {[0, 1, 2, 3].map(i => (
+                    <div
+                      key={i}
+                      className={styles.strengthSegment}
+                      style={{
+                        backgroundColor: i < passwordStrength.score
+                          ? strengthColors[passwordStrength.score]
+                          : 'var(--bg-tertiary)'
+                      }}
+                    />
+                  ))}
+                </div>
+                <span
+                  className={styles.strengthLabel}
+                  style={{ color: strengthColors[passwordStrength.score] }}
+                >
+                  {strengthLabels[passwordStrength.score]}
+                </span>
+                {passwordStrength.feedback.warning && (
+                  <p className={styles.strengthHint}>{passwordStrength.feedback.warning}</p>
+                )}
+              </div>
+            )}
+
+            {/* Базовые требования */}
             <div className={styles.passwordRequirements}>
-              <p>Требования к паролю:</p>
               <ul>
                 <li className={formData.password.length >= 8 ? styles.valid : ''}>
                   Минимум 8 символов
