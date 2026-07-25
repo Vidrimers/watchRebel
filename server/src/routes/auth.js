@@ -1772,12 +1772,12 @@ router.delete('/unlink-google', authenticateToken, async (req, res) => {
     const user = userResult.data[0];
 
     // Проверяем, есть ли другие способы входа
-    const hasOtherMethods = user.telegram_username || user.discord_id || user.password_hash;
+    const hasOtherMethods = user.email || user.telegram_username || user.discord_id;
 
     if (!hasOtherMethods) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Нельзя отвязать Google, так как это единственный способ входа. Сначала привяжите другой способ входа.',
-        code: 'LAST_AUTH_METHOD' 
+        code: 'LAST_AUTH_METHOD'
       });
     }
 
@@ -2010,12 +2010,12 @@ router.delete('/unlink-discord', authenticateToken, async (req, res) => {
     const user = userResult.data[0];
 
     // Проверяем, есть ли другие способы входа
-    const hasOtherMethods = user.telegram_username || user.google_id || user.password_hash;
+    const hasOtherMethods = user.email || user.telegram_username || user.google_id;
 
     if (!hasOtherMethods) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Нельзя отвязать Discord, так как это единственный способ входа. Сначала привяжите другой способ входа.',
-        code: 'LAST_AUTH_METHOD' 
+        code: 'LAST_AUTH_METHOD'
       });
     }
 
@@ -2227,13 +2227,13 @@ router.delete('/unlink-email', authenticateToken, async (req, res) => {
 
     const user = userResult.data[0];
 
-    // Проверяем, есть ли другие способы входа
-    const hasOtherMethods = user.telegram_username || user.google_id || user.discord_id || user.password_hash;
+    // Проверяем, есть ли другие способы входа (пароль без email бесполезен)
+    const hasOtherMethods = user.telegram_username || user.google_id || user.discord_id;
 
     if (!hasOtherMethods) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Нельзя отвязать email, так как это единственный способ входа. Сначала привяжите другой способ.',
-        code: 'LAST_AUTH_METHOD' 
+        code: 'LAST_AUTH_METHOD'
       });
     }
 
