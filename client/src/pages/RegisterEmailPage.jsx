@@ -44,18 +44,19 @@ function RegisterEmailPage() {
   // Переводы сообщений zxcvbn
   const zxcvbnTranslations = {
     warnings: {
+      'This is a very common password': 'Это очень распространённый пароль',
+      'This is similar to a commonly used password': 'Это похож на часто используемый пароль',
+      'This is a top-10 common password': 'Это один из 10 самых распространённых паролей',
       'Too short': 'Слишком короткий',
-      'Very common passwords': 'Очень распространённый пароль',
       'Common words and names': 'Распространённые слова и имена',
       'Straight rows of keys': 'Последовательность клавиш',
       'Short keyboard patterns': 'Короткий паттерн клавиатуры',
-      'Repeats like "aaa"': 'Повторы (например "aaa")',
-      'Repeats like "abcabc"': 'Повторяющиеся паттерны (например "abcabc")',
       'Sequences like "abc"': 'Последовательности (например "abc")',
       'Recent years': 'Последние годы',
       'Dates': 'Даты',
     },
     suggestions: {
+      'Add another word or two. Uncommon words are better.': 'Добавьте ещё одно-два слова. Редкие слова лучше.',
       'Add more words that are less common': 'Добавьте слова, которые встречаются реже',
       'Use a few words, and avoid common phrases': 'Используйте несколько слов, избегайте распространённых фраз',
       'No need for symbols, digits, or uppercase letters': 'Не нужны символы, цифры или заглавные буквы',
