@@ -817,9 +817,11 @@ router.get('/verify-email/:token', async (req, res) => {
     }
 
     if (tokenResult.data.length === 0) {
-      return res.status(400).json({ 
-        error: 'Неверный или недействительный токен подтверждения',
-        code: 'INVALID_TOKEN' 
+      // Токен не найден — возможно, уже был использован (Gmail pre-fetch и т.п.).
+      // Возвращаем специальный код, чтобы клиент перенаправил на логин.
+      return res.status(400).json({
+        error: 'Токен подтверждения уже был использован. Если вы не видите страницу подтверждения, попробуйте войти в систему.',
+        code: 'TOKEN_ALREADY_USED'
       });
     }
 

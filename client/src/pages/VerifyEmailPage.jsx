@@ -43,17 +43,21 @@ function VerifyEmailPage() {
 
       } catch (err) {
         console.error('Ошибка подтверждения email:', err);
-        
+
+        const serverCode = err.data?.code;
+        const serverError = err.data?.error || err.message;
+
         setStatus('error');
-        
-        if (err.response?.data?.code === 'INVALID_TOKEN') {
-          setError('Неверный или недействительный токен подтверждения');
-        } else if (err.response?.data?.code === 'TOKEN_EXPIRED') {
+
+        if (serverCode === 'TOKEN_ALREADY_USED') {
+          // Токен уже использован (Gmail pre-fetch) — email скорее всего подтвержден
+          setError('Ссылка подтверждения уже была использована. Попробуйте войти в систему.');
+        } else if (serverCode === 'TOKEN_EXPIRED') {
           setError('Токен подтверждения истек. Пожалуйста, запросите новое письмо.');
-        } else if (err.response?.data?.code === 'EMAIL_ALREADY_VERIFIED') {
+        } else if (serverCode === 'EMAIL_ALREADY_VERIFIED') {
           setError('Email уже подтвержден. Вы можете войти в систему.');
-        } else if (err.response?.data?.error) {
-          setError(err.response.data.error);
+        } else if (serverError) {
+          setError(serverError);
         } else {
           setError('Ошибка подтверждения email. Попробуйте позже.');
         }
