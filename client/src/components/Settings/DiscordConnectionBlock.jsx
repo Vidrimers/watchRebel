@@ -73,7 +73,7 @@ const DiscordConnectionBlock = () => {
       console.error('Ошибка отвязки Discord:', error);
       await showAlert({
         title: 'Ошибка',
-        message: error.response?.data?.error || 'Не удалось отвязать Discord. Попробуйте позже.',
+        message: error.data?.error || 'Не удалось отвязать Discord. Попробуйте позже.',
         type: 'error'
       });
     } finally {

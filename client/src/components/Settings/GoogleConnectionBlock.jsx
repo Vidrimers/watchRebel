@@ -75,7 +75,7 @@ const GoogleConnectionBlock = () => {
       console.error('Ошибка отвязки Google:', error);
       await showAlert({
         title: 'Ошибка',
-        message: error.response?.data?.error || 'Не удалось отвязать Google. Попробуйте позже.',
+        message: error.data?.error || 'Не удалось отвязать Google. Попробуйте позже.',
         type: 'error'
       });
     } finally {

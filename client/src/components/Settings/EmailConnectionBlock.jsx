@@ -126,7 +126,7 @@ const EmailConnectionBlock = () => {
     } catch (error) {
       await showAlert({
         title: 'Ошибка',
-        message: error.response?.data?.error || 'Не удалось отвязать email.',
+        message: error.data?.error || 'Не удалось отвязать email.',
         type: 'error'
       });
     } finally {

@@ -103,7 +103,7 @@ const TelegramConnectionBlock = () => {
       console.error('Ошибка отвязки Telegram:', error);
       await showAlert({
         title: 'Ошибка',
-        message: error.response?.data?.error || 'Не удалось отвязать Telegram. Попробуйте позже.',
+        message: error.data?.error || 'Не удалось отвязать Telegram. Попробуйте позже.',
         type: 'error'
       });
     } finally {
