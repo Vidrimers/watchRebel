@@ -27,6 +27,43 @@ function ResetPasswordPage() {
   const strengthLabels = ['Очень слабый', 'Слабый', 'Средний', 'Сильный', 'Очень сильный'];
   const strengthColors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#27ae60'];
 
+  // Переводы сообщений zxcvbn
+  const zxcvbnTranslations = {
+    warnings: {
+      'Too short': 'Слишком короткий',
+      'Very common passwords': 'Очень распространённый пароль',
+      'Common words and names': 'Распространённые слова и имена',
+      'Straight rows of keys': 'Последовательность клавиш',
+      'Short keyboard patterns': 'Короткий паттерн клавиатуры',
+      'Repeats like "aaa"': 'Повторы (например "aaa")',
+      'Repeats like "abcabc"': 'Повторяющиеся паттерны (например "abcabc")',
+      'Sequences like "abc"': 'Последовательности (например "abc")',
+      'Recent years': 'Последние годы',
+      'Dates': 'Даты',
+    },
+    suggestions: {
+      'Add more words that are less common': 'Добавьте слова, которые встречаются реже',
+      'Use a few words, and avoid common phrases': 'Используйте несколько слов, избегайте распространённых фраз',
+      'No need for symbols, digits, or uppercase letters': 'Не нужны символы, цифры или заглавные буквы',
+      'Avoid repeated words': 'Избегайте повторяющихся слов',
+      'Avoid sequences': 'Избегайте последовательностей',
+      'Avoid recent years': 'Избегайте последних годов',
+      'Avoid dates and years': 'Избегайте дат и годов',
+    }
+  };
+
+  const translateFeedback = (text) => {
+    if (!text) return '';
+    let translated = text;
+    for (const [en, ru] of Object.entries(zxcvbnTranslations.warnings)) {
+      translated = translated.replaceAll(en, ru);
+    }
+    for (const [en, ru] of Object.entries(zxcvbnTranslations.suggestions)) {
+      translated = translated.replaceAll(en, ru);
+    }
+    return translated;
+  };
+
   // Валидация формы
   const validateForm = () => {
     const newErrors = {};
@@ -41,7 +78,7 @@ function ResetPasswordPage() {
     } else if (!/[0-9]/.test(formData.password)) {
       newErrors.password = 'Пароль должен содержать хотя бы одну цифру';
     } else if (passwordStrength && passwordStrength.score < 2) {
-      const feedback = passwordStrength.feedback.warning || passwordStrength.feedback.suggestions?.[0] || '';
+      const feedback = translateFeedback(passwordStrength.feedback.warning) || translateFeedback(passwordStrength.feedback.suggestions?.[0]) || '';
       newErrors.password = `Пароль слишком простой. ${feedback}`;
     }
 
@@ -185,7 +222,7 @@ function ResetPasswordPage() {
                   {strengthLabels[passwordStrength.score]}
                 </span>
                 {passwordStrength.feedback.warning && (
-                  <p className={styles.strengthHint}>{passwordStrength.feedback.warning}</p>
+                  <p className={styles.strengthHint}>{translateFeedback(passwordStrength.feedback.warning)}</p>
                 )}
               </div>
             )}
