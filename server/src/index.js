@@ -83,6 +83,9 @@ if (process.env.NODE_ENV === 'production') {
 const app = express();
 const PORT = process.env.PORT || 1313;
 
+// Доверяем заголовкам X-Forwarded-For от nginx (для корректной работы rate limiter)
+app.set('trust proxy', 1);
+
 // Helmet для улучшения безопасности
 app.use(configureHelmet());
 
