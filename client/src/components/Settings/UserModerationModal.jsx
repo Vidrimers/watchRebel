@@ -153,26 +153,6 @@ function UserModerationModal({ user, onClose, onUpdate }) {
     } finally { setLoading(false); }
   };
 
-  const handleToggleAdmin = async () => {
-    const newIsAdmin = !user.isAdmin;
-    const action = newIsAdmin ? 'назначить администратором' : 'снять права администратора';
-    const confirmed = await showConfirm({
-      title: `${newIsAdmin ? 'Назначить' : 'Снять'} администратора?`,
-      message: `Вы уверены, что хотите ${action} пользователя ${user.displayName}?`,
-      confirmText: newIsAdmin ? 'Назначить' : 'Снять', cancelText: 'Отмена',
-      confirmButtonStyle: newIsAdmin ? 'primary' : 'danger'
-    });
-    if (!confirmed) return;
-    setLoading(true);
-    try {
-      await api.put(`/admin/users/${user.id}/role`, { isAdmin: newIsAdmin });
-      if (onUpdate) onUpdate();
-      await showAlert({ title: 'Успешно', message: `Права администратора ${newIsAdmin ? 'предоставлены' : 'сняты'}`, type: 'success' });
-    } catch (err) {
-      await showAlert({ title: 'Ошибка', message: err.data?.error || 'Ошибка', type: 'error' });
-    } finally { setLoading(false); }
-  };
-
   const handleUnlink = async (method) => {
     const methodNames = { telegram: 'Telegram', email: 'Email', google: 'Google', discord: 'Discord' };
     const confirmed = await showConfirm({
@@ -299,21 +279,7 @@ function UserModerationModal({ user, onClose, onUpdate }) {
             </div>
           )}
 
-          {/* Роль */}
-          <div className={styles.section}>
-            <h4 className={styles.sectionTitle}><Icon name="shield" size="small" /> Роль</h4>
-            <div className={styles.actions}>
-              <button
-                className={`${styles.actionButton} ${user.isAdmin ? styles.demoteButton : styles.promoteButton}`}
-                onClick={handleToggleAdmin}
-                disabled={loading}
-              >
-                {user.isAdmin ? 'Снять админа' : 'Назначить админом'}
-              </button>
-            </div>
-          </div>
-
-          {/* Сброс пароля */}
+          {/* Модерация */}
           {user.authMethod === 'email' && user.email && (
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}><Icon name="lock" size="small" /> Безопасность</h4>
