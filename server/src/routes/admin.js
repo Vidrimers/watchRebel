@@ -25,7 +25,8 @@ router.use(requireAdmin);
 router.get('/users', async (req, res) => {
   try {
     const usersResult = await executeQuery(
-      `SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, theme, created_at, updated_at, email, auth_method
+      `SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, theme, created_at, updated_at, email, auth_method,
+              google_id, discord_id, email_verified, post_ban_until, ban_reason, last_feed_view, user_status
        FROM users
        ORDER BY created_at DESC`
     );
@@ -48,7 +49,14 @@ router.get('/users', async (req, res) => {
       createdAt: user.created_at,
       updatedAt: user.updated_at,
       email: user.email,
-      authMethod: user.auth_method
+      authMethod: user.auth_method,
+      hasGoogle: Boolean(user.google_id),
+      hasDiscord: Boolean(user.discord_id),
+      emailVerified: Boolean(user.email_verified),
+      postBanUntil: user.post_ban_until,
+      banReason: user.ban_reason,
+      lastFeedView: user.last_feed_view,
+      userStatus: user.user_status
     }));
 
     res.json(users);
@@ -1916,6 +1924,190 @@ router.delete('/ad-requests/:id', async (req, res) => {
     res.json({ message: 'Заявка удалена' });
   } catch (error) {
     console.error('Ошибка:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/users/:id/stats
+ * Статистика пользователя для модалки модерации
+ */
+router.get('/users/:id/stats', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [posts, friends, reviews, lists, ratings] = await Promise.all([
+      executeQuery('SELECT COUNT(*) as count FROM wall_posts WHERE user_id = ? AND post_type != \'system\'', [id]),
+      executeQuery('SELECT COUNT(*) as count FROM friends WHERE user_id = ? OR friend_id = ?', [id, id]),
+      executeQuery('SELECT COUNT(*) as count FROM wall_posts WHERE user_id = ? AND (post_type = \'review\' OR rating IS NOT NULL)', [id]),
+      executeQuery('SELECT COUNT(*) as count FROM custom_lists WHERE user_id = ?', [id]),
+      executeQuery('SELECT COUNT(*) as count FROM ratings WHERE user_id = ?', [id])
+    ]);
+
+    res.json({
+      posts: posts.success ? posts.data[0].count : 0,
+      friends: friends.success ? friends.data[0].count : 0,
+      reviews: reviews.success ? reviews.data[0].count : 0,
+      lists: lists.success ? lists.data[0].count : 0,
+      ratings: ratings.success ? ratings.data[0].count : 0
+    });
+  } catch (error) {
+    console.error('Ошибка получения статистики:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/reset-password
+ * Отправить письмо сброса пароля пользователю
+ */
+router.post('/users/:id/reset-password', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const userResult = await executeQuery('SELECT id, email, display_name, auth_method FROM users WHERE id = ?', [id]);
+    if (!userResult.success || userResult.data.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const user = userResult.data[0];
+
+    if (!user.email) {
+      return res.status(400).json({ error: 'У пользователя нет привязанного email' });
+    }
+
+    if (user.auth_method !== 'email') {
+      return res.status(400).json({ error: 'Пользователь зарегистрирован не через email. Пароль можно сбросить только для email-аккаунтов.' });
+    }
+
+    const crypto = await import('crypto');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenId = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    // Удаляем старые токены сброса для этого пользователя
+    await executeQuery('DELETE FROM password_reset_tokens WHERE user_id = ?', [id]);
+
+    const tokenResult = await executeQuery(
+      'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
+      [tokenId, id, resetToken, expiresAt.toISOString()]
+    );
+
+    if (!tokenResult.success) {
+      return res.status(500).json({ error: 'Ошибка создания токена' });
+    }
+
+    const { sendPasswordResetEmail } = await import('../services/emailService.js');
+    const emailResult = await sendPasswordResetEmail(user.email, user.display_name, resetToken);
+
+    if (!emailResult.success) {
+      console.error('Ошибка отправки письма:', emailResult.error);
+      return res.status(500).json({ error: 'Ошибка отправки письма' });
+    }
+
+    console.log(`🔑 Админ ${req.user.id} отправил письмо сброса пароля пользователю ${user.display_name} (${user.email})`);
+    res.json({ message: `Письмо сброса пароля отправлено на ${user.email}` });
+  } catch (error) {
+    console.error('Ошибка сброса пароля:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/users/:id/role
+ * Назначить/снять админа
+ */
+router.put('/users/:id/role', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAdmin } = req.body;
+
+    if (id === req.user.id) {
+      return res.status(400).json({ error: 'Нельзя изменить свою роль' });
+    }
+
+    const userCheck = await executeQuery('SELECT id, is_admin FROM users WHERE id = ?', [id]);
+    if (!userCheck.success || userCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const result = await executeQuery(
+      'UPDATE users SET is_admin = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [isAdmin ? 1 : 0, id]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка обновления роли' });
+    }
+
+    console.log(`👤 Админ ${req.user.id} ${isAdmin ? 'назначил' : 'снял'} админа для пользователя ${id}`);
+    res.json({ message: isAdmin ? 'Пользователь назначен администратором' : 'Права администратора сняты', isAdmin });
+  } catch (error) {
+    console.error('Ошибка изменения роли:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/admin/users/:id/unlink/:method
+ * Отвязать аккаунт (telegram/email/google/discord) от пользователя
+ */
+router.delete('/users/:id/unlink/:method', async (req, res) => {
+  try {
+    const { id, method } = req.params;
+
+    const allowedMethods = ['telegram', 'email', 'google', 'discord'];
+    if (!allowedMethods.includes(method)) {
+      return res.status(400).json({ error: 'Неизвестный метод' });
+    }
+
+    const userResult = await executeQuery(
+      'SELECT id, telegram_username, email, google_id, discord_id, auth_method FROM users WHERE id = ?',
+      [id]
+    );
+    if (!userResult.success || userResult.data.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const user = userResult.data[0];
+
+    // Проверяем, не пытаемся ли отвязать последний метод входа
+    const otherMethods = ['telegram', 'email', 'google', 'discord'].filter(m => {
+      if (m === method) return false;
+      if (m === 'telegram') return Boolean(user.telegram_username);
+      if (m === 'email') return Boolean(user.email);
+      if (m === 'google') return Boolean(user.google_id);
+      if (m === 'discord') return Boolean(user.discord_id);
+      return false;
+    });
+
+    if (otherMethods.length === 0) {
+      return res.status(400).json({ error: 'Нельзя отвязать единственный способ входа' });
+    }
+
+    const fieldMap = {
+      telegram: 'telegram_username = NULL',
+      email: 'email = NULL, email_verified = 0',
+      google: 'google_id = NULL',
+      discord: 'discord_id = NULL'
+    };
+
+    const result = await executeQuery(
+      `UPDATE users SET ${fieldMap[method]}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [id]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: 'Ошибка отвязки' });
+    }
+
+    console.log(`🔗 Админ ${req.user.id} отвязал ${method} от пользователя ${id}`);
+    res.json({ message: `${method} успешно отвязан` });
+  } catch (error) {
+    console.error('Ошибка отвязки:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

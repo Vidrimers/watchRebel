@@ -94,6 +94,18 @@
   opacity: 0.5;
 }
 
+.adminBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 .closeButton {
   position: absolute;
   top: 20px;
@@ -132,6 +144,167 @@
   font-weight: 600;
   color: var(--text-secondary);
   margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Информация */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.banText {
+  color: var(--error-color, #ef4444);
+}
+
+.statsRow {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.statItem {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Связанные аккаунты */
+.connectionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.connectionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.connectionInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.connectionLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.connectionValue {
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verifiedBadge {
+  font-size: 11px;
+  color: var(--success-color, #10b981);
+  white-space: nowrap;
+}
+
+.unverifiedBadge {
+  font-size: 11px;
+  color: var(--warning-color, #f59e0b);
+  white-space: nowrap;
+}
+
+.unlinkButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.unlinkButton:hover:not(:disabled) {
+  background: var(--error-color, #ef4444);
+  color: white;
+}
+
+.unlinkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Роль и безопасность */
+.promoteButton {
+  background: var(--info-color, #3b82f6);
+  color: white;
+}
+
+.promoteButton:hover:not(:disabled) {
+  background: var(--info-color-hover, #2563eb);
+}
+
+.demoteButton {
+  background: var(--warning-color, #f59e0b);
+  color: white;
+}
+
+.demoteButton:hover:not(:disabled) {
+  background: var(--warning-color-hover, #d97706);
+}
+
+.resetPasswordButton {
+  background: var(--accent-primary, #667eea);
+  color: white;
+}
+
+.resetPasswordButton:hover:not(:disabled) {
+  background: var(--accent-primary-hover, #5a6fd6);
+}
+
+/* Быстрые действия */
+.quickActionButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.quickActionButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
 }
 
 /* Действия */
