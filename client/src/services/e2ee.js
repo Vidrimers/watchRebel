@@ -12,7 +12,7 @@ const PUBLIC_KEY_STORAGE = 'e2ee_public_key';
  * @returns {{ publicKey: Uint8Array, privateKey: Uint8Array }}
  */
 export function generateIdentityKeyPair() {
-  const privateKey = x25519.utils.randomPrivateKey();
+  const privateKey = crypto.getRandomValues(new Uint8Array(32));
   const publicKey = x25519.getPublicKey(privateKey);
   return { publicKey, privateKey };
 }
