@@ -80,7 +80,7 @@ const ConversationList = ({ onSelectConversation }) => {
       // Проверяем, есть ли у друга публичный ключ
       const theirKey = await fetchPublicKey(friend.id);
       if (!theirKey) {
-        await showAlert({ title: 'E2EE', message: 'У этого пользователя ещё нет ключей E2EE. Он должен сначала войти в приложение.', type: 'warning' });
+        await showAlert({ title: 'E2EE', message: 'У этого пользователя ещё нет ключей шифрования. Секретный чат будет доступен после создания ключей.', type: 'warning' });
         return;
       }
 
