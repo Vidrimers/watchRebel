@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
@@ -35,7 +35,7 @@ const parseLocation = (loc) => {
   return null;
 };
 
-// РџР°СЂСЃРёРЅРі СѓРїРѕРјРёРЅР°РЅРёР№ РІ С‚РµРєСЃС‚Рµ СЃРѕРѕР±С‰РµРЅРёСЏ
+// Парсинг упоминаний в тексте сообщения
 const MENTION_REGEX = /@\[([^\]]+)\]\(([^)]+)\)/g;
 const renderMessageContent = (text) => {
   if (!text) return null;
@@ -72,8 +72,8 @@ const parseSuggestedMedia = (sm) => {
 };
 
 /**
- * РћРєРЅРѕ РїРµСЂРµРїРёСЃРєРё
- * РћС‚РѕР±СЂР°Р¶Р°РµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ РІ РІС‹Р±СЂР°РЅРЅРѕРј РґРёР°Р»РѕРіРµ Рё РїРѕР·РІРѕР»СЏРµС‚ РѕС‚РїСЂР°РІР»СЏС‚СЊ РЅРѕРІС‹Рµ
+ * Окно переписки
+ * Отображает сообщения в выбранном диалоге и позволяет отправлять новые
  */
 const MessageThread = ({ conversation, onClose }) => {
   const dispatch = useAppDispatch();
@@ -83,10 +83,10 @@ const MessageThread = ({ conversation, onClose }) => {
 
   const [conversationOverrides, setConversationOverrides] = useState({});
 
-  // РњРµСЂР¶РёРј РїСЂРѕРї conversation СЃ Р»РѕРєР°Р»СЊРЅС‹РјРё РѕРІРµСЂСЂР°Р№РґР°РјРё (РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РёРјРµРЅРё/Р°РІР°С‚Р°СЂРєРё Р±РµР· РїРµСЂРµР·Р°РіСЂСѓР·РєРё)
+  // Мержим проп conversation с локальными оверрайдами (для обновления имени/аватарки без перезагрузки)
   const effectiveConversation = { ...conversation, ...conversationOverrides };
 
-  // РҐРµР»РїРµСЂС‹ РґР»СЏ РіСЂСѓРїРїРѕРІС‹С… С‡Р°С‚РѕРІ (РёСЃРїРѕР»СЊР·СѓРµРј effectiveConversation РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёР№ Р±РµР· РїРµСЂРµР·Р°РіСЂСѓР·РєРё)
+  // Хелперы для групповых чатов (используем effectiveConversation для обновлений без перезагрузки)
   const isGroup = effectiveConversation?.isGroup;
   const getReceiverId = () => isGroup ? effectiveConversation.id : effectiveConversation.otherUser?.id;
   const getDisplayName = () => isGroup ? effectiveConversation.groupName : effectiveConversation.otherUser?.displayName;
@@ -144,12 +144,12 @@ const MessageThread = ({ conversation, onClose }) => {
 
   const showInput = !isRecording && !audioBlob;
 
-  // Р—Р°РіСЂСѓР¶Р°РµРј СЃРѕРѕР±С‰РµРЅРёСЏ РїСЂРё РІС‹Р±РѕСЂРµ РґРёР°Р»РѕРіР° (СЃ СѓС‡С‘С‚РѕРј E2EE)
+  // Загружаем сообщения при выборе диалога (с учётом E2EE)
   useEffect(() => {
     if (!conversation || !conversation.id) return;
 
     const loadMessages = async () => {
-      // Р”Р»СЏ СЃРµРєСЂРµС‚РЅС‹С… С‡Р°С‚РѕРІ: СЃРЅР°С‡Р°Р»Р° РІС‹С‡РёСЃР»СЏРµРј session key, РїРѕС‚РѕРј Р·Р°РіСЂСѓР¶Р°РµРј СЃРѕРѕР±С‰РµРЅРёСЏ
+      // Для секретных чатов: сначала вычисляем session key, потом загружаем сообщения
       if (conversation.isSecret) {
         if (!hasSessionKey(conversation.id)) {
           try {
@@ -160,7 +160,7 @@ const MessageThread = ({ conversation, onClose }) => {
               getOrCreateSessionKey(conversation.id, theirKey.publicKey);
             }
           } catch (err) {
-            console.error('РћС€РёР±РєР° РІС‹С‡РёСЃР»РµРЅРёСЏ СЃРµСЃСЃРёРѕРЅРЅРѕРіРѕ РєР»СЋС‡Р°:', err);
+            console.error('Ошибка вычисления сессионного ключа:', err);
           }
         }
         dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0, isSecret: true }));
@@ -172,45 +172,45 @@ const MessageThread = ({ conversation, onClose }) => {
     loadMessages();
   }, [conversation?.id, conversation?.isSecret, conversation?.otherUser?.id, dispatch]);
 
-  // РЎРєСЂРѕР»Р» РІРЅРёР· РїСЂРё Р·Р°РіСЂСѓР·РєРµ СЃРѕРѕР±С‰РµРЅРёР№ РІ РЅРѕРІРѕРј РґРёР°Р»РѕРіРµ
+  // Скролл вниз при загрузке сообщений в новом диалоге
   const prevConversationRef = useRef(null);
   const prevMessagesLenRef = useRef(0);
   useEffect(() => {
-    // РџСЂРё СЃРјРµРЅРµ РґРёР°Р»РѕРіР° вЂ” СЃР±СЂР°СЃС‹РІР°РµРј СЃС‡С‘С‚С‡РёРє
+    // При смене диалога — сбрасываем счётчик
     if (conversation?.id !== prevConversationRef.current) {
       prevConversationRef.current = conversation?.id;
       prevMessagesLenRef.current = 0;
       return;
     }
     
-    // РЎРєСЂРѕР»Р»РёРј РєРѕРіРґР° СЃРѕРѕР±С‰РµРЅРёСЏ РІРїРµСЂРІС‹Рµ Р·Р°РіСЂСѓР·РёР»РёСЃСЊ (Р±С‹Р»Рѕ 0, СЃС‚Р°Р»Рѕ >0)
+    // Скроллим когда сообщения впервые загрузились (было 0, стало >0)
     if (messages.length > 0 && prevMessagesLenRef.current === 0) {
       prevMessagesLenRef.current = messages.length;
-      // РњРіРЅРѕРІРµРЅРЅС‹Р№ СЃРєСЂРѕР»Р» вЂ” Р±РµР· Р°РЅРёРјР°С†РёРё
+      // Мгновенный скролл — без анимации
       scrollToBottom(false);
     }
     
     prevMessagesLenRef.current = messages.length;
   }, [conversation?.id, messages.length]);
 
-  // РџРѕРґРєР»СЋС‡Р°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРє WebSocket СЃРѕРѕР±С‰РµРЅРёР№
+  // Подключаем обработчик WebSocket сообщений
   useEffect(() => {
-    // РћР±СЂР°Р±РѕС‚С‡РёРє РЅРѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№ С‡РµСЂРµР· WebSocket
+    // Обработчик новых сообщений через WebSocket
     const handleWebSocketMessage = async (data) => {
       if (data.type === 'new_message' && data.message) {
         const message = { ...data.message };
 
-        // Р Р°СЃС€РёС„СЂРѕРІРєР° РґР»СЏ СЃРµРєСЂРµС‚РЅС‹С… С‡Р°С‚РѕРІ
+        // Расшифровка для секретных чатов
         if (conversation?.isSecret && isEncryptedMessage(message.content)) {
           try {
-            // РћРїСЂРµРґРµР»СЏРµРј РЅСѓР¶РЅС‹Р№ РєР»СЋС‡ РїРѕ СЃС‡С‘С‚С‡РёРєСѓ СЂРѕС‚Р°С†РёРё
+            // Определяем нужный ключ по счётчику ротации
             const rotationCounter = extractRotationCounter(message.content);
             const sessionKey = getSessionKeyByRotation(conversation.id, rotationCounter) || getSessionKey(conversation.id);
             if (sessionKey) {
               message.content = await decryptMessage(message.content, sessionKey);
             }
           } catch (err) {
-            console.error('РћС€РёР±РєР° СЂР°СЃС€РёС„СЂРѕРІРєРё WebSocket СЃРѕРѕР±С‰РµРЅРёСЏ:', err);
+            console.error('Ошибка расшифровки WebSocket сообщения:', err);
           }
         }
 
@@ -233,42 +233,42 @@ const MessageThread = ({ conversation, onClose }) => {
     };
   }, [dispatch, conversation?.id, conversation?.isSecret]);
 
-  // РџРѕРєР°Р·С‹РІР°РµРј РєРЅРѕРїРєСѓ СЃРєСЂРѕР»Р»Р° РІРЅРёР· РїСЂРё РїРѕСЏРІР»РµРЅРёРё РЅРѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№
+  // Показываем кнопку скролла вниз при появлении новых сообщений
   useEffect(() => {
     if (messages.length === 0) return;
     
     const currentLastMessage = messages[messages.length - 1];
     const currentLastMessageId = currentLastMessage?.id;
     
-    // Р•СЃР»Рё ID РїРѕСЃР»РµРґРЅРµРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ РёР·РјРµРЅРёР»СЃСЏ - Р·РЅР°С‡РёС‚ РїСЂРёС€Р»Рѕ РЅРѕРІРѕРµ
+    // Если ID последнего сообщения изменился - значит пришло новое
     if (lastMessageId && currentLastMessageId !== lastMessageId) {
       const container = messagesContainerRef.current;
       if (container) {
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 300;
         
-        // РџСЂРѕРІРµСЂСЏРµРј РїРѕСЃР»РµРґРЅРµРµ СЃРѕРѕР±С‰РµРЅРёРµ - РѕС‚ РјРµРЅСЏ РёР»Рё РЅРµС‚
+        // Проверяем последнее сообщение - от меня или нет
         const isMyMessage = currentLastMessage?.senderId === user?.id;
         
         if (isMyMessage) {
-          // Р•СЃР»Рё СЏ РѕС‚РїСЂР°РІРёР» - РІСЃРµРіРґР° СЃРєСЂРѕР»Р»РёРј РјРіРЅРѕРІРµРЅРЅРѕ
+          // Если я отправил - всегда скроллим мгновенно
           scrollToBottom(false);
         } else if (isNearBottom) {
-          // Р•СЃР»Рё РїСЂРёС€Р»Рѕ РѕС‚ РґСЂСѓРіРѕРіРѕ Рё СЏ РІРЅРёР·Сѓ - СЃРєСЂРѕР»Р»РёРј РјРіРЅРѕРІРµРЅРЅРѕ
+          // Если пришло от другого и я внизу - скроллим мгновенно
           scrollToBottom(false);
         } else {
-          // Р•СЃР»Рё РїСЂРёС€Р»Рѕ РѕС‚ РґСЂСѓРіРѕРіРѕ Рё СЏ РќР• РІРЅРёР·Сѓ - РїРѕРєР°Р·С‹РІР°РµРј РєРЅРѕРїРєСѓ
+          // Если пришло от другого и я НЕ внизу - показываем кнопку
           setShowScrollButton(true);
         }
       }
     }
     
-    // РћР±РЅРѕРІР»СЏРµРј lastMessageId С‚РѕР»СЊРєРѕ РµСЃР»Рё РѕРЅ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ РёР·РјРµРЅРёР»СЃСЏ
+    // Обновляем lastMessageId только если он действительно изменился
     if (currentLastMessageId !== lastMessageId) {
       setLastMessageId(currentLastMessageId);
     }
-  }, [messages.length, user?.id]); // РЈР±СЂР°Р» messages Рё lastMessageId РёР· Р·Р°РІРёСЃРёРјРѕСЃС‚РµР№
+  }, [messages.length, user?.id]); // Убрал messages и lastMessageId из зависимостей
 
-  // Р—Р°РєСЂС‹С‚РёРµ РјРµРЅСЋ РїСЂРё РєР»РёРєРµ РІРЅРµ
+  // Закрытие меню при клике вне
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -281,7 +281,7 @@ const MessageThread = ({ conversation, onClose }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
-  // Р—Р°РєСЂС‹С‚РёРµ РґРёР°Р»РѕРіР° РїРѕ Esc
+  // Закрытие диалога по Esc
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && conversation) {
@@ -292,27 +292,27 @@ const MessageThread = ({ conversation, onClose }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [conversation, onClose]);
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРє СЃРєСЂРѕР»Р»Р° РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ РєРѕРіРґР° Р·Р°РіСЂСѓР¶Р°С‚СЊ СЃС‚Р°СЂС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ
+  // Обработчик скролла для определения когда загружать старые сообщения
   const handleScroll = (e) => {
     const container = e.target;
     
-    // Р—Р°РєСЂС‹РІР°РµРј popup СѓРґР°Р»РµРЅРёСЏ РїСЂРё СЃРєСЂРѕР»Р»Рµ
+    // Закрываем popup удаления при скролле
     if (showDeletePopup) {
       setShowDeletePopup(false);
       setDeleteMessageId(null);
     }
     
-    // Р•СЃР»Рё РїСЂРѕСЃРєСЂРѕР»Р»РёР»Рё РІ СЃР°РјС‹Р№ РІРµСЂС… Рё РµСЃС‚СЊ РµС‰Рµ СЃРѕРѕР±С‰РµРЅРёСЏ
+    // Если проскроллили в самый верх и есть еще сообщения
     if (container.scrollTop === 0 && hasMoreMessages && !loadingMore) {
       loadOlderMessages();
     }
 
-    // РџРѕРєР°Р·С‹РІР°РµРј/СЃРєСЂС‹РІР°РµРј РєРЅРѕРїРєСѓ СЃРєСЂРѕР»Р»Р° РІРЅРёР·
+    // Показываем/скрываем кнопку скролла вниз
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
     setShowScrollButton(distanceFromBottom > 200);
   };
 
-  // Р—Р°РіСЂСѓР·РєР° СЃС‚Р°СЂС‹С… СЃРѕРѕР±С‰РµРЅРёР№
+  // Загрузка старых сообщений
   const loadOlderMessages = async () => {
     if (!conversation || !conversation.id || loadingMore) return;
     
@@ -326,33 +326,33 @@ const MessageThread = ({ conversation, onClose }) => {
       isSecret: conversation.isSecret || false
     }));
     
-    // РЎРѕС…СЂР°РЅСЏРµРј РїРѕР·РёС†РёСЋ СЃРєСЂРѕР»Р»Р° РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё
+    // Сохраняем позицию скролла после загрузки
     setTimeout(() => {
       const newScrollHeight = container.scrollHeight;
       container.scrollTop = newScrollHeight - previousScrollHeight;
     }, 0);
   };
 
-  // РћС‚РїСЂР°РІРєР° РіРµРѕРјРµС‚РєРё
+  // Отправка геометки
   const handleSendLocation = async (data) => {
     try {
       await dispatch(sendMessage({
         receiverId: getReceiverId(),
-        content: `рџ“Ќ ${data.latitude}, ${data.longitude}`,
+        content: `📍 ${data.latitude}, ${data.longitude}`,
         files: [],
         location: { lat: data.latitude, lng: data.longitude }
       }));
     } catch (error) {
-      console.error('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё:', error);
+      console.error('Ошибка отправки:', error);
     }
   };
 
-  // РћС‚РїСЂР°РІРєР° РїСЂРµРґР»РѕР¶РµРЅРЅРѕРіРѕ РјРµРґРёР°
+  // Отправка предложенного медиа
   const handleSendSuggestedMedia = async (data) => {
     try {
       await dispatch(sendMessage({
         receiverId: getReceiverId(),
-        content: `рџЋ¬ ${data.title}`,
+        content: `🎬 ${data.title}`,
         files: [],
         suggestedMedia: {
           tmdbId: data.tmdbId,
@@ -363,12 +363,12 @@ const MessageThread = ({ conversation, onClose }) => {
         }
       }));
     } catch (error) {
-      console.error('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё:', error);
+      console.error('Ошибка отправки:', error);
     }
   };
 
-  // Р‘Р»РѕРєРёСЂРѕРІРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-  // РћР±СЂР°Р±РѕС‚РєР° РІС‹Р±РѕСЂР° С‚РёРїР° РІР»РѕР¶РµРЅРёСЏ
+  // Блокировка пользователя
+  // Обработка выбора типа вложения
   const handleAttachmentSelect = (type) => {
     setShowAttachDropdown(false);
     setAttachType(type);
@@ -400,10 +400,10 @@ const MessageThread = ({ conversation, onClose }) => {
   const handleBlockUser = async () => {
     setShowMenu(false);
     const confirmed = await showConfirm({
-      title: 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?',
-      message: `Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ ${conversation.otherUser.displayName}? Р’С‹ РЅРµ Р±СѓРґРµС‚Рµ РІРёРґРµС‚СЊ РµРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ.`,
-      confirmText: 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ',
-      cancelText: 'РћС‚РјРµРЅР°',
+      title: 'Заблокировать пользователя?',
+      message: `Вы уверены, что хотите заблокировать ${conversation.otherUser.displayName}? Вы не будете видеть его сообщения.`,
+      confirmText: 'Заблокировать',
+      cancelText: 'Отмена',
       confirmButtonStyle: 'danger'
     });
     if (!confirmed) return;
@@ -411,15 +411,15 @@ const MessageThread = ({ conversation, onClose }) => {
     try {
       await api.post(`/users/${conversation.otherUser.id}/block`);
       await showAlert({
-        title: 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ',
-        message: `${conversation.otherUser.displayName} Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ`,
+        title: 'Пользователь заблокирован',
+        message: `${conversation.otherUser.displayName} заблокирован`,
         type: 'success'
       });
       navigate('/messages');
     } catch (error) {
       await showAlert({
-        title: 'РћС€РёР±РєР°',
-        message: error.response?.data?.error || 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ',
+        title: 'Ошибка',
+        message: error.response?.data?.error || 'Не удалось заблокировать пользователя',
         type: 'error'
       });
     }
@@ -467,19 +467,19 @@ const MessageThread = ({ conversation, onClose }) => {
     requestAnimationFrame(animate);
   };
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРє РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ
+  // Обработчик отправки сообщения
   const handleSendMessage = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('рџ“¤ РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ:', { 
+    console.log('📤 Отправка сообщения:', { 
       hasText: !!messageText.trim(), 
       filesCount: selectedFiles.length,
       sendingMessage 
     });
     
     if ((!messageText.trim() && selectedFiles.length === 0) || sendingMessage) {
-      console.log('вљ пёЏ РћС‚РїСЂР°РІРєР° РѕС‚РјРµРЅРµРЅР°: РЅРµС‚ РєРѕРЅС‚РµРЅС‚Р° РёР»Рё СѓР¶Рµ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ');
+      console.log('⚠️ Отправка отменена: нет контента или уже отправляется');
       return;
     }
 
@@ -490,19 +490,19 @@ const MessageThread = ({ conversation, onClose }) => {
     setMessageText('');
     setSelectedFiles([]);
 
-    // РЁРёС„СЂРѕРІР°РЅРёРµ РґР»СЏ СЃРµРєСЂРµС‚РЅС‹С… С‡Р°С‚РѕРІ
+    // Шифрование для секретных чатов
     if (conversation.isSecret && content) {
       try {
-        // РџСЂРѕРІРµСЂСЏРµРј РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ СЂРѕС‚Р°С†РёРё РєР»СЋС‡Р°
+        // Проверяем необходимость ротации ключа
         let sessionKey = getSessionKey(conversation.id);
         if (!sessionKey) {
-          console.error('РќРµС‚ СЃРµСЃСЃРёРѕРЅРЅРѕРіРѕ РєР»СЋС‡Р° РґР»СЏ С€РёС„СЂРѕРІР°РЅРёСЏ');
+          console.error('Нет сессионного ключа для шифрования');
           setMessageText(content);
           setSelectedFiles(files);
           return;
         }
 
-        // Р РѕС‚Р°С†РёСЏ РµСЃР»Рё РґРѕСЃС‚РёРіРЅСѓС‚ РїРѕСЂРѕРі СЃРѕРѕР±С‰РµРЅРёР№
+        // Ротация если достигнут порог сообщений
         const messageCount = messages.length;
         if (needsRotation(conversation.id, messageCount)) {
           const otherUserId = conversation.otherUser?.id;
@@ -516,7 +516,7 @@ const MessageThread = ({ conversation, onClose }) => {
         const rotationCounter = getRotationCounter(conversation.id);
         content = await encryptMessage(content, sessionKey, rotationCounter);
       } catch (err) {
-        console.error('РћС€РёР±РєР° С€РёС„СЂРѕРІР°РЅРёСЏ:', err);
+        console.error('Ошибка шифрования:', err);
         setMessageText(content);
         setSelectedFiles(files);
         return;
@@ -531,48 +531,48 @@ const MessageThread = ({ conversation, onClose }) => {
         originalContent
       }));
 
-      console.log('вњ… РЎРѕРѕР±С‰РµРЅРёРµ РѕС‚РїСЂР°РІР»РµРЅРѕ:', result);
+      console.log('✅ Сообщение отправлено:', result);
 
-      // Р•СЃР»Рё СЌС‚Рѕ РЅРѕРІС‹Р№ РґРёР°Р»РѕРі (id === null), РѕР±РЅРѕРІР»СЏРµРј СЃРїРёСЃРѕРє РґРёР°Р»РѕРіРѕРІ
+      // Если это новый диалог (id === null), обновляем список диалогов
       if (conversation.id === null && result.meta.requestStatus === 'fulfilled') {
-        // Р”РёР°Р»РѕРі Р±СѓРґРµС‚ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РґРѕР±Р°РІР»РµРЅ РІ СЃРїРёСЃРѕРє С‡РµСЂРµР· fetchConversations
-        // РєРѕС‚РѕСЂС‹Р№ РІС‹Р·С‹РІР°РµС‚СЃСЏ РІ ConversationList РїСЂРё РјРѕРЅС‚РёСЂРѕРІР°РЅРёРё
+        // Диалог будет автоматически добавлен в список через fetchConversations
+        // который вызывается в ConversationList при монтировании
       }
     } catch (error) {
-      console.error('вќЊ РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ:', error);
-      // Р’РѕР·РІСЂР°С‰Р°РµРј С„Р°Р№Р»С‹ РѕР±СЂР°С‚РЅРѕ РїСЂРё РѕС€РёР±РєРµ
+      console.error('❌ Ошибка отправки сообщения:', error);
+      // Возвращаем файлы обратно при ошибке
       setSelectedFiles(files);
       setMessageText(content);
     }
   };
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРє РІС‹Р±РѕСЂР° С„Р°Р№Р»РѕРІ
+  // Обработчик выбора файлов
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     const maxSize = 50 * 1024 * 1024; // 50MB
     
     const validFiles = files.filter(file => {
       if (file.size > maxSize) {
-        alert(`Р¤Р°Р№Р» ${file.name} СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№. РњР°РєСЃРёРјСѓРј 50РњР‘`);
+        alert(`Файл ${file.name} слишком большой. Максимум 50МБ`);
         return false;
       }
       return true;
     });
     
     if (selectedFiles.length + validFiles.length > 10) {
-      alert('РњР°РєСЃРёРјСѓРј 10 С„Р°Р№Р»РѕРІ Р·Р° СЂР°Р·');
+      alert('Максимум 10 файлов за раз');
       return;
     }
     
     setSelectedFiles([...selectedFiles, ...validFiles]);
   };
 
-  // РЈРґР°Р»РµРЅРёРµ С„Р°Р№Р»Р° РёР· СЃРїРёСЃРєР°
+  // Удаление файла из списка
   const handleRemoveFile = (index) => {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
   };
 
-  // РћС‚РєСЂС‹С‚РёРµ РіР°Р»РµСЂРµРё РёР·РѕР±СЂР°Р¶РµРЅРёР№
+  // Открытие галереи изображений
   const handleImageClick = (attachments, index) => {
     const images = attachments.filter(att => att.mimetype.startsWith('image/'));
     setModalImages(images);
@@ -581,7 +581,7 @@ const MessageThread = ({ conversation, onClose }) => {
     setImageDimensions({ natural: { width: 0, height: 0 }, displayed: { width: 0, height: 0 } });
   };
 
-  // РћР±РЅРѕРІР»РµРЅРёРµ СЂР°Р·РјРµСЂРѕРІ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
+  // Обновление размеров изображения
   const handleImageLoad = (e) => {
     const img = e.target;
     if (img && img.naturalWidth && img.naturalHeight) {
@@ -592,7 +592,7 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРє РЅР°Р¶Р°С‚РёСЏ Enter
+  // Обработчик нажатия Enter
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -600,7 +600,7 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
-  // РћС‚РїСЂР°РІРєР° Р°СѓРґРёРѕСЃРѕРѕР±С‰РµРЅРёСЏ
+  // Отправка аудиосообщения
   const handleSendAudio = async () => {
     if (!audioBlob || sendingMessage) return;
     
@@ -615,11 +615,11 @@ const MessageThread = ({ conversation, onClose }) => {
       }));
       resetRecording();
     } catch (error) {
-      console.error('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё Р°СѓРґРёРѕ:', error);
+      console.error('Ошибка отправки аудио:', error);
     }
   };
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРєРё РєРЅРѕРїРєРё Р·Р°РїРёСЃРё (РґР»РёРЅРЅРѕРµ РЅР°Р¶Р°С‚РёРµ = Р·Р°РїРёСЃСЊ)
+  // Обработчики кнопки записи (длинное нажатие = запись)
   const handleRecordMouseDown = () => {
     isLongPressRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
@@ -636,7 +636,7 @@ const MessageThread = ({ conversation, onClose }) => {
     if (isLongPressRef.current) {
       isLongPressRef.current = false;
     } else {
-      // РљРѕСЂРѕС‚РєРѕРµ РЅР°Р¶Р°С‚РёРµ вЂ” РЅРёС‡РµРіРѕ (РѕСЃС‚Р°С‘РјСЃСЏ РІ С‚РµРєСЃС‚РѕРІРѕРј СЂРµР¶РёРјРµ)
+      // Короткое нажатие — ничего (остаёмся в текстовом режиме)
     }
   };
 
@@ -658,17 +658,17 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
-  // РћРїСЂРµРґРµР»СЏРµРј, РЅСѓР¶РЅРѕ Р»Рё РїРѕРєР°Р·С‹РІР°С‚СЊ РєРЅРѕРїРєСѓ Р·Р°РїРёСЃРё
+  // Определяем, нужно ли показывать кнопку записи
   const hasContent = messageText.trim() || selectedFiles.length > 0;
 
-  // Р’СЃС‚Р°РІРєР° СЌРјРѕРґР·Рё РІ textarea
+  // Вставка эмодзи в textarea
   const handleEmojiSelect = (emoji) => {
     setMessageText(prev => prev + emoji);
     setShowEmojiPicker(false);
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
-  // РћР±СЂР°Р±РѕС‚С‡РёРє СѓРґР°Р»РµРЅРёСЏ СЃРѕРѕР±С‰РµРЅРёСЏ вЂ” РїРѕРєР°Р· popup РЅР°Рґ РєСЂРµСЃС‚РёРєРѕРј
+  // Обработчик удаления сообщения — показ popup над крестиком
   const handleDeleteClick = (e, messageId, isOwn, isAnnouncement = false) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -683,13 +683,13 @@ const MessageThread = ({ conversation, onClose }) => {
     setShowDeletePopup(true);
   };
 
-  // РЈРґР°Р»РµРЅРёРµ РґР»СЏ СЃРµР±СЏ
+  // Удаление для себя
   const handleDeleteForMe = async () => {
     if (!deleteMessageId) return;
     dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_me' }));
   };
 
-  // РЈРґР°Р»РµРЅРёРµ РґР»СЏ РІСЃРµС…
+  // Удаление для всех
   const handleDeleteForEveryone = async () => {
     if (!deleteMessageId) return;
     if (deleteIsAnnouncement) {
@@ -697,14 +697,14 @@ const MessageThread = ({ conversation, onClose }) => {
         await api.delete(`/messages/announcement/${deleteMessageId}`);
         dispatch({ type: 'messages/removeMessage', payload: deleteMessageId });
       } catch (err) {
-        console.error('РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ РѕР±СЉСЏРІР»РµРЅРёСЏ:', err);
+        console.error('Ошибка удаления объявления:', err);
       }
     } else {
       dispatch(deleteMessage({ messageId: deleteMessageId, deleteType: 'for_everyone' }));
     }
   };
 
-  // Р¤РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёРµ РІСЂРµРјРµРЅРё
+  // Форматирование времени
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('ru-RU', { 
@@ -713,7 +713,7 @@ const MessageThread = ({ conversation, onClose }) => {
     });
   };
 
-  // Р¤РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёРµ РґР°С‚С‹ РґР»СЏ СЂР°Р·РґРµР»РёС‚РµР»СЏ
+  // Форматирование даты для разделителя
   const formatDateSeparator = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -721,9 +721,9 @@ const MessageThread = ({ conversation, onClose }) => {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'РЎРµРіРѕРґРЅСЏ';
+      return 'Сегодня';
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Р’С‡РµСЂР°';
+      return 'Вчера';
     } else {
       return date.toLocaleDateString('ru-RU', { 
         day: 'numeric', 
@@ -733,7 +733,7 @@ const MessageThread = ({ conversation, onClose }) => {
     }
   };
 
-  // РџСЂРѕРІРµСЂРєР°, РЅСѓР¶РµРЅ Р»Рё СЂР°Р·РґРµР»РёС‚РµР»СЊ РґР°С‚С‹
+  // Проверка, нужен ли разделитель даты
   const shouldShowDateSeparator = (currentMessage, previousMessage) => {
     if (!previousMessage) return true;
     
@@ -752,7 +752,7 @@ const MessageThread = ({ conversation, onClose }) => {
             <span className={styles.emptyIcon}>
               <Icon name="messages" size="large" />
             </span>
-            <p>Р’С‹Р±РµСЂРёС‚Рµ РґРёР°Р»РѕРі РґР»СЏ РЅР°С‡Р°Р»Р° РїРµСЂРµРїРёСЃРєРё</p>
+            <p>Выберите диалог для начала переписки</p>
           </div>
         </div>
       </>
@@ -782,7 +782,7 @@ const MessageThread = ({ conversation, onClose }) => {
                   className={styles.headerAvatarImage}
                 />
               ) : (
-                <div className={styles.headerAvatarPlaceholder}>рџ‘Ґ</div>
+                <div className={styles.headerAvatarPlaceholder}>👥</div>
               )}
             </div>
           ) : (
@@ -825,14 +825,14 @@ const MessageThread = ({ conversation, onClose }) => {
         {isGroup ? (
           <h2
             className={`${styles.headerName} ${styles.headerNameClickable}`}
-            title="Р“СЂСѓРїРїРѕРІРѕР№ С‡Р°С‚"
+            title="Групповой чат"
             onClick={() => setShowMembersModal(true)}
           >
-            рџ‘Ґ {getDisplayName()}
+            👥 {getDisplayName()}
           </h2>
         ) : (
           <h2 className={styles.headerName}>
-            {conversation.isSecret ? '?? ' : ''}
+            {conversation.isSecret ? '🔒 ' : ''}
             {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
           </h2>
         )}
@@ -851,7 +851,7 @@ const MessageThread = ({ conversation, onClose }) => {
       {confirmDialog}
       {alertDialog}
       <div className={styles.container}>
-      {/* РЁР°РїРєР° СЃ РёРЅС„РѕСЂРјР°С†РёРµР№ Рѕ СЃРѕР±РµСЃРµРґРЅРёРєРµ/РіСЂСѓРїРїРµ */}
+      {/* Шапка с информацией о собеседнике/группе */}
       <div className={styles.header}>
         {isGroup ? (
           <div
@@ -870,7 +870,7 @@ const MessageThread = ({ conversation, onClose }) => {
                 className={styles.headerAvatarImage}
               />
             ) : (
-              <div className={styles.headerAvatarPlaceholder}>рџ‘Ґ</div>
+              <div className={styles.headerAvatarPlaceholder}>👥</div>
             )}
           </div>
         ) : (
@@ -906,19 +906,19 @@ const MessageThread = ({ conversation, onClose }) => {
         {isGroup ? (
           <h2
             className={`${styles.headerName} ${styles.headerNameClickable}`}
-            title="Р“СЂСѓРїРїРѕРІРѕР№ С‡Р°С‚"
+            title="Групповой чат"
             onClick={() => setShowMembersModal(true)}
           >
-            рџ‘Ґ {getDisplayName()}
+            👥 {getDisplayName()}
           </h2>
         ) : (
           <h2 className={styles.headerName}>
-            {conversation.isSecret ? 'рџ”’ ' : ''}
+            {conversation.isSecret ? '🔒 ' : ''}
             {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
           </h2>
         )}
         {conversation.isSecret && (
-          <span className={styles.secretChatBadge}>РЎРµРєСЂРµС‚РЅС‹Р№ С‡Р°С‚ В· E2EE</span>
+          <span className={styles.secretChatBadge}>Секретный чат · E2EE</span>
         )}
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button
@@ -941,7 +941,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     navigate(`/user/${conversation.otherUser.id}`);
                   }}
                 >
-                  <Icon name="friends" size="small" /> РџСЂРѕС„РёР»СЊ
+                  <Icon name="friends" size="small" /> Профиль
                 </button>
               )}
               {isGroup && (
@@ -953,7 +953,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       setShowMembersModal(true);
                     }}
                   >
-                    <Icon name="friends" size="small" /> РЈС‡Р°СЃС‚РЅРёРєРё
+                    <Icon name="friends" size="small" /> Участники
                   </button>
                   {effectiveConversation.createdBy === user.id && (
                     <button
@@ -963,7 +963,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         setShowGroupSettings(true);
                       }}
                     >
-                      <Icon name="settings" size="small" /> РќР°СЃС‚СЂРѕР№РєРё
+                      <Icon name="settings" size="small" /> Настройки
                     </button>
                   )}
                 </>
@@ -974,7 +974,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     className={styles.dropdownItem}
                     onClick={handleBlockUser}
                   >
-                    <Icon name="close" size="small" /> Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ
+                    <Icon name="close" size="small" /> Заблокировать
                   </button>
                   <button
                     className={styles.dropdownItem}
@@ -983,7 +983,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       setShowReportModal(true);
                     }}
                   >
-                    <Icon name="bug" size="small" /> РџРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ
+                    <Icon name="bug" size="small" /> Пожаловаться
                   </button>
                 </>
               )}
@@ -992,7 +992,7 @@ const MessageThread = ({ conversation, onClose }) => {
         </div>
       </div>
 
-      {/* РЎРїРёСЃРѕРє СЃРѕРѕР±С‰РµРЅРёР№ */}
+      {/* Список сообщений */}
       <div 
         className={styles.messagesContainer} 
         ref={messagesContainerRef}
@@ -1000,12 +1000,12 @@ const MessageThread = ({ conversation, onClose }) => {
       >
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
-            <p>{isGroup ? `РќР°С‡РЅРёС‚Рµ РѕР±С‰РµРЅРёРµ РІ "${conversation.groupName}"` : `РќР°С‡РЅРёС‚Рµ РїРµСЂРµРїРёСЃРєСѓ СЃ ${conversation.otherUser?.displayName}`}</p>
+            <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
           </div>
         ) : (
           <div className={styles.messagesList}>
             {loadingMore && (
-              <div className={styles.loadingMore}>Р—Р°РіСЂСѓР·РєР° СЃС‚Р°СЂС‹С… СЃРѕРѕР±С‰РµРЅРёР№...</div>
+              <div className={styles.loadingMore}>Загрузка старых сообщений...</div>
             )}
             {messages.map((message, index) => {
               const isOwnMessage = message.senderId === user.id;
@@ -1019,13 +1019,13 @@ const MessageThread = ({ conversation, onClose }) => {
                     </div>
                   )}
 
-                  {/* РћР±СЉСЏРІР»РµРЅРёРµ вЂ” РїРѕ С†РµРЅС‚СЂСѓ */}
+                  {/* Объявление — по центру */}
                   {message.isAnnouncement ? (
                     <div className={styles.announcementMessage}>
                       <div className={styles.announcementHeader}>
                         <Icon name="announcement" size="small" />
-                        <span>РћР±СЉСЏРІР»РµРЅРёРµ</span>
-                        {/* РљРЅРѕРїРєР° СѓРґР°Р»РµРЅРёСЏ вЂ” С‚РѕР»СЊРєРѕ Р°РІС‚РѕСЂ РёР»Рё РјРѕРґРµСЂР°С‚РѕСЂ СЃ delete_announcements */}
+                        <span>Объявление</span>
+                        {/* Кнопка удаления — только автор или модератор с delete_announcements */}
                         {(
                           message.senderId === user.id ||
                           (isGroup && (effectiveConversation.createdBy === user.id || group?.canDeleteAnnouncements))
@@ -1033,9 +1033,9 @@ const MessageThread = ({ conversation, onClose }) => {
                           <button
                             className={styles.announcementDeleteBtn}
                             onClick={(e) => handleDeleteClick(e, message.id, message.senderId === user.id, true)}
-                            title="РЈРґР°Р»РёС‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ"
+                            title="Удалить объявление"
                           >
-                            Г—
+                            ×
                           </button>
                         )}
                       </div>
@@ -1066,7 +1066,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     </div>
                   ) : (
                   <>
-                  {/* РРјСЏ РѕС‚РїСЂР°РІРёС‚РµР»СЏ РґР»СЏ РіСЂСѓРїРїРѕРІС‹С… С‡Р°С‚РѕРІ вЂ” РЅР°Рґ СЃРѕРѕР±С‰РµРЅРёРµРј */}
+                  {/* Имя отправителя для групповых чатов — над сообщением */}
                   {isGroup && !isOwnMessage && message.sender?.displayName && (
                     <div className={styles.senderNameRow}>
                       <a
@@ -1110,7 +1110,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         )
                       ) : (
                         (() => {
-                          // Р”Р»СЏ РіСЂСѓРїРїРѕРІС‹С… С‡Р°С‚РѕРІ вЂ” Р°РІР°С‚Р°СЂ СЂРµР°Р»СЊРЅРѕРіРѕ РѕС‚РїСЂР°РІРёС‚РµР»СЏ
+                          // Для групповых чатов — аватар реального отправителя
                           const senderAvatar = isGroup ? message.sender?.avatarUrl : conversation.otherUser?.avatarUrl;
                           const senderName = isGroup ? message.sender?.displayName : conversation.otherUser?.displayName;
                           const senderId = isGroup ? message.senderId : conversation.otherUser?.id;
@@ -1183,7 +1183,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         <p className={styles.messageText}>{renderMessageContent(message.content)}</p>
                       )}
                       
-                      {/* Р“РµРѕРјРµС‚РєР° */}
+                      {/* Геометка */}
                       {(() => {
                         const loc = parseLocation(message.location);
                         if (!loc) return null;
@@ -1193,7 +1193,7 @@ const MessageThread = ({ conversation, onClose }) => {
                               src={`https://www.openstreetmap.org/export/embed.html?bbox=${loc.lng-0.01},${loc.lat-0.01},${loc.lng+0.01},${loc.lat+0.01}&layer=mapnik&marker=${loc.lat},${loc.lng}`}
                               className={styles.locationMap}
                               loading="lazy"
-                              title="РљР°СЂС‚Р°"
+                              title="Карта"
                             />
                             <a 
                               href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=15/${loc.lat}/${loc.lng}`}
@@ -1202,13 +1202,13 @@ const MessageThread = ({ conversation, onClose }) => {
                               className={styles.locationLink}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              РћС‚РєСЂС‹С‚СЊ РЅР° РєР°СЂС‚Рµ в†’
+                              Открыть на карте →
                             </a>
                           </div>
                         );
                       })()}
 
-                      {/* РџСЂРµРґР»РѕР¶РµРЅРЅС‹Р№ С„РёР»СЊРј/СЃРµСЂРёР°Р» */}
+                      {/* Предложенный фильм/сериал */}
                       {(() => {
                         const sm = parseSuggestedMedia(message.suggestedMedia);
                         if (!sm) return null;
@@ -1227,16 +1227,16 @@ const MessageThread = ({ conversation, onClose }) => {
                                 className={styles.suggestedMediaPoster}
                               />
                             ) : (
-                              <div className={styles.suggestedMediaPlaceholder}>рџЋ¬</div>
+                              <div className={styles.suggestedMediaPlaceholder}>🎬</div>
                             )}
                             <div className={styles.suggestedMediaInfo}>
                               <span className={styles.suggestedMediaTitle}>{sm.title}</span>
                               <div className={styles.suggestedMediaMeta}>
                                 <span className={styles.suggestedMediaType}>
-                                  {sm.mediaType === 'movie' ? 'Р¤РёР»СЊРј' : 'РЎРµСЂРёР°Р»'}
+                                  {sm.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
                                 </span>
                                 {sm.voteAverage > 0 && (
-                                  <span className={styles.suggestedMediaRating}>в… {sm.voteAverage.toFixed(1)}</span>
+                                  <span className={styles.suggestedMediaRating}>★ {sm.voteAverage.toFixed(1)}</span>
                                 )}
                               </div>
                             </div>
@@ -1244,7 +1244,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         );
                       })()}
                       
-                      {/* Р’Р»РѕР¶РµРЅРёСЏ */}
+                      {/* Вложения */}
                       {message.attachments && message.attachments.length > 0 && (
                         <div className={styles.attachments}>
                           {message.attachments.map((attachment, attIndex) => (
@@ -1267,10 +1267,10 @@ const MessageThread = ({ conversation, onClose }) => {
                                   download={attachment.originalName}
                                   className={styles.attachmentFile}
                                 >
-                                  <span className={styles.attachmentIcon}>рџ“„</span>
+                                  <span className={styles.attachmentIcon}>📄</span>
                                   <span className={styles.attachmentName}>{attachment.originalName}</span>
                                   <span className={styles.attachmentSize}>
-                                    {(attachment.size / 1024 / 1024).toFixed(2)} РњР‘
+                                    {(attachment.size / 1024 / 1024).toFixed(2)} МБ
                                   </span>
                                 </a>
                               )}
@@ -1281,7 +1281,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       
                       {message.sentViaBot && (
                         <div className={styles.botLabel}>
-                          рџ“± РћС‚РІРµС‡РµРЅРѕ СЃ РїРѕРјРѕС‰СЊСЋ <a href="https://t.me/watchRebel_bot" target="_blank" rel="noopener noreferrer" className={styles.botLink}>Р±РѕС‚Р°</a>
+                          📱 Отвечено с помощью <a href="https://t.me/watchRebel_bot" target="_blank" rel="noopener noreferrer" className={styles.botLink}>бота</a>
                         </div>
                       )}
                       <div className={styles.messageFooter}>
@@ -1290,9 +1290,9 @@ const MessageThread = ({ conversation, onClose }) => {
                           <button
                             className={styles.deleteButton}
                             onClick={(e) => handleDeleteClick(e, message.id, isOwnMessage)}
-                            title="РЈРґР°Р»РёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ"
+                            title="Удалить сообщение"
                           >
-                            Г—
+                            ×
                           </button>
                         )}
                       </div>
@@ -1304,12 +1304,12 @@ const MessageThread = ({ conversation, onClose }) => {
               );
             })}
             <div ref={messagesEndRef} />
-            {/* РљРЅРѕРїРєР° СЃРєСЂРѕР»Р»Р° РІРЅРёР· вЂ” РІРЅСѓС‚СЂРё messagesList */}
+            {/* Кнопка скролла вниз — внутри messagesList */}
             {showScrollButton && (
             <button 
               className={styles.scrollDownButton}
               onClick={() => scrollToBottom(true)}
-              title="Рљ РЅРѕРІС‹Рј СЃРѕРѕР±С‰РµРЅРёСЏРј"
+              title="К новым сообщениям"
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M19 12l-7 7-7-7"/>
@@ -1321,10 +1321,10 @@ const MessageThread = ({ conversation, onClose }) => {
         
       </div>
 
-      {/* Р¤РѕСЂРјР° РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ */}
+      {/* Форма отправки сообщения */}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>
         <div className={styles.inputWrapper}>
-          {/* РџСЂРµРІСЊСЋ РІС‹Р±СЂР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ */}
+          {/* Превью выбранных файлов */}
           {selectedFiles.length > 0 && (
             <div className={styles.filesPreview}>
               {selectedFiles.map((file, index) => (
@@ -1336,7 +1336,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       className={styles.filePreviewImage}
                     />
                   ) : (
-                    <div className={styles.filePreviewIcon}>рџ“„</div>
+                    <div className={styles.filePreviewIcon}>📄</div>
                   )}
                   <span className={styles.filePreviewName}>{file.name}</span>
                   <button
@@ -1344,7 +1344,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     className={styles.fileRemoveButton}
                     onClick={() => handleRemoveFile(index)}
                   >
-                    Г—
+                    ×
                   </button>
                 </div>
               ))}
@@ -1386,7 +1386,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     type="button"
                     className={styles.attachButton}
                     onClick={() => setShowAttachDropdown(!showAttachDropdown)}
-                    title="РџСЂРёРєСЂРµРїРёС‚СЊ"
+                    title="Прикрепить"
                   >
                     <Icon name="paperclip" size="medium" />
                   </button>
@@ -1405,7 +1405,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isGroup ? "РќР°РїРёС€РёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ..." : "РќР°РїРёС€РёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ..."}
+                    placeholder={isGroup ? "Напишите сообщение..." : "Напишите сообщение..."}
                     rows={1}
                     disabled={sendingMessage}
                   />
@@ -1422,7 +1422,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       type="button"
                       className={styles.emojiButton}
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      title="Р­РјРѕРґР·Рё"
+                      title="Эмодзи"
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
@@ -1436,9 +1436,9 @@ const MessageThread = ({ conversation, onClose }) => {
                         type="button"
                         className={styles.clearInputButton}
                         onClick={() => setMessageText('')}
-                        title="РћС‡РёСЃС‚РёС‚СЊ"
+                        title="Очистить"
                       >
-                        вњ•
+                        ✕
                       </button>
                     )}
                   </div>
@@ -1457,7 +1457,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     className={styles.sendButton}
                     disabled={(!messageText.trim() && selectedFiles.length === 0) || sendingMessage}
                   >
-                    {sendingMessage ? '...' : 'вћ¤'}
+                    {sendingMessage ? '...' : '➤'}
                   </button>
                 ) : (
                   <button
@@ -1468,7 +1468,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     onMouseLeave={handleRecordMouseUp}
                     onTouchStart={handleRecordTouchStart}
                     onTouchEnd={handleRecordTouchEnd}
-                    title="Р—Р°Р¶РјРёС‚Рµ РґР»СЏ Р·Р°РїРёСЃРё"
+                    title="Зажмите для записи"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -1484,7 +1484,7 @@ const MessageThread = ({ conversation, onClose }) => {
         </div>
       </form>
       
-      {/* РњРѕРґР°Р»РєР° РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РёР·РѕР±СЂР°Р¶РµРЅРёР№ */}
+      {/* Модалка для просмотра изображений */}
       {showImageModal && (
         <div className={styles.imageModal} onClick={() => setShowImageModal(false)}>
           <div className={styles.imageModalContent} onClick={(e) => e.stopPropagation()}>
@@ -1492,7 +1492,7 @@ const MessageThread = ({ conversation, onClose }) => {
               className={styles.imageModalClose}
               onClick={() => setShowImageModal(false)}
             >
-              Г—
+              ×
             </button>
             
             {modalImages.length > 1 && (
@@ -1501,13 +1501,13 @@ const MessageThread = ({ conversation, onClose }) => {
                   className={styles.imageModalPrev}
                   onClick={() => setCurrentImageIndex((currentImageIndex - 1 + modalImages.length) % modalImages.length)}
                 >
-                  вЂ№
+                  ‹
                 </button>
                 <button
                   className={styles.imageModalNext}
                   onClick={() => setCurrentImageIndex((currentImageIndex + 1) % modalImages.length)}
                 >
-                  вЂє
+                  ›
                 </button>
               </>
             )}
@@ -1522,8 +1522,8 @@ const MessageThread = ({ conversation, onClose }) => {
             <div className={styles.imageModalInfo}>
               {imageDimensions.natural.width > 0 && (
                 <div className={styles.imageModalDimensions}>
-                  Р РµР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ: {imageDimensions.natural.width}Г—{imageDimensions.natural.height} | 
-                  РўРµРєСѓС‰РёР№ СЂР°Р·РјРµСЂ: {imageDimensions.displayed.width}Г—{imageDimensions.displayed.height}
+                  Реальный размер: {imageDimensions.natural.width}×{imageDimensions.natural.height} | 
+                  Текущий размер: {imageDimensions.displayed.width}×{imageDimensions.displayed.height}
                 </div>
               )}
               {modalImages.length > 1 && (
@@ -1603,7 +1603,7 @@ const MessageThread = ({ conversation, onClose }) => {
               className={styles.imageModalClose}
               onClick={() => setShowGroupAvatarModal(false)}
             >
-              Г—
+              ×
             </button>
             <img
               src={
