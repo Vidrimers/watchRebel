@@ -18,6 +18,8 @@ import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
+import { hasIdentityKey } from '../services/e2ee';
+import KeyRecoveryModal from '../components/E2EE/KeyRecoveryModal';
 import styles from './SettingsPage.module.css';
 
 const SettingsPage = () => {
@@ -31,6 +33,8 @@ const SettingsPage = () => {
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [saveError, setSaveError] = useState(null);
   const [openSection, setOpenSection] = useState(null);
+  const [showE2EEModal, setShowE2EEModal] = useState(false);
+  const [hasE2EEKey, setHasE2EEKey] = useState(hasIdentityKey());
 
   const isAdmin = user?.isAdmin || user?.id === TELEGRAM_ADMIN_ID;
 
@@ -354,6 +358,26 @@ const SettingsPage = () => {
                   <TwoFactorSettings />
                 </div>
                 <div className={styles.accordionSection}>
+                  <h4 className={styles.accordionSectionTitle}>Шифрование секретных чатов (E2EE)</h4>
+                  {hasE2EEKey ? (
+                    <p className={styles.cardDescription} style={{ color: 'var(--text-secondary)' }}>
+                      ✅ Ключи шифрования созданы. Секретные чаты доступны.
+                    </p>
+                  ) : (
+                    <>
+                      <p className={styles.cardDescription}>
+                        Для использования секретных чатов необходимо создать ключи шифрования.
+                      </p>
+                      <button
+                        className={styles.linkButton}
+                        onClick={() => setShowE2EEModal(true)}
+                      >
+                        Создать ключи E2EE
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className={styles.accordionSection}>
                   <h4 className={styles.accordionSectionTitle}>Связанные аккаунты</h4>
                   <div className={styles.connectionsGrid}>
                     <EmailConnectionBlock />
@@ -412,6 +436,16 @@ const SettingsPage = () => {
           {isAdmin && <AdminPanel />}
         </div>
       </UserPageLayout>
+
+      {showE2EEModal && (
+        <KeyRecoveryModal
+          onClose={() => setShowE2EEModal(false)}
+          onKeyReady={() => {
+            setShowE2EEModal(false);
+            setHasE2EEKey(true);
+          }}
+        />
+      )}
     </>
   );
 };
