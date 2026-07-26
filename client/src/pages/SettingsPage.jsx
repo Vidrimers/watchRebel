@@ -385,7 +385,7 @@ const SettingsPage = () => {
                             }
                           }
                         }}
-                        style={{ marginTop: '8px', fontSize: '12px', padding: '4px 10px' }}
+                        style={{ marginTop: '8px', fontSize: '12px', padding: '4px 10px', width: 'auto', display: 'inline-flex' }}
                       >
                         <Icon name="delete" size="small" /> Сбросить ключи
                       </button>
