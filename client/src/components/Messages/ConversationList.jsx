@@ -3,6 +3,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchConversations, setCurrentConversation } from '../../store/slices/messagesSlice';
 import Icon from '../Common/Icon';
+import useAlert from '../../hooks/useAlert';
 import api from '../../services/api';
 import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
 import { hasIdentityKey, fetchPublicKey, isEncryptedMessage } from '../../services/e2ee';
@@ -17,6 +18,7 @@ const ConversationList = ({ onSelectConversation }) => {
   const dispatch = useAppDispatch();
   const { conversations, loading, currentConversation } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
+  const { alertDialog, showAlert } = useAlert();
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [friends, setFriends] = useState([]);
@@ -59,7 +61,7 @@ const ConversationList = ({ onSelectConversation }) => {
   // Обработчик создания секретного чата
   const handleCreateSecretChat = async (friend) => {
     if (!hasIdentityKey()) {
-      alert('Сначала создайте ключи E2EE в настройках');
+      await showAlert({ title: 'E2EE', message: 'Сначала создайте ключи E2EE в настройках', type: 'warning' });
       return;
     }
 
@@ -78,7 +80,7 @@ const ConversationList = ({ onSelectConversation }) => {
       // Проверяем, есть ли у друга публичный ключ
       const theirKey = await fetchPublicKey(friend.id);
       if (!theirKey) {
-        alert('У этого пользователя ещё нет ключей E2EE. Он должен сначала войти в приложение.');
+        await showAlert({ title: 'E2EE', message: 'У этого пользователя ещё нет ключей E2EE. Он должен сначала войти в приложение.', type: 'warning' });
         return;
       }
 
@@ -101,7 +103,7 @@ const ConversationList = ({ onSelectConversation }) => {
     } catch (error) {
       console.error('Ошибка создания секретного чата:', error);
       const msg = error.response?.data?.error || 'Не удалось создать секретный чат';
-      alert(msg);
+      await showAlert({ title: 'Ошибка', message: msg, type: 'error' });
     }
   };
 
@@ -298,7 +300,7 @@ const ConversationList = ({ onSelectConversation }) => {
                         onClick={(e) => { e.stopPropagation(); handleCreateSecretChat(friend); }}
                         title="Создать секретный чат"
                       >
-                        🔒
+                        <Icon name="secret-chat" size="small" />
                       </button>
                     </div>
                   ))
@@ -486,7 +488,7 @@ const ConversationList = ({ onSelectConversation }) => {
                       onClick={(e) => { e.stopPropagation(); handleCreateSecretChat(friend); }}
                       title="Создать секретный чат"
                     >
-                      🔒
+                      <Icon name="secret-chat" size="small" />
                     </button>
                   </div>
                 ))
@@ -524,6 +526,7 @@ const ConversationList = ({ onSelectConversation }) => {
           </button>
         </div>
       )}
+      {alertDialog}
     </div>
   );
 };
