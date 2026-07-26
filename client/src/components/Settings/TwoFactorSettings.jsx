@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { logout } from '../../store/slices/authSlice';
 import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert.jsx';
 import useConfirm from '../../hooks/useConfirm.jsx';
@@ -10,6 +13,8 @@ import styles from './TwoFactorSettings.module.css';
  * Отображается в секции "Аккаунт и безопасность"
  */
 function TwoFactorSettings() {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { alertDialog, showAlert } = useAlert();
   const { confirmDialog, showConfirm } = useConfirm();
 
@@ -111,12 +116,13 @@ function TwoFactorSettings() {
       });
       return;
     }
-    setSetupStep(null);
-    setSetupData(null);
-    setVerifyCode('');
-    setBackupCodes([]);
-    setBackupCodesSaved(false);
-    await fetchTrustedDevices();
+    await showAlert({
+      title: '2FA включена',
+      message: 'Для завершения необходимо войти заново с кодом 2FA.',
+      type: 'success'
+    });
+    await dispatch(logout());
+    navigate('/login', { replace: true });
   };
 
   // Отключение 2FA

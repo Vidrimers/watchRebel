@@ -153,11 +153,18 @@ router.post('/confirm', authenticateToken, async (req, res) => {
       [JSON.stringify(backupCodesHashed), userId]
     );
 
+    // Инвалидируем все текущие сессии (кроме текущей) — пользователь должен перелогиниться с 2FA
+    await executeQuery(
+      'DELETE FROM sessions WHERE user_id = ? AND id != ?',
+      [userId, req.sessionId]
+    );
+
     console.log(`✅ 2FA enabled for user ${userId}`);
 
     res.json({
-      message: '2FA успешно включена',
-      backupCodes
+      message: '2FA успешно включена. Необходимо войти заново.',
+      backupCodes,
+      requireRelogin: true
     });
 
   } catch (error) {
