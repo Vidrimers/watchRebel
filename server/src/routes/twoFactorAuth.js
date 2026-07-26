@@ -4,17 +4,18 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
+import { generateSecret } from '@otplib/core';
+import { generate, verify } from '@otplib/totp';
+import { NobleCryptoPlugin } from '@otplib/plugin-crypto-noble';
+import { ScureBase32Plugin } from '@otplib/plugin-base32-scure';
 import QRCode from 'qrcode';
 import { generatePreAuthToken, verifyPreAuthToken, hashTrustedDeviceToken } from '../utils/twoFactorUtils.js';
 
 const router = express.Router();
 
-// Создаём экземпляр TOTP с required плагинами
-const totp = new TOTP({
-  crypto: new NobleCryptoPlugin(),
-  base32: new ScureBase32Plugin()
-});
+const otplibCrypto = new NobleCryptoPlugin();
+const otplibBase32 = new ScureBase32Plugin();
+const otplibOpts = { crypto: otplibCrypto, base32: otplibBase32 };
 
 /**
  * POST /api/2fa/setup
@@ -46,10 +47,10 @@ router.post('/setup', authenticateToken, async (req, res) => {
     }
 
     // Генерируем секрет
-    const secret = totp.generateSecret();
+    const secret = generateSecret(otplibOpts);
 
     // Генерируем otpauth:// URI
-    const otpauthUrl = totp.toURI({ secret, issuer: 'WatchRebel', label: String(userId) });
+    const otpauthUrl = `otpauth://totp/WatchRebel:${encodeURIComponent(userId)}?secret=${secret}&issuer=WatchRebel`;
 
     // Генерируем QR-код как data URL
     const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
@@ -125,7 +126,8 @@ router.post('/confirm', authenticateToken, async (req, res) => {
     }
 
     // Проверяем код
-    const isValid = totp.verify({ token: code, secret: user.two_factor_secret });
+    const result = await verify({ token: code, secret: user.two_factor_secret, ...otplibOpts });
+    const isValid = result.valid;
 
     if (!isValid) {
       return res.status(400).json({
@@ -220,7 +222,8 @@ router.post('/verify', async (req, res) => {
 
     // Проверяем TOTP-код
     if (code) {
-      verified = totp.verify({ token: code, secret: user.two_factor_secret });
+      const verifyResult = await verify({ token: code, secret: user.two_factor_secret, ...otplibOpts });
+      verified = verifyResult.valid;
     }
     // Проверяем backup-код
     else if (backupCode) {
@@ -366,7 +369,7 @@ router.post('/disable', authenticateToken, async (req, res) => {
     }
     // Если есть TOTP-код — проверяем его
     else if (totpCode) {
-      confirmed = totp.verify({ token: totpCode, secret: user.two_factor_secret });
+      confirmed = (await verify({ token: totpCode, secret: user.two_factor_secret, ...otplibOpts })).valid;
     }
 
     if (!confirmed) {
@@ -621,7 +624,7 @@ router.post('/regenerate-backup-codes', authenticateToken, async (req, res) => {
     if (password && user.password_hash) {
       confirmed = await bcrypt.compare(password, user.password_hash);
     } else if (totpCode) {
-      confirmed = totp.verify({ token: totpCode, secret: user.two_factor_secret });
+      confirmed = (await verify({ token: totpCode, secret: user.two_factor_secret, ...otplibOpts })).valid;
     }
 
     if (!confirmed) {
