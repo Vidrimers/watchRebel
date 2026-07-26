@@ -4,12 +4,14 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import otplib from 'otplib';
-const { authenticator } = otplib;
+import { TOTP } from 'otplib';
 import QRCode from 'qrcode';
 import { generatePreAuthToken, verifyPreAuthToken, hashTrustedDeviceToken } from '../utils/twoFactorUtils.js';
 
 const router = express.Router();
+
+// Создаём экземпляр TOTP для генерации и верификации кодов
+const totp = new TOTP();
 
 /**
  * POST /api/2fa/setup
@@ -41,10 +43,10 @@ router.post('/setup', authenticateToken, async (req, res) => {
     }
 
     // Генерируем секрет
-    const secret = authenticator.generateSecret();
+    const secret = totp.generateSecret();
 
     // Генерируем otpauth:// URI
-    const otpauthUrl = authenticator.keyuri(userId, 'WatchRebel', secret);
+    const otpauthUrl = totp.generateURI({ secret, issuer: 'WatchRebel', label: String(userId) });
 
     // Генерируем QR-код как data URL
     const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
@@ -120,7 +122,7 @@ router.post('/confirm', authenticateToken, async (req, res) => {
     }
 
     // Проверяем код
-    const isValid = authenticator.verify({ token: code, secret: user.two_factor_secret });
+    const isValid = totp.verify({ token: code, secret: user.two_factor_secret });
 
     if (!isValid) {
       return res.status(400).json({
@@ -215,7 +217,7 @@ router.post('/verify', async (req, res) => {
 
     // Проверяем TOTP-код
     if (code) {
-      verified = authenticator.verify({ token: code, secret: user.two_factor_secret });
+      verified = totp.verify({ token: code, secret: user.two_factor_secret });
     }
     // Проверяем backup-код
     else if (backupCode) {
@@ -361,7 +363,7 @@ router.post('/disable', authenticateToken, async (req, res) => {
     }
     // Если есть TOTP-код — проверяем его
     else if (totpCode) {
-      confirmed = authenticator.verify({ token: totpCode, secret: user.two_factor_secret });
+      confirmed = totp.verify({ token: totpCode, secret: user.two_factor_secret });
     }
 
     if (!confirmed) {
@@ -616,7 +618,7 @@ router.post('/regenerate-backup-codes', authenticateToken, async (req, res) => {
     if (password && user.password_hash) {
       confirmed = await bcrypt.compare(password, user.password_hash);
     } else if (totpCode) {
-      confirmed = authenticator.verify({ token: totpCode, secret: user.two_factor_secret });
+      confirmed = totp.verify({ token: totpCode, secret: user.two_factor_secret });
     }
 
     if (!confirmed) {
