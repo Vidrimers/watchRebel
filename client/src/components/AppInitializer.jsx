@@ -31,7 +31,11 @@ function AppInitializer({ children }) {
   // Проверка E2EE ключей после авторизации
   useEffect(() => {
     if (user?.id && initialized && !hasIdentityKey()) {
-      setShowE2EEModal(true);
+      // Показываем модалку только если пользователь не отклонял её ранее
+      const dismissed = localStorage.getItem('e2ee_modal_dismissed');
+      if (!dismissed) {
+        setShowE2EEModal(true);
+      }
     }
   }, [user?.id, initialized]);
 
@@ -97,8 +101,16 @@ function AppInitializer({ children }) {
       {children}
       {showE2EEModal && (
         <KeyRecoveryModal
-          onClose={() => setShowE2EEModal(false)}
-          onKeyReady={() => setShowE2EEModal(false)}
+          onClose={() => {
+            setShowE2EEModal(false);
+            // Запоминаем что пользователь отклонил модалку
+            localStorage.setItem('e2ee_modal_dismissed', 'true');
+          }}
+          onKeyReady={() => {
+            setShowE2EEModal(false);
+            // Удаляем флаг если ключи созданы
+            localStorage.removeItem('e2ee_modal_dismissed');
+          }}
         />
       )}
     </>
