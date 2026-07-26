@@ -51,8 +51,7 @@ export const fetchMessages = createAsyncThunk(
             }
             return msg;
           })
-          );
-        }
+        );
       }
 
       return { conversationId, ...response.data, messages, offset };
