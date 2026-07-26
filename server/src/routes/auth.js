@@ -254,15 +254,48 @@ router.delete('/logout', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({ 
-      message: 'Выход выполнен успешно' 
+    res.json({
+      message: 'Выход выполнен успешно'
     });
 
   } catch (error) {
     console.error('Ошибка выхода:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+/**
+ * DELETE /api/auth/logout-all
+ * Выход из всех сессий, кроме текущей
+ * Требует токен в заголовке Authorization
+ */
+router.delete('/logout-all', authenticateToken, async (req, res) => {
+  try {
+    const result = await executeQuery(
+      'DELETE FROM sessions WHERE user_id = ? AND id != ?',
+      [req.user.id, req.sessionId]
+    );
+
+    if (!result.success) {
+      return res.status(500).json({
+        error: 'Ошибка удаления сессий',
+        code: 'DATABASE_ERROR'
+      });
+    }
+
+    res.json({
+      message: 'Все остальные сессии завершены',
+      terminatedSessions: result.changes
+    });
+
+  } catch (error) {
+    console.error('Ошибка выхода из всех сессий:', error);
+    res.status(500).json({
+      error: 'Внутренняя ошибка сервера',
+      code: 'INTERNAL_ERROR'
     });
   }
 });

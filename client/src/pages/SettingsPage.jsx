@@ -48,6 +48,32 @@ const SettingsPage = () => {
     }
   };
 
+  const handleLogoutAll = async () => {
+    const confirmed = await showConfirm({
+      title: 'Завершить все сессии',
+      message: 'Все остальные устройства будут разлогинены. Вы останетесь на этом устройстве.',
+      confirmText: 'Завершить',
+      cancelText: 'Отмена',
+      confirmButtonStyle: 'danger'
+    });
+    if (confirmed) {
+      try {
+        await api.delete('/auth/logout-all');
+        await showAlert({
+          title: 'Готово',
+          message: 'Все остальные сессии завершены',
+          type: 'success'
+        });
+      } catch (error) {
+        await showAlert({
+          title: 'Ошибка',
+          message: 'Не удалось завершить сессии',
+          type: 'error'
+        });
+      }
+    }
+  };
+
   const handleDeleteAccount = async () => {
     const firstConfirm = await showConfirm({
       title: 'Удаление аккаунта',
@@ -335,9 +361,14 @@ const SettingsPage = () => {
                   <DiscordConnectionBlock />
                 </div>
                 <div className={styles.accordionSection}>
-                  <button onClick={handleLogout} className={styles.logoutButton}>
-                    Выйти из аккаунта
-                  </button>
+                  <div className={styles.logoutGroup}>
+                    <button onClick={handleLogout} className={styles.logoutButton}>
+                      Выйти из аккаунта
+                    </button>
+                    <button onClick={handleLogoutAll} className={styles.logoutAllButton}>
+                      Завершить все сессии
+                    </button>
+                  </div>
                 </div>
                 <div className={styles.accordionSection}>
                   <h4 className={styles.accordionSectionTitle}>Удаление аккаунта</h4>
