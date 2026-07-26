@@ -36,6 +36,9 @@ function TwoFactorSettings() {
       setLoading(true);
       const result = await api.post('/2fa/status');
       setStatus(result.data.enabled);
+      if (result.data.enabled) {
+        fetchTrustedDevices();
+      }
     } catch (error) {
       console.error('Ошибка загрузки статуса 2FA:', error);
     } finally {
