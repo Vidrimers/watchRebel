@@ -4,6 +4,8 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
 import { connectWebSocket, disconnectWebSocket } from '../services/websocket';
 import { fetchNicknames, setNicknames, setNicknameDisplayMode } from '../utils/nicknameResolver';
+import { hasIdentityKey } from '../services/e2ee';
+import KeyRecoveryModal from './E2EE/KeyRecoveryModal';
 
 /**
  * Компонент для инициализации приложения
@@ -15,6 +17,7 @@ function AppInitializer({ children }) {
   const [initialized, setInitialized] = React.useState(false);
   const wsConnectedRef = useRef(false);
   const currentUserIdRef = useRef(null);
+  const [showE2EEModal, setShowE2EEModal] = React.useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -24,6 +27,13 @@ function AppInitializer({ children }) {
 
     initializeAuth();
   }, [dispatch]);
+
+  // Проверка E2EE ключей после авторизации
+  useEffect(() => {
+    if (user?.id && initialized && !hasIdentityKey()) {
+      setShowE2EEModal(true);
+    }
+  }, [user?.id, initialized]);
 
   // Загружаем ники и настройки отображения когда пользователь авторизован
   useEffect(() => {
@@ -82,7 +92,17 @@ function AppInitializer({ children }) {
     );
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      {showE2EEModal && (
+        <KeyRecoveryModal
+          onClose={() => setShowE2EEModal(false)}
+          onKeyReady={() => setShowE2EEModal(false)}
+        />
+      )}
+    </>
+  );
 }
 
 export default AppInitializer;

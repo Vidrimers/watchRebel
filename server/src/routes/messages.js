@@ -63,7 +63,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     // 1. Личные диалоги (не групповые)
     const directQuery = `
       SELECT
-        c.id, c.user1_id, c.user2_id, c.is_group, c.group_name,
+        c.id, c.user1_id, c.user2_id, c.is_group, c.is_secret, c.group_name,
         c.group_avatar, c.created_by, c.last_message_at, c.created_at,
         CASE WHEN c.user1_id = ? THEN u2.id ELSE u1.id END as other_user_id,
         CASE WHEN c.user1_id = ? THEN u2.display_name ELSE u1.display_name END as other_user_name,
@@ -198,10 +198,12 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       }
 
       const isGroup = Boolean(c.is_group);
+      const isSecret = Boolean(c.is_secret);
 
       return {
         id: c.id,
         isGroup,
+        isSecret,
         ...(isGroup ? {
           groupName: c.group_name,
           groupAvatar: c.group_avatar,
@@ -443,6 +445,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
     let conversationId;
     let isGroup = false;
+    let isSecret = false;
     let groupMembers = [];
 
     if (groupCheck.success && groupCheck.data.length > 0) {
@@ -528,6 +531,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
         }
       } else {
         conversationId = conversationCheck.data[0].id;
+        isSecret = Boolean(conversationCheck.data[0].is_secret);
       }
     }
 
@@ -639,6 +643,11 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
 
       let messagePreview = '';
 
+      // Для секретных чатов — не показываем текст сообщения
+      if (isSecret) {
+        messagePreview = '🔒 Зашифрованное сообщение';
+      } else {
+
       // Форматируем упоминания для Telegram: @[Name](id) → <a href="t.me/...">Name</a>
       const formatMentionsForTelegram = (text) => {
         if (!text) return text;
@@ -671,6 +680,7 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       } else {
         messagePreview = formatMentionsForTelegram(content.substring(0, 100) + (content.length > 100 ? '...' : ''));
       }
+      } // конец else для isSecret
 
       // Получатели уведомлений: для групп — все участники кроме отправителя, для личных — получатель
       const notificationTargets = isGroup ? groupMembers : [receiverId];
@@ -1259,6 +1269,118 @@ router.post('/conversations/group', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка создания группового чата:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/conversations/secret
+ * Создать секретный чат (E2EE)
+ */
+router.post('/conversations/secret', authenticateToken, async (req, res) => {
+  try {
+    const { memberId } = req.body;
+    const userId = req.user.id;
+
+    if (!memberId) {
+      return res.status(400).json({ error: 'Укажите собеседника', code: 'MISSING_MEMBER' });
+    }
+
+    if (memberId === userId) {
+      return res.status(400).json({ error: 'Нельзя создать секретный чат с самим собой', code: 'SELF_CHAT' });
+    }
+
+    // Проверяем, существует ли получатель
+    const receiverCheck = await executeQuery(
+      'SELECT id, display_name, avatar_url FROM users WHERE id = ?',
+      [memberId]
+    );
+    if (!receiverCheck.success || receiverCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден', code: 'USER_NOT_FOUND' });
+    }
+
+    // Проверяем, есть ли у обоих пользователей публичные ключи
+    const myKeyCheck = await executeQuery(
+      'SELECT id FROM user_keys WHERE user_id = ?',
+      [userId]
+    );
+    if (!myKeyCheck.success || myKeyCheck.data.length === 0) {
+      return res.status(400).json({ error: 'У вас нет ключей E2EE. Сначала создайте ключи.', code: 'NO_E2EE_KEY' });
+    }
+
+    const theirKeyCheck = await executeQuery(
+      'SELECT id FROM user_keys WHERE user_id = ?',
+      [memberId]
+    );
+    if (!theirKeyCheck.success || theirKeyCheck.data.length === 0) {
+      return res.status(400).json({ error: 'У собеседника нет ключей E2EE', code: 'NO_E2EE_KEY_OTHER' });
+    }
+
+    // Проверяем, нет ли уже секретного чата между пользователями
+    const existingCheck = await executeQuery(
+      `SELECT id FROM conversations
+       WHERE ((user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?))
+       AND is_secret = 1`,
+      [userId, memberId, memberId, userId]
+    );
+    if (existingCheck.success && existingCheck.data.length > 0) {
+      return res.status(409).json({
+        error: 'Секретный чат с этим пользователем уже существует',
+        code: 'ALREADY_EXISTS',
+        conversationId: existingCheck.data[0].id
+      });
+    }
+
+    // Создаём секретный чат
+    const conversationId = uuidv4();
+    const [user1Id, user2Id] = [userId, memberId].sort();
+
+    const createResult = await executeQuery(
+      `INSERT INTO conversations (id, user1_id, user2_id, is_secret, last_message_at, created_at)
+       VALUES (?, ?, ?, 1, datetime('now'), datetime('now'))`,
+      [conversationId, user1Id, user2Id]
+    );
+
+    if (!createResult.success) {
+      return res.status(500).json({ error: 'Ошибка создания секретного чата', code: 'DATABASE_ERROR' });
+    }
+
+    // Добавляем участников в conversation_members
+    await executeQuery(
+      'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+      [uuidv4(), conversationId, userId]
+    );
+    await executeQuery(
+      'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+      [uuidv4(), conversationId, memberId]
+    );
+
+    // Уведомляем второго пользователя через WebSocket
+    const { sendMessageToUser } = await import('../services/websocketService.js');
+    sendMessageToUser(memberId, {
+      type: 'secret_chat_request',
+      conversationId,
+      fromUser: {
+        id: userId,
+        displayName: req.user.displayName,
+        avatarUrl: req.user.avatarUrl
+      }
+    });
+
+    const otherUser = receiverCheck.data[0];
+    res.status(201).json({
+      id: conversationId,
+      isSecret: true,
+      otherUser: {
+        id: memberId,
+        displayName: otherUser.display_name,
+        avatarUrl: otherUser.avatar_url
+      },
+      createdAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания секретного чата:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });

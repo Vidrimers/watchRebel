@@ -10,6 +10,7 @@
     "test": "node --test src/**/*.property.test.js"
   },
   "dependencies": {
+    "@noble/curves": "^2.2.0",
     "@reduxjs/toolkit": "^2.0.1",
     "axios": "^1.6.2",
     "prop-types": "^15.8.1",

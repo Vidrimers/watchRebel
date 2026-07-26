@@ -417,6 +417,9 @@ export async function runMigrations() {
           }
         });
 
+        // === Секретные чаты (E2EE) ===
+        safeAddColumn('conversations', 'is_secret', 'BOOLEAN', '0');
+
         // === Групповые чаты ===
         safeAddColumn('conversations', 'is_group', 'BOOLEAN', '0');
         safeAddColumn('conversations', 'group_name', 'TEXT');
@@ -561,6 +564,46 @@ export async function runMigrations() {
             console.error('Ошибка создания таблицы telegram_verification_codes:', err.message);
           } else {
             console.log('✓ Таблица telegram_verification_codes создана');
+          }
+        });
+
+        // === E2EE: Таблица публичных ключей пользователей ===
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS user_keys (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL UNIQUE,
+            public_key TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_user_keys_user ON user_keys(user_id);
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы user_keys:', err.message);
+          } else {
+            console.log('✓ Таблица user_keys создана');
+          }
+        });
+
+        // === E2EE: Таблица зашифрованных бэкапов приватных ключей ===
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS key_backups (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL UNIQUE,
+            encrypted_private_key TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            iv TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_key_backups_user ON key_backups(user_id);
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы key_backups:', err.message);
+          } else {
+            console.log('✓ Таблица key_backups создана');
           }
         });
 

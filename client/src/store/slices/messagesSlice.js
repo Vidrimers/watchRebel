@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { APIError, NetworkError } from '../../services/api';
+import { isEncryptedMessage, decryptMessage, getSessionKey, extractRotationCounter, getSessionKeyByRotation } from '../../services/e2ee';
 
 // Вспомогательная функция для обработки ошибок
 const handleError = (error, rejectWithValue) => {
@@ -27,10 +28,34 @@ export const fetchConversations = createAsyncThunk(
 // Получить сообщения из конкретного диалога
 export const fetchMessages = createAsyncThunk(
   'messages/fetchMessages',
-  async ({ conversationId, limit = 50, offset = 0 }, { rejectWithValue }) => {
+  async ({ conversationId, limit = 50, offset = 0, isSecret = false }, { rejectWithValue }) => {
     try {
       const response = await api.get(`/messages/${conversationId}?limit=${limit}&offset=${offset}`);
-      return { conversationId, ...response.data, offset };
+      let messages = response.data.messages || [];
+
+      // Расшифровка сообщений для секретных чатов
+      if (isSecret && messages.length > 0) {
+        messages = await Promise.all(
+          messages.map(async (msg) => {
+            if (isEncryptedMessage(msg.content)) {
+              try {
+                // Определяем нужный ключ по счётчику ротации
+                const rotationCounter = extractRotationCounter(msg.content);
+                const sessionKey = getSessionKeyByRotation(conversationId, rotationCounter) || getSessionKey(conversationId);
+                if (sessionKey) {
+                  msg = { ...msg, content: await decryptMessage(msg.content, sessionKey) };
+                }
+              } catch (err) {
+                console.error('Ошибка расшифровки сообщения:', err);
+              }
+            }
+            return msg;
+          })
+          );
+        }
+      }
+
+      return { conversationId, ...response.data, messages, offset };
     } catch (error) {
       return handleError(error, rejectWithValue);
     }
@@ -40,7 +65,7 @@ export const fetchMessages = createAsyncThunk(
 // Отправить новое сообщение
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ receiverId, content, files = [], location = null, suggestedMedia = null }, { rejectWithValue }) => {
+  async ({ receiverId, content, files = [], location = null, suggestedMedia = null, originalContent = null }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append('receiverId', receiverId);
@@ -51,17 +76,23 @@ export const sendMessage = createAsyncThunk(
       if (suggestedMedia) {
         formData.append('suggestedMedia', JSON.stringify(suggestedMedia));
       }
-      
+
       // Добавляем файлы
       files.forEach(file => {
         formData.append('attachments', file);
       });
-      
+
       const response = await api.post('/messages', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+
+      // Для секретных чатов: заменяем зашифрованный content на оригинальный plaintext
+      if (originalContent !== null) {
+        response.data = { ...response.data, content: originalContent };
+      }
+
       return response.data;
     } catch (error) {
       return handleError(error, rejectWithValue);

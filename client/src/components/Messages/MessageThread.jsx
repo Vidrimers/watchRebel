@@ -4,6 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
+import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
@@ -143,12 +144,33 @@ const MessageThread = ({ conversation, onClose }) => {
 
   const showInput = !isRecording && !audioBlob;
 
-  // Загружаем сообщения при выборе диалога
+  // Загружаем сообщения при выборе диалога (с учётом E2EE)
   useEffect(() => {
-    if (conversation && conversation.id) {
-      dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0 }));
-    }
-  }, [conversation, dispatch]);
+    if (!conversation || !conversation.id) return;
+
+    const loadMessages = async () => {
+      // Для секретных чатов: сначала вычисляем session key, потом загружаем сообщения
+      if (conversation.isSecret) {
+        if (!hasSessionKey(conversation.id)) {
+          try {
+            const otherUserId = conversation.otherUser?.id;
+            if (!otherUserId) return;
+            const theirKey = await fetchPublicKey(otherUserId);
+            if (theirKey) {
+              getOrCreateSessionKey(conversation.id, theirKey.publicKey);
+            }
+          } catch (err) {
+            console.error('Ошибка вычисления сессионного ключа:', err);
+          }
+        }
+        dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0, isSecret: true }));
+      } else {
+        dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0 }));
+      }
+    };
+
+    loadMessages();
+  }, [conversation?.id, conversation?.isSecret, conversation?.otherUser?.id, dispatch]);
 
   // Скролл вниз при загрузке сообщений в новом диалоге
   const prevConversationRef = useRef(null);
@@ -174,11 +196,27 @@ const MessageThread = ({ conversation, onClose }) => {
   // Подключаем обработчик WebSocket сообщений
   useEffect(() => {
     // Обработчик новых сообщений через WebSocket
-    const handleWebSocketMessage = (data) => {
+    const handleWebSocketMessage = async (data) => {
       if (data.type === 'new_message' && data.message) {
-        dispatch({ 
-          type: 'messages/addNewMessage', 
-          payload: data.message 
+        const message = { ...data.message };
+
+        // Расшифровка для секретных чатов
+        if (conversation?.isSecret && isEncryptedMessage(message.content)) {
+          try {
+            // Определяем нужный ключ по счётчику ротации
+            const rotationCounter = extractRotationCounter(message.content);
+            const sessionKey = getSessionKeyByRotation(conversation.id, rotationCounter) || getSessionKey(conversation.id);
+            if (sessionKey) {
+              message.content = await decryptMessage(message.content, sessionKey);
+            }
+          } catch (err) {
+            console.error('Ошибка расшифровки WebSocket сообщения:', err);
+          }
+        }
+
+        dispatch({
+          type: 'messages/addNewMessage',
+          payload: message
         });
       } else if (data.type === 'announcement_deleted' && data.messageId) {
         dispatch({
@@ -193,7 +231,7 @@ const MessageThread = ({ conversation, onClose }) => {
     return () => {
       removeMessageHandler(handleWebSocketMessage);
     };
-  }, [dispatch]);
+  }, [dispatch, conversation?.id, conversation?.isSecret]);
 
   // Показываем кнопку скролла вниз при появлении новых сообщений
   useEffect(() => {
@@ -281,10 +319,11 @@ const MessageThread = ({ conversation, onClose }) => {
     const container = messagesContainerRef.current;
     const previousScrollHeight = container.scrollHeight;
     
-    await dispatch(fetchMessages({ 
-      conversationId: conversation.id, 
-      limit: 20, 
-      offset: messages.length 
+    await dispatch(fetchMessages({
+      conversationId: conversation.id,
+      limit: 20,
+      offset: messages.length,
+      isSecret: conversation.isSecret || false
     }));
     
     // Сохраняем позицию скролла после загрузки
@@ -444,17 +483,52 @@ const MessageThread = ({ conversation, onClose }) => {
       return;
     }
 
-    const content = messageText.trim();
+    let content = messageText.trim();
     const files = selectedFiles;
-    
+    let originalContent = null;
+
     setMessageText('');
     setSelectedFiles([]);
+
+    // Шифрование для секретных чатов
+    if (conversation.isSecret && content) {
+      try {
+        // Проверяем необходимость ротации ключа
+        let sessionKey = getSessionKey(conversation.id);
+        if (!sessionKey) {
+          console.error('Нет сессионного ключа для шифрования');
+          setMessageText(content);
+          setSelectedFiles(files);
+          return;
+        }
+
+        // Ротация если достигнут порог сообщений
+        const messageCount = messages.length;
+        if (needsRotation(conversation.id, messageCount)) {
+          const otherUserId = conversation.otherUser?.id;
+          const theirKey = await fetchPublicKey(otherUserId);
+          if (theirKey) {
+            sessionKey = rotateSessionKey(conversation.id, theirKey.publicKey);
+          }
+        }
+
+        originalContent = content;
+        const rotationCounter = getRotationCounter(conversation.id);
+        content = await encryptMessage(content, sessionKey, rotationCounter);
+      } catch (err) {
+        console.error('Ошибка шифрования:', err);
+        setMessageText(content);
+        setSelectedFiles(files);
+        return;
+      }
+    }
 
     try {
       const result = await dispatch(sendMessage({
         receiverId: getReceiverId(),
         content,
-        files
+        files,
+        originalContent
       }));
 
       console.log('✅ Сообщение отправлено:', result);
@@ -757,7 +831,14 @@ const MessageThread = ({ conversation, onClose }) => {
             👥 {getDisplayName()}
           </h2>
         ) : (
-          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+          <h2 className={styles.headerName}>
+            {conversation.isSecret ? '?? ' : ''}
+            {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
+          </h2>
+        )}
+        {conversation.isSecret && (
+          <span className={styles.secretChatBadge}>��������� ��� � E2EE</span>
+        )}
         )}
         </div>
         <div className={styles.loading}>Загрузка сообщений...</div>
@@ -832,7 +913,13 @@ const MessageThread = ({ conversation, onClose }) => {
             👥 {getDisplayName()}
           </h2>
         ) : (
-          <h2 className={styles.headerName}>{resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}</h2>
+          <h2 className={styles.headerName}>
+            {conversation.isSecret ? '🔒 ' : ''}
+            {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
+          </h2>
+        )}
+        {conversation.isSecret && (
+          <span className={styles.secretChatBadge}>Секретный чат · E2EE</span>
         )}
         <div className={styles.headerMenuContainer} ref={menuRef}>
           <button

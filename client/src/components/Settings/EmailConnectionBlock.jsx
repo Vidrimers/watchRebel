@@ -190,6 +190,9 @@ const EmailConnectionBlock = () => {
         ) : step === 'set_password' ? (
           <div className={styles.notLinkedContainer}>
             <p className={styles.description}>Задайте пароль для входа по email.</p>
+            <p className={styles.description} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '-0.5rem' }}>
+              Смена пароля не влияет на доступ к секретным чатам.
+            </p>
 
             <input
               type="password"

@@ -5,6 +5,7 @@ import { fetchConversations, setCurrentConversation } from '../../store/slices/m
 import Icon from '../Common/Icon';
 import api from '../../services/api';
 import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
+import { hasIdentityKey, fetchPublicKey, isEncryptedMessage } from '../../services/e2ee';
 import CreateGroupChatModal from './CreateGroupChatModal';
 import styles from './ConversationList.module.css';
 
@@ -52,6 +53,55 @@ const ConversationList = ({ onSelectConversation }) => {
     dispatch(setCurrentConversation(conversation.id));
     if (onSelectConversation) {
       onSelectConversation(conversation);
+    }
+  };
+
+  // Обработчик создания секретного чата
+  const handleCreateSecretChat = async (friend) => {
+    if (!hasIdentityKey()) {
+      alert('Сначала создайте ключи E2EE в настройках');
+      return;
+    }
+
+    // Проверяем, есть ли уже секретный чат с этим пользователем
+    const existingSecret = conversations.find(
+      conv => conv.isSecret && conv.otherUser?.id === friend.id
+    );
+    if (existingSecret) {
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      handleSelectConversation(existingSecret);
+      return;
+    }
+
+    try {
+      // Проверяем, есть ли у друга публичный ключ
+      const theirKey = await fetchPublicKey(friend.id);
+      if (!theirKey) {
+        alert('У этого пользователя ещё нет ключей E2EE. Он должен сначала войти в приложение.');
+        return;
+      }
+
+      // Создаём секретный чат на сервере
+      const response = await api.post('/messages/conversations/secret', { memberId: friend.id });
+      const newConversation = {
+        id: response.data.id,
+        isSecret: true,
+        otherUser: response.data.otherUser,
+        lastMessage: null,
+        unreadCount: 0,
+        lastMessageAt: response.data.createdAt,
+        createdAt: response.data.createdAt
+      };
+
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      dispatch(fetchConversations());
+      handleSelectConversation(newConversation);
+    } catch (error) {
+      console.error('Ошибка создания секретного чата:', error);
+      const msg = error.response?.data?.error || 'Не удалось создать секретный чат';
+      alert(msg);
     }
   };
 
@@ -221,7 +271,7 @@ const ConversationList = ({ onSelectConversation }) => {
                     >
                       <div className={styles.friendAvatar}>
                         {friend.avatarUrl ? (
-                          <img 
+                          <img
                             src={
                               friend.avatarUrl.startsWith('/uploads/')
                                 ? `${import.meta.env.VITE_API_URL || ''}${friend.avatarUrl}`
@@ -235,7 +285,7 @@ const ConversationList = ({ onSelectConversation }) => {
                             }}
                           />
                         ) : null}
-                        <div 
+                        <div
                           className={styles.friendAvatarPlaceholder}
                           style={{ display: friend.avatarUrl ? 'none' : 'flex' }}
                         >
@@ -243,6 +293,13 @@ const ConversationList = ({ onSelectConversation }) => {
                         </div>
                       </div>
                       <span className={styles.friendName}>{friend.displayName}</span>
+                      <button
+                        className={styles.secretChatButton}
+                        onClick={(e) => { e.stopPropagation(); handleCreateSecretChat(friend); }}
+                        title="Создать секретный чат"
+                      >
+                        🔒
+                      </button>
                     </div>
                   ))
                 )}
@@ -279,6 +336,7 @@ const ConversationList = ({ onSelectConversation }) => {
       <ul className={styles.list}>
         {conversations.map((conversation) => {
           const isGroup = conversation.isGroup;
+          const isSecret = conversation.isSecret;
           const displayName = isGroup ? conversation.groupName : conversation.otherUser?.displayName;
           const avatarUrl = isGroup ? conversation.groupAvatar : conversation.otherUser?.avatarUrl;
 
@@ -315,6 +373,7 @@ const ConversationList = ({ onSelectConversation }) => {
               <div className={styles.content}>
                 <div className={styles.topRow}>
                   <span className={styles.name} title={displayName}>
+                    {isSecret ? '🔒 ' : ''}
                     {isGroup ? `👥 ${displayName}` : (
                       conversation.otherUser ? resolveDisplayNameWithTooltip(conversation.otherUser.id, displayName).text : displayName
                     )}
@@ -323,7 +382,10 @@ const ConversationList = ({ onSelectConversation }) => {
                 </div>
                 <div className={styles.bottomRow}>
                   <p className={styles.lastMessage} title={conversation.lastMessage}>
-                    {truncateText(conversation.lastMessage)}
+                    {conversation.isSecret && isEncryptedMessage(conversation.lastMessage)
+                      ? '🔒 Зашифрованное сообщение'
+                      : truncateText(conversation.lastMessage)
+                    }
                   </p>
                   {conversation.unreadCount > 0 && (
                     <div className={styles.unreadBadge}>
@@ -397,7 +459,7 @@ const ConversationList = ({ onSelectConversation }) => {
                   >
                     <div className={styles.friendAvatar}>
                       {friend.avatarUrl ? (
-                        <img 
+                        <img
                           src={
                             friend.avatarUrl.startsWith('/uploads/')
                               ? `${import.meta.env.VITE_API_URL || ''}${friend.avatarUrl}`
@@ -411,7 +473,7 @@ const ConversationList = ({ onSelectConversation }) => {
                           }}
                         />
                       ) : null}
-                      <div 
+                      <div
                         className={styles.friendAvatarPlaceholder}
                         style={{ display: friend.avatarUrl ? 'none' : 'flex' }}
                       >
@@ -419,6 +481,13 @@ const ConversationList = ({ onSelectConversation }) => {
                       </div>
                     </div>
                     <span className={styles.friendName}>{friend.displayName}</span>
+                    <button
+                      className={styles.secretChatButton}
+                      onClick={(e) => { e.stopPropagation(); handleCreateSecretChat(friend); }}
+                      title="Создать секретный чат"
+                    >
+                      🔒
+                    </button>
                   </div>
                 ))
               )}

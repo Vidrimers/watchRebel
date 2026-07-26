@@ -419,6 +419,24 @@
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--text-primary);
+  flex: 1;
+}
+
+.secretChatButton {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.secretChatButton:hover {
+  opacity: 1;
+  background: var(--bg-hover, #f3f4f6);
 }
 
 .modalLoading,
