@@ -6,7 +6,7 @@ import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert';
 import api from '../../services/api';
 import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
-import { hasIdentityKey, fetchPublicKey, isEncryptedMessage } from '../../services/e2ee';
+import { hasIdentityKey, fetchPublicKey, isEncryptedMessage, removeSessionKey } from '../../services/e2ee';
 import CreateGroupChatModal from './CreateGroupChatModal';
 import styles from './ConversationList.module.css';
 
@@ -167,9 +167,18 @@ const ConversationList = ({ onSelectConversation }) => {
   const handleDeleteConversation = async (deleteType) => {
     if (!deletePopup) return;
     try {
+      // Находим диалог для проверки является ли он секретным
+      const conversation = conversations.find(c => c.id === deletePopup.conversationId);
+
       await api.delete(`/messages/conversations/${deletePopup.conversationId}`, {
         params: { deleteType }
       });
+
+      // Удаляем session key для секретных чатов
+      if (conversation?.isSecret) {
+        removeSessionKey(deletePopup.conversationId);
+      }
+
       // Обновляем список диалогов
       dispatch(fetchConversations());
       setDeletePopup(null);
