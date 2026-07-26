@@ -49,7 +49,7 @@ router.post('/setup', authenticateToken, async (req, res) => {
     const secret = totp.generateSecret();
 
     // Генерируем otpauth:// URI
-    const otpauthUrl = totp.generateURI({ secret, issuer: 'WatchRebel', label: String(userId) });
+    const otpauthUrl = totp.toURI({ secret, issuer: 'WatchRebel', label: String(userId) });
 
     // Генерируем QR-код как data URL
     const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
