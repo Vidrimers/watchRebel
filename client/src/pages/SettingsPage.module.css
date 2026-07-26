@@ -184,7 +184,7 @@
 
 .logoutButton {
   flex: 1;
-  padding: 12px 24px;
+  padding: 6px 12px;
   background: var(--error-color, #ef4444);
   color: white;
   border: none;
@@ -201,7 +201,7 @@
 
 .logoutAllButton {
   flex: 1;
-  padding: 12px 24px;
+  padding: 6px 12px;
   background: transparent;
   color: var(--error-color, #ef4444);
   border: 1px solid var(--error-color, #ef4444);
@@ -220,7 +220,7 @@
 /* Кнопка удаления аккаунта */
 .deleteButton {
   width: 100%;
-  padding: 12px 24px;
+  padding: 6px 12px;
   background: var(--error-color, #ef4444);
   color: white;
   border: none;
