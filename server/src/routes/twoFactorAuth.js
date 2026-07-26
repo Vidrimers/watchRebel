@@ -4,14 +4,17 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { TOTP } from 'otplib';
+import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
 import QRCode from 'qrcode';
 import { generatePreAuthToken, verifyPreAuthToken, hashTrustedDeviceToken } from '../utils/twoFactorUtils.js';
 
 const router = express.Router();
 
-// Создаём экземпляр TOTP для генерации и верификации кодов
-const totp = new TOTP();
+// Создаём экземпляр TOTP с required плагинами
+const totp = new TOTP({
+  crypto: new NobleCryptoPlugin(),
+  base32: new ScureBase32Plugin()
+});
 
 /**
  * POST /api/2fa/setup
