@@ -369,10 +369,11 @@ const SettingsPage = () => {
                         Для использования секретных чатов необходимо создать ключи шифрования.
                       </p>
                       <button
-                        className={styles.linkButton}
+                        className={styles.settingsNavigationButton}
                         onClick={() => setShowE2EEModal(true)}
                       >
-                        Создать ключи E2EE
+                        <Icon name="lock" size="small" />
+                        <span>Создать ключи E2EE</span>
                       </button>
                     </>
                   )}
