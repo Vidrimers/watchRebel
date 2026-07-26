@@ -109,7 +109,7 @@ const ConversationList = ({ onSelectConversation }) => {
   const handleSelectFriend = (friend) => {
     // Проверяем, существует ли уже диалог с этим пользователем
     const existingConversation = conversations.find(
-      conv => conv.otherUser.id === friend.id
+      conv => !conv.isGroup && conv.otherUser?.id === friend.id
     );
 
     if (existingConversation) {
