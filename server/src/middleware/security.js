@@ -34,7 +34,8 @@ export function configureHelmet() {
         ],
         styleSrc: [
           "'self'",
-          "'unsafe-inline'" // Для CSS модулей
+          "'unsafe-inline'", // Для CSS модулей
+          "https://fonts.googleapis.com" // Google Fonts
         ],
         imgSrc: [
           "'self'",
@@ -45,7 +46,8 @@ export function configureHelmet() {
         ],
         fontSrc: [
           "'self'",
-          "data:"
+          "data:",
+          "https://fonts.gstatic.com" // Google Fonts
         ],
         connectSrc: [
           "'self'",
