@@ -415,7 +415,7 @@ function TwoFactorSettings() {
               type="text"
               value={disableCode}
               onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Код из аутентификатора"
+              placeholder="000000"
               className={styles.codeInput}
               maxLength={6}
             />
