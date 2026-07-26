@@ -837,11 +837,10 @@ const MessageThread = ({ conversation, onClose }) => {
           </h2>
         )}
         {conversation.isSecret && (
-          <span className={styles.secretChatBadge}>пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ E2EE</span>
-        )}
+          <span className={styles.secretChatBadge}>Секретный чат · E2EE</span>
         )}
         </div>
-        <div className={styles.loading}>Р—Р°РіСЂСѓР·РєР° СЃРѕРѕР±С‰РµРЅРёР№...</div>
+        <div className={styles.loading}>Загрузка сообщений...</div>
       </div>
       </>
     );
