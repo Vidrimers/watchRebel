@@ -161,12 +161,12 @@ export function configureCORS() {
  */
 export function secureSessionMiddleware(req, res, next) {
   if (process.env.NODE_ENV === 'production') {
-    // Устанавливаем secure флаг для cookies в production
+    const originalCookie = res.cookie.bind(res);
     res.cookie = function (name, value, options = {}) {
-      options.secure = true; // Только HTTPS
-      options.httpOnly = true; // Недоступно для JavaScript
-      options.sameSite = 'strict'; // Защита от CSRF
-      return res.cookie.call(this, name, value, options);
+      options.secure = true;
+      options.httpOnly = true;
+      options.sameSite = 'strict';
+      return originalCookie(name, value, options);
     };
   }
   next();
