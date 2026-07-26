@@ -369,7 +369,7 @@
 }
 
 .editButton {
-  padding: 4px 12px;
+  padding: 6px 12px;
   background: var(--accent-primary, #6366f1);
   color: white;
   border: none;
