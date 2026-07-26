@@ -4,7 +4,8 @@ import { executeQuery } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { authenticator } from 'otplib';
+import otplib from 'otplib';
+const { authenticator } = otplib;
 import QRCode from 'qrcode';
 import { generatePreAuthToken, verifyPreAuthToken, hashTrustedDeviceToken } from '../utils/twoFactorUtils.js';
 
