@@ -464,7 +464,7 @@ function TwoFactorSettings() {
                       <div className={styles.deviceInfo}>
                         <span className={styles.deviceName}>{device.device_name || 'Неизвестное устройство'}</span>
                         <span className={styles.deviceMeta}>
-                          {device.ip_address} · {new Date(device.last_used_at).toLocaleDateString('ru-RU')}
+                          {(device.ip_address === '127.0.0.1' || device.ip_address === '::1') ? 'Локальное подключение' : device.ip_address} · {new Date(device.last_used_at).toLocaleDateString('ru-RU')}
                         </span>
                       </div>
                       <button
