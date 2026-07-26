@@ -762,6 +762,18 @@
   border-top: 1px solid var(--border-color, #e0e0e0);
 }
 
+.connectionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .connectionsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .accordionSection:first-child {
   border-top: none;
   padding-top: 0;

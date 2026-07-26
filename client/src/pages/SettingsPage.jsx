@@ -355,10 +355,12 @@ const SettingsPage = () => {
                 </div>
                 <div className={styles.accordionSection}>
                   <h4 className={styles.accordionSectionTitle}>Связанные аккаунты</h4>
-                  <EmailConnectionBlock />
-                  <TelegramConnectionBlock />
-                  <GoogleConnectionBlock />
-                  <DiscordConnectionBlock />
+                  <div className={styles.connectionsGrid}>
+                    <EmailConnectionBlock />
+                    <TelegramConnectionBlock />
+                    <GoogleConnectionBlock />
+                    <DiscordConnectionBlock />
+                  </div>
                 </div>
                 <div className={styles.accordionSection}>
                   <div className={styles.logoutGroup}>
