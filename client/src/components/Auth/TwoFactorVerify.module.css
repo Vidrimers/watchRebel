@@ -57,11 +57,11 @@
 
 .codeInput {
   width: 100%;
-  padding: 16px;
-  font-size: 32px;
+  padding: 14px 16px;
+  font-size: 18px;
   font-family: monospace;
   text-align: center;
-  letter-spacing: 12px;
+  letter-spacing: 4px;
   border: 2px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-tertiary);
@@ -75,7 +75,7 @@
 }
 
 .backupInput {
-  font-size: 24px;
+  font-size: 18px;
   letter-spacing: 4px;
 }
 
