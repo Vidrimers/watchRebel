@@ -7,6 +7,7 @@ import { addMessageHandler, removeMessageHandler } from '../../services/websocke
 import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
+import useToast from '../../hooks/useToast';
 import Icon from '../Common/Icon';
 import ReportModal from '../Common/ReportModal';
 import { resolveDisplayNameWithTooltip } from '../../utils/nicknameResolver';
@@ -93,6 +94,7 @@ const MessageThread = ({ conversation, onClose }) => {
   const getAvatarUrl = () => isGroup ? effectiveConversation.groupAvatar : effectiveConversation.otherUser?.avatarUrl;
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
+  const { toastContainer, showToast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
@@ -223,6 +225,10 @@ const MessageThread = ({ conversation, onClose }) => {
           type: 'messages/removeMessage',
           payload: data.messageId
         });
+      } else if (data.type === 'secret_chat_deleted' && data.conversationId) {
+        // Уведомление об удалении секретного чата
+        showToast('Секретный чат был удалён другим участником', 'warning');
+        dispatch(fetchConversations());
       }
     };
 
@@ -231,7 +237,7 @@ const MessageThread = ({ conversation, onClose }) => {
     return () => {
       removeMessageHandler(handleWebSocketMessage);
     };
-  }, [dispatch, conversation?.id, conversation?.isSecret]);
+  }, [dispatch, conversation?.id, conversation?.isSecret, showToast]);
 
   // Показываем кнопку скролла вниз при появлении новых сообщений
   useEffect(() => {
@@ -850,6 +856,7 @@ const MessageThread = ({ conversation, onClose }) => {
     <>
       {confirmDialog}
       {alertDialog}
+      {toastContainer}
       <div className={styles.container}>
       {/* Шапка с информацией о собеседнике/группе */}
       <div className={styles.header}>

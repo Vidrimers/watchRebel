@@ -1031,10 +1031,24 @@ router.delete('/conversations/:conversationId', authenticateToken, async (req, r
     }
 
     if (deleteType === 'for_everyone') {
+      // Проверяем является ли диалог секретным
+      const isSecret = Boolean(conversationCheck.data[0].is_secret);
+
+      // Получаем ID второго участника для уведомления
+      const otherUserId = conversationCheck.data[0].user1_id === userId
+        ? conversationCheck.data[0].user2_id
+        : conversationCheck.data[0].user1_id;
+
       // Физическое удаление всех сообщений диалога
       await executeQuery('DELETE FROM messages WHERE conversation_id = ?', [conversationId]);
       // Удаление самого диалога
       await executeQuery('DELETE FROM conversations WHERE id = ?', [conversationId]);
+
+      // Уведомляем второго участника через WebSocket (для секретных чатов)
+      if (isSecret) {
+        const { sendSecretChatDeletedNotification } = await import('../services/websocketService.js');
+        sendSecretChatDeletedNotification(otherUserId, conversationId);
+      }
 
       res.json({
         message: 'Диалог удален для всех',

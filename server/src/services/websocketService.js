@@ -122,6 +122,25 @@ export function sendReadNotification(userId, conversationId) {
 }
 
 /**
+ * Отправить уведомление об удалении секретного чата
+ * @param {string} userId - ID пользователя для уведомления
+ * @param {string} conversationId - ID удалённого диалога
+ */
+export function sendSecretChatDeletedNotification(userId, conversationId) {
+  const ws = clients.get(userId);
+  
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({
+      type: 'secret_chat_deleted',
+      conversationId
+    }));
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Получить количество активных подключений
  */
 export function getActiveConnections() {
