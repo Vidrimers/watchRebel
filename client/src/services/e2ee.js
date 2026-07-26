@@ -120,6 +120,44 @@ export async function hasServerKey(userId) {
   return key !== null;
 }
 
+/**
+ * Полный сброс E2EE ключей: удаление с клиента и сервера
+ * @returns {Promise<void>}
+ */
+export async function resetE2EEKeys() {
+  // Удаляем публичный ключ с сервера
+  try {
+    await deletePublicKey();
+  } catch (err) {
+    // Игнорируем ошибку если ключа нет на сервере
+    if (err.status !== 404) throw err;
+  }
+
+  // Удаляем бэкап с сервера
+  try {
+    await api.delete('/e2ee/backup');
+  } catch (err) {
+    if (err.status !== 404) throw err;
+  }
+
+  // Удаляем все session keys из localStorage
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith(SESSION_KEY_PREFIX) ||
+                key.startsWith(ROTATION_COUNTER_PREFIX) ||
+                key.startsWith(KEY_HISTORY_PREFIX))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  // Удаляем identity ключи
+  localStorage.removeItem(PRIVATE_KEY_STORAGE);
+  localStorage.removeItem(PUBLIC_KEY_STORAGE);
+  localStorage.removeItem('e2ee_modal_dismissed');
+}
+
 // === Сессионные ключи (ECDH + HKDF) ===
 
 const SESSION_KEY_PREFIX = 'e2ee_session_';

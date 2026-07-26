@@ -18,7 +18,7 @@ import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useAlert from '../hooks/useAlert.jsx';
 import api from '../services/api';
-import { hasIdentityKey } from '../services/e2ee';
+import { hasIdentityKey, resetE2EEKeys } from '../services/e2ee';
 import KeyRecoveryModal from '../components/E2EE/KeyRecoveryModal';
 import styles from './SettingsPage.module.css';
 
@@ -360,9 +360,36 @@ const SettingsPage = () => {
                 <div className={styles.accordionSection}>
                   <h4 className={styles.accordionSectionTitle}>Шифрование секретных чатов (E2EE)</h4>
                   {hasE2EEKey ? (
-                    <p className={styles.cardDescription} style={{ color: 'var(--text-secondary)' }}>
-                      ✅ Ключи шифрования созданы. Секретные чаты доступны.
-                    </p>
+                    <>
+                      <p className={styles.cardDescription} style={{ color: 'var(--text-secondary)' }}>
+                        ✅ Ключи шифрования созданы. Секретные чаты доступны.
+                      </p>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={async () => {
+                          const confirmed = await showConfirm({
+                            title: 'Сбросить ключи E2EE?',
+                            message: 'Все секретные чаты станут недоступны. Старые переписки восстановить невозможно. Это действие необратимо.',
+                            confirmText: 'Сбросить',
+                            cancelText: 'Отмена',
+                            confirmButtonStyle: 'danger'
+                          });
+                          if (confirmed) {
+                            try {
+                              await resetE2EEKeys();
+                              setHasE2EEKey(false);
+                              await showAlert({ title: 'Готово', message: 'Ключи E2EE сброшены. Секретные чаты больше недоступны.', type: 'success' });
+                            } catch (err) {
+                              console.error('Ошибка сброса ключей:', err);
+                              await showAlert({ title: 'Ошибка', message: 'Не удалось сбросить ключи', type: 'error' });
+                            }
+                          }
+                        }}
+                        style={{ marginTop: '8px', fontSize: '12px', padding: '4px 10px' }}
+                      >
+                        <Icon name="delete" size="small" /> Сбросить ключи
+                      </button>
+                    </>
                   ) : (
                     <>
                       <p className={styles.cardDescription}>
