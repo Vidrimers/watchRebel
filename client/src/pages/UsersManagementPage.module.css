@@ -146,6 +146,26 @@
   border-radius: 4px;
 }
 
+.tfaEnabledBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  background: #10b981;
+  color: white;
+  border-radius: 4px;
+}
+
+.tfaDisabledBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  background: #ef4444;
+  color: white;
+  border-radius: 4px;
+}
+
 .userUsername {
   font-size: 14px;
   color: var(--text-secondary);

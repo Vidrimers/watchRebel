@@ -197,6 +197,11 @@ function UserModerationModal({ user, onClose, onUpdate }) {
               <h3 className={styles.userName}>
                 {user.displayName}
                 {user.isAdmin && <span className={styles.adminBadge}>Админ</span>}
+                {user.twoFactorEnabled ? (
+                  <span className={styles.tfaEnabledBadge}>2FA ✓</span>
+                ) : (
+                  <span className={styles.tfaDisabledBadge}>2FA ✗</span>
+                )}
               </h3>
               <div className={styles.userAuthMethods}>
                 {user.authMethod === 'telegram' && <span className={styles.authBadge}><Icon name="telegram" size="small" /> Telegram</span>}

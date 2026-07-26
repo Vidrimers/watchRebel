@@ -214,6 +214,11 @@ const UsersManagementPage = () => {
                     {user.isBlocked && (
                       <span className={styles.blockedBadge}>Заблокирован</span>
                     )}
+                    {user.twoFactorEnabled ? (
+                      <span className={styles.tfaEnabledBadge}>2FA ✓</span>
+                    ) : (
+                      <span className={styles.tfaDisabledBadge}>2FA ✗</span>
+                    )}
                   </div>
                   <div className={styles.userAuthMethods}>
                     {user.authMethod === 'telegram' && (

@@ -31,6 +31,9 @@ export async function runMigrations() {
         email_verified BOOLEAN DEFAULT 0,
         google_id TEXT UNIQUE,
         discord_id TEXT UNIQUE,
+        two_factor_enabled BOOLEAN DEFAULT 0,
+        two_factor_secret TEXT,
+        two_factor_backup_codes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
@@ -369,6 +372,32 @@ export async function runMigrations() {
         safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
         safeAddColumn('messages', 'is_announcement', 'BOOLEAN', '0');
         safeAddColumn('users', 'last_feed_view', 'DATETIME');
+        safeAddColumn('users', 'two_factor_enabled', 'BOOLEAN', '0');
+        safeAddColumn('users', 'two_factor_secret', 'TEXT');
+        safeAddColumn('users', 'two_factor_backup_codes', 'TEXT');
+
+        // Таблица доверенных устройств для 2FA
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS trusted_devices (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            device_name TEXT,
+            ip_address TEXT,
+            user_agent TEXT,
+            last_used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_trusted_devices_user_id ON trusted_devices(user_id);
+          CREATE INDEX IF NOT EXISTS idx_trusted_devices_token_hash ON trusted_devices(token_hash);
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы trusted_devices:', err.message);
+          } else {
+            console.log('✓ Таблица trusted_devices создана');
+          }
+        });
 
         // === Упоминания в постах ===
         db.exec(`

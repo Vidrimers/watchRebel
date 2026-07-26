@@ -74,7 +74,8 @@ export async function authenticateToken(req, res, next) {
       hasPassword: Boolean(session.password_hash),
       googleId: session.google_id,
       discordId: session.discord_id,
-      nicknameDisplay: session.nickname_display || 'name'
+      nicknameDisplay: session.nickname_display || 'name',
+      twoFactorEnabled: Boolean(session.two_factor_enabled)
     };
 
     req.sessionId = session.id;
@@ -218,7 +219,8 @@ export async function optionalAuth(req, res, next) {
           hasPassword: Boolean(session.password_hash),
           googleId: session.google_id,
           discordId: session.discord_id,
-          nicknameDisplay: session.nickname_display || 'name'
+          nicknameDisplay: session.nickname_display || 'name',
+          twoFactorEnabled: Boolean(session.two_factor_enabled)
         };
         req.sessionId = session.id;
       }

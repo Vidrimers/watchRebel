@@ -34,6 +34,7 @@ import {
   validateDisplayName,
   sanitizeString
 } from '../utils/validation.js';
+import { generatePreAuthToken } from '../utils/twoFactorUtils.js';
 
 const router = express.Router();
 
@@ -147,7 +148,30 @@ router.post('/telegram', async (req, res) => {
       );
     }
 
-    // Создаем новую сессию
+    // Проверяем, включена ли 2FA для этого пользователя
+    if (user.two_factor_enabled) {
+      // 2FA включена — возвращаем pre-auth токен вместо сессии
+      const preAuthToken = generatePreAuthToken(user.id);
+
+      console.log(`✅ Вход через Telegram (2FA required): ${user.display_name}`);
+
+      return res.json({
+        requiresTwoFactor: true,
+        preAuthToken,
+        user: {
+          id: user.id,
+          telegramUsername: user.telegram_username,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url,
+          isAdmin: Boolean(user.is_admin),
+          theme: user.theme,
+          hasPassword: Boolean(user.password_hash),
+          createdAt: user.created_at
+        }
+      });
+    }
+
+    // 2FA не включена — создаем сессию как обычно
     const sessionId = uuidv4();
     const token = uuidv4();
     const expiresAt = new Date();
@@ -160,9 +184,9 @@ router.post('/telegram', async (req, res) => {
     );
 
     if (!sessionResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка создания сессии',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 
@@ -183,9 +207,9 @@ router.post('/telegram', async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка авторизации через Telegram:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
+      code: 'INTERNAL_ERROR'
     });
   }
 });
@@ -404,14 +428,38 @@ router.post('/telegram-referral', async (req, res) => {
       const newAvatarUrl = shouldUpdateAvatar ? (avatarUrl || user.avatar_url) : user.avatar_url;
       
       await executeQuery(
-        `UPDATE users 
+        `UPDATE users
          SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [telegramUsername || user.telegram_username, newAvatarUrl, telegramId]
       );
     }
 
-    // Создаем новую сессию
+    // Проверяем, включена ли 2FA для этого пользователя
+    if (user.two_factor_enabled) {
+      // 2FA включена — возвращаем pre-auth токен вместо сессии
+      const preAuthToken = generatePreAuthToken(user.id);
+
+      console.log(`✅ Вход через Telegram с реферальным кодом (2FA required): ${user.display_name}`);
+
+      return res.json({
+        requiresTwoFactor: true,
+        preAuthToken,
+        user: {
+          id: user.id,
+          telegramUsername: user.telegram_username,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url,
+          isAdmin: Boolean(user.is_admin),
+          theme: user.theme,
+          hasPassword: Boolean(user.password_hash),
+          createdAt: user.created_at
+        },
+        referralUsed: !!referrerId
+      });
+    }
+
+    // 2FA не включена — создаем сессию как обычно
     const sessionId = uuidv4();
     const token = uuidv4();
     const expiresAt = new Date();
@@ -424,9 +472,9 @@ router.post('/telegram-referral', async (req, res) => {
     );
 
     if (!sessionResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка создания сессии',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 
@@ -448,9 +496,9 @@ router.post('/telegram-referral', async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка авторизации через Telegram с реферальным кодом:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
+      code: 'INTERNAL_ERROR'
     });
   }
 });
@@ -593,14 +641,37 @@ router.post('/telegram-widget', async (req, res) => {
       const newAvatarUrl = shouldUpdateAvatar ? (avatarUrl || user.avatar_url) : user.avatar_url;
       
       await executeQuery(
-        `UPDATE users 
+        `UPDATE users
          SET telegram_username = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [telegramUsername || user.telegram_username, newAvatarUrl, telegramId]
       );
     }
 
-    // Создаем новую сессию
+    // Проверяем, включена ли 2FA для этого пользователя
+    if (user.two_factor_enabled) {
+      // 2FA включена — возвращаем pre-auth токен вместо сессии
+      const preAuthToken = generatePreAuthToken(user.id);
+
+      console.log(`✅ Вход через Telegram Widget (2FA required): ${user.display_name}`);
+
+      return res.json({
+        requiresTwoFactor: true,
+        preAuthToken,
+        user: {
+          id: user.id,
+          telegramUsername: user.telegram_username,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url,
+          isAdmin: Boolean(user.is_admin),
+          theme: user.theme,
+          hasPassword: Boolean(user.password_hash),
+          createdAt: user.created_at
+        }
+      });
+    }
+
+    // 2FA не включена — создаем сессию как обычно
     const sessionId = uuidv4();
     const token = uuidv4();
     const expiresAt = new Date();
@@ -613,9 +684,9 @@ router.post('/telegram-widget', async (req, res) => {
     );
 
     if (!sessionResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка создания сессии',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 
@@ -638,9 +709,9 @@ router.post('/telegram-widget', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Ошибка авторизации через Telegram Widget:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Внутренняя ошибка сервера',
-      code: 'INTERNAL_ERROR' 
+      code: 'INTERNAL_ERROR'
     });
   }
 });
@@ -1238,11 +1309,34 @@ router.post('/login-email', loginRateLimiter, async (req, res) => {
 
     // Успешный вход - сбрасываем счетчик неудачных попыток
     await resetLoginAttempts(email);
-    
+
     // Записываем успешную попытку
     await recordLoginAttempt(email, ipAddress, true);
 
-    // Создаем новую сессию
+    // Проверяем, включена ли 2FA для этого пользователя
+    if (user.two_factor_enabled) {
+      // 2FA включена — возвращаем pre-auth токен вместо сессии
+      const preAuthToken = generatePreAuthToken(user.id);
+
+      console.log(`✅ Вход через email (2FA required): ${user.display_name} (${user.email})`);
+
+      return res.json({
+        requiresTwoFactor: true,
+        preAuthToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url,
+          isAdmin: Boolean(user.is_admin),
+          theme: user.theme,
+          hasPassword: Boolean(user.password_hash),
+          createdAt: user.created_at
+        }
+      });
+    }
+
+    // 2FA не включена — создаем сессию как обычно
     const sessionId = uuidv4();
     const token = uuidv4();
     const expiresAt = new Date();
@@ -1255,9 +1349,9 @@ router.post('/login-email', loginRateLimiter, async (req, res) => {
     );
 
     if (!sessionResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Ошибка создания сессии',
-        code: 'DATABASE_ERROR' 
+        code: 'DATABASE_ERROR'
       });
     }
 

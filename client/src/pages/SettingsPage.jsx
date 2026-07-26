@@ -12,6 +12,7 @@ import TelegramConnectionBlock from '../components/Settings/TelegramConnectionBl
 import GoogleConnectionBlock from '../components/Settings/GoogleConnectionBlock';
 import DiscordConnectionBlock from '../components/Settings/DiscordConnectionBlock';
 import EmailConnectionBlock from '../components/Settings/EmailConnectionBlock';
+import TwoFactorSettings from '../components/Settings/TwoFactorSettings';
 import NotificationSettings from '../components/Settings/NotificationSettings';
 import Icon from '../components/Common/Icon';
 import useConfirm from '../hooks/useConfirm.jsx';
@@ -323,6 +324,9 @@ const SettingsPage = () => {
             </button>
             {openSection === 'account' && (
               <div className={styles.accordionContent}>
+                <div className={styles.accordionSection}>
+                  <TwoFactorSettings />
+                </div>
                 <div className={styles.accordionSection}>
                   <h4 className={styles.accordionSectionTitle}>Связанные аккаунты</h4>
                   <EmailConnectionBlock />

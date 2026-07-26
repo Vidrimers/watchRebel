@@ -26,7 +26,7 @@ router.get('/users', async (req, res) => {
   try {
     const usersResult = await executeQuery(
       `SELECT id, telegram_username, display_name, avatar_url, is_admin, is_blocked, theme, created_at, updated_at, email, auth_method,
-              google_id, discord_id, email_verified, post_ban_until, ban_reason, last_feed_view, user_status
+              google_id, discord_id, email_verified, post_ban_until, ban_reason, last_feed_view, user_status, two_factor_enabled
        FROM users
        ORDER BY created_at DESC`
     );
@@ -56,7 +56,8 @@ router.get('/users', async (req, res) => {
       postBanUntil: user.post_ban_until,
       banReason: user.ban_reason,
       lastFeedView: user.last_feed_view,
-      userStatus: user.user_status
+      userStatus: user.user_status,
+      twoFactorEnabled: Boolean(user.two_factor_enabled)
     }));
 
     res.json(users);

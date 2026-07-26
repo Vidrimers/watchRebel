@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { checkSession } from '../store/slices/authSlice';
+import TwoFactorVerify from '../components/Auth/TwoFactorVerify';
 import Icon from '../components/Common/Icon';
 import api from '../services/api';
 import './LoginPage.css';
@@ -19,6 +20,11 @@ function LoginPage() {
   const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const [authError, setAuthError] = useState(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  // Состояние для 2FA
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [preAuthToken, setPreAuthToken] = useState(null);
+  const [twoFactorUser, setTwoFactorUser] = useState(null);
 
   // Принудительно устанавливаем светлую тему для страниц аутентификации
   useEffect(() => {
@@ -84,7 +90,16 @@ function LoginPage() {
       try {
         // Отправляем данные на backend
         const response = await api.post('/auth/telegram-widget', user);
-        
+
+        // Проверяем, требуется ли 2FA
+        if (response.data.requiresTwoFactor) {
+          setPreAuthToken(response.data.preAuthToken);
+          setTwoFactorUser(response.data.user);
+          setTwoFactorRequired(true);
+          setIsAuthenticating(false);
+          return;
+        }
+
         const { token, user: userData } = response.data;
 
         // Сохраняем токен
@@ -133,6 +148,25 @@ function LoginPage() {
       delete window.onTelegramAuth;
     };
   }, [dispatch, navigate]);
+
+  // Обработчик возврата из 2FA
+  const handleBackFrom2FA = () => {
+    setTwoFactorRequired(false);
+    setPreAuthToken(null);
+    setTwoFactorUser(null);
+    setIsAuthenticating(false);
+  };
+
+  // Если требуется 2FA — показываем экран верификации
+  if (twoFactorRequired) {
+    return (
+      <TwoFactorVerify
+        preAuthToken={preAuthToken}
+        user={twoFactorUser}
+        onBack={handleBackFrom2FA}
+      />
+    );
+  }
 
   // Если идет загрузка или авторизация
   if (loading || isAuthenticating) {

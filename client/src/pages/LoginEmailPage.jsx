@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { checkSession } from '../store/slices/authSlice';
+import TwoFactorVerify from '../components/Auth/TwoFactorVerify';
 import api from '../services/api';
 import styles from './LoginEmailPage.module.css';
 
@@ -18,11 +19,16 @@ function LoginEmailPage() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // Состояние для 2FA
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [preAuthToken, setPreAuthToken] = useState(null);
+  const [twoFactorUser, setTwoFactorUser] = useState(null);
+
   // Принудительно устанавливаем светлую тему для страниц аутентификации
   useEffect(() => {
     const savedTheme = document.documentElement.getAttribute('data-theme');
     document.documentElement.setAttribute('data-theme', 'light-cream');
-    
+
     return () => {
       // Восстанавливаем предыдущую тему при размонтировании
       if (savedTheme) {
@@ -76,6 +82,15 @@ function LoginEmailPage() {
 
       console.log('Вход успешен:', response.data);
 
+      // Проверяем, требуется ли 2FA
+      if (response.data.requiresTwoFactor) {
+        setPreAuthToken(response.data.preAuthToken);
+        setTwoFactorUser(response.data.user);
+        setTwoFactorRequired(true);
+        setLoading(false);
+        return;
+      }
+
       // Сохраняем токен
       localStorage.setItem('authToken', response.data.token);
 
@@ -87,12 +102,12 @@ function LoginEmailPage() {
 
     } catch (error) {
       console.error('Ошибка входа:', error);
-      
+
       if (error.response?.data?.code === 'INVALID_CREDENTIALS') {
         setErrors({ general: 'Неверный email или пароль' });
       } else if (error.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
-        setErrors({ 
-          general: 'Email не подтвержден. Пожалуйста, проверьте свою почту и перейдите по ссылке подтверждения.' 
+        setErrors({
+          general: 'Email не подтвержден. Пожалуйста, проверьте свою почту и перейдите по ссылке подтверждения.'
         });
       } else if (error.response?.data?.code === 'USER_BLOCKED') {
         setErrors({ general: 'Ваш аккаунт заблокирован' });
@@ -105,6 +120,24 @@ function LoginEmailPage() {
       setLoading(false);
     }
   };
+
+  // Обработчик возврата из 2FA
+  const handleBackFrom2FA = () => {
+    setTwoFactorRequired(false);
+    setPreAuthToken(null);
+    setTwoFactorUser(null);
+  };
+
+  // Если требуется 2FA — показываем экран верификации
+  if (twoFactorRequired) {
+    return (
+      <TwoFactorVerify
+        preAuthToken={preAuthToken}
+        user={twoFactorUser}
+        onBack={handleBackFrom2FA}
+      />
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -166,8 +199,8 @@ function LoginEmailPage() {
           )}
 
           {/* Кнопка отправки */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={styles.submitButton}
             disabled={loading}
           >
