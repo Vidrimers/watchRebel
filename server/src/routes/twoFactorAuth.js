@@ -283,7 +283,7 @@ router.post('/verify', async (req, res) => {
 
     const trustedDeviceId = uuidv4();
     const deviceName = req.headers['user-agent']?.substring(0, 100) || 'Unknown';
-    const ipAddress = req.ip || req.connection.remoteAddress;
+    const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection.remoteAddress;
 
     await executeQuery(
       `INSERT INTO trusted_devices (id, user_id, token_hash, device_name, ip_address, user_agent)

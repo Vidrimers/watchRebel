@@ -1245,7 +1245,7 @@ router.post('/register-email', registerRateLimiter, async (req, res) => {
 router.post('/login-email', loginRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
-    const ipAddress = req.ip || req.connection.remoteAddress;
+    const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection.remoteAddress;
 
     // Валидация входных данных
     if (!email || !password) {

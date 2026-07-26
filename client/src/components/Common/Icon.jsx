@@ -58,6 +58,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     bug: '🐛',
     theme: '🎨',
     shield: '🛡️',
+    'shield-off': '🔓',
     lock: '🔒',
     database: '🗄️',
     report: '⚠️',
