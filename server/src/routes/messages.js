@@ -733,13 +733,17 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
           const replyCallbackData = isGroup
             ? `reply_group_${conversationId}`
             : `reply_message_${senderId}`;
-          sendTelegramNotification(targetId, telegramMessage, {
+
+          // Для секретных чатов не показываем кнопку "Ответить" (нельзя ответить из Telegram на зашифрованное сообщение)
+          const telegramOptions = isSecret ? {} : {
             reply_markup: {
               inline_keyboard: [[
                 { text: '💬 Ответить', callback_data: replyCallbackData }
               ]]
             }
-          }).catch(err => {
+          };
+
+          sendTelegramNotification(targetId, telegramMessage, telegramOptions).catch(err => {
             console.error('Ошибка отправки Telegram уведомления:', err);
           });
         }
