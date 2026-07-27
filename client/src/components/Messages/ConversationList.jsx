@@ -185,6 +185,11 @@ const ConversationList = ({ onSelectConversation }) => {
       setDeletePopup(null);
     } catch (error) {
       console.error('Ошибка удаления диалога:', error);
+      // Если диалог не найден на сервере — обновляем список (удалим из кэша)
+      if (error.status === 404) {
+        dispatch(fetchConversations());
+        setDeletePopup(null);
+      }
     }
   };
 

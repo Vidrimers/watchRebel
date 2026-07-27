@@ -1047,11 +1047,21 @@ router.delete('/conversations/:conversationId', authenticateToken, async (req, r
     const { deleteType = 'for_me' } = req.query;
     const userId = req.user.id;
 
-    // Проверяем, что пользователь участник диалога
-    const conversationCheck = await executeQuery(
+    // Проверяем, что пользователь участник диалога (личного или группового)
+    let conversationCheck = await executeQuery(
       'SELECT * FROM conversations WHERE id = ? AND (user1_id = ? OR user2_id = ?)',
       [conversationId, userId, userId]
     );
+
+    // Если не найден как личный чат, проверяем как участник группы
+    if (!conversationCheck.success || conversationCheck.data.length === 0) {
+      conversationCheck = await executeQuery(
+        `SELECT c.* FROM conversations c
+         INNER JOIN conversation_members cm ON c.id = cm.conversation_id
+         WHERE c.id = ? AND cm.user_id = ? AND cm.left_at IS NULL`,
+        [conversationId, userId]
+      );
+    }
 
     if (!conversationCheck.success) {
       return res.status(500).json({
