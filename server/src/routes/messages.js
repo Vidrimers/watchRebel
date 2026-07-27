@@ -711,8 +711,8 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       }
       } // конец else для isSecret
 
-      // Получатели уведомлений: для групп — все участники кроме отправителя, для личных — получатель
-      const notificationTargets = isGroup ? groupMembers : [receiverId];
+      // Получатели уведомлений: для групп/секретных — все участники кроме отправителя, для личных — получатель
+      const notificationTargets = (isGroup || isSecret) ? groupMembers : [receiverId];
 
       for (const targetId of notificationTargets) {
         let telegramMessage;
