@@ -574,8 +574,8 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     const suggestedMediaParsed = typeof suggestedMedia === 'string' ? JSON.parse(suggestedMedia) : suggestedMedia;
     const suggestedMediaJson = suggestedMediaParsed ? JSON.stringify(suggestedMediaParsed) : null;
 
-    // Для групповых чатов receiver_id = sender_id (т.к..receiver_id NOT NULL, а реальный получатель — все участники)
-    const messageReceiverId = isGroup ? senderId : receiverId;
+    // Для групповых и секретных чатов receiver_id = sender_id (реальный получатель определяется через conversation)
+    const messageReceiverId = (isGroup || isSecret) ? senderId : receiverId;
 
     const createMessageResult = await executeQuery(
       `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, created_at)
@@ -636,8 +636,8 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     };
 
     // Отправляем сообщение через WebSocket
-    if (isGroup) {
-      // Для групповых чатов — отправляем всем участникам кроме отправителя
+    if (isGroup || isSecret) {
+      // Для групповых и секретных чатов — отправляем всем участникам кроме отправителя
       for (const memberId of groupMembers) {
         const sent = sendMessageToUser(memberId, messageResponse);
         if (sent) {
