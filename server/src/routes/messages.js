@@ -466,8 +466,9 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     let groupMembers = [];
 
     if (groupCheck.success && groupCheck.data.length > 0) {
-      // Групповой чат
+      // Групповой чат (проверяем также является ли секретным)
       isGroup = true;
+      isSecret = Boolean(groupCheck.data[0].is_secret);
       conversationId = receiverId;
 
       // Проверяем что отправитель — участник группы
