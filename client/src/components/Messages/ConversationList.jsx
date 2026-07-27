@@ -38,7 +38,8 @@ const ConversationList = ({ onSelectConversation }) => {
       // Обновляем список при получении событий, связанных с группами
       if (data.type === 'secret_group_joined' ||
           data.type === 'group_deleted' ||
-          data.type === 'secret_group_member_left') {
+          data.type === 'secret_group_member_left' ||
+          data.type === 'secret_group_removed') {
         dispatch(fetchConversations());
       }
     };

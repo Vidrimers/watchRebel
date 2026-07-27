@@ -1889,13 +1889,21 @@ router.delete('/conversations/:conversationId/members/:memberId', authenticateTo
       [conversationId, memberId]
     );
 
-    // Для секретных групп — удаляем ключ участника и уведомляем о ротации
+    // Для секретных групп — удаляем ключ участника и уведомляем
     if (isSecretGroup) {
       // Удаляем ключ удалённого участника
       await executeQuery(
         'DELETE FROM group_keys WHERE conversation_id = ? AND user_id = ?',
         [conversationId, memberId]
       );
+
+      const { sendMessageToUser } = await import('../services/websocketService.js');
+
+      // Уведомляем удалённого участника
+      sendMessageToUser(memberId, {
+        type: 'secret_group_removed',
+        conversationId
+      });
 
       // Уведомляем оставшихся участников о необходимости ротации ключа
       const membersResult = await executeQuery(
@@ -1904,7 +1912,6 @@ router.delete('/conversations/:conversationId/members/:memberId', authenticateTo
       );
 
       if (membersResult.success) {
-        const { sendMessageToUser } = await import('../services/websocketService.js');
         for (const m of membersResult.data) {
           sendMessageToUser(m.user_id, {
             type: 'secret_group_key_rotation_needed',

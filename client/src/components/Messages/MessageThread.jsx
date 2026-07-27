@@ -294,6 +294,10 @@ const MessageThread = ({ conversation, onClose }) => {
       } else if (data.type === 'secret_group_member_left' && data.conversationId) {
         // Уведомление о выходе участника из секретной группы
         dispatch(fetchConversations());
+      } else if (data.type === 'secret_group_removed' && data.conversationId) {
+        // Уведомление об удалении из секретной группы
+        showToast('Вы были удалены из секретной группы', 'warning');
+        dispatch(fetchConversations());
       }
     };
 
@@ -802,7 +806,9 @@ const MessageThread = ({ conversation, onClose }) => {
 
   // Форматирование даты для разделителя
   const formatDateSeparator = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
