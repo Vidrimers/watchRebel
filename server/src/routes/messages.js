@@ -168,6 +168,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 
     const conversations = conversationsResult.data.filter(c => !hiddenConvIds.includes(c.id)).map(c => {
       // Формируем текст последнего сообщения
+      const isSecret = Boolean(c.is_secret);
       let lastMessage = c.last_message_content;
 
       // Если есть вложения, показываем информацию о них
@@ -199,8 +200,12 @@ router.get('/conversations', authenticateToken, async (req, res) => {
         }
       }
 
+      // Для секретных чатов — всегда показываем "Зашифрованное сообщение"
+      if (isSecret && lastMessage) {
+        lastMessage = '🔒 Зашифрованное сообщение';
+      }
+
       const isGroup = Boolean(c.is_group);
-      const isSecret = Boolean(c.is_secret);
 
       return {
         id: c.id,
