@@ -227,10 +227,15 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.memberDetails {
+  flex: 1;
+  min-width: 0;
 }
 
 .memberNameLink {
@@ -497,6 +502,90 @@
 
 .permRemove:hover {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.creatorBadge,
+.modBadge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.creatorBadge {
+  background: var(--accent-primary, #6366f1);
+  color: white;
+}
+
+.modBadge {
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.permissions {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.permissionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permissionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.permissionItem:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.permissionLabel {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.permissionDesc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.confirmBtn {
+  padding: 8px 16px;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.confirmBtn:hover {
+  opacity: 0.9;
+}
+
+.cancelBtn {
+  padding: 8px 16px;
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: var(--bg-hover, #e5e7eb);
 }
 
 @media (max-width: 768px) {
