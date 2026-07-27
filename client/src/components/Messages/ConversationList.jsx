@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchConversations, setCurrentConversation } from '../../store/slices/messagesSlice';
+import { fetchConversations, setCurrentConversation, clearMessages } from '../../store/slices/messagesSlice';
 import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert';
 import api from '../../services/api';
@@ -52,6 +52,7 @@ const ConversationList = ({ onSelectConversation }) => {
 
   // Обработчик выбора диалога
   const handleSelectConversation = (conversation) => {
+    dispatch(clearMessages());
     dispatch(setCurrentConversation(conversation.id));
     if (onSelectConversation) {
       onSelectConversation(conversation);

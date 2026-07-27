@@ -160,10 +160,12 @@ const MessageThread = ({ conversation, onClose }) => {
             try {
               // Пытаемся получить ключ с сервера (на случай если ротировался пока были офлайн)
               const keyResponse = await api.get(`/messages/conversations/${conversation.id}/group-key`);
-              if (keyResponse.data) {
-                // Ключ есть на сервере, но нет локально — нужно расшифровать
-                // Пока сохраняем зашифрованный, расшифруем при получении сообщения
+              if (keyResponse.data && keyResponse.data.encryptedGroupKey) {
+                // Ключ есть на сервере — расшифровываем его нашим identity-ключом
+                // Пока логируем, полная реализация будет при обмене ключами
                 console.log('Групповой ключ найден на сервере, версия:', keyResponse.data.keyVersion);
+                // TODO: расшифровать encryptedGroupKey через decryptGroupKey
+                // Для этого нужен публичный ключ создателя (того, кто зашифровал)
               }
             } catch (err) {
               console.error('Ошибка получения группового ключа:', err);
