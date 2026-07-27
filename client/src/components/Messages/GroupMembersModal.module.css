@@ -329,11 +329,14 @@
 .footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 .leaveBtn {
-  width: 100%;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   background: none;
   border: 1px solid var(--error-color, #ef4444);
   border-radius: 8px;
@@ -341,6 +344,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .leaveBtn:hover {
