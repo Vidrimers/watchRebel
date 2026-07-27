@@ -1573,6 +1573,75 @@ router.get('/conversations/:conversationId/group-key', authenticateToken, async 
 });
 
 /**
+ * PUT /api/messages/conversations/:conversationId/group-key
+ * Обновить зашифрованные групповые ключи (ротация)
+ * Body: { encryptedKeys: [{ userId, encryptedGroupKey }], keyVersion: number }
+ */
+router.put('/conversations/:conversationId/group-key', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { encryptedKeys, keyVersion } = req.body;
+    const userId = req.user.id;
+
+    if (!encryptedKeys || !Array.isArray(encryptedKeys)) {
+      return res.status(400).json({ error: 'encryptedKeys обязателен', code: 'MISSING_KEYS' });
+    }
+
+    // Проверяем что это секретный групповой чат
+    const convCheck = await executeQuery(
+      'SELECT is_group, is_secret FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group || !convCheck.data[0].is_secret) {
+      return res.status(400).json({ error: 'Это не секретный групповой чат', code: 'NOT_SECRET_GROUP' });
+    }
+
+    // Проверяем что пользователь участник чата
+    const memberCheck = await executeQuery(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+      [conversationId, userId]
+    );
+    if (!memberCheck.success || memberCheck.data.length === 0) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    // Удаляем старые ключи и вставляем новые
+    await executeQuery(
+      'DELETE FROM group_keys WHERE conversation_id = ? AND key_version < ?',
+      [conversationId, keyVersion]
+    );
+
+    for (const ek of encryptedKeys) {
+      // Проверяем существует ли уже запись для этой версии
+      const existing = await executeQuery(
+        'SELECT id FROM group_keys WHERE conversation_id = ? AND user_id = ? AND key_version = ?',
+        [conversationId, ek.userId, keyVersion]
+      );
+
+      if (existing.success && existing.data.length > 0) {
+        // Обновляем
+        await executeQuery(
+          'UPDATE group_keys SET encrypted_group_key = ? WHERE conversation_id = ? AND user_id = ? AND key_version = ?',
+          [ek.encryptedGroupKey, conversationId, ek.userId, keyVersion]
+        );
+      } else {
+        // Вставляем новый
+        await executeQuery(
+          'INSERT INTO group_keys (id, conversation_id, user_id, encrypted_group_key, key_version) VALUES (?, ?, ?, ?, ?)',
+          [uuidv4(), conversationId, ek.userId, ek.encryptedGroupKey, keyVersion]
+        );
+      }
+    }
+
+    res.json({ message: 'Групповые ключи обновлены', keyVersion });
+
+  } catch (error) {
+    console.error('Ошибка обновления групповых ключей:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
  * GET /api/messages/conversations/:conversationId/members
  * Получить список участников группового чата
  */
@@ -1652,12 +1721,12 @@ router.get('/conversations/:conversationId/members', authenticateToken, async (r
 /**
  * POST /api/messages/conversations/:conversationId/members
  * Добавить участника в групповой чат
- * Body: { userId: string }
+ * Body: { userId: string, encryptedGroupKey?: string }  (encryptedGroupKey required for secret groups)
  */
 router.post('/conversations/:conversationId/members', authenticateToken, async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const { userId: newMemberId } = req.body;
+    const { userId: newMemberId, encryptedGroupKey } = req.body;
     const currentUserId = req.user.id;
 
     // Проверяем что текущий пользователь участник чата
@@ -1671,11 +1740,18 @@ router.post('/conversations/:conversationId/members', authenticateToken, async (
 
     // Проверяем что это групповой чат
     const convCheck = await executeQuery(
-      'SELECT is_group FROM conversations WHERE id = ?',
+      'SELECT is_group, is_secret FROM conversations WHERE id = ?',
       [conversationId]
     );
     if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
       return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+
+    const isSecretGroup = Boolean(convCheck.data[0].is_secret);
+
+    // Для секретных групп — требуется зашифрованный ключ
+    if (isSecretGroup && !encryptedGroupKey) {
+      return res.status(400).json({ error: 'Для секретной группы требуется encryptedGroupKey', code: 'MISSING_KEY' });
     }
 
     // Проверяем что добавляемый пользователь не уже участник
@@ -1704,6 +1780,37 @@ router.post('/conversations/:conversationId/members', authenticateToken, async (
       );
     }
 
+    // Для секретных групп — сохраняем зашифрованный ключ для нового участника
+    if (isSecretGroup && encryptedGroupKey) {
+      // Получаем текущую версию ключа
+      const keyVersionResult = await executeQuery(
+        'SELECT MAX(key_version) as max_version FROM group_keys WHERE conversation_id = ?',
+        [conversationId]
+      );
+      const keyVersion = keyVersionResult.success && keyVersionResult.data[0].max_version
+        ? keyVersionResult.data[0].max_version : 1;
+
+      // Удаляем старый ключ если есть (при повторном входе)
+      await executeQuery(
+        'DELETE FROM group_keys WHERE conversation_id = ? AND user_id = ?',
+        [conversationId, newMemberId]
+      );
+
+      // Сохраняем новый зашифрованный ключ
+      await executeQuery(
+        'INSERT INTO group_keys (id, conversation_id, user_id, encrypted_group_key, key_version) VALUES (?, ?, ?, ?, ?)',
+        [uuidv4(), conversationId, newMemberId, encryptedGroupKey, keyVersion]
+      );
+
+      // Уведомляем нового участника
+      const { sendMessageToUser } = await import('../services/websocketService.js');
+      sendMessageToUser(newMemberId, {
+        type: 'secret_group_joined',
+        conversationId,
+        groupName: convCheck.data[0].group_name || 'Секретная группа'
+      });
+    }
+
     res.json({ message: 'Участник добавлен' });
 
   } catch (error) {
@@ -1723,13 +1830,14 @@ router.delete('/conversations/:conversationId/members/:memberId', authenticateTo
 
     // Проверяем что это групповой чат
     const convCheck = await executeQuery(
-      'SELECT is_group, created_by FROM conversations WHERE id = ?',
+      'SELECT is_group, is_secret, created_by FROM conversations WHERE id = ?',
       [conversationId]
     );
     if (!convCheck.success || convCheck.data.length === 0 || !convCheck.data[0].is_group) {
       return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
     }
 
+    const isSecretGroup = Boolean(convCheck.data[0].is_secret);
     const isCreator = convCheck.data[0].created_by === currentUserId;
 
     // Удаление другого участника — только создатель или модератор с manage_members
@@ -1757,7 +1865,33 @@ router.delete('/conversations/:conversationId/members/:memberId', authenticateTo
       [conversationId, memberId]
     );
 
-    res.json({ message: 'Участник удалён' });
+    // Для секретных групп — удаляем ключ участника и уведомляем о ротации
+    if (isSecretGroup) {
+      // Удаляем ключ удалённого участника
+      await executeQuery(
+        'DELETE FROM group_keys WHERE conversation_id = ? AND user_id = ?',
+        [conversationId, memberId]
+      );
+
+      // Уведомляем оставшихся участников о необходимости ротации ключа
+      const membersResult = await executeQuery(
+        'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+        [conversationId, memberId]
+      );
+
+      if (membersResult.success) {
+        const { sendMessageToUser } = await import('../services/websocketService.js');
+        for (const m of membersResult.data) {
+          sendMessageToUser(m.user_id, {
+            type: 'secret_group_key_rotation_needed',
+            conversationId,
+            removedUserId: memberId
+          });
+        }
+      }
+    }
+
+    res.json({ message: 'Участник удалён', keyRotationNeeded: isSecretGroup });
 
   } catch (error) {
     console.error('Ошибка удаления участника:', error);
