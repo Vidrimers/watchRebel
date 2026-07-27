@@ -4,6 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
 import { hasGroupKey, getGroupKey, fetchPublicKey, encryptGroupKeyForMember, generateGroupKey, storeGroupKey } from '../../services/e2ee';
 import useAlert from '../../hooks/useAlert';
+import Icon from '../Common/Icon';
 import styles from './GroupMembersModal.module.css';
 
 const PERMISSIONS = [
@@ -24,7 +25,7 @@ const GroupMembersModal = ({
 }) => {
   const { user } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
-  const { alertDialog, showAlert } = useAlert();
+  const { alertDialog, showAlert, showConfirm } = useAlert();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddMember, setShowAddMember] = useState(false);
@@ -75,7 +76,6 @@ const GroupMembersModal = ({
     try {
       let encryptedGroupKey = null;
 
-      // Для секретных групп — шифруем групповый ключ для нового участника
       if (isSecretGroup) {
         const groupKeyData = getGroupKey(conversationId);
         if (!groupKeyData) {
@@ -106,11 +106,17 @@ const GroupMembersModal = ({
   };
 
   const handleRemoveMember = async (memberId) => {
-    if (!confirm('Удалить участника из группы?')) return;
+    const confirmed = await showConfirm({
+      title: 'Удалить участника?',
+      message: 'Участник будет удалён из группы.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена'
+    });
+    if (!confirmed) return;
+
     try {
       const response = await api.delete(`/messages/conversations/${conversationId}/members/${memberId}`);
 
-      // Для секретных групп — если нужна ротация ключа
       if (response.data.keyRotationNeeded) {
         await handleKeyRotation();
       }
@@ -124,14 +130,10 @@ const GroupMembersModal = ({
 
   const handleKeyRotation = async () => {
     try {
-      // Генерируем новый групповый ключ
       const newGroupKey = generateGroupKey();
-
-      // Получаем текущих участников
       const currentMembers = members.filter(m => m.userId !== user.id);
       const encryptedKeys = [];
 
-      // Шифруем новый ключ для каждого оставшегося участника
       for (const member of currentMembers) {
         const theirKey = await fetchPublicKey(member.userId);
         if (theirKey) {
@@ -140,26 +142,21 @@ const GroupMembersModal = ({
         }
       }
 
-      // Шифруем для себя
       const myKey = await fetchPublicKey(user.id);
       if (myKey) {
         const myEncryptedKey = await encryptGroupKeyForMember(newGroupKey, myKey.publicKey);
         encryptedKeys.push({ userId: user.id, encryptedGroupKey: myEncryptedKey });
       }
 
-      // Получаем текущую версию ключа
       const currentKeyData = getGroupKey(conversationId);
       const newVersion = (currentKeyData?.version || 1) + 1;
 
-      // Отправляем обновлённые ключи на сервер
       await api.put(`/messages/conversations/${conversationId}/group-key`, {
         encryptedKeys,
         keyVersion: newVersion
       });
 
-      // Сохраняем новый ключ локально
       storeGroupKey(conversationId, newGroupKey, newVersion);
-
       await showAlert({ title: 'Готово', message: 'Ключ группы обновлён', type: 'success' });
     } catch (err) {
       console.error('Ошибка ротации ключа:', err);
@@ -168,7 +165,14 @@ const GroupMembersModal = ({
   };
 
   const handleLeaveGroup = async () => {
-    if (!confirm('Покинуть группу?')) return;
+    const confirmed = await showConfirm({
+      title: 'Покинуть группу?',
+      message: 'Вы больше не сможете видеть сообщения в этом чате.',
+      confirmText: 'Покинуть',
+      cancelText: 'Отмена'
+    });
+    if (!confirmed) return;
+
     try {
       await api.delete(`/messages/conversations/${conversationId}/members/${user.id}`);
       onClose();
@@ -193,13 +197,25 @@ const GroupMembersModal = ({
   };
 
   const handleRemoveModerator = async (modUserId) => {
-    if (!confirm('Снять модератора?')) return;
+    const confirmed = await showConfirm({
+      title: 'Снять модератора?',
+      message: 'Участник потеряет все модераторские права.',
+      confirmText: 'Снять',
+      cancelText: 'Отмена'
+    });
+    if (!confirmed) return;
+
     try {
       await api.delete(`/messages/conversations/${conversationId}/moderators/${modUserId}`);
       await loadMembers();
     } catch (err) {
       setError(err.data?.error || 'Ошибка снятия модератора');
     }
+  };
+
+  const navigateToProfile = (userId) => {
+    onClose();
+    navigate(`/user/${userId}`);
   };
 
   const filteredFriends = friends.filter(f =>
@@ -211,7 +227,7 @@ const GroupMembersModal = ({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3>Участники группы {isSecretGroup && '🔒'}</h3>
+          <h3>Участники группы {isSecretGroup && '🔒'} <span className={styles.memberCount}>({members.length})</span></h3>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 
@@ -223,28 +239,29 @@ const GroupMembersModal = ({
               <div className={styles.membersList}>
                 {members.map(member => (
                   <div key={member.userId} className={styles.memberItem}>
-                    <div className={styles.memberInfo}>
-                      <div className={styles.memberAvatar}>
-                        {member.avatarUrl ? (
-                          <img src={member.avatarUrl} alt={member.displayName} className={styles.memberAvatarImg} />
-                        ) : (
-                          <div className={styles.memberAvatarPlaceholder}>
-                            {member.displayName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className={styles.memberDetails}>
-                        <span className={styles.memberName}>
-                          {member.displayName}
-                          {member.isCreator && <span className={styles.creatorBadge}>Создатель</span>}
-                          {member.isModerator && <span className={styles.modBadge}>Мод</span>}
-                        </span>
-                        {member.permissions.length > 0 && (
-                          <span className={styles.permissions}>
-                            {member.permissions.map(p => PERMISSIONS.find(perm => perm.key === p)?.label).join(', ')}
-                          </span>
-                        )}
-                      </div>
+                    <div
+                      className={styles.memberAvatar}
+                      onClick={() => navigateToProfile(member.userId)}
+                      title={member.displayName}
+                    >
+                      {member.avatarUrl ? (
+                        <img src={member.avatarUrl} alt={member.displayName} className={styles.memberAvatarImg} />
+                      ) : (
+                        <div className={styles.memberAvatarPlaceholder}>
+                          {member.displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.memberDetails}>
+                      <span
+                        className={styles.memberName}
+                        onClick={() => navigateToProfile(member.userId)}
+                      >
+                        {member.displayName}
+                      </span>
+                      {member.isModerator && (
+                        <span className={styles.modLabel}>Модератор</span>
+                      )}
                     </div>
                     <div className={styles.memberActions}>
                       {member.userId !== user.id && !member.isCreator && (
@@ -258,7 +275,7 @@ const GroupMembersModal = ({
                               }}
                               title="Назначить модератором"
                             >
-                              🛡️
+                              <Icon name="shield" size="small" />
                             </button>
                           )}
                           {isCreator && member.isModerator && (
@@ -267,16 +284,16 @@ const GroupMembersModal = ({
                               onClick={() => handleRemoveModerator(member.userId)}
                               title="Снять модератора"
                             >
-                              ⚡
+                              <Icon name="shield-off" size="small" />
                             </button>
                           )}
-                          {(isCreator || member.isModerator) && (
+                          {(isCreator || (members.find(m => m.userId === user.id)?.isModerator && member.userId !== user.id)) && (
                             <button
                               className={`${styles.actionBtn} ${styles.removeBtn}`}
                               onClick={() => handleRemoveMember(member.userId)}
                               title="Удалить из группы"
                             >
-                              ✕
+                              <Icon name="close" size="small" />
                             </button>
                           )}
                         </>
@@ -338,7 +355,7 @@ const GroupMembersModal = ({
             setShowAddMember(!showAddMember);
             if (!showAddMember) loadFriends();
           }}>
-            {showAddMember ? 'Отмена' : '+ Добавить участника'}
+            {showAddMember ? 'Отмена' : '+ Добавить'}
           </button>
         </div>
 

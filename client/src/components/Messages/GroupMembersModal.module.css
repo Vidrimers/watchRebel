@@ -43,6 +43,15 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memberCount {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 .closeBtn {
@@ -69,44 +78,140 @@
 .body {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
 }
 
-.addMemberBtn {
-  width: 100%;
-  padding: 0.6rem;
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 12px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.memberItem:hover {
   background: var(--bg-hover);
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-  color: var(--accent-primary, #6366f1);
+}
+
+.memberAvatar {
+  flex-shrink: 0;
   cursor: pointer;
-  font-size: 0.875rem;
+  transition: opacity 0.15s;
+}
+
+.memberAvatar:hover {
+  opacity: 0.8;
+}
+
+.memberAvatarImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.memberAvatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.memberDetails {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memberName {
+  font-size: 0.9375rem;
   font-weight: 500;
-  margin-bottom: 1rem;
-  transition: all 0.2s;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.addMemberBtn:hover {
-  background: rgba(99, 102, 241, 0.1);
+.memberName:hover {
+  color: var(--accent-primary, #6366f1);
 }
 
-.addMemberPanel {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+.modLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.memberActions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.memberItem:hover .memberActions {
+  opacity: 1;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.removeBtn {
+  color: var(--error-color, #ef4444);
+}
+
+.removeBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error-color, #ef4444);
+}
+
+/* Добавление участника */
+.addMemberSection {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
 }
 
 .searchInput {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 8px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.8125rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
   background: var(--bg-input);
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
   box-sizing: border-box;
 }
 
@@ -123,8 +228,15 @@
 .friendItem {
   display: flex;
   align-items: center;
-  padding: 0.4rem 0.25rem;
-  gap: 0.5rem;
+  padding: 8px;
+  gap: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.friendItem:hover {
+  background: var(--bg-hover);
 }
 
 .friendAvatar {
@@ -132,198 +244,45 @@
 }
 
 .friendAvatarImg {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .friendAvatarPlaceholder {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--accent-primary, #6366f1);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .friendName {
   flex: 1;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--text-primary);
 }
 
 .addBtn {
-  padding: 0.25rem 0.5rem;
+  padding: 8px 16px;
   background: var(--accent-primary, #6366f1);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .addBtn:hover {
   background: var(--accent-primary-active, #4f46e5);
-}
-
-.membersList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.memberItem {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.25rem;
-  gap: 0.75rem;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-
-.memberItem:hover {
-  background: var(--bg-hover);
-}
-
-.memberAvatar {
-  flex-shrink: 0;
-  text-decoration: none;
-  display: flex;
-  cursor: pointer;
-}
-
-.memberAvatarImg {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.memberAvatarPlaceholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--accent-primary, #6366f1);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.memberInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.memberName {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.memberDetails {
-  flex: 1;
-  min-width: 0;
-}
-
-.memberNameLink {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  text-decoration: none;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-
-.memberNameLink:hover {
-  color: var(--accent-primary, #6366f1);
-  text-decoration: underline;
-}
-
-.memberBadges {
-  display: flex;
-  gap: 0.375rem;
-  margin-top: 2px;
-}
-
-.badgeCreator {
-  font-size: 0.65rem;
-  padding: 1px 6px;
-  background: rgba(234, 179, 8, 0.15);
-  color: #b45309;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.badgeMod {
-  font-size: 0.65rem;
-  padding: 1px 6px;
-  background: rgba(99, 102, 241, 0.15);
-  color: #6366f1;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.memberActions {
-  display: flex;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.memberItem:hover .memberActions {
-  opacity: 1;
-}
-
-.actionBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-
-.actionBtn:hover {
-  background: var(--bg-hover);
-}
-
-.removeBtn {
-  color: var(--error-color, #ef4444);
-}
-
-.removeBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.empty {
-  text-align: center;
-  padding: 1.5rem;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
-.error {
-  color: var(--error-color, #ef4444);
-  font-size: 0.8125rem;
-  text-align: center;
-  margin-top: 0.5rem;
 }
 
 .footer {
@@ -336,7 +295,7 @@
 }
 
 .leaveBtn {
-  padding: 0.5rem 1rem;
+  padding: 8px 16px;
   background: none;
   border: 1px solid var(--error-color, #ef4444);
   border-radius: 8px;
@@ -351,189 +310,22 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Модалка прав модератора */
-.permOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-  padding: 1rem;
-}
-
-.permModal {
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 360px;
-  max-height: 85vh;
-  padding: 1.25rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.2s ease;
-}
-
-.permTitle {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.permSubtitle {
-  margin: 0 0 1rem;
-  font-size: 0.8125rem;
+.loading,
+.empty {
+  text-align: center;
+  padding: 1.5rem;
   color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
-.permList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.permItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  padding: 0.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.permItem:hover {
-  background: var(--bg-hover);
-}
-
-.permCheckbox {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--border-color);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s;
-  flex-shrink: 0;
-  font-size: 12px;
-  color: white;
-  background: var(--bg-primary);
-}
-
-.permCheckboxChecked {
-  background: var(--accent-primary, #6366f1);
-  border-color: var(--accent-primary, #6366f1);
-}
-
-.permInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.permLabel {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.permDesc {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.permActions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.permActionsRight {
-  display: flex;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.permCancel {
-  padding: 0.5rem 1rem;
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 0.8125rem;
-  transition: background 0.2s;
-}
-
-.permCancel:hover {
-  background: var(--bg-hover);
-}
-
-.permSave {
-  padding: 0.5rem 1rem;
-  background: var(--accent-primary, #6366f1);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.permSave:hover {
-  background: var(--accent-primary-active, #4f46e5);
-}
-
-.permRemove {
-  padding: 0.3rem 0.6rem;
-  background: none;
-  border: 1px solid var(--error-color, #ef4444);
-  border-radius: 6px;
+.error {
   color: var(--error-color, #ef4444);
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: background 0.2s;
+  font-size: 0.8125rem;
+  text-align: center;
+  margin-top: 8px;
 }
 
-.permRemove:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.creatorBadge,
-.modBadge {
-  display: inline-block;
-  font-size: 0.65rem;
-  padding: 1px 6px;
-  border-radius: 8px;
-  margin-left: 6px;
-  font-weight: 500;
-}
-
-.creatorBadge {
-  background: var(--accent-primary, #6366f1);
-  color: white;
-}
-
-.modBadge {
-  background: var(--bg-tertiary, #f3f4f6);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-}
-
-.permissions {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
+/* Модалка назначения модератора */
 .permissionsList {
   display: flex;
   flex-direction: column;
