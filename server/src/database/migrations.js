@@ -281,7 +281,7 @@ export async function runMigrations() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
-        UNIQUE(user1_id, user2_id)
+        UNIQUE(user1_id, user2_id, is_secret)
       );
 
       -- Индекс для быстрого поиска диалогов пользователя
@@ -604,6 +604,42 @@ export async function runMigrations() {
             console.error('Ошибка создания таблицы key_backups:', err.message);
           } else {
             console.log('✓ Таблица key_backups создана');
+          }
+        });
+
+        // === Миграция: обновление UNIQUE constraint для conversations ===
+        // Для существующих БД — пересоздаём таблицу с новым constraint
+        db.run(`SELECT sql FROM sqlite_master WHERE name = 'conversations' AND sql NOT LIKE '%is_secret%'`, [], (err, row) => {
+          if (row) {
+            console.log('🔄 Миграция: обновление UNIQUE constraint для conversations...');
+            db.exec(`
+              CREATE TABLE IF NOT EXISTS conversations_new (
+                id TEXT PRIMARY KEY,
+                user1_id TEXT NOT NULL,
+                user2_id TEXT NOT NULL,
+                last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_group BOOLEAN DEFAULT 0,
+                created_by TEXT,
+                group_name TEXT,
+                group_avatar TEXT,
+                is_secret BOOLEAN DEFAULT 0,
+                FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user1_id, user2_id, is_secret)
+              );
+              INSERT OR IGNORE INTO conversations_new SELECT * FROM conversations;
+              DROP TABLE conversations;
+              ALTER TABLE conversations_new RENAME TO conversations;
+              CREATE INDEX IF NOT EXISTS idx_conversations_user1 ON conversations(user1_id);
+              CREATE INDEX IF NOT EXISTS idx_conversations_user2 ON conversations(user2_id);
+            `, (migrateErr) => {
+              if (migrateErr) {
+                console.error('Ошибка миграции conversations:', migrateErr.message);
+              } else {
+                console.log('✓ UNIQUE constraint для conversations обновлён');
+              }
+            });
           }
         });
 
