@@ -81,6 +81,10 @@ const GroupMembersModal = ({
     try {
       let encryptedGroupKey = null;
 
+      // Находим имя друга для сообщения об ошибке
+      const friend = friends.find(f => f.id === friendId);
+      const friendName = friend?.displayName || 'пользователя';
+
       if (isSecretGroup) {
         const groupKeyData = getGroupKey(conversationId);
         if (!groupKeyData) {
@@ -90,7 +94,7 @@ const GroupMembersModal = ({
 
         const theirKey = await fetchPublicKey(friendId);
         if (!theirKey) {
-          await showAlert({ title: 'Ошибка', message: 'У пользователя нет ключей E2EE', type: 'error' });
+          await showAlert({ title: 'Ошибка', message: `У ${friendName} нет ключей E2EE`, type: 'error' });
           return;
         }
 
