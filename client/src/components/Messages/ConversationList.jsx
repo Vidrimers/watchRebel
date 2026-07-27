@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchConversations, setCurrentConversation, clearMessages } from '../../store/slices/messagesSlice';
+import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import Icon from '../Common/Icon';
 import useAlert from '../../hooks/useAlert';
 import api from '../../services/api';
@@ -29,6 +30,21 @@ const ConversationList = ({ onSelectConversation }) => {
   // Загружаем диалоги при монтировании компонента
   useEffect(() => {
     dispatch(fetchConversations());
+  }, [dispatch]);
+
+  // Глобальный WebSocket-обработчик для обновления списка диалогов
+  useEffect(() => {
+    const handleWebSocketEvent = (data) => {
+      // Обновляем список при получении событий, связанных с группами
+      if (data.type === 'secret_group_joined' ||
+          data.type === 'group_deleted' ||
+          data.type === 'secret_group_member_left') {
+        dispatch(fetchConversations());
+      }
+    };
+
+    addMessageHandler(handleWebSocketEvent);
+    return () => removeMessageHandler(handleWebSocketEvent);
   }, [dispatch]);
 
   // Загружаем список друзей при открытии модального окна
