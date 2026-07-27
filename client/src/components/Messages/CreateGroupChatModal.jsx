@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
+import { hasIdentityKey, fetchPublicKey, generateGroupKey, encryptGroupKeyForMember, storeGroupKey } from '../../services/e2ee';
+import Icon from '../Common/Icon';
 import styles from './CreateGroupChatModal.module.css';
 
 const CreateGroupChatModal = ({ onClose, onCreated }) => {
@@ -12,6 +14,7 @@ const CreateGroupChatModal = ({ onClose, onCreated }) => {
   const [loading, setLoading] = useState(false);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [error, setError] = useState(null);
+  const [isSecret, setIsSecret] = useState(false);
 
   useEffect(() => {
     loadFriends();
@@ -50,12 +53,48 @@ const CreateGroupChatModal = ({ onClose, onCreated }) => {
 
     setLoading(true);
     setError(null);
+
     try {
-      const response = await api.post('/messages/conversations/group', {
-        groupName: groupName.trim(),
-        memberIds: selectedIds
-      });
-      onCreated(response.data.id);
+      if (isSecret) {
+        // Секретная группа — генерируем групповый ключ и шифруем для каждого участника
+        if (!hasIdentityKey()) {
+          setError('Сначала создайте ключи E2EE в настройках');
+          setLoading(false);
+          return;
+        }
+
+        const groupKey = generateGroupKey();
+        const allMemberIds = [user.id, ...selectedIds];
+        const encryptedKeys = [];
+
+        for (const memberId of allMemberIds) {
+          const theirKey = await fetchPublicKey(memberId);
+          if (!theirKey) {
+            setError(`У пользователя ${memberId} нет ключей E2EE`);
+            setLoading(false);
+            return;
+          }
+          const encryptedKey = await encryptGroupKeyForMember(groupKey, theirKey.publicKey);
+          encryptedKeys.push({ userId: memberId, encryptedGroupKey: encryptedKey });
+        }
+
+        const response = await api.post('/messages/conversations/group-secret', {
+          groupName: groupName.trim(),
+          memberIds: selectedIds,
+          encryptedKeys
+        });
+
+        // Сохраняем групповый ключ локально
+        storeGroupKey(response.data.id, groupKey, 1);
+        onCreated(response.data.id);
+      } else {
+        // Обычная группа
+        const response = await api.post('/messages/conversations/group', {
+          groupName: groupName.trim(),
+          memberIds: selectedIds
+        });
+        onCreated(response.data.id);
+      }
     } catch (err) {
       setError(err.data?.error || 'Ошибка создания группы');
     } finally {
@@ -80,6 +119,23 @@ const CreateGroupChatModal = ({ onClose, onCreated }) => {
             onChange={e => setGroupName(e.target.value)}
             autoFocus
           />
+
+          {/* Переключатель секретной группы */}
+          <label className={styles.secretToggle}>
+            <input
+              type="checkbox"
+              checked={isSecret}
+              onChange={(e) => setIsSecret(e.target.checked)}
+              disabled={!hasIdentityKey()}
+            />
+            <Icon name="secret-chat" size="small" />
+            <span>Секретная группа (E2EE)</span>
+          </label>
+          {!hasIdentityKey() && (
+            <p className={styles.secretHint}>
+              Создайте ключи E2EE в настройках для использования секретных групп
+            </p>
+          )}
 
           <input
             type="text"

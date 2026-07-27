@@ -514,6 +514,162 @@ export async function decryptPrivateKeyWithPhrase(encryptedPrivateKeyBase64, sal
   return new Uint8Array(decrypted);
 }
 
+// === Групповые ключи (для секретных групповых чатов) ===
+
+const GROUP_KEY_PREFIX = 'e2ee_group_key_';
+const GROUP_E2EE_PREFIX = '[E2EE-G]';
+
+/**
+ * Сгенерировать случайный групповой AES-256 ключ
+ * @returns {Uint8Array} 32 bytes
+ */
+export function generateGroupKey() {
+  return crypto.getRandomValues(new Uint8Array(32));
+}
+
+/**
+ * Зашифровать групповой ключ для конкретного участника через ECDH
+ * @param {Uint8Array} groupKey - групповой ключ
+ * @param {string} theirPublicKeyBase64 - публичный ключ участника
+ * @returns {Promise<string>} base64 зашифрованного ключа
+ */
+export async function encryptGroupKeyForMember(groupKey, theirPublicKeyBase64) {
+  const privateKey = getPrivateKey();
+  if (!privateKey) throw new Error('Приватный ключ E2EE не найден');
+
+  const sharedSecret = computeSharedSecret(privateKey, theirPublicKeyBase64);
+  const wrappingKey = await crypto.subtle.importKey('raw', sharedSecret, 'AES-GCM', false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrappingKey, groupKey);
+
+  // Формат: iv (12 bytes) + encrypted data
+  const result = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
+  result.set(iv);
+  result.set(new Uint8Array(encrypted), iv.length);
+
+  return uint8ArrayToBase64(result);
+}
+
+/**
+ * Расшифровать групповой ключ
+ * @param {string} encryptedGroupKeyBase64 - зашифрованный ключ (base64)
+ * @param {string} senderPublicKeyBase64 - публичный ключ отправителя (того, кто зашифровал)
+ * @returns {Promise<Uint8Array>} групповой ключ
+ */
+export async function decryptGroupKey(encryptedGroupKeyBase64, senderPublicKeyBase64) {
+  const privateKey = getPrivateKey();
+  if (!privateKey) throw new Error('Приватный ключ E2EE не найден');
+
+  const encryptedBytes = base64ToUint8Array(encryptedGroupKeyBase64);
+  const iv = encryptedBytes.slice(0, 12);
+  const ciphertext = encryptedBytes.slice(12);
+
+  const sharedSecret = computeSharedSecret(privateKey, senderPublicKeyBase64);
+  const wrappingKey = await crypto.subtle.importKey('raw', sharedSecret, 'AES-GCM', false, ['decrypt']);
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, wrappingKey, ciphertext);
+
+  return new Uint8Array(decrypted);
+}
+
+/**
+ * Сохранить групповой ключ в localStorage
+ * @param {string} conversationId
+ * @param {Uint8Array} groupKey
+ * @param {number} version
+ */
+export function storeGroupKey(conversationId, groupKey, version = 1) {
+  const data = JSON.stringify({ key: uint8ArrayToBase64(groupKey), version });
+  localStorage.setItem(`${GROUP_KEY_PREFIX}${conversationId}`, data);
+}
+
+/**
+ * Получить групповой ключ из localStorage
+ * @param {string} conversationId
+ * @returns {{ key: Uint8Array, version: number } | null}
+ */
+export function getGroupKey(conversationId) {
+  const stored = localStorage.getItem(`${GROUP_KEY_PREFIX}${conversationId}`);
+  if (!stored) return null;
+  const data = JSON.parse(stored);
+  return { key: base64ToUint8Array(data.key), version: data.version };
+}
+
+/**
+ * Проверить, есть ли групповой ключ
+ * @param {string} conversationId
+ * @returns {boolean}
+ */
+export function hasGroupKey(conversationId) {
+  return localStorage.getItem(`${GROUP_KEY_PREFIX}${conversationId}`) !== null;
+}
+
+/**
+ * Удалить групповой ключ
+ * @param {string} conversationId
+ */
+export function removeGroupKey(conversationId) {
+  localStorage.removeItem(`${GROUP_KEY_PREFIX}${conversationId}`);
+}
+
+/**
+ * Зашифровать сообщение групповым ключом
+ * @param {string} plaintext
+ * @param {Uint8Array} groupKey
+ * @param {number} version
+ * @returns {Promise<string>}
+ */
+export async function encryptGroupMessage(plaintext, groupKey, version = 1) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await crypto.subtle.importKey('raw', groupKey, 'AES-GCM', false, ['encrypt']);
+  const encoded = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+  const encryptedBytes = new Uint8Array(encrypted);
+  return `${GROUP_E2EE_PREFIX}${version}:${uint8ArrayToBase64(iv)}:${uint8ArrayToBase64(encryptedBytes)}`;
+}
+
+/**
+ * Расшифровать групповое сообщение
+ * @param {string} encrypted
+ * @param {Uint8Array} groupKey
+ * @returns {Promise<string>}
+ */
+export async function decryptGroupMessage(encrypted, groupKey) {
+  const withoutPrefix = encrypted.slice(GROUP_E2EE_PREFIX.length);
+  const parts = withoutPrefix.split(':');
+  let ivBase64, ciphertextBase64;
+  if (parts.length === 3) {
+    [, ivBase64, ciphertextBase64] = parts;
+  } else {
+    [ivBase64, ciphertextBase64] = parts;
+  }
+  const iv = base64ToUint8Array(ivBase64);
+  const ciphertext = base64ToUint8Array(ciphertextBase64);
+  const key = await crypto.subtle.importKey('raw', groupKey, 'AES-GCM', false, ['decrypt']);
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return new TextDecoder().decode(decrypted);
+}
+
+/**
+ * Проверить, является ли сообщение зашифрованным групповым
+ * @param {string} content
+ * @returns {boolean}
+ */
+export function isEncryptedGroupMessage(content) {
+  return typeof content === 'string' && content.startsWith(GROUP_E2EE_PREFIX);
+}
+
+/**
+ * Извлечь версию ключа из зашифрованного сообщения
+ * @param {string} encrypted
+ * @returns {number}
+ */
+export function extractGroupKeyVersion(encrypted) {
+  if (!isEncryptedGroupMessage(encrypted)) return 1;
+  const withoutPrefix = encrypted.slice(GROUP_E2EE_PREFIX.length);
+  const parts = withoutPrefix.split(':');
+  return parseInt(parts[0], 10) || 1;
+}
+
 // === Backup API ===
 
 /**

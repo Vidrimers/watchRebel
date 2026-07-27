@@ -98,7 +98,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 
     // 2. Групповые диалоги
     const groupQuery = `
-      SELECT c.id, c.is_group, c.group_name, c.group_avatar, c.created_by,
+      SELECT c.id, c.is_group, c.is_secret, c.group_name, c.group_avatar, c.created_by,
              c.last_message_at, c.created_at,
              (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
              (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments
@@ -1428,6 +1428,146 @@ router.post('/conversations/secret', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка создания секретного чата:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/conversations/group-secret
+ * Создать секретный групповой чат (E2EE)
+ */
+router.post('/conversations/group-secret', authenticateToken, async (req, res) => {
+  try {
+    const { groupName, memberIds, encryptedKeys } = req.body;
+    const userId = req.user.id;
+
+    if (!groupName || !groupName.trim()) {
+      return res.status(400).json({ error: 'Укажите название группы', code: 'MISSING_NAME' });
+    }
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length < 1) {
+      return res.status(400).json({ error: 'Добавьте хотя бы одного участника', code: 'MISSING_MEMBERS' });
+    }
+
+    if (!encryptedKeys || !Array.isArray(encryptedKeys)) {
+      return res.status(400).json({ error: 'Зашифрованные ключи обязательны', code: 'MISSING_KEYS' });
+    }
+
+    // Проверяем что все memberIds — друзья пользователя
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      const friendCheck = await executeQuery(
+        'SELECT id FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
+        [userId, memberId, memberId, userId]
+      );
+      if (!friendCheck.success || friendCheck.data.length === 0) {
+        return res.status(400).json({
+          error: `Пользователь ${memberId} не является вашим другом`,
+          code: 'NOT_FRIEND'
+        });
+      }
+    }
+
+    // Проверяем что у всех участников есть E2EE ключи
+    const allMemberIds = [userId, ...memberIds.filter(id => id !== userId)];
+    for (const memberId of allMemberIds) {
+      const keyCheck = await executeQuery('SELECT id FROM user_keys WHERE user_id = ?', [memberId]);
+      if (!keyCheck.success || keyCheck.data.length === 0) {
+        return res.status(400).json({
+          error: `У пользователя ${memberId} нет ключей E2EE`,
+          code: 'NO_E2EE_KEY'
+        });
+      }
+    }
+
+    const conversationId = uuidv4();
+
+    // Создаём секретный групповой чат
+    const createResult = await executeQuery(
+      `INSERT INTO conversations (id, user1_id, user2_id, is_group, is_secret, group_name, created_by, last_message_at, created_at)
+       VALUES (?, ?, ?, 1, 1, ?, ?, datetime('now'), datetime('now'))`,
+      [conversationId, userId, userId, groupName.trim(), userId]
+    );
+
+    if (!createResult.success) {
+      return res.status(500).json({ error: 'Ошибка создания группы', code: 'DATABASE_ERROR' });
+    }
+
+    // Добавляем создателя как участника
+    await executeQuery(
+      'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+      [uuidv4(), conversationId, userId]
+    );
+
+    // Добавляем остальных участников
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      await executeQuery(
+        'INSERT INTO conversation_members (id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, datetime(\'now\'))',
+        [uuidv4(), conversationId, memberId]
+      );
+    }
+
+    // Сохраняем зашифрованные ключи для каждого участника
+    for (const ek of encryptedKeys) {
+      await executeQuery(
+        'INSERT INTO group_keys (id, conversation_id, user_id, encrypted_group_key, key_version) VALUES (?, ?, ?, ?, 1)',
+        [uuidv4(), conversationId, ek.userId, ek.encryptedGroupKey]
+      );
+    }
+
+    // Уведомляем участников через WebSocket
+    const { sendMessageToUser } = await import('../services/websocketService.js');
+    for (const memberId of allMemberIds) {
+      if (memberId === userId) continue;
+      sendMessageToUser(memberId, {
+        type: 'secret_group_created',
+        conversationId,
+        groupName: groupName.trim(),
+        createdBy: { id: userId, displayName: req.user.displayName, avatarUrl: req.user.avatarUrl }
+      });
+    }
+
+    res.status(201).json({
+      id: conversationId,
+      isGroup: true,
+      isSecret: true,
+      groupName: groupName.trim(),
+      createdBy: userId,
+      createdAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания секретного группового чата:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * GET /api/messages/conversations/:conversationId/group-key
+ * Получить зашифрованный групповой ключ для текущего пользователя
+ */
+router.get('/conversations/:conversationId/group-key', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    const result = await executeQuery(
+      'SELECT encrypted_group_key, key_version FROM group_keys WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, userId]
+    );
+
+    if (!result.success || result.data.length === 0) {
+      return res.status(404).json({ error: 'Групповой ключ не найден', code: 'KEY_NOT_FOUND' });
+    }
+
+    res.json({
+      encryptedGroupKey: result.data[0].encrypted_group_key,
+      keyVersion: result.data[0].key_version
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения группового ключа:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });

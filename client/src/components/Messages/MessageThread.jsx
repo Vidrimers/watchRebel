@@ -4,7 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
-import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation } from '../../services/e2ee';
+import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import useToast from '../../hooks/useToast';
@@ -166,7 +166,7 @@ const MessageThread = ({ conversation, onClose }) => {
             console.error('Ошибка вычисления сессионного ключа:', err);
           }
         }
-        dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0, isSecret: true }));
+        dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0, isSecret: true, isGroup: isGroup }));
       } else {
         dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0 }));
       }
@@ -203,14 +203,22 @@ const MessageThread = ({ conversation, onClose }) => {
       if (data.type === 'new_message' && data.message) {
         const message = { ...data.message };
 
-        // Расшифровка для секретных чатов
-        if (conversation?.isSecret && isEncryptedMessage(message.content)) {
+        // Расшифровка для секретных чатов и секретных групп
+        if (conversation?.isSecret) {
           try {
-            // Определяем нужный ключ по счётчику ротации
-            const rotationCounter = extractRotationCounter(message.content);
-            const sessionKey = getSessionKeyByRotation(conversation.id, rotationCounter) || getSessionKey(conversation.id);
-            if (sessionKey) {
-              message.content = await decryptMessage(message.content, sessionKey);
+            if (isGroup && isEncryptedGroupMessage(message.content)) {
+              // Секретная группа — используем групповый ключ
+              const groupKeyData = getGroupKey(conversation.id);
+              if (groupKeyData) {
+                message.content = await decryptGroupMessage(message.content, groupKeyData.key);
+              }
+            } else if (isEncryptedMessage(message.content)) {
+              // Секретный чат 1-на-1 — используем session key
+              const rotationCounter = extractRotationCounter(message.content);
+              const sessionKey = getSessionKeyByRotation(conversation.id, rotationCounter) || getSessionKey(conversation.id);
+              if (sessionKey) {
+                message.content = await decryptMessage(message.content, sessionKey);
+              }
             }
           } catch (err) {
             console.error('Ошибка расшифровки WebSocket сообщения:', err);
@@ -330,7 +338,8 @@ const MessageThread = ({ conversation, onClose }) => {
       conversationId: conversation.id,
       limit: 20,
       offset: messages.length,
-      isSecret: conversation.isSecret || false
+      isSecret: conversation.isSecret || false,
+      isGroup: isGroup || false
     }));
     
     // Сохраняем позицию скролла после загрузки
@@ -497,31 +506,44 @@ const MessageThread = ({ conversation, onClose }) => {
     setMessageText('');
     setSelectedFiles([]);
 
-    // Шифрование для секретных чатов
+    // Шифрование для секретных чатов и секретных групп
     if (conversation.isSecret && content) {
       try {
-        // Проверяем необходимость ротации ключа
-        let sessionKey = getSessionKey(conversation.id);
-        if (!sessionKey) {
-          console.error('Нет сессионного ключа для шифрования');
-          setMessageText(content);
-          setSelectedFiles(files);
-          return;
-        }
-
-        // Ротация если достигнут порог сообщений
-        const messageCount = messages.length;
-        if (needsRotation(conversation.id, messageCount)) {
-          const otherUserId = conversation.otherUser?.id;
-          const theirKey = await fetchPublicKey(otherUserId);
-          if (theirKey) {
-            sessionKey = rotateSessionKey(conversation.id, theirKey.publicKey);
-          }
-        }
-
         originalContent = content;
-        const rotationCounter = getRotationCounter(conversation.id);
-        content = await encryptMessage(content, sessionKey, rotationCounter);
+
+        if (isGroup) {
+          // Секретная группа — используем групповый ключ
+          const groupKeyData = getGroupKey(conversation.id);
+          if (!groupKeyData) {
+            console.error('Нет группового ключа для шифрования');
+            setMessageText(content);
+            setSelectedFiles(files);
+            return;
+          }
+          content = await encryptGroupMessage(content, groupKeyData.key, groupKeyData.version);
+        } else {
+          // Секретный чат 1-на-1 — используем session key
+          let sessionKey = getSessionKey(conversation.id);
+          if (!sessionKey) {
+            console.error('Нет сессионного ключа для шифрования');
+            setMessageText(content);
+            setSelectedFiles(files);
+            return;
+          }
+
+          // Ротация если достигнут порог сообщений
+          const messageCount = messages.length;
+          if (needsRotation(conversation.id, messageCount)) {
+            const otherUserId = conversation.otherUser?.id;
+            const theirKey = await fetchPublicKey(otherUserId);
+            if (theirKey) {
+              sessionKey = rotateSessionKey(conversation.id, theirKey.publicKey);
+            }
+          }
+
+          const rotationCounter = getRotationCounter(conversation.id);
+          content = await encryptMessage(content, sessionKey, rotationCounter);
+        }
       } catch (err) {
         console.error('Ошибка шифрования:', err);
         setMessageText(content);

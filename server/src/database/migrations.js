@@ -607,6 +607,28 @@ export async function runMigrations() {
           }
         });
 
+        // === E2EE: Таблица зашифрованных групповых ключей ===
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS group_keys (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            encrypted_group_key TEXT NOT NULL,
+            key_version INTEGER DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(conversation_id, user_id, key_version)
+          );
+          CREATE INDEX IF NOT EXISTS idx_group_keys_conv ON group_keys(conversation_id);
+        `, (err) => {
+          if (err) {
+            console.error('Ошибка создания таблицы group_keys:', err.message);
+          } else {
+            console.log('✓ Таблица group_keys создана');
+          }
+        });
+
         // === Миграция: обновление UNIQUE constraint для conversations ===
         // Для существующих БД — пересоздаём таблицу с новым constraint
         db.run(`SELECT sql FROM sqlite_master WHERE name = 'conversations' AND sql NOT LIKE '%is_secret%'`, [], (err, row) => {
