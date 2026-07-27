@@ -439,6 +439,12 @@
   background: var(--bg-hover, #f3f4f6);
 }
 
+.secretIcon {
+  margin-right: 4px;
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+
 .modalLoading,
 .modalEmpty {
   text-align: center;

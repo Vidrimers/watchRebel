@@ -384,7 +384,7 @@ const ConversationList = ({ onSelectConversation }) => {
               <div className={styles.content}>
                 <div className={styles.topRow}>
                   <span className={styles.name} title={displayName}>
-                    {isSecret ? '🔒 ' : ''}
+                    {isSecret && <Icon name="secret-chat" size="small" className={styles.secretIcon} />}
                     {isGroup ? `👥 ${displayName}` : (
                       conversation.otherUser ? resolveDisplayNameWithTooltip(conversation.otherUser.id, displayName).text : displayName
                     )}
