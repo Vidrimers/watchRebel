@@ -838,7 +838,7 @@ const MessageThread = ({ conversation, onClose }) => {
           </h2>
         ) : (
           <h2 className={styles.headerName}>
-            {conversation.isSecret ? '🔒 ' : ''}
+            {conversation.isSecret && <Icon name="secret-chat" size="small" className={styles.secretHeaderIcon} />}
             {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
           </h2>
         )}
@@ -920,7 +920,7 @@ const MessageThread = ({ conversation, onClose }) => {
           </h2>
         ) : (
           <h2 className={styles.headerName}>
-            {conversation.isSecret ? '🔒 ' : ''}
+            {conversation.isSecret && <Icon name="secret-chat" size="small" className={styles.secretHeaderIcon} />}
             {resolveDisplayNameWithTooltip(conversation.otherUser.id, conversation.otherUser.displayName).text}
           </h2>
         )}
