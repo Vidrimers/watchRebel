@@ -259,7 +259,10 @@ const GroupMembersModal = ({
                       >
                         {member.displayName}
                       </span>
-                      {member.isModerator && (
+                      {member.isCreator && (
+                        <span className={styles.modLabel}>Создатель</span>
+                      )}
+                      {!member.isCreator && member.isModerator && (
                         <span className={styles.modLabel}>Модератор</span>
                       )}
                     </div>
