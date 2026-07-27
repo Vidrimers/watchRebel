@@ -557,11 +557,14 @@
   font-weight: 500;
   font-size: 0.9rem;
   color: var(--text-primary);
+  display: block;
+  margin-bottom: 2px;
 }
 
 .permissionDesc {
   font-size: 0.8rem;
   color: var(--text-secondary);
+  display: block;
 }
 
 .confirmBtn {
