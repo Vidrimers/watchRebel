@@ -1567,7 +1567,7 @@ router.get('/conversations/:conversationId/group-key', authenticateToken, async 
     const userId = req.user.id;
 
     const result = await executeQuery(
-      'SELECT encrypted_group_key, key_version FROM group_keys WHERE conversation_id = ? AND user_id = ?',
+      'SELECT encrypted_group_key, key_version FROM group_keys WHERE conversation_id = ? AND user_id = ? ORDER BY key_version DESC LIMIT 1',
       [conversationId, userId]
     );
 
