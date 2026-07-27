@@ -283,6 +283,13 @@ const MessageThread = ({ conversation, onClose }) => {
         // Уведомление о вступлении в секретную группу
         showToast(`Вы добавлены в секретную группу "${data.groupName}"`, 'info');
         dispatch(fetchConversations());
+      } else if (data.type === 'group_deleted' && data.conversationId) {
+        // Уведомление об удалении группы
+        showToast('Группа была удалена создателем', 'warning');
+        dispatch(fetchConversations());
+      } else if (data.type === 'secret_group_member_left' && data.conversationId) {
+        // Уведомление о выходе участника из секретной группы
+        dispatch(fetchConversations());
       }
     };
 

@@ -2069,6 +2069,23 @@ router.delete('/conversations/:conversationId', authenticateToken, async (req, r
       return res.status(403).json({ error: 'Только создатель может удалить группу', code: 'FORBIDDEN' });
     }
 
+    // Получаем участников для уведомления
+    const membersResult = await executeQuery(
+      'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+      [conversationId, userId]
+    );
+
+    // Уведомляем участников через WebSocket ДО удаления
+    if (membersResult.success && membersResult.data.length > 0) {
+      const { sendMessageToUser } = await import('../services/websocketService.js');
+      for (const m of membersResult.data) {
+        sendMessageToUser(m.user_id, {
+          type: 'group_deleted',
+          conversationId
+        });
+      }
+    }
+
     // Удаляем сообщения, участников, модераторов — каскадно
     await executeQuery('DELETE FROM messages WHERE conversation_id = ?', [conversationId]);
     await executeQuery('DELETE FROM group_moderator_permissions WHERE moderator_id IN (SELECT id FROM group_moderators WHERE conversation_id = ?)', [conversationId]);
