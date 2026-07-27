@@ -140,13 +140,14 @@ export async function resetE2EEKeys() {
     if (err.status !== 404) throw err;
   }
 
-  // Удаляем все session keys из localStorage
+  // Удаляем все session keys и group keys из localStorage
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && (key.startsWith(SESSION_KEY_PREFIX) ||
                 key.startsWith(ROTATION_COUNTER_PREFIX) ||
-                key.startsWith(KEY_HISTORY_PREFIX))) {
+                key.startsWith(KEY_HISTORY_PREFIX) ||
+                key.startsWith(GROUP_KEY_PREFIX))) {
       keysToRemove.push(key);
     }
   }
