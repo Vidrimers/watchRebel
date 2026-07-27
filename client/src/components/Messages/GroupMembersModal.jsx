@@ -135,14 +135,21 @@ const GroupMembersModal = ({
         storeGroupKey(conversationId, newGroupKey, newVersion);
       }
 
+      // Передаём версию ключа при добавлении участника
+      const groupKeyData = isSecretGroup ? getGroupKey(conversationId) : null;
       await api.post(`/messages/conversations/${conversationId}/members`, {
         userId: friendId,
-        encryptedGroupKey
+        encryptedGroupKey,
+        keyVersion: groupKeyData?.version
       });
 
       await loadMembers();
       setShowAddMember(false);
       onMembersUpdated?.();
+    } catch (err) {
+      setError(err.data?.error || 'Ошибка добавления участника');
+    }
+  };
     } catch (err) {
       setError(err.data?.error || 'Ошибка добавления участника');
     }

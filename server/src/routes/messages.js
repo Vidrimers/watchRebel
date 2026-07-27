@@ -1619,11 +1619,8 @@ router.put('/conversations/:conversationId/group-key', authenticateToken, async 
       return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
     }
 
-    // Удаляем старые ключи и вставляем новые
-    await executeQuery(
-      'DELETE FROM group_keys WHERE conversation_id = ? AND key_version < ?',
-      [conversationId, keyVersion]
-    );
+    // НЕ удаляем старые ключи — они нужны для расшифровки старых сообщений
+    // Старые ключи остаются в БД для обратной совместимости
 
     for (const ek of encryptedKeys) {
       // Проверяем существует ли уже запись для этой версии
@@ -1750,7 +1747,7 @@ router.get('/conversations/:conversationId/members', authenticateToken, async (r
 router.post('/conversations/:conversationId/members', authenticateToken, async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const { userId: newMemberId, encryptedGroupKey } = req.body;
+    const { userId: newMemberId, encryptedGroupKey, keyVersion: clientKeyVersion } = req.body;
     const currentUserId = req.user.id;
 
     // Проверяем что текущий пользователь участник чата
@@ -1806,13 +1803,16 @@ router.post('/conversations/:conversationId/members', authenticateToken, async (
 
     // Для секретных групп — сохраняем зашифрованный ключ для нового участника
     if (isSecretGroup && encryptedGroupKey) {
-      // Получаем текущую версию ключа
-      const keyVersionResult = await executeQuery(
-        'SELECT MAX(key_version) as max_version FROM group_keys WHERE conversation_id = ?',
-        [conversationId]
-      );
-      const keyVersion = keyVersionResult.success && keyVersionResult.data[0].max_version
-        ? keyVersionResult.data[0].max_version : 1;
+      // Используем версию ключа от клиента, или запрашиваем MAX из БД
+      let keyVersion = clientKeyVersion;
+      if (!keyVersion) {
+        const keyVersionResult = await executeQuery(
+          'SELECT MAX(key_version) as max_version FROM group_keys WHERE conversation_id = ?',
+          [conversationId]
+        );
+        keyVersion = keyVersionResult.success && keyVersionResult.data[0].max_version
+          ? keyVersionResult.data[0].max_version : 1;
+      }
 
       // Удаляем старый ключ если есть (при повторном входе)
       await executeQuery(

@@ -1682,7 +1682,11 @@ const MessageThread = ({ conversation, onClose }) => {
           isCreator={effectiveConversation.createdBy === user.id}
           isSecretGroup={effectiveConversation.isSecret}
           onClose={() => setShowMembersModal(false)}
-          onMembersUpdated={() => dispatch(fetchMessages({ conversationId: effectiveConversation.id }))}
+          onMembersUpdated={() => dispatch(fetchMessages({
+            conversationId: effectiveConversation.id,
+            isSecret: effectiveConversation.isSecret,
+            isGroup: isGroup
+          }))}
         />
       )}
       {showGroupSettings && isGroup && (
