@@ -16,14 +16,16 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Личные диалоги: непрочитанные где receiver_id = userId
+    // Личные и секретные диалоги: непрочитанные
+    // Для обычных чатов: receiver_id = userId
+    // Для секретных чатов: sender_id != userId (receiver_id = sender_id по архитектуре)
     const directResult = await executeQuery(
-      `SELECT COUNT(*) as cnt FROM messages 
-       WHERE receiver_id = ? AND sender_id != ? AND is_read = 0
+      `SELECT COUNT(*) as cnt FROM messages
+       WHERE sender_id != ? AND is_read = 0
        AND conversation_id IN (
-         SELECT id FROM conversations WHERE is_group IS NULL OR is_group = 0
+         SELECT id FROM conversations WHERE (is_group IS NULL OR is_group = 0)
        )`,
-      [userId, userId]
+      [userId]
     );
 
     // Групповые диалоги: непрочитанные где sender_id != userId
@@ -88,7 +90,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     const directConvs = (directResult.success && Array.isArray(directResult.data)) ? directResult.data : [];
     for (const conv of directConvs) {
       const unreadResult = await executeQuery(
-        'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
+        'SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
         [conv.id, userId]
       );
       conv.unread_count = (unreadResult.success && unreadResult.data.length > 0) ? unreadResult.data[0].cnt : 0;
@@ -270,6 +272,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
 
     const conv = conversationCheck.data[0];
     const isGroup = Boolean(conv.is_group);
+    const isSecret = Boolean(conv.is_secret);
 
     // Проверка доступа
     if (isGroup) {
@@ -322,8 +325,9 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
     }
 
     // Отмечаем все непрочитанные сообщения как прочитанные
-    if (isGroup) {
-      // Для групповых чатов — помечаем чужие сообщения как прочитанные
+    // Для групповых и секретных чатов — помечаем чужие сообщения как прочитанные
+    // Для обычных чатов — помечаем сообщения где receiver_id = userId
+    if (isGroup || isSecret) {
       await executeQuery(
         'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
         [conversationId, userId]
