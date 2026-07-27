@@ -4,7 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
-import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage } from '../../services/e2ee';
+import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, storeGroupKey, decryptGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import useToast from '../../hooks/useToast';
@@ -162,10 +162,23 @@ const MessageThread = ({ conversation, onClose }) => {
               const keyResponse = await api.get(`/messages/conversations/${conversation.id}/group-key`);
               if (keyResponse.data && keyResponse.data.encryptedGroupKey) {
                 // Ключ есть на сервере — расшифровываем его нашим identity-ключом
-                // Пока логируем, полная реализация будет при обмене ключами
-                console.log('Групповой ключ найден на сервере, версия:', keyResponse.data.keyVersion);
-                // TODO: расшифровать encryptedGroupKey через decryptGroupKey
-                // Для этого нужен публичный ключ создателя (того, кто зашифровал)
+                // Нужен публичный ключ того, кто зашифровал (создателя группы)
+                const creatorId = conversation.createdBy;
+                if (creatorId) {
+                  const creatorKey = await fetchPublicKey(creatorId);
+                  if (creatorKey) {
+                    try {
+                      const decryptedGroupKey = await decryptGroupKey(
+                        keyResponse.data.encryptedGroupKey,
+                        creatorKey.publicKey
+                      );
+                      storeGroupKey(conversation.id, decryptedGroupKey, keyResponse.data.keyVersion);
+                      console.log('Групповой ключ восстановлен с сервера, версия:', keyResponse.data.keyVersion);
+                    } catch (decryptErr) {
+                      console.error('Ошибка расшифровки группового ключа:', decryptErr);
+                    }
+                  }
+                }
               }
             } catch (err) {
               console.error('Ошибка получения группового ключа:', err);
