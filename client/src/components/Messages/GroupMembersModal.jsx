@@ -98,7 +98,41 @@ const GroupMembersModal = ({
           return;
         }
 
-        encryptedGroupKey = await encryptGroupKeyForMember(groupKeyData.key, theirKey.publicKey);
+        // Ротируем ключ при добавлении нового участника
+        // Новый участник получит новый ключ и не увидит старые сообщения
+        const newGroupKey = generateGroupKey();
+        const newVersion = (groupKeyData.version || 1) + 1;
+
+        // Шифруем новый ключ для нового участника
+        encryptedGroupKey = await encryptGroupKeyForMember(newGroupKey, theirKey.publicKey);
+
+        // Шифруем новый ключ для существующих участников
+        const currentMembers = members.filter(m => m.userId !== user.id);
+        const encryptedKeys = [];
+
+        for (const member of currentMembers) {
+          const memberKey = await fetchPublicKey(member.userId);
+          if (memberKey) {
+            const encKey = await encryptGroupKeyForMember(newGroupKey, memberKey.publicKey);
+            encryptedKeys.push({ userId: member.userId, encryptedGroupKey: encKey });
+          }
+        }
+
+        // Шифруем для себя
+        const myKey = await fetchPublicKey(user.id);
+        if (myKey) {
+          const myEncryptedKey = await encryptGroupKeyForMember(newGroupKey, myKey.publicKey);
+          encryptedKeys.push({ userId: user.id, encryptedGroupKey: myEncryptedKey });
+        }
+
+        // Обновляем ключи на сервере
+        await api.put(`/messages/conversations/${conversationId}/group-key`, {
+          encryptedKeys,
+          keyVersion: newVersion
+        });
+
+        // Сохраняем новый ключ локально
+        storeGroupKey(conversationId, newGroupKey, newVersion);
       }
 
       await api.post(`/messages/conversations/${conversationId}/members`, {
