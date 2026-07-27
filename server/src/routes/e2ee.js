@@ -276,4 +276,67 @@ router.delete('/backup', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/e2ee/leave-secret-groups
+ * Покинуть все секретные групповые чаты (при сбросе ключей)
+ */
+router.post('/leave-secret-groups', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Находим все секретные группы, где пользователь является участником
+    const secretGroups = await executeQuery(
+      `SELECT c.id, c.group_name
+       FROM conversations c
+       INNER JOIN conversation_members cm ON c.id = cm.conversation_id
+       WHERE cm.user_id = ? AND cm.left_at IS NULL AND c.is_group = 1 AND c.is_secret = 1`,
+      [userId]
+    );
+
+    if (!secretGroups.success || secretGroups.data.length === 0) {
+      return res.json({ message: 'Нет секретных групп для выхода', leftCount: 0 });
+    }
+
+    // Помечаем пользователя как покинувшего во всех секретных группах
+    for (const group of secretGroups.data) {
+      await executeQuery(
+        'UPDATE conversation_members SET left_at = datetime(\'now\') WHERE conversation_id = ? AND user_id = ?',
+        [group.id, userId]
+      );
+
+      // Удаляем ключ пользователя из group_keys
+      await executeQuery(
+        'DELETE FROM group_keys WHERE conversation_id = ? AND user_id = ?',
+        [group.id, userId]
+      );
+
+      // Уведомляем других участников
+      const membersResult = await executeQuery(
+        'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+        [group.id, userId]
+      );
+
+      if (membersResult.success) {
+        const { sendMessageToUser } = await import('../services/websocketService.js');
+        for (const m of membersResult.data) {
+          sendMessageToUser(m.user_id, {
+            type: 'secret_group_member_left',
+            conversationId: group.id,
+            userId
+          });
+        }
+      }
+    }
+
+    res.json({
+      message: `Вышли из ${secretGroups.data.length} секретных групп`,
+      leftCount: secretGroups.data.length
+    });
+
+  } catch (error) {
+    console.error('Ошибка выхода из секретных групп:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
 export default router;

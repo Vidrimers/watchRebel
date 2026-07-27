@@ -125,6 +125,14 @@ export async function hasServerKey(userId) {
  * @returns {Promise<void>}
  */
 export async function resetE2EEKeys() {
+  // Покидаем все секретные группы
+  try {
+    await api.post('/e2ee/leave-secret-groups');
+  } catch (err) {
+    // Игнорируем ошибку
+    console.error('Ошибка выхода из секретных групп:', err);
+  }
+
   // Удаляем публичный ключ с сервера
   try {
     await deletePublicKey();
