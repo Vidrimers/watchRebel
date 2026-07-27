@@ -385,6 +385,15 @@
   opacity: 1;
 }
 
+.noKeyWarning {
+  padding: 12px 20px;
+  background: rgba(255, 152, 0, 0.1);
+  border-top: 1px solid rgba(255, 152, 0, 0.3);
+  color: #e6a700;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 .inputForm {
   display: flex;
   align-items: flex-end;

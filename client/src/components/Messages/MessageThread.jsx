@@ -145,6 +145,11 @@ const MessageThread = ({ conversation, onClose }) => {
   const longPressTimerRef = useRef(null);
   const isLongPressRef = useRef(false);
 
+  // Проверяем наличие ключей для секретных чатов
+  const hasEncryptionKey = conversation?.isSecret
+    ? (isGroup ? hasGroupKey(conversation.id) : hasSessionKey(conversation.id))
+    : true;
+
   const showInput = !isRecording && !audioBlob;
 
   // Загружаем сообщения при выборе диалога (с учётом E2EE)
@@ -556,6 +561,7 @@ const MessageThread = ({ conversation, onClose }) => {
           const groupKeyData = getGroupKey(conversation.id);
           if (!groupKeyData) {
             console.error('Нет группового ключа для шифрования');
+            showToast('Невозможно отправить сообщение: нет ключа шифрования. Создайте ключи E2EE в настройках.', 'error');
             setMessageText(content);
             setSelectedFiles(files);
             return;
@@ -566,6 +572,7 @@ const MessageThread = ({ conversation, onClose }) => {
           let sessionKey = getSessionKey(conversation.id);
           if (!sessionKey) {
             console.error('Нет сессионного ключа для шифрования');
+            showToast('Невозможно отправить сообщение: нет ключа шифрования.', 'error');
             setMessageText(content);
             setSelectedFiles(files);
             return;
@@ -1400,6 +1407,11 @@ const MessageThread = ({ conversation, onClose }) => {
       </div>
 
       {/* Форма отправки сообщения */}
+      {conversation?.isSecret && !hasEncryptionKey && (
+        <div className={styles.noKeyWarning}>
+          🔐 Нет ключа шифрования. Создайте ключи E2EE в настройках для отправки сообщений.
+        </div>
+      )}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>
         <div className={styles.inputWrapper}>
           {/* Превью выбранных файлов */}
@@ -1483,9 +1495,9 @@ const MessageThread = ({ conversation, onClose }) => {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isGroup ? "Напишите сообщение..." : "Напишите сообщение..."}
+                    placeholder={conversation?.isSecret && !hasEncryptionKey ? "Нет ключа шифрования..." : (isGroup ? "Напишите сообщение..." : "Напишите сообщение...")}
                     rows={1}
-                    disabled={sendingMessage}
+                    disabled={sendingMessage || (conversation?.isSecret && !hasEncryptionKey)}
                   />
                   {isGroup && (
                     <MentionAutocomplete
