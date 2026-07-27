@@ -4,7 +4,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
-import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, storeGroupKey, decryptGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage } from '../../services/e2ee';
+import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, getGroupKeyByVersion, storeGroupKey, decryptGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage, extractGroupKeyVersion } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
 import useToast from '../../hooks/useToast';
@@ -245,10 +245,14 @@ const MessageThread = ({ conversation, onClose }) => {
         if (conversation?.isSecret) {
           try {
             if (isGroup && isEncryptedGroupMessage(message.content)) {
-              // Секретная группа — используем групповый ключ
+              // Секретная группа — используем групповый ключ (с учётом версии)
+              const keyVersion = extractGroupKeyVersion(message.content);
               const groupKeyData = getGroupKey(conversation.id);
-              if (groupKeyData) {
-                message.content = await decryptGroupMessage(message.content, groupKeyData.key);
+              const groupKey = (groupKeyData && groupKeyData.version === keyVersion)
+                ? groupKeyData.key
+                : getGroupKeyByVersion(conversation.id, keyVersion);
+              if (groupKey) {
+                message.content = await decryptGroupMessage(message.content, groupKey);
               }
             } else if (isEncryptedMessage(message.content)) {
               // Секретный чат 1-на-1 — используем session key

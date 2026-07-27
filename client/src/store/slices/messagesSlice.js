@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { APIError, NetworkError } from '../../services/api';
-import { isEncryptedMessage, decryptMessage, getSessionKey, extractRotationCounter, getSessionKeyByRotation, isEncryptedGroupMessage, decryptGroupMessage, getGroupKey } from '../../services/e2ee';
+import { isEncryptedMessage, decryptMessage, getSessionKey, extractRotationCounter, getSessionKeyByRotation, isEncryptedGroupMessage, decryptGroupMessage, getGroupKey, getGroupKeyByVersion, extractGroupKeyVersion } from '../../services/e2ee';
 
 // Вспомогательная функция для обработки ошибок
 const handleError = (error, rejectWithValue) => {
@@ -39,10 +39,14 @@ export const fetchMessages = createAsyncThunk(
           messages.map(async (msg) => {
             try {
               if (isGroup && isEncryptedGroupMessage(msg.content)) {
-                // Секретная группа — используем групповый ключ
+                // Секретная группа — используем групповый ключ (с учётом версии)
+                const keyVersion = extractGroupKeyVersion(msg.content);
                 const groupKeyData = getGroupKey(conversationId);
-                if (groupKeyData) {
-                  msg = { ...msg, content: await decryptGroupMessage(msg.content, groupKeyData.key) };
+                const groupKey = (groupKeyData && groupKeyData.version === keyVersion)
+                  ? groupKeyData.key
+                  : getGroupKeyByVersion(conversationId, keyVersion);
+                if (groupKey) {
+                  msg = { ...msg, content: await decryptGroupMessage(msg.content, groupKey) };
                 }
               } else if (isEncryptedMessage(msg.content)) {
                 // Секретный чат 1-на-1 — используем session key

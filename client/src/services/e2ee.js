@@ -155,7 +155,8 @@ export async function resetE2EEKeys() {
     if (key && (key.startsWith(SESSION_KEY_PREFIX) ||
                 key.startsWith(ROTATION_COUNTER_PREFIX) ||
                 key.startsWith(KEY_HISTORY_PREFIX) ||
-                key.startsWith(GROUP_KEY_PREFIX))) {
+                key.startsWith(GROUP_KEY_PREFIX) ||
+                key.startsWith(GROUP_KEY_HISTORY_PREFIX))) {
       keysToRemove.push(key);
     }
   }
@@ -526,6 +527,7 @@ export async function decryptPrivateKeyWithPhrase(encryptedPrivateKeyBase64, sal
 // === Групповые ключи (для секретных групповых чатов) ===
 
 const GROUP_KEY_PREFIX = 'e2ee_group_key_';
+const GROUP_KEY_HISTORY_PREFIX = 'e2ee_group_key_history_';
 const GROUP_E2EE_PREFIX = '[E2EE-G]';
 
 /**
@@ -581,7 +583,7 @@ export async function decryptGroupKey(encryptedGroupKeyBase64, senderPublicKeyBa
 }
 
 /**
- * Сохранить групповой ключ в localStorage
+ * Сохранить групповой ключ в localStorage (с историей)
  * @param {string} conversationId
  * @param {Uint8Array} groupKey
  * @param {number} version
@@ -589,6 +591,18 @@ export async function decryptGroupKey(encryptedGroupKeyBase64, senderPublicKeyBa
 export function storeGroupKey(conversationId, groupKey, version = 1) {
   const data = JSON.stringify({ key: uint8ArrayToBase64(groupKey), version });
   localStorage.setItem(`${GROUP_KEY_PREFIX}${conversationId}`, data);
+
+  // Сохраняем в историю ключей (для расшифровки старых сообщений)
+  const history = getGroupKeyHistory(conversationId);
+  history[version] = uint8ArrayToBase64(groupKey);
+  // Храним только последние 5 версий
+  const versions = Object.keys(history).map(Number).sort((a, b) => b - a);
+  if (versions.length > 5) {
+    for (let i = 5; i < versions.length; i++) {
+      delete history[versions[i]];
+    }
+  }
+  localStorage.setItem(`${GROUP_KEY_HISTORY_PREFIX}${conversationId}`, JSON.stringify(history));
 }
 
 /**
@@ -601,6 +615,34 @@ export function getGroupKey(conversationId) {
   if (!stored) return null;
   const data = JSON.parse(stored);
   return { key: base64ToUint8Array(data.key), version: data.version };
+}
+
+/**
+ * Получить историю ключей группы
+ * @param {string} conversationId
+ * @returns {Object<number, string>} version -> base64 key
+ */
+function getGroupKeyHistory(conversationId) {
+  const stored = localStorage.getItem(`${GROUP_KEY_HISTORY_PREFIX}${conversationId}`);
+  return stored ? JSON.parse(stored) : {};
+}
+
+/**
+ * Получить групповой ключ по версии (для расшифровки старых сообщений)
+ * @param {string} conversationId
+ * @param {number} version
+ * @returns {Uint8Array | null}
+ */
+export function getGroupKeyByVersion(conversationId, version) {
+  const history = getGroupKeyHistory(conversationId);
+  const base64 = history[version];
+  if (base64) return base64ToUint8Array(base64);
+
+  // Fallback: текущий ключ если версия совпадает
+  const current = getGroupKey(conversationId);
+  if (current && current.version === version) return current.key;
+
+  return null;
 }
 
 /**
