@@ -89,7 +89,8 @@ const MessageThread = ({ conversation, onClose }) => {
 
   // Хелперы для групповых чатов (используем effectiveConversation для обновлений без перезагрузки)
   const isGroup = effectiveConversation?.isGroup;
-  const getReceiverId = () => isGroup ? effectiveConversation.id : effectiveConversation.otherUser?.id;
+  const isSecret = effectiveConversation?.isSecret;
+  const getReceiverId = () => (isGroup || isSecret) ? effectiveConversation.id : effectiveConversation.otherUser?.id;
   const getDisplayName = () => isGroup ? effectiveConversation.groupName : effectiveConversation.otherUser?.displayName;
   const getAvatarUrl = () => isGroup ? effectiveConversation.groupAvatar : effectiveConversation.otherUser?.avatarUrl;
   const { confirmDialog, showConfirm } = useConfirm();

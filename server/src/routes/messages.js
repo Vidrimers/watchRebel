@@ -437,9 +437,14 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       });
     }
 
-    // Проверяем, является ли это групповым чатом
+    // Проверяем, является ли это групповым или секретным чатом
     const groupCheck = await executeQuery(
       'SELECT * FROM conversations WHERE id = ? AND is_group = 1',
+      [receiverId]
+    );
+
+    const secretCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ? AND is_secret = 1',
       [receiverId]
     );
 
@@ -468,6 +473,21 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
         [conversationId, senderId]
       );
       groupMembers = membersResult.success ? membersResult.data.map(m => m.user_id) : [];
+
+    } else if (secretCheck.success && secretCheck.data.length > 0) {
+      // Секретный чат
+      isSecret = true;
+      conversationId = receiverId;
+
+      // Проверяем что отправитель — участник секретного чата
+      const conv = secretCheck.data[0];
+      if (conv.user1_id !== senderId && conv.user2_id !== senderId) {
+        return res.status(403).json({ error: 'Нет доступа к этому секретному чату', code: 'FORBIDDEN' });
+      }
+
+      // Получаем ID получателя
+      const receiverUserId = conv.user1_id === senderId ? conv.user2_id : conv.user1_id;
+      groupMembers = [receiverUserId];
 
     } else {
       // Обычный диалог (1-на-1)
