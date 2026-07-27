@@ -1030,7 +1030,15 @@ const MessageThread = ({ conversation, onClose }) => {
       >
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
-            <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
+            {isSecret && isGroup ? (
+              <div className={styles.secretGroupNotice}>
+                <span className={styles.secretGroupIcon}>🔐</span>
+                <p>Этот чат зашифрован. Только участники могут читать сообщения.</p>
+                <p className={styles.secretGroupHint}>Начните общение в "{conversation.groupName}"</p>
+              </div>
+            ) : (
+              <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
+            )}
           </div>
         ) : (
           <div className={styles.messagesList}>

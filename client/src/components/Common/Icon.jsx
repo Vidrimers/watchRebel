@@ -61,6 +61,7 @@ const Icon = ({ name, size = 'medium', color, className = '', ...props }) => {
     'shield-off': '🔓',
     lock: '🔒',
     'secret-chat': '🔐',
+    'secret-group-chat': '🔐',
     database: '🗄️',
     report: '⚠️',
     support: '❓',

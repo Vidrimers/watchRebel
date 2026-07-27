@@ -143,6 +143,34 @@
   flex: 1;
 }
 
+.secretGroupNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 350px;
+}
+
+.secretGroupIcon {
+  font-size: 2.5rem;
+}
+
+.secretGroupNotice p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.secretGroupHint {
+  font-size: 0.85rem !important;
+  color: var(--text-secondary) !important;
+}
+
 .emptyIcon {
   font-size: 3rem;
   margin-bottom: 1rem;
