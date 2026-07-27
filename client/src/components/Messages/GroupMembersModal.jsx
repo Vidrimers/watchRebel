@@ -32,6 +32,7 @@ const GroupMembersModal = ({
   const [showAddMember, setShowAddMember] = useState(false);
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [error, setError] = useState(null);
   const [modTarget, setModTarget] = useState(null);
@@ -240,8 +241,21 @@ const GroupMembersModal = ({
             <div className={styles.loading}>Загрузка...</div>
           ) : (
             <>
+              {/* Поиск по участникам */}
+              {members.length > 5 && (
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="Поиск участников..."
+                  value={memberSearchQuery}
+                  onChange={e => setMemberSearchQuery(e.target.value)}
+                />
+              )}
+
               <div className={styles.membersList}>
-                {members.map(member => (
+                {members
+                  .filter(m => m.displayName.toLowerCase().includes(memberSearchQuery.toLowerCase()))
+                  .map(member => (
                   <div key={member.userId} className={styles.memberItem}>
                     <div
                       className={styles.memberAvatar}

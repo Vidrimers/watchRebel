@@ -1661,7 +1661,6 @@ const MessageThread = ({ conversation, onClose }) => {
           onClose={() => setShowGroupSettings(false)}
           onUpdated={(updateData) => {
             setConversationOverrides(prev => ({ ...prev, ...updateData }));
-            setShowGroupSettings(false);
             dispatch(fetchConversations());
           }}
         />

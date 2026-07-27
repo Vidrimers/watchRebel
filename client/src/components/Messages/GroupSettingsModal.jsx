@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import api from '../../services/api';
 import useConfirm from '../../hooks/useConfirm';
 import useAlert from '../../hooks/useAlert';
+import useToast from '../../hooks/useToast';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../Common/Icon';
 import styles from './GroupSettingsModal.module.css';
@@ -20,6 +21,7 @@ const GroupSettingsModal = ({
   const navigate = useNavigate();
   const { confirmDialog, showConfirm } = useConfirm();
   const { alertDialog, showAlert } = useAlert();
+  const { toastContainer, showToast } = useToast();
   const [groupName, setGroupName] = useState(currentName || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -78,8 +80,9 @@ const GroupSettingsModal = ({
       if (setting === 'showCreatorLabel') setShowCreatorLabel(value);
       if (setting === 'showModeratorLabel') setShowModeratorLabel(value);
       onUpdated({ [setting]: value });
+      showToast('Настройка сохранена', 'success');
     } catch (err) {
-      await showAlert({ title: 'Ошибка', message: 'Не удалось сохранить настройку', type: 'error' });
+      showToast('Не удалось сохранить настройку', 'error');
     }
   };
 
@@ -110,6 +113,7 @@ const GroupSettingsModal = ({
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         {confirmDialog}
         {alertDialog}
+        {toastContainer}
         <div className={styles.header}>
           <h3>Настройки группы</h3>
           <button className={styles.closeBtn} onClick={onClose}>
