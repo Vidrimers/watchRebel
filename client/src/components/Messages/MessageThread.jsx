@@ -152,18 +152,36 @@ const MessageThread = ({ conversation, onClose }) => {
     if (!conversation || !conversation.id) return;
 
     const loadMessages = async () => {
-      // Для секретных чатов: сначала вычисляем session key, потом загружаем сообщения
+      // Для секретных чатов: сначала вычисляем ключ, потом загружаем сообщения
       if (conversation.isSecret) {
-        if (!hasSessionKey(conversation.id)) {
-          try {
-            const otherUserId = conversation.otherUser?.id;
-            if (!otherUserId) return;
-            const theirKey = await fetchPublicKey(otherUserId);
-            if (theirKey) {
-              getOrCreateSessionKey(conversation.id, theirKey.publicKey);
+        if (isGroup) {
+          // Секретная группа — проверяем групповый ключ
+          if (!hasGroupKey(conversation.id)) {
+            try {
+              // Пытаемся получить ключ с сервера (на случай если ротировался пока были офлайн)
+              const keyResponse = await api.get(`/messages/conversations/${conversation.id}/group-key`);
+              if (keyResponse.data) {
+                // Ключ есть на сервере, но нет локально — нужно расшифровать
+                // Пока сохраняем зашифрованный, расшифруем при получении сообщения
+                console.log('Групповой ключ найден на сервере, версия:', keyResponse.data.keyVersion);
+              }
+            } catch (err) {
+              console.error('Ошибка получения группового ключа:', err);
             }
-          } catch (err) {
-            console.error('Ошибка вычисления сессионного ключа:', err);
+          }
+        } else {
+          // Секретный чат 1-на-1 — вычисляем session key
+          if (!hasSessionKey(conversation.id)) {
+            try {
+              const otherUserId = conversation.otherUser?.id;
+              if (!otherUserId) return;
+              const theirKey = await fetchPublicKey(otherUserId);
+              if (theirKey) {
+                getOrCreateSessionKey(conversation.id, theirKey.publicKey);
+              }
+            } catch (err) {
+              console.error('Ошибка вычисления сессионного ключа:', err);
+            }
           }
         }
         dispatch(fetchMessages({ conversationId: conversation.id, limit: 20, offset: 0, isSecret: true, isGroup: isGroup }));
@@ -237,6 +255,13 @@ const MessageThread = ({ conversation, onClose }) => {
       } else if (data.type === 'secret_chat_deleted' && data.conversationId) {
         // Уведомление об удалении секретного чата
         showToast('Секретный чат был удалён другим участником', 'warning');
+        dispatch(fetchConversations());
+      } else if (data.type === 'secret_group_key_rotation_needed' && data.conversationId) {
+        // Уведомление о ротации ключа в секретной группе
+        showToast('Ключ группы обновлён. Обновите страницу для получения нового ключа.', 'warning');
+      } else if (data.type === 'secret_group_joined' && data.conversationId) {
+        // Уведомление о вступлении в секретную группу
+        showToast(`Вы добавлены в секретную группу "${data.groupName}"`, 'info');
         dispatch(fetchConversations());
       }
     };
