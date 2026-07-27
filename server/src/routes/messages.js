@@ -99,6 +99,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     // 2. Групповые диалоги
     const groupQuery = `
       SELECT c.id, c.is_group, c.is_secret, c.group_name, c.group_avatar, c.created_by,
+             c.show_creator_label, c.show_moderator_label,
              c.last_message_at, c.created_at,
              (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_content,
              (SELECT attachments FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_attachments
@@ -215,6 +216,8 @@ router.get('/conversations', authenticateToken, async (req, res) => {
           groupName: c.group_name,
           groupAvatar: c.group_avatar,
           createdBy: c.created_by,
+          showCreatorLabel: c.show_creator_label !== 0,
+          showModeratorLabel: c.show_moderator_label !== 0,
           membersCount: c.members_count || 0
         } : {
           otherUser: {
@@ -1692,13 +1695,17 @@ router.get('/conversations/:conversationId/members', authenticateToken, async (r
       }
     }
 
-    // Получаем создателя группы
+    // Получаем создателя группы и настройки отображения
     const convResult = await executeQuery(
-      'SELECT created_by FROM conversations WHERE id = ?',
+      'SELECT created_by, show_creator_label, show_moderator_label FROM conversations WHERE id = ?',
       [conversationId]
     );
     const createdBy = convResult.success && convResult.data.length > 0
       ? convResult.data[0].created_by : null;
+    const showCreatorLabel = convResult.success && convResult.data.length > 0
+      ? convResult.data[0].show_creator_label !== 0 : true;
+    const showModeratorLabel = convResult.success && convResult.data.length > 0
+      ? convResult.data[0].show_moderator_label !== 0 : true;
 
     const members = membersResult.data.map(m => ({
       userId: m.user_id,
@@ -1710,7 +1717,13 @@ router.get('/conversations/:conversationId/members', authenticateToken, async (r
       permissions: moderatorRights[m.user_id] || []
     }));
 
-    res.json(members);
+    res.json({
+      members,
+      settings: {
+        showCreatorLabel,
+        showModeratorLabel
+      }
+    });
 
   } catch (error) {
     console.error('Ошибка получения участников:', error);
@@ -1932,6 +1945,61 @@ router.put('/conversations/:conversationId', authenticateToken, async (req, res)
 
   } catch (error) {
     console.error('Ошибка обновления группы:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * PATCH /api/messages/conversations/:conversationId/settings
+ * Обновить настройки отображения группы (только создатель)
+ * Body: { showCreatorLabel?: boolean, showModeratorLabel?: boolean }
+ */
+router.patch('/conversations/:conversationId/settings', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { showCreatorLabel, showModeratorLabel } = req.body;
+    const userId = req.user.id;
+
+    const convCheck = await executeQuery(
+      'SELECT created_by, is_group FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'NOT_FOUND' });
+    }
+    if (!convCheck.data[0].is_group) {
+      return res.status(400).json({ error: 'Это не групповой чат', code: 'NOT_GROUP' });
+    }
+    if (convCheck.data[0].created_by !== userId) {
+      return res.status(403).json({ error: 'Только создатель может менять настройки', code: 'FORBIDDEN' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (showCreatorLabel !== undefined) {
+      updates.push('show_creator_label = ?');
+      params.push(showCreatorLabel ? 1 : 0);
+    }
+    if (showModeratorLabel !== undefined) {
+      updates.push('show_moderator_label = ?');
+      params.push(showModeratorLabel ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Нет изменений', code: 'NO_CHANGES' });
+    }
+
+    params.push(conversationId);
+    await executeQuery(
+      `UPDATE conversations SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    res.json({ message: 'Настройки обновлены' });
+
+  } catch (error) {
+    console.error('Ошибка обновления настроек группы:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });

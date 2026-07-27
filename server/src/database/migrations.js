@@ -425,6 +425,8 @@ export async function runMigrations() {
         safeAddColumn('conversations', 'group_name', 'TEXT');
         safeAddColumn('conversations', 'group_avatar', 'TEXT');
         safeAddColumn('conversations', 'created_by', 'TEXT');
+        safeAddColumn('conversations', 'show_creator_label', 'BOOLEAN', '1');
+        safeAddColumn('conversations', 'show_moderator_label', 'BOOLEAN', '1');
 
         db.exec(`
           -- Участники групповых чатов

@@ -1654,6 +1654,10 @@ const MessageThread = ({ conversation, onClose }) => {
           conversationId={effectiveConversation.id}
           currentName={effectiveConversation.groupName}
           currentAvatar={effectiveConversation.groupAvatar}
+          isCreator={effectiveConversation.createdBy === user.id}
+          isSecretGroup={effectiveConversation.isSecret}
+          showCreatorLabel={effectiveConversation.showCreatorLabel}
+          showModeratorLabel={effectiveConversation.showModeratorLabel}
           onClose={() => setShowGroupSettings(false)}
           onUpdated={(updateData) => {
             setConversationOverrides(prev => ({ ...prev, ...updateData }));

@@ -27,6 +27,7 @@ const GroupMembersModal = ({
   const navigate = useNavigate();
   const { alertDialog, showAlert, showConfirm } = useAlert();
   const [members, setMembers] = useState([]);
+  const [groupSettings, setGroupSettings] = useState({ showCreatorLabel: true, showModeratorLabel: true });
   const [loading, setLoading] = useState(true);
   const [showAddMember, setShowAddMember] = useState(false);
   const [friends, setFriends] = useState([]);
@@ -52,7 +53,10 @@ const GroupMembersModal = ({
   const loadMembers = async () => {
     try {
       const response = await api.get(`/messages/conversations/${conversationId}/members`);
-      setMembers(response.data);
+      setMembers(response.data.members || response.data);
+      if (response.data.settings) {
+        setGroupSettings(response.data.settings);
+      }
     } catch (err) {
       console.error('Ошибка загрузки участников:', err);
     } finally {
@@ -259,10 +263,10 @@ const GroupMembersModal = ({
                       >
                         {member.displayName}
                       </span>
-                      {member.isCreator && (
+                      {member.isCreator && groupSettings.showCreatorLabel && (
                         <span className={styles.modLabel}>Создатель</span>
                       )}
-                      {!member.isCreator && member.isModerator && (
+                      {!member.isCreator && member.isModerator && groupSettings.showModeratorLabel && (
                         <span className={styles.modLabel}>Модератор</span>
                       )}
                     </div>
