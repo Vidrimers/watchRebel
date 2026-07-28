@@ -253,6 +253,9 @@ const MessageThread = ({ conversation, onClose }) => {
                 : getGroupKeyByVersion(conversation.id, keyVersion);
               if (groupKey) {
                 message.content = await decryptGroupMessage(message.content, groupKey);
+              } else {
+                message.content = '🔒 Сообщение не расшифровывается';
+                message.undecryptable = true;
               }
             } else if (isEncryptedMessage(message.content)) {
               // Секретный чат 1-на-1 — используем session key
@@ -260,10 +263,17 @@ const MessageThread = ({ conversation, onClose }) => {
               const sessionKey = getSessionKeyByRotation(conversation.id, rotationCounter) || getSessionKey(conversation.id);
               if (sessionKey) {
                 message.content = await decryptMessage(message.content, sessionKey);
+              } else {
+                message.content = '🔒 Сообщение не расшифровывается';
+                message.undecryptable = true;
               }
             }
           } catch (err) {
             console.error('Ошибка расшифровки WebSocket сообщения:', err);
+            if (isEncryptedGroupMessage(message.content) || isEncryptedMessage(message.content)) {
+              message.content = '🔒 Сообщение не расшифровывается';
+              message.undecryptable = true;
+            }
           }
         }
 
@@ -1282,7 +1292,9 @@ const MessageThread = ({ conversation, onClose }) => {
                     
                     <div className={styles.messageBubble}>
                       {message.content && (
-                        <p className={styles.messageText}>{renderMessageContent(message.content)}</p>
+                        <p className={`${styles.messageText} ${message.undecryptable ? styles.undecryptable : ''}`}>
+                          {renderMessageContent(message.content)}
+                        </p>
                       )}
                       
                       {/* Геометка */}

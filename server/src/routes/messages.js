@@ -297,20 +297,35 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       }
     }
 
+    // Для секретных групп — получаем время вступления пользователя
+    let joinedAt = null;
+    if (isGroup && isSecret) {
+      const joinResult = await executeQuery(
+        'SELECT joined_at FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+        [conversationId, userId]
+      );
+      if (joinResult.success && joinResult.data.length > 0) {
+        joinedAt = joinResult.data[0].joined_at;
+      }
+    }
+
     // Получаем общее количество сообщений
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM messages
-      WHERE conversation_id = ?
-    `;
-    
-    const countResult = await executeQuery(countQuery, [conversationId]);
+    let countQuery = `SELECT COUNT(*) as total FROM messages WHERE conversation_id = ?`;
+    const countParams = [conversationId];
+
+    // Для секретных групп — только сообщения после вступления
+    if (joinedAt) {
+      countQuery += ` AND created_at >= ?`;
+      countParams.push(joinedAt);
+    }
+
+    const countResult = await executeQuery(countQuery, countParams);
     const totalMessages = countResult.success ? countResult.data[0].total : 0;
 
-    // Получаем сообщения с пагинацией (сортируем по убыванию, берем limit, потом разворачиваем)
-    const messagesQuery = `
+    // Получаем сообщения с пагинацией
+    let messagesQuery = `
       SELECT * FROM (
-        SELECT 
+        SELECT
           m.*,
           u.display_name as sender_name,
           u.avatar_url as sender_avatar
@@ -318,12 +333,23 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         LEFT JOIN users u ON m.sender_id = u.id
         WHERE m.conversation_id = ?
           AND (m.deleted_for_users IS NULL OR m.deleted_for_users = '[]' OR NOT m.deleted_for_users LIKE '%"${userId}"%')
+    `;
+    const messagesParams = [conversationId];
+
+    // Для секретных групп — только сообщения после вступления
+    if (joinedAt) {
+      messagesQuery += ` AND m.created_at >= ?`;
+      messagesParams.push(joinedAt);
+    }
+
+    messagesQuery += `
         ORDER BY m.created_at DESC
         LIMIT ? OFFSET ?
       ) ORDER BY created_at ASC
     `;
+    messagesParams.push(limit, offset);
 
-    const messagesResult = await executeQuery(messagesQuery, [conversationId, limit, offset]);
+    const messagesResult = await executeQuery(messagesQuery, messagesParams);
 
     if (!messagesResult.success) {
       return res.status(500).json({ 

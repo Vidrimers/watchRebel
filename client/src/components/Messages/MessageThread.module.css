@@ -333,6 +333,11 @@
   line-height: 1.4;
 }
 
+.undecryptable {
+  opacity: 0.6;
+  font-style: italic;
+}
+
 .botLabel {
   margin-top: 0.5rem;
   padding-top: 0.5rem;

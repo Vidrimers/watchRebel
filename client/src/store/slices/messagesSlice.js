@@ -47,6 +47,9 @@ export const fetchMessages = createAsyncThunk(
                   : getGroupKeyByVersion(conversationId, keyVersion);
                 if (groupKey) {
                   msg = { ...msg, content: await decryptGroupMessage(msg.content, groupKey) };
+                } else {
+                  // Нет ключа для этой версии — показываем placeholder
+                  msg = { ...msg, content: '🔒 Сообщение не расшифровывается', undecryptable: true };
                 }
               } else if (isEncryptedMessage(msg.content)) {
                 // Секретный чат 1-на-1 — используем session key
@@ -54,10 +57,15 @@ export const fetchMessages = createAsyncThunk(
                 const sessionKey = getSessionKeyByRotation(conversationId, rotationCounter) || getSessionKey(conversationId);
                 if (sessionKey) {
                   msg = { ...msg, content: await decryptMessage(msg.content, sessionKey) };
+                } else {
+                  msg = { ...msg, content: '🔒 Сообщение не расшифровывается', undecryptable: true };
                 }
               }
             } catch (err) {
               console.error('Ошибка расшифровки сообщения:', err);
+              if (isEncryptedGroupMessage(msg.content) || isEncryptedMessage(msg.content)) {
+                msg = { ...msg, content: '🔒 Сообщение не расшифровывается', undecryptable: true };
+              }
             }
             return msg;
           })
