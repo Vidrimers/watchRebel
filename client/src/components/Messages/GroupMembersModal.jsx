@@ -150,10 +150,6 @@ const GroupMembersModal = ({
       setError(err.data?.error || 'Ошибка добавления участника');
     }
   };
-    } catch (err) {
-      setError(err.data?.error || 'Ошибка добавления участника');
-    }
-  };
 
   const handleRemoveMember = async (memberId) => {
     const confirmed = await showConfirm({
