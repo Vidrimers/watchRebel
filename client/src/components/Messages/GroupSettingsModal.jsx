@@ -97,6 +97,7 @@ const GroupSettingsModal = ({
 
     try {
       await api.delete(`/messages/conversations/${conversationId}`);
+      onClose(); // Закрываем модалку
       await showAlert({ title: 'Группа удалена', type: 'success' });
       navigate('/messages');
     } catch (err) {
