@@ -300,6 +300,11 @@ const MessageThread = ({ conversation, onClose }) => {
       } else if (data.type === 'group_deleted' && data.conversationId) {
         // Уведомление об удалении группы
         showToast('Группа была удалена создателем', 'warning');
+        // Закрываем модалки если открыты
+        setShowGroupSettings(false);
+        setShowMembersModal(false);
+        setShowAnnouncementModal(false);
+        // Обновляем список диалогов
         dispatch(fetchConversations());
       } else if (data.type === 'secret_group_member_left' && data.conversationId) {
         // Уведомление о выходе участника из секретной группы
@@ -633,6 +638,19 @@ const MessageThread = ({ conversation, onClose }) => {
       }));
 
       console.log('✅ Сообщение отправлено:', result);
+
+      // Проверяем если запрос не удался
+      if (result.meta.requestStatus === 'rejected') {
+        const errorData = result.payload;
+        // Если диалог/группа не найдена — обновляем список
+        if (errorData?.code === 'CONVERSATION_NOT_FOUND' ||
+            errorData?.code === 'NOT_FOUND' ||
+            errorData?.code === 'RECEIVER_NOT_FOUND') {
+          showToast('Группа была удалена', 'warning');
+          dispatch(fetchConversations());
+          return;
+        }
+      }
 
       // Если это новый диалог (id === null), обновляем список диалогов
       if (conversation.id === null && result.meta.requestStatus === 'fulfilled') {
