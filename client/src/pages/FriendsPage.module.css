@@ -142,9 +142,9 @@
 .visitButton {
   flex-shrink: 0;
   padding: 6px 10px;
-  background: var(--primary-color, #6366f1);
-  color: white;
-  border: none;
+  background: transparent;
+  color: var(--accent-primary, #6366f1);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -156,8 +156,7 @@
 }
 
 .visitButton:hover {
-  background: var(--primary-dark, #4f46e5);
-  transform: scale(1.05);
+  border-color: var(--accent-primary, #6366f1);
 }
 
 .visitButton:active {
