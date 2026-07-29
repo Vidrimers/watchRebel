@@ -136,8 +136,6 @@
 }
 
 .messageButton:hover {
-  background: var(--accent-primary, #6366f1);
-  color: white;
   border-color: var(--accent-primary, #6366f1);
 }
 
