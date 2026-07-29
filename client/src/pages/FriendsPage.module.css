@@ -67,7 +67,7 @@
 .friendCard {
   display: flex;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem 1.25rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -83,7 +83,7 @@
 
 .friendAvatar {
   flex-shrink: 0;
-  margin-right: 1.5rem;
+  margin-right: 1rem;
 }
 
 .friendInfo {
@@ -93,8 +93,9 @@
 
 .friendActions {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.375rem;
   flex-shrink: 0;
 }
 
@@ -120,17 +121,40 @@
   color: var(--text-secondary);
 }
 
+.messageButton {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--accent-primary, #6366f1);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.messageButton:hover {
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border-color: var(--accent-primary, #6366f1);
+}
+
 .visitButton {
   flex-shrink: 0;
-  padding: 0.75rem 1.5rem;
+  padding: 6px 10px;
   background: var(--primary-color, #6366f1);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .visitButton:hover {
@@ -144,15 +168,18 @@
 
 .removeFriendButton {
   flex-shrink: 0;
-  padding: 0.75rem 1.5rem;
+  padding: 6px 10px;
   background: transparent;
   color: var(--error-color, #ef4444);
   border: 1px solid var(--error-color, #ef4444);
   border-radius: 8px;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .removeFriendButton:hover {
@@ -167,12 +194,12 @@
 
 .addFriendButton {
   flex-shrink: 0;
-  padding: 0.75rem 1.5rem;
+  padding: 6px 12px;
   background: var(--accent-primary, #6366f1);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -189,13 +216,14 @@
 
 .friendStatusBadge {
   flex-shrink: 0;
-  padding: 0.75rem 1.5rem;
+  padding: 6px 10px;
   background: var(--bg-tertiary, #f3f4f6);
   color: var(--text-secondary, #6b7280);
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 8px;
-  font-size: 0.9375rem;
+  font-size: 0.75rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Адаптивность */
@@ -224,12 +252,16 @@
 
   .friendActions {
     width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
+  .messageButton,
   .visitButton,
   .removeFriendButton,
   .addFriendButton {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 }
 

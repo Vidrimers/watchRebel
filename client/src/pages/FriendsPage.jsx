@@ -343,19 +343,30 @@ const FriendsPage = () => {
                       </div>
                       
                       <div className={styles.friendActions}>
+                        {isOwnProfile && (
+                          <button
+                            className={styles.messageButton}
+                            onClick={() => navigate(`/messages/${friend.id}`)}
+                            title="Написать сообщение"
+                          >
+                            <Icon name="messages" size="small" />
+                          </button>
+                        )}
                         <button
                           className={styles.visitButton}
                           onClick={() => handleVisitProfile(friend.id)}
+                          title="Профиль"
                         >
-                          Перейти в профиль
+                          <Icon name="user" size="small" />
                         </button>
                         
                         {isOwnProfile ? (
                           <button
                             className={styles.removeFriendButton}
                             onClick={() => handleRemoveFriend(friend.id, friend.displayName)}
+                            title="Удалить из друзей"
                           >
-                            Удалить из друзей
+                            <Icon name="close" size="small" />
                           </button>
                         ) : friend.id === user?.id ? null : myFriendIds.has(friend.id) ? (
                           <span className={styles.friendStatusBadge}>У вас в друзьях</span>
