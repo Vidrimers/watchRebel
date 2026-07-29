@@ -18,7 +18,7 @@ const MessagesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { conversations } = useAppSelector((state) => state.messages);
+  const { conversations, loading } = useAppSelector((state) => state.messages);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
 
@@ -48,7 +48,7 @@ const MessagesPage = () => {
   // Если передан userId в URL, проверяем существующие диалоги или создаем новый
   useEffect(() => {
     const loadUserAndCreateConversation = async () => {
-      if (!userId || conversations.length === 0) return;
+      if (!userId || loading) return;
       
       // Проверяем, есть ли уже диалог с этим пользователем
       const existingConversation = conversations.find(
