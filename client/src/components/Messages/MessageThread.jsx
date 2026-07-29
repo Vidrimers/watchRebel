@@ -290,13 +290,6 @@ const MessageThread = ({ conversation, onClose }) => {
         // Уведомление об удалении секретного чата
         showToast('Секретный чат был удалён другим участником', 'warning');
         dispatch(fetchConversations());
-      } else if (data.type === 'secret_group_key_rotation_needed' && data.conversationId) {
-        // Уведомление о ротации ключа в секретной группе
-        showToast('Ключ группы обновлён. Обновите страницу для получения нового ключа.', 'warning');
-      } else if (data.type === 'secret_group_joined' && data.conversationId) {
-        // Уведомление о вступлении в секретную группу
-        showToast(`Вы добавлены в секретную группу "${data.groupName}"`, 'info');
-        dispatch(fetchConversations());
       } else if (data.type === 'group_deleted' && data.conversationId) {
         // Уведомление об удалении группы
         showToast('Группа была удалена создателем', 'warning');
@@ -305,13 +298,6 @@ const MessageThread = ({ conversation, onClose }) => {
         setShowMembersModal(false);
         setShowAnnouncementModal(false);
         // Обновляем список диалогов
-        dispatch(fetchConversations());
-      } else if (data.type === 'secret_group_member_left' && data.conversationId) {
-        // Уведомление о выходе участника из секретной группы
-        dispatch(fetchConversations());
-      } else if (data.type === 'secret_group_removed' && data.conversationId) {
-        // Уведомление об удалении из секретной группы
-        showToast('Вы были удалены из секретной группы', 'warning');
         dispatch(fetchConversations());
       }
     };
@@ -1122,15 +1108,7 @@ const MessageThread = ({ conversation, onClose }) => {
       >
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
-            {isSecret && isGroup ? (
-              <div className={styles.secretGroupNotice}>
-                <span className={styles.secretGroupIcon}>🔐</span>
-                <p>Этот чат зашифрован. Только участники могут читать сообщения.</p>
-                <p className={styles.secretGroupHint}>Начните общение в "{conversation.groupName}"</p>
-              </div>
-            ) : (
-              <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
-            )}
+            <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
           </div>
         ) : (
           <div className={styles.messagesList}>
@@ -1716,7 +1694,6 @@ const MessageThread = ({ conversation, onClose }) => {
         <GroupMembersModal
           conversationId={effectiveConversation.id}
           isCreator={effectiveConversation.createdBy === user.id}
-          isSecretGroup={effectiveConversation.isSecret}
           onClose={() => setShowMembersModal(false)}
           onMembersUpdated={() => dispatch(fetchMessages({
             conversationId: effectiveConversation.id,
@@ -1731,7 +1708,6 @@ const MessageThread = ({ conversation, onClose }) => {
           currentName={effectiveConversation.groupName}
           currentAvatar={effectiveConversation.groupAvatar}
           isCreator={effectiveConversation.createdBy === user.id}
-          isSecretGroup={effectiveConversation.isSecret}
           showCreatorLabel={effectiveConversation.showCreatorLabel}
           showModeratorLabel={effectiveConversation.showModeratorLabel}
           onClose={() => setShowGroupSettings(false)}

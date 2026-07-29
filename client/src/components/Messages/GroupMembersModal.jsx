@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import api from '../../services/api';
-import { hasGroupKey, getGroupKey, fetchPublicKey, encryptGroupKeyForMember, generateGroupKey, storeGroupKey } from '../../services/e2ee';
 import useAlert from '../../hooks/useAlert';
 import Icon from '../Common/Icon';
 import styles from './GroupMembersModal.module.css';
@@ -19,7 +18,6 @@ const PERMISSIONS = [
 const GroupMembersModal = ({
   conversationId,
   isCreator,
-  isSecretGroup,
   onClose,
   onMembersUpdated
 }) => {
@@ -79,68 +77,8 @@ const GroupMembersModal = ({
 
   const handleAddMember = async (friendId) => {
     try {
-      let encryptedGroupKey = null;
-
-      // Находим имя друга для сообщения об ошибке
-      const friend = friends.find(f => f.id === friendId);
-      const friendName = friend?.displayName || 'пользователя';
-
-      if (isSecretGroup) {
-        const groupKeyData = getGroupKey(conversationId);
-        if (!groupKeyData) {
-          await showAlert({ title: 'Ошибка', message: 'Нет группового ключа', type: 'error' });
-          return;
-        }
-
-        const theirKey = await fetchPublicKey(friendId);
-        if (!theirKey) {
-          await showAlert({ title: 'Ошибка', message: `У ${friendName} нет ключей E2EE`, type: 'error' });
-          return;
-        }
-
-        // Ротируем ключ при добавлении нового участника
-        // Новый участник получит новый ключ и не увидит старые сообщения
-        const newGroupKey = generateGroupKey();
-        const newVersion = (groupKeyData.version || 1) + 1;
-
-        // Шифруем новый ключ для нового участника
-        encryptedGroupKey = await encryptGroupKeyForMember(newGroupKey, theirKey.publicKey);
-
-        // Шифруем новый ключ для существующих участников
-        const currentMembers = members.filter(m => m.userId !== user.id);
-        const encryptedKeys = [];
-
-        for (const member of currentMembers) {
-          const memberKey = await fetchPublicKey(member.userId);
-          if (memberKey) {
-            const encKey = await encryptGroupKeyForMember(newGroupKey, memberKey.publicKey);
-            encryptedKeys.push({ userId: member.userId, encryptedGroupKey: encKey });
-          }
-        }
-
-        // Шифруем для себя
-        const myKey = await fetchPublicKey(user.id);
-        if (myKey) {
-          const myEncryptedKey = await encryptGroupKeyForMember(newGroupKey, myKey.publicKey);
-          encryptedKeys.push({ userId: user.id, encryptedGroupKey: myEncryptedKey });
-        }
-
-        // Обновляем ключи на сервере
-        await api.put(`/messages/conversations/${conversationId}/group-key`, {
-          encryptedKeys,
-          keyVersion: newVersion
-        });
-
-        // Сохраняем новый ключ локально
-        storeGroupKey(conversationId, newGroupKey, newVersion);
-      }
-
-      // Передаём версию ключа при добавлении участника
-      const groupKeyData = isSecretGroup ? getGroupKey(conversationId) : null;
       await api.post(`/messages/conversations/${conversationId}/members`, {
-        userId: friendId,
-        encryptedGroupKey,
-        keyVersion: groupKeyData?.version
+        userId: friendId
       });
 
       await loadMembers();
@@ -161,52 +99,12 @@ const GroupMembersModal = ({
     if (!confirmed) return;
 
     try {
-      const response = await api.delete(`/messages/conversations/${conversationId}/members/${memberId}`);
-
-      if (response.data.keyRotationNeeded) {
-        await handleKeyRotation();
-      }
+      await api.delete(`/messages/conversations/${conversationId}/members/${memberId}`);
 
       await loadMembers();
       onMembersUpdated?.();
     } catch (err) {
       setError(err.data?.error || 'Ошибка удаления участника');
-    }
-  };
-
-  const handleKeyRotation = async () => {
-    try {
-      const newGroupKey = generateGroupKey();
-      const currentMembers = members.filter(m => m.userId !== user.id);
-      const encryptedKeys = [];
-
-      for (const member of currentMembers) {
-        const theirKey = await fetchPublicKey(member.userId);
-        if (theirKey) {
-          const encryptedKey = await encryptGroupKeyForMember(newGroupKey, theirKey.publicKey);
-          encryptedKeys.push({ userId: member.userId, encryptedGroupKey: encryptedKey });
-        }
-      }
-
-      const myKey = await fetchPublicKey(user.id);
-      if (myKey) {
-        const myEncryptedKey = await encryptGroupKeyForMember(newGroupKey, myKey.publicKey);
-        encryptedKeys.push({ userId: user.id, encryptedGroupKey: myEncryptedKey });
-      }
-
-      const currentKeyData = getGroupKey(conversationId);
-      const newVersion = (currentKeyData?.version || 1) + 1;
-
-      await api.put(`/messages/conversations/${conversationId}/group-key`, {
-        encryptedKeys,
-        keyVersion: newVersion
-      });
-
-      storeGroupKey(conversationId, newGroupKey, newVersion);
-      await showAlert({ title: 'Готово', message: 'Ключ группы обновлён', type: 'success' });
-    } catch (err) {
-      console.error('Ошибка ротации ключа:', err);
-      await showAlert({ title: 'Ошибка', message: 'Не удалось обновить ключ группы', type: 'error' });
     }
   };
 
@@ -273,7 +171,7 @@ const GroupMembersModal = ({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3>Участники группы {isSecretGroup && '🔒'} <span className={styles.memberCount}>({members.length})</span></h3>
+          <h3>Участники группы <span className={styles.memberCount}>({members.length})</span></h3>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 

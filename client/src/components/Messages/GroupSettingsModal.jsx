@@ -12,7 +12,6 @@ const GroupSettingsModal = ({
   currentName,
   currentAvatar,
   isCreator,
-  isSecretGroup,
   showCreatorLabel: initialShowCreator,
   showModeratorLabel: initialShowModerator,
   onClose,
@@ -138,7 +137,7 @@ const GroupSettingsModal = ({
                 />
               ) : (
                 <div className={styles.avatarPlaceholder}>
-                  {isSecretGroup ? '🔐' : '👥'}
+                  👥
                 </div>
               )}
               {isCreator && (

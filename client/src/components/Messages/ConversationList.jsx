@@ -35,11 +35,7 @@ const ConversationList = ({ onSelectConversation }) => {
   // Глобальный WebSocket-обработчик для обновления списка диалогов
   useEffect(() => {
     const handleWebSocketEvent = (data) => {
-      // Обновляем список при получении событий, связанных с группами
-      if (data.type === 'secret_group_joined' ||
-          data.type === 'group_deleted' ||
-          data.type === 'secret_group_member_left' ||
-          data.type === 'secret_group_removed') {
+      if (data.type === 'group_deleted') {
         dispatch(fetchConversations());
       }
     };
