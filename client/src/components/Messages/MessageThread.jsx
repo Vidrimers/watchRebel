@@ -1294,6 +1294,7 @@ const MessageThread = ({ conversation, onClose }) => {
                     </div>
                   )}
                   <div id={`msg-${message.id}`} className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
+                    <div className={styles.messageRow}>
                     <div className={styles.messageAvatar}>
                       {isOwnMessage ? (
                         user.avatarUrl ? (
@@ -1548,6 +1549,7 @@ const MessageThread = ({ conversation, onClose }) => {
                         </button>
                       </div>
                     </div>
+                    </div> {/* messageRow */}
                     {/* Кнопка быстрого ответа — desktop only */}
                     <button
                       className={styles.quickReplyButton}
