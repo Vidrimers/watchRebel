@@ -419,11 +419,11 @@
   opacity: 1 !important;
 }
 
-/* Quick reply button — appears on hover at bottom-left of message */
+/* Quick reply button — appears on hover below message bubble */
 .quickReplyButton {
   position: absolute;
-  bottom: 4px;
-  left: -32px;
+  bottom: -26px;
+  left: 40px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -443,7 +443,7 @@
 
 .ownMessage .quickReplyButton {
   left: auto;
-  right: -32px;
+  right: 40px;
 }
 
 .message:hover .quickReplyButton {
