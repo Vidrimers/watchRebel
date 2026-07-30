@@ -1554,7 +1554,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       onClick={(e) => { e.stopPropagation(); handleReply(message); }}
                       title="Ответить"
                     >
-                      ↩
+                      Ответить
                     </button>
                   </div>
                   </>

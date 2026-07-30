@@ -422,28 +422,28 @@
 /* Quick reply button — appears on hover below message bubble */
 .quickReplyButton {
   position: absolute;
-  bottom: -26px;
+  bottom: -24px;
   left: 40px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   color: var(--text-secondary, #666);
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s, background 0.15s;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   z-index: 2;
+  white-space: nowrap;
 }
 
 .ownMessage .quickReplyButton {
-  left: auto;
-  right: 40px;
+  left: 40px;
 }
 
 .message:hover .quickReplyButton {
