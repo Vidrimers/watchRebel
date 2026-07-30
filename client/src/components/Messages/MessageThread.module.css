@@ -453,6 +453,10 @@
   display: flex;
 }
 
+.otherMessage .quickReplyButton {
+  margin-left: 40px; /* avatar 32px + gap 8px */
+}
+
 .quickReplyButton:hover {
   background: var(--bg-hover, #f0f0f0);
   color: var(--accent-primary, #6366f1);
