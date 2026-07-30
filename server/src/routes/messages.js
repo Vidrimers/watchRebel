@@ -328,9 +328,17 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         SELECT
           m.*,
           u.display_name as sender_name,
-          u.avatar_url as sender_avatar
+          u.avatar_url as sender_avatar,
+          reply_msg.content as reply_to_content,
+          reply_sender.display_name as reply_to_sender_name,
+          reply_sender.id as reply_to_sender_id,
+          fwd_sender.display_name as forward_from_name,
+          fwd_sender.avatar_url as forward_from_avatar
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
+        LEFT JOIN messages reply_msg ON m.reply_to = reply_msg.id
+        LEFT JOIN users reply_sender ON reply_msg.sender_id = reply_sender.id
+        LEFT JOIN users fwd_sender ON m.forward_from = fwd_sender.id
         WHERE m.conversation_id = ?
           AND (m.deleted_for_users IS NULL OR m.deleted_for_users = '[]' OR NOT m.deleted_for_users LIKE '%"${userId}"%')
     `;
@@ -386,6 +394,19 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
       location: m.location ? JSON.parse(m.location) : null,
       suggestedMedia: m.suggested_media ? JSON.parse(m.suggested_media) : null,
       createdAt: m.created_at ? m.created_at + 'Z' : null,
+      isPinned: Boolean(m.is_pinned),
+      replyTo: m.reply_to ? {
+        id: m.reply_to,
+        content: m.reply_to_content,
+        senderName: m.reply_to_sender_name,
+        senderId: m.reply_to_sender_id
+      } : null,
+      forwardFrom: m.forward_from ? {
+        id: m.forward_from,
+        displayName: m.forward_from_name,
+        avatarUrl: m.forward_from_avatar
+      } : null,
+      forwardMessageId: m.forward_message_id || null,
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
@@ -455,7 +476,7 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
  */
 router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10), async (req, res) => {
   try {
-    const { receiverId, content, sentViaBot, location, suggestedMedia } = req.body;
+    const { receiverId, content, sentViaBot, location, suggestedMedia, replyTo, forwardFrom, forwardMessageId } = req.body;
     const senderId = req.user.id;
     const files = req.files || [];
 
@@ -617,9 +638,9 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
     const messageReceiverId = (isGroup || isSecret) ? senderId : receiverId;
 
     const createMessageResult = await executeQuery(
-      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now'))`,
-      [messageId, conversationId, senderId, messageReceiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments, locationJson, suggestedMediaJson]
+      `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, is_read, sent_via_bot, attachments, location, suggested_media, reply_to, forward_from, forward_message_id, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [messageId, conversationId, senderId, messageReceiverId, content?.trim() || '', sentViaBot ? 1 : 0, attachments, locationJson, suggestedMediaJson, replyTo || null, forwardFrom || null, forwardMessageId || null]
     );
 
     if (!createMessageResult.success) {
@@ -668,6 +689,9 @@ router.post('/', authenticateToken, uploadMessageFiles.array('attachments', 10),
       isAnnouncement: false,
       attachments: m.attachments ? JSON.parse(m.attachments) : null,
       createdAt: m.created_at ? m.created_at + 'Z' : null,
+      replyTo: m.reply_to || null,
+      forwardFrom: m.forward_from || null,
+      forwardMessageId: m.forward_message_id || null,
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
@@ -1273,6 +1297,171 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       error: 'Внутренняя ошибка сервера',
       code: 'INTERNAL_ERROR' 
     });
+  }
+});
+
+/**
+ * PUT /api/messages/:id/pin
+ * Закрепить/открепить сообщение (toggle)
+ * Любой участник чата может закрепить любое сообщение
+ */
+router.put('/:id/pin', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const messageCheck = await executeQuery(
+      'SELECT * FROM messages WHERE id = ?',
+      [id]
+    );
+
+    if (!messageCheck.success || messageCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Сообщение не найдено', code: 'MESSAGE_NOT_FOUND' });
+    }
+
+    const message = messageCheck.data[0];
+
+    // Проверяем что пользователь — участник чата
+    const convCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ?',
+      [message.conversation_id]
+    );
+
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'CONVERSATION_NOT_FOUND' });
+    }
+
+    const conv = convCheck.data[0];
+    let isParticipant = false;
+
+    if (conv.is_group) {
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [message.conversation_id, userId]
+      );
+      isParticipant = memberCheck.success && memberCheck.data.length > 0;
+    } else {
+      isParticipant = conv.user1_id === userId || conv.user2_id === userId;
+    }
+
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Нет доступа к этому чату', code: 'FORBIDDEN' });
+    }
+
+    // Toggle pin
+    const newPinnedState = message.is_pinned ? 0 : 1;
+
+    // Если закрепляем — сначала снимаем старое закрепление
+    if (newPinnedState === 1) {
+      await executeQuery(
+        'UPDATE messages SET is_pinned = 0 WHERE conversation_id = ? AND is_pinned = 1',
+        [message.conversation_id]
+      );
+    }
+
+    await executeQuery(
+      'UPDATE messages SET is_pinned = ? WHERE id = ?',
+      [newPinnedState, id]
+    );
+
+    // Уведомляем участников через WebSocket
+    const wsManager = req.app.get('wsManager');
+    if (wsManager) {
+      const notifyUserIds = conv.is_group
+        ? (await executeQuery(
+            'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+            [message.conversation_id, userId]
+          )).data?.map(m => m.user_id) || []
+        : [conv.user1_id === userId ? conv.user2_id : conv.user1_id];
+
+      notifyUserIds.forEach(uid => {
+        wsManager.sendToUser(uid, {
+          type: newPinnedState ? 'message_pinned' : 'message_unpinned',
+          conversationId: message.conversation_id,
+          messageId: id,
+          pinnedBy: userId
+        });
+      });
+    }
+
+    res.json({
+      messageId: id,
+      isPinned: Boolean(newPinnedState)
+    });
+
+  } catch (error) {
+    console.error('Ошибка закрепления сообщения:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * GET /api/messages/pinned/:conversationId
+ * Получить закреплённое сообщение в чате
+ */
+router.get('/pinned/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем доступ
+    const convCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'CONVERSATION_NOT_FOUND' });
+    }
+
+    const conv = convCheck.data[0];
+    let isParticipant = false;
+
+    if (conv.is_group) {
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [conversationId, userId]
+      );
+      isParticipant = memberCheck.success && memberCheck.data.length > 0;
+    } else {
+      isParticipant = conv.user1_id === userId || conv.user2_id === userId;
+    }
+
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    const pinnedResult = await executeQuery(
+      `SELECT m.*, u.display_name as sender_name, u.avatar_url as sender_avatar
+       FROM messages m
+       LEFT JOIN users u ON m.sender_id = u.id
+       WHERE m.conversation_id = ? AND m.is_pinned = 1
+       LIMIT 1`,
+      [conversationId]
+    );
+
+    if (!pinnedResult.success || pinnedResult.data.length === 0) {
+      return res.json({ pinnedMessage: null });
+    }
+
+    const m = pinnedResult.data[0];
+    res.json({
+      pinnedMessage: {
+        id: m.id,
+        conversationId: m.conversation_id,
+        senderId: m.sender_id,
+        content: m.content,
+        createdAt: m.created_at ? m.created_at + 'Z' : null,
+        sender: {
+          displayName: m.sender_name,
+          avatarUrl: m.sender_avatar
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения закреплённого сообщения:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });
 

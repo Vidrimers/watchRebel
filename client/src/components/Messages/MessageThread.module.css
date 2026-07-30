@@ -181,6 +181,29 @@
   overflow-y: auto;
   background: var(--bg-secondary, #fff);
   position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
+}
+.messagesContainer:hover {
+  scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+.messagesContainer::-webkit-scrollbar {
+  width: 5px;
+}
+.messagesContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.messagesContainer::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+.messagesContainer:hover::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+}
+.messagesContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
 }
 
 .scrollDownButton {
@@ -374,20 +397,25 @@
   opacity: 0.7;
 }
 
-.deleteButton {
+.menuButton {
   background: none;
   border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 1.25rem;
-  padding: 0;
-  opacity: 0.5;
+  font-size: 1.1rem;
+  padding: 0 2px;
+  opacity: 0;
   transition: opacity 0.2s;
   line-height: 1;
+  letter-spacing: 1px;
 }
 
-.deleteButton:hover {
-  opacity: 1;
+.message:hover .menuButton {
+  opacity: 0.5;
+}
+
+.menuButton:hover {
+  opacity: 1 !important;
 }
 
 .noKeyWarning {
@@ -1024,8 +1052,9 @@
     font-size: 0.7rem;
   }
 
-  .deleteButton {
-    font-size: 1.1rem;
+  .menuButton {
+    opacity: 0.5;
+    font-size: 1rem;
   }
 
   .inputForm {
@@ -1343,4 +1372,238 @@
 .announcementDeleteBtn:hover {
   opacity: 1;
   color: var(--error-color, #ef4444);
+}
+
+/* === PINNED MESSAGE BAR === */
+.pinnedBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-hover, #f0f0f0);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pinnedBar:hover {
+  background: var(--bg-secondary, #e8e8e8);
+}
+
+.pinnedContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pinnedIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.pinnedInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pinnedAuthor {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary, #6366f1);
+}
+
+.pinnedText {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pinnedClose {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.pinnedBar:hover .pinnedClose {
+  opacity: 1;
+}
+
+.pinnedClose:hover {
+  color: var(--error-color, #ef4444);
+}
+
+/* === REPLY QUOTE IN MESSAGE === */
+.replyQuote {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ownMessage .replyQuote {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.replyQuote:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ownMessage .replyQuote:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.replyQuoteBar {
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent-primary, #6366f1);
+  flex-shrink: 0;
+}
+
+.ownMessage .replyQuoteBar {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.replyQuoteContent {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.replyQuoteAuthor {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary, #6366f1);
+}
+
+.ownMessage .replyQuoteAuthor {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.replyQuoteText {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ownMessage .replyQuoteText {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* === FORWARD BAR === */
+.forwardBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.forwardIcon {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.forwardText {
+  color: var(--text-secondary, #666);
+}
+
+.ownMessage .forwardText {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.forwardAuthor {
+  color: var(--accent-primary, #6366f1);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forwardAuthor:hover {
+  text-decoration: underline;
+}
+
+.ownMessage .forwardAuthor {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* === REPLY PREVIEW IN INPUT === */
+.replyPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-hover, #f0f0f0);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 12px 12px 0 0;
+}
+
+.replyPreviewBar {
+  width: 3px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--accent-primary, #6366f1);
+  flex-shrink: 0;
+}
+
+.replyPreviewContent {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.replyPreviewAuthor {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary, #6366f1);
+}
+
+.replyPreviewText {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replyPreviewClose {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.replyPreviewClose:hover {
+  color: var(--text-primary, #1a1a1a);
+}
+
+/* === MESSAGE HIGHLIGHT (scroll to) === */
+.highlightMessage {
+  animation: highlightPulse 2s ease;
+}
+
+@keyframes highlightPulse {
+  0% { background: rgba(99, 102, 241, 0.2); }
+  100% { background: transparent; }
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchMessages, fetchConversations, sendMessage, deleteMessage } from '../../store/slices/messagesSlice';
+import { fetchMessages, fetchConversations, sendMessage, deleteMessage, pinMessage, fetchPinnedMessage } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, getGroupKeyByVersion, storeGroupKey, decryptGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage, extractGroupKeyVersion } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
@@ -20,6 +20,8 @@ import DeleteMessagePopup from './DeleteMessagePopup';
 import GroupMembersModal from './GroupMembersModal';
 import GroupSettingsModal from './GroupSettingsModal';
 import AnnouncementModal from './AnnouncementModal';
+import MessageContextMenu from './MessageContextMenu';
+import ForwardMessageModal from './ForwardMessageModal';
 import MentionAutocomplete from '../Common/MentionAutocomplete';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
@@ -79,7 +81,7 @@ const parseSuggestedMedia = (sm) => {
 const MessageThread = ({ conversation, onClose }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { messages, group, loading, loadingMore, hasMoreMessages, sendingMessage } = useAppSelector((state) => state.messages);
+  const { messages, group, loading, loadingMore, hasMoreMessages, sendingMessage, pinnedMessage } = useAppSelector((state) => state.messages);
   const { user } = useAppSelector((state) => state.auth);
 
   const [conversationOverrides, setConversationOverrides] = useState({});
@@ -127,6 +129,9 @@ const MessageThread = ({ conversation, onClose }) => {
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [showGroupAvatarModal, setShowGroupAvatarModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [forwardMessage, setForwardMessage] = useState(null);
   const textareaRef = useRef(null);
 
   const {
@@ -212,6 +217,13 @@ const MessageThread = ({ conversation, onClose }) => {
 
     loadMessages();
   }, [conversation?.id, conversation?.isSecret, conversation?.otherUser?.id, dispatch]);
+
+  // Загружаем закреплённое сообщение при смене диалога
+  useEffect(() => {
+    if (conversation?.id) {
+      dispatch(fetchPinnedMessage({ conversationId: conversation.id }));
+    }
+  }, [conversation?.id, dispatch]);
 
   // Скролл вниз при загрузке сообщений в новом диалоге
   const prevConversationRef = useRef(null);
@@ -299,6 +311,10 @@ const MessageThread = ({ conversation, onClose }) => {
         setShowAnnouncementModal(false);
         // Обновляем список диалогов
         dispatch(fetchConversations());
+      } else if (data.type === 'message_pinned' && data.conversationId === conversation?.id) {
+        dispatch(fetchPinnedMessage({ conversationId: data.conversationId }));
+      } else if (data.type === 'message_unpinned' && data.conversationId === conversation?.id) {
+        dispatch({ type: 'messages/clearPinnedMessage' });
       }
     };
 
@@ -620,8 +636,12 @@ const MessageThread = ({ conversation, onClose }) => {
         receiverId: getReceiverId(),
         content,
         files,
-        originalContent
+        originalContent,
+        replyTo: replyTo?.id || null
       }));
+
+      // Очищаем reply после отправки
+      setReplyTo(null);
 
       console.log('✅ Сообщение отправлено:', result);
 
@@ -786,6 +806,68 @@ const MessageThread = ({ conversation, onClose }) => {
       left: rect.right - 170
     });
     setShowDeletePopup(true);
+  };
+
+  // Контекстное меню — открытие
+  const handleContextMenuOpen = (e, message, isOwnMessage) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setContextMenu({
+      message,
+      isOwnMessage,
+      position: {
+        x: rect.left,
+        y: rect.bottom + 4
+      }
+    });
+  };
+
+  // Reply — установить цитируемое сообщение
+  const handleReply = (message) => {
+    setReplyTo({
+      id: message.id,
+      content: message.content,
+      senderName: message.sender?.displayName || 'Неизвестный'
+    });
+    setContextMenu(null);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  // Forward — открыть модалку
+  const handleForward = (message) => {
+    setForwardMessage(message);
+    setContextMenu(null);
+  };
+
+  // Pin/Unpin сообщение
+  const handlePin = (messageId) => {
+    dispatch(pinMessage({ messageId }));
+    setContextMenu(null);
+  };
+
+  // Удаление из контекстного меню
+  const handleDeleteFromMenu = () => {
+    if (!contextMenu) return;
+    const msg = contextMenu.message;
+    setDeleteMessageId(msg.id);
+    setDeleteMessageIsOwn(contextMenu.isOwnMessage);
+    setDeleteIsAnnouncement(msg.isAnnouncement || false);
+    setDeletePopupPosition({
+      top: contextMenu.position.y - 120,
+      left: contextMenu.position.x - 170
+    });
+    setShowDeletePopup(true);
+    setContextMenu(null);
+  };
+
+  // Скролл к сообщению (для reply цитаты)
+  const scrollToMessage = (messageId) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add(styles.highlightMessage);
+      setTimeout(() => el.classList.remove(styles.highlightMessage), 2000);
+    }
   };
 
   // Удаление для себя
@@ -1106,6 +1188,31 @@ const MessageThread = ({ conversation, onClose }) => {
         ref={messagesContainerRef}
         onScroll={handleScroll}
       >
+        {/* Закреплённое сообщение */}
+        {pinnedMessage && (
+          <div className={styles.pinnedBar}>
+            <div className={styles.pinnedContent}>
+              <span className={styles.pinnedIcon}>📌</span>
+              <div className={styles.pinnedInfo}>
+                <span className={styles.pinnedAuthor}>{pinnedMessage.sender?.displayName}</span>
+                <span className={styles.pinnedText}>
+                  {pinnedMessage.content?.length > 80
+                    ? pinnedMessage.content.substring(0, 80) + '...'
+                    : pinnedMessage.content || '[вложение]'
+                  }
+                </span>
+              </div>
+            </div>
+            <button
+              className={styles.pinnedClose}
+              onClick={() => dispatch(pinMessage({ messageId: pinnedMessage.id }))}
+              title="Открепить"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
             <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
@@ -1186,7 +1293,7 @@ const MessageThread = ({ conversation, onClose }) => {
                       </a>
                     </div>
                   )}
-                  <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
+                  <div id={`msg-${message.id}`} className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
                     <div className={styles.messageAvatar}>
                       {isOwnMessage ? (
                         user.avatarUrl ? (
@@ -1287,6 +1394,42 @@ const MessageThread = ({ conversation, onClose }) => {
                     </div>
                     
                     <div className={styles.messageBubble}>
+                      {/* Цитата (reply) */}
+                      {message.replyTo && (
+                        <div
+                          className={styles.replyQuote}
+                          onClick={() => scrollToMessage(message.replyTo.id)}
+                        >
+                          <div className={styles.replyQuoteBar} />
+                          <div className={styles.replyQuoteContent}>
+                            <span className={styles.replyQuoteAuthor}>{message.replyTo.senderName}</span>
+                            <span className={styles.replyQuoteText}>
+                              {message.replyTo.content?.length > 100
+                                ? message.replyTo.content.substring(0, 100) + '...'
+                                : message.replyTo.content || '[вложение]'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Пересланное сообщение */}
+                      {message.forwardFrom && (
+                        <div className={styles.forwardBar}>
+                          <span className={styles.forwardIcon}>↪</span>
+                          <span className={styles.forwardText}>
+                            Переслано от{' '}
+                            <a
+                              href={`/user/${message.forwardFrom.id}`}
+                              className={styles.forwardAuthor}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {message.forwardFrom.displayName}
+                            </a>
+                          </span>
+                        </div>
+                      )}
+
                       {message.content && (
                         <p className={`${styles.messageText} ${message.undecryptable ? styles.undecryptable : ''}`}>
                           {renderMessageContent(message.content)}
@@ -1396,15 +1539,13 @@ const MessageThread = ({ conversation, onClose }) => {
                       )}
                       <div className={styles.messageFooter}>
                         <span className={styles.messageTime}>{formatTime(message.createdAt)}</span>
-                        {(isOwnMessage || (isGroup && group?.canDeleteMessages)) && (
-                          <button
-                            className={styles.deleteButton}
-                            onClick={(e) => handleDeleteClick(e, message.id, isOwnMessage)}
-                            title="Удалить сообщение"
-                          >
-                            ×
-                          </button>
-                        )}
+                        <button
+                          className={styles.menuButton}
+                          onClick={(e) => handleContextMenuOpen(e, message, isOwnMessage)}
+                          title="Ещё"
+                        >
+                          ⋮
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1439,6 +1580,29 @@ const MessageThread = ({ conversation, onClose }) => {
       )}
       <form className={styles.inputForm} onSubmit={handleSendMessage}>
         <div className={styles.inputWrapper}>
+          {/* Превью reply */}
+          {replyTo && (
+            <div className={styles.replyPreview}>
+              <div className={styles.replyPreviewBar} />
+              <div className={styles.replyPreviewContent}>
+                <span className={styles.replyPreviewAuthor}>{replyTo.senderName}</span>
+                <span className={styles.replyPreviewText}>
+                  {replyTo.content?.length > 80
+                    ? replyTo.content.substring(0, 80) + '...'
+                    : replyTo.content || '[вложение]'
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                className={styles.replyPreviewClose}
+                onClick={() => setReplyTo(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {/* Превью выбранных файлов */}
           {selectedFiles.length > 0 && (
             <div className={styles.filesPreview}>
@@ -1660,6 +1824,25 @@ const MessageThread = ({ conversation, onClose }) => {
         isAnnouncement={deleteIsAnnouncement}
         position={deletePopupPosition}
       />
+      {contextMenu && (
+        <MessageContextMenu
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onReply={() => handleReply(contextMenu.message)}
+          onForward={() => handleForward(contextMenu.message)}
+          onPin={() => handlePin(contextMenu.message.id)}
+          onDelete={handleDeleteFromMenu}
+          isPinned={contextMenu.message.isPinned}
+          isOwnMessage={contextMenu.isOwnMessage}
+          canDelete={isGroup && group?.canDeleteMessages}
+        />
+      )}
+      {forwardMessage && (
+        <ForwardMessageModal
+          message={forwardMessage}
+          onClose={() => setForwardMessage(null)}
+        />
+      )}
       {showReportModal && (
         <ReportModal
           reportedUserId={conversation.otherUser.id}

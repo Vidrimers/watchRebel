@@ -371,6 +371,10 @@ export async function runMigrations() {
         safeAddColumn('messages', 'suggested_media', 'TEXT');
         safeAddColumn('messages', 'deleted_for_users', 'TEXT', "'[]'");
         safeAddColumn('messages', 'is_announcement', 'BOOLEAN', '0');
+        safeAddColumn('messages', 'reply_to', 'TEXT');
+        safeAddColumn('messages', 'forward_from', 'TEXT');
+        safeAddColumn('messages', 'forward_message_id', 'TEXT');
+        safeAddColumn('messages', 'is_pinned', 'BOOLEAN', '0');
         safeAddColumn('users', 'last_feed_view', 'DATETIME');
         safeAddColumn('users', 'two_factor_enabled', 'BOOLEAN', '0');
         safeAddColumn('users', 'two_factor_secret', 'TEXT');

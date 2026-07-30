@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { fetchConversations } from '../store/slices/messagesSlice';
@@ -16,6 +16,7 @@ import styles from './MessagesPage.module.css';
 const MessagesPage = () => {
   const { userId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { conversations, loading } = useAppSelector((state) => state.messages);
@@ -24,6 +25,10 @@ const MessagesPage = () => {
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation);
+    // Очищаем userId из URL, чтобы эффект автооткрытия по URL не срабатывал повторно
+    if (userId) {
+      navigate('/messages', { replace: true });
+    }
     // Через небольшой задержку обновляем список диалогов (чтобы badge непрочитанных обновился)
     setTimeout(() => dispatch(fetchConversations()), 500);
   };

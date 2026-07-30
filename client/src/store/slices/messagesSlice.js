@@ -82,7 +82,7 @@ export const fetchMessages = createAsyncThunk(
 // Отправить новое сообщение
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ receiverId, content, files = [], location = null, suggestedMedia = null, originalContent = null }, { rejectWithValue }) => {
+  async ({ receiverId, content, files = [], location = null, suggestedMedia = null, originalContent = null, replyTo = null, forwardFrom = null, forwardMessageId = null }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append('receiverId', receiverId);
@@ -92,6 +92,15 @@ export const sendMessage = createAsyncThunk(
       }
       if (suggestedMedia) {
         formData.append('suggestedMedia', JSON.stringify(suggestedMedia));
+      }
+      if (replyTo) {
+        formData.append('replyTo', replyTo);
+      }
+      if (forwardFrom) {
+        formData.append('forwardFrom', forwardFrom);
+      }
+      if (forwardMessageId) {
+        formData.append('forwardMessageId', forwardMessageId);
       }
 
       // Добавляем файлы
@@ -130,6 +139,32 @@ export const deleteMessage = createAsyncThunk(
   }
 );
 
+// Закрепить/открепить сообщение
+export const pinMessage = createAsyncThunk(
+  'messages/pinMessage',
+  async ({ messageId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/messages/${messageId}/pin`);
+      return response.data;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Получить закреплённое сообщение
+export const fetchPinnedMessage = createAsyncThunk(
+  'messages/fetchPinnedMessage',
+  async ({ conversationId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/messages/pinned/${conversationId}`);
+      return response.data.pinnedMessage;
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 const messagesSlice = createSlice({
   name: 'messages',
   initialState: {
@@ -137,6 +172,7 @@ const messagesSlice = createSlice({
     currentConversation: null,
     messages: [],
     group: null,
+    pinnedMessage: null,
     hasMoreMessages: false,
     totalMessages: 0,
     loading: false,
@@ -154,6 +190,7 @@ const messagesSlice = createSlice({
     clearMessages: (state) => {
       state.messages = [];
       state.currentConversation = null;
+      state.pinnedMessage = null;
     },
     addNewMessage: (state, action) => {
       const message = action.payload;
@@ -167,6 +204,12 @@ const messagesSlice = createSlice({
     removeMessage: (state, action) => {
       const messageId = action.payload;
       state.messages = state.messages.filter(m => m.id !== messageId);
+    },
+    setPinnedMessage: (state, action) => {
+      state.pinnedMessage = action.payload;
+    },
+    clearPinnedMessage: (state) => {
+      state.pinnedMessage = null;
     }
   },
   extraReducers: (builder) => {
@@ -254,9 +297,28 @@ const messagesSlice = createSlice({
       })
       .addCase(deleteMessage.rejected, (state, action) => {
         state.error = action.payload;
+      })
+      // Pin Message
+      .addCase(pinMessage.fulfilled, (state, action) => {
+        const { messageId, isPinned } = action.payload;
+        const msg = state.messages.find(m => m.id === messageId);
+        if (msg) {
+          msg.isPinned = isPinned;
+        }
+        // Если открепили — очищаем pinnedMessage
+        if (!isPinned && state.pinnedMessage?.id === messageId) {
+          state.pinnedMessage = null;
+        }
+      })
+      .addCase(pinMessage.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      // Fetch Pinned Message
+      .addCase(fetchPinnedMessage.fulfilled, (state, action) => {
+        state.pinnedMessage = action.payload;
       });
   }
 });
 
-export const { clearError, setCurrentConversation, clearMessages, addNewMessage, removeMessage } = messagesSlice.actions;
+export const { clearError, setCurrentConversation, clearMessages, addNewMessage, removeMessage, setPinnedMessage, clearPinnedMessage } = messagesSlice.actions;
 export default messagesSlice.reducer;
