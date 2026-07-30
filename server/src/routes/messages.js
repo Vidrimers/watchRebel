@@ -245,6 +245,76 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 });
 
 /**
+ * GET /api/messages/pinned/:conversationId
+ * Получить закреплённое сообщение в чате
+ */
+router.get('/pinned/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем доступ
+    const convCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'CONVERSATION_NOT_FOUND' });
+    }
+
+    const conv = convCheck.data[0];
+    let isParticipant = false;
+
+    if (conv.is_group) {
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [conversationId, userId]
+      );
+      isParticipant = memberCheck.success && memberCheck.data.length > 0;
+    } else {
+      isParticipant = conv.user1_id === userId || conv.user2_id === userId;
+    }
+
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    const pinnedResult = await executeQuery(
+      `SELECT m.*, u.display_name as sender_name, u.avatar_url as sender_avatar
+       FROM messages m
+       LEFT JOIN users u ON m.sender_id = u.id
+       WHERE m.conversation_id = ? AND m.is_pinned = 1
+       LIMIT 1`,
+      [conversationId]
+    );
+
+    if (!pinnedResult.success || pinnedResult.data.length === 0) {
+      return res.json({ pinnedMessage: null });
+    }
+
+    const m = pinnedResult.data[0];
+    res.json({
+      pinnedMessage: {
+        id: m.id,
+        conversationId: m.conversation_id,
+        senderId: m.sender_id,
+        content: m.content,
+        createdAt: m.created_at ? m.created_at + 'Z' : null,
+        sender: {
+          displayName: m.sender_name,
+          avatarUrl: m.sender_avatar
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения закреплённого сообщения:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
  * GET /api/messages/:conversationId
  * Получить все сообщения из конкретного диалога
  * Query params: limit (default: 20), offset (default: 0)
@@ -1391,76 +1461,6 @@ router.put('/:id/pin', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка закрепления сообщения:', error);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
-  }
-});
-
-/**
- * GET /api/messages/pinned/:conversationId
- * Получить закреплённое сообщение в чате
- */
-router.get('/pinned/:conversationId', authenticateToken, async (req, res) => {
-  try {
-    const { conversationId } = req.params;
-    const userId = req.user.id;
-
-    // Проверяем доступ
-    const convCheck = await executeQuery(
-      'SELECT * FROM conversations WHERE id = ?',
-      [conversationId]
-    );
-
-    if (!convCheck.success || convCheck.data.length === 0) {
-      return res.status(404).json({ error: 'Чат не найден', code: 'CONVERSATION_NOT_FOUND' });
-    }
-
-    const conv = convCheck.data[0];
-    let isParticipant = false;
-
-    if (conv.is_group) {
-      const memberCheck = await executeQuery(
-        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
-        [conversationId, userId]
-      );
-      isParticipant = memberCheck.success && memberCheck.data.length > 0;
-    } else {
-      isParticipant = conv.user1_id === userId || conv.user2_id === userId;
-    }
-
-    if (!isParticipant) {
-      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
-    }
-
-    const pinnedResult = await executeQuery(
-      `SELECT m.*, u.display_name as sender_name, u.avatar_url as sender_avatar
-       FROM messages m
-       LEFT JOIN users u ON m.sender_id = u.id
-       WHERE m.conversation_id = ? AND m.is_pinned = 1
-       LIMIT 1`,
-      [conversationId]
-    );
-
-    if (!pinnedResult.success || pinnedResult.data.length === 0) {
-      return res.json({ pinnedMessage: null });
-    }
-
-    const m = pinnedResult.data[0];
-    res.json({
-      pinnedMessage: {
-        id: m.id,
-        conversationId: m.conversation_id,
-        senderId: m.sender_id,
-        content: m.content,
-        createdAt: m.created_at ? m.created_at + 'Z' : null,
-        sender: {
-          displayName: m.sender_name,
-          avatarUrl: m.sender_avatar
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Ошибка получения закреплённого сообщения:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });

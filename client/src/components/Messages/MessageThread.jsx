@@ -1548,6 +1548,14 @@ const MessageThread = ({ conversation, onClose }) => {
                         </button>
                       </div>
                     </div>
+                    {/* Кнопка быстрого ответа — desktop only */}
+                    <button
+                      className={styles.quickReplyButton}
+                      onClick={(e) => { e.stopPropagation(); handleReply(message); }}
+                      title="Ответить"
+                    >
+                      ↩
+                    </button>
                   </div>
                   </>
                   )}

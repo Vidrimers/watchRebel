@@ -278,6 +278,7 @@
   align-items: flex-end;
   gap: 0.5rem;
   max-width: 70%;
+  position: relative;
 }
 
 .ownMessage {
@@ -416,6 +417,48 @@
 
 .menuButton:hover {
   opacity: 1 !important;
+}
+
+/* Quick reply button — appears on hover at bottom-left of message */
+.quickReplyButton {
+  position: absolute;
+  bottom: 4px;
+  left: -32px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  color: var(--text-secondary, #666);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.ownMessage .quickReplyButton {
+  left: auto;
+  right: -32px;
+}
+
+.message:hover .quickReplyButton {
+  opacity: 1;
+}
+
+.quickReplyButton:hover {
+  background: var(--bg-hover, #f0f0f0);
+  color: var(--accent-primary, #6366f1);
+}
+
+@media (max-width: 768px) {
+  .quickReplyButton {
+    display: none;
+  }
 }
 
 .noKeyWarning {
