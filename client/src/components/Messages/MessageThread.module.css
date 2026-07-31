@@ -430,7 +430,7 @@
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   color: var(--text-secondary, #666);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   cursor: pointer;
   display: flex;
   align-items: center;
