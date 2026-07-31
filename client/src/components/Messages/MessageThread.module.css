@@ -436,20 +436,20 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s, background 0.15s;
+  transition: opacity 0.15s ease 0.3s, background 0.15s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   z-index: 2;
   white-space: nowrap;
-  pointer-events: none;
 }
 
 .otherMessage .quickReplyButton {
   left: 40px;
 }
 
-.message:hover .quickReplyButton {
+.message:hover .quickReplyButton,
+.quickReplyButton:hover {
   opacity: 1;
-  pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .quickReplyButton:hover {
