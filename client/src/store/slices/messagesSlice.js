@@ -312,8 +312,18 @@ const messagesSlice = createSlice({
         if (msg) {
           msg.isPinned = isPinned;
         }
-        // Если открепили — очищаем pinnedMessage
-        if (!isPinned && state.pinnedMessage?.id === messageId) {
+        if (isPinned && msg) {
+          // Закрепили — сразу показываем в pinnedBar
+          state.pinnedMessage = {
+            id: msg.id,
+            conversationId: msg.conversationId,
+            senderId: msg.senderId,
+            content: msg.content,
+            createdAt: msg.createdAt,
+            sender: msg.sender
+          };
+        } else if (!isPinned && state.pinnedMessage?.id === messageId) {
+          // Открепили — очищаем
           state.pinnedMessage = null;
         }
       })
