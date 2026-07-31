@@ -1192,37 +1192,37 @@ const MessageThread = ({ conversation, onClose }) => {
         </div>
       </div>
 
+      {/* Закреплённое сообщение — фиксировано над списком */}
+      {pinnedMessage && (
+        <div className={styles.pinnedBar} onClick={() => scrollToMessage(pinnedMessage.id)}>
+          <div className={styles.pinnedContent}>
+            <span className={styles.pinnedIcon}>📌</span>
+            <div className={styles.pinnedInfo}>
+              <span className={styles.pinnedAuthor}>{pinnedMessage.sender?.displayName}</span>
+              <span className={styles.pinnedText}>
+                {pinnedMessage.content?.length > 80
+                  ? pinnedMessage.content.substring(0, 80) + '...'
+                  : pinnedMessage.content || '[вложение]'
+                }
+              </span>
+            </div>
+          </div>
+          <button
+            className={styles.pinnedClose}
+            onClick={(e) => { e.stopPropagation(); dispatch(pinMessage({ messageId: pinnedMessage.id })); }}
+            title="Открепить"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Список сообщений */}
       <div 
         className={styles.messagesContainer} 
         ref={messagesContainerRef}
         onScroll={handleScroll}
       >
-        {/* Закреплённое сообщение */}
-        {pinnedMessage && (
-          <div className={styles.pinnedBar}>
-            <div className={styles.pinnedContent}>
-              <span className={styles.pinnedIcon}>📌</span>
-              <div className={styles.pinnedInfo}>
-                <span className={styles.pinnedAuthor}>{pinnedMessage.sender?.displayName}</span>
-                <span className={styles.pinnedText}>
-                  {pinnedMessage.content?.length > 80
-                    ? pinnedMessage.content.substring(0, 80) + '...'
-                    : pinnedMessage.content || '[вложение]'
-                  }
-                </span>
-              </div>
-            </div>
-            <button
-              className={styles.pinnedClose}
-              onClick={() => dispatch(pinMessage({ messageId: pinnedMessage.id }))}
-              title="Открепить"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         {messages.length === 0 ? (
           <div className={styles.emptyMessages}>
             <p>{isGroup ? `Начните общение в "${conversation.groupName}"` : `Начните переписку с ${conversation.otherUser?.displayName}`}</p>
