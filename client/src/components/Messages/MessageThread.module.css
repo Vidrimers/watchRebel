@@ -1709,13 +1709,13 @@
 .reactionButtonWrap {
   position: absolute;
   bottom: 10px;
-  left: -14px;
+  right: -14px;
   z-index: 5;
 }
 
 .ownMessage .reactionButtonWrap {
-  left: auto;
-  right: -14px;
+  right: auto;
+  left: -14px;
 }
 
 .reactionButton {
@@ -1724,7 +1724,7 @@
   border-radius: 50%;
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
-  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1748,13 +1748,13 @@
 .reactionPickerPopup {
   position: absolute;
   bottom: 34px;
-  left: 0;
+  right: 0;
   z-index: 10;
 }
 
 .ownMessage .reactionPickerPopup {
-  left: auto;
-  right: 0;
+  right: auto;
+  left: 0;
 }
 
 /* Bounce animation for new reaction */
