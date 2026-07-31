@@ -210,6 +210,13 @@ const messagesSlice = createSlice({
     },
     clearPinnedMessage: (state) => {
       state.pinnedMessage = null;
+    },
+    patchMessageReplyTo: (state, action) => {
+      const { messageId, replyTo } = action.payload;
+      const msg = state.messages.find(m => m.id === messageId);
+      if (msg) {
+        msg.replyTo = replyTo;
+      }
     }
   },
   extraReducers: (builder) => {

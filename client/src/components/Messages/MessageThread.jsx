@@ -632,6 +632,8 @@ const MessageThread = ({ conversation, onClose }) => {
     }
 
     try {
+      const replyToData = replyTo ? { id: replyTo.id, content: replyTo.content, senderName: replyTo.senderName } : null;
+
       const result = await dispatch(sendMessage({
         receiverId: getReceiverId(),
         content,
@@ -642,6 +644,14 @@ const MessageThread = ({ conversation, onClose }) => {
 
       // Очищаем reply после отправки
       setReplyTo(null);
+
+      // Патчим сообщение в store — подставляем данные цитаты из локального стейта
+      if (replyToData && result.meta.requestStatus === 'fulfilled' && result.payload?.id) {
+        dispatch({
+          type: 'messages/patchMessageReplyTo',
+          payload: { messageId: result.payload.id, replyTo: replyToData }
+        });
+      }
 
       console.log('✅ Сообщение отправлено:', result);
 
