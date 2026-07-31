@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchMessages, fetchConversations, sendMessage, deleteMessage, pinMessage, fetchPinnedMessage } from '../../store/slices/messagesSlice';
+import { fetchMessages, fetchConversations, sendMessage, deleteMessage, pinMessage, fetchPinnedMessage, addMessageReaction, removeMessageReaction } from '../../store/slices/messagesSlice';
 import { addMessageHandler, removeMessageHandler } from '../../services/websocket';
 import { hasSessionKey, getOrCreateSessionKey, fetchPublicKey, getSessionKey, encryptMessage, decryptMessage, isEncryptedMessage, needsRotation, rotateSessionKey, getRotationCounter, extractRotationCounter, getSessionKeyByRotation, hasGroupKey, getGroupKey, getGroupKeyByVersion, storeGroupKey, decryptGroupKey, encryptGroupMessage, decryptGroupMessage, isEncryptedGroupMessage, extractGroupKeyVersion } from '../../services/e2ee';
 import useConfirm from '../../hooks/useConfirm';
@@ -22,6 +22,7 @@ import GroupSettingsModal from './GroupSettingsModal';
 import AnnouncementModal from './AnnouncementModal';
 import MessageContextMenu from './MessageContextMenu';
 import ForwardMessageModal from './ForwardMessageModal';
+import QuickReactionsBar from './QuickReactionsBar';
 import MentionAutocomplete from '../Common/MentionAutocomplete';
 import ReactionPicker from '../Wall/ReactionPicker';
 import useAudioRecorder from '../../hooks/useAudioRecorder';
@@ -132,6 +133,8 @@ const MessageThread = ({ conversation, onClose }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [forwardMessage, setForwardMessage] = useState(null);
+  const [reactionTarget, setReactionTarget] = useState(null);
+  const [showFullPicker, setShowFullPicker] = useState(false);
   const textareaRef = useRef(null);
 
   const {
@@ -315,6 +318,10 @@ const MessageThread = ({ conversation, onClose }) => {
         dispatch(fetchPinnedMessage({ conversationId: data.conversationId }));
       } else if (data.type === 'message_unpinned' && data.conversationId === conversation?.id) {
         dispatch({ type: 'messages/clearPinnedMessage' });
+      } else if ((data.type === 'message_reaction' || data.type === 'message_reaction_updated') && data.conversationId === conversation?.id) {
+        dispatch({ type: 'messages/updateMessageReaction', payload: { messageId: data.reaction.messageId, reaction: data.reaction } });
+      } else if (data.type === 'message_reaction_removed' && data.conversationId === conversation?.id) {
+        dispatch({ type: 'messages/removeMessageReactionFromState', payload: { messageId: data.messageId, userId: data.userId } });
       }
     };
 
@@ -877,6 +884,35 @@ const MessageThread = ({ conversation, onClose }) => {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add(styles.highlightMessage);
       setTimeout(() => el.classList.remove(styles.highlightMessage), 2000);
+    }
+  };
+
+  // Реакция на сообщение
+  const handleReaction = (messageId, emoji) => {
+    // Сохраняем частоту использования
+    try {
+      const usage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
+      usage[emoji] = (usage[emoji] || 0) + 1;
+      localStorage.setItem('emojiUsage', JSON.stringify(usage));
+    } catch {}
+
+    dispatch(addMessageReaction({ messageId, emoji }));
+    setReactionTarget(null);
+    setShowFullPicker(false);
+  };
+
+  // Снять реакцию
+  const handleRemoveReaction = (messageId) => {
+    dispatch(removeMessageReaction({ messageId }));
+  };
+
+  // Клик по реакции под сообщением — toggle
+  const handleReactionClick = (message, emoji) => {
+    const userReaction = message.reactions?.find(r => r.userId === user.id);
+    if (userReaction && userReaction.emoji === emoji) {
+      handleRemoveReaction(message.id);
+    } else {
+      handleReaction(message.id, emoji);
     }
   };
 
@@ -1557,6 +1593,55 @@ const MessageThread = ({ conversation, onClose }) => {
                           ⋮
                         </button>
                       </div>
+                      {/* Реакции */}
+                      {message.reactions && message.reactions.length > 0 && (() => {
+                        const grouped = {};
+                        message.reactions.forEach(r => {
+                          if (!grouped[r.emoji]) grouped[r.emoji] = { emoji: r.emoji, count: 0, users: [] };
+                          grouped[r.emoji].count++;
+                          grouped[r.emoji].users.push(r.user?.displayName || 'Пользователь');
+                        });
+                        return (
+                          <div className={styles.reactionsRow}>
+                            {Object.values(grouped).map((g) => {
+                              const isUserReaction = message.reactions.some(r => r.userId === user.id && r.emoji === g.emoji);
+                              return (
+                                <button
+                                  key={g.emoji}
+                                  className={`${styles.reactionBadge} ${isUserReaction ? styles.userReaction : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); handleReactionClick(message, g.emoji); }}
+                                  title={g.users.join(', ')}
+                                >
+                                  <span className={styles.reactionEmoji}>{g.emoji}</span>
+                                  {g.count > 1 && <span className={styles.reactionCount}>{g.count}</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    {/* Кнопка реакции при hover — desktop only */}
+                    <div className={styles.reactionButtonWrap}>
+                      <button
+                        className={styles.reactionButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReactionTarget(reactionTarget === message.id ? null : message.id);
+                        }}
+                        title="Реакция"
+                      >
+                        😊
+                      </button>
+                      {reactionTarget === message.id && (
+                        <div className={styles.reactionPickerPopup}>
+                          <QuickReactionsBar
+                            onSelect={(emoji) => handleReaction(message.id, emoji)}
+                            onOpenFullPicker={() => { setReactionTarget(null); setShowFullPicker(message.id); }}
+                            onClose={() => setReactionTarget(null)}
+                          />
+                        </div>
+                      )}
                     </div>
                     {/* Кнопка быстрого ответа — desktop only */}
                     <button
@@ -1850,6 +1935,8 @@ const MessageThread = ({ conversation, onClose }) => {
           onForward={() => handleForward(contextMenu.message)}
           onPin={() => handlePin(contextMenu.message.id)}
           onDelete={handleDeleteFromMenu}
+          onReaction={(emoji) => handleReaction(contextMenu.message.id, emoji)}
+          onOpenFullPicker={() => { setShowFullPicker(contextMenu.message.id); }}
           isPinned={contextMenu.message.isPinned}
           isOwnMessage={contextMenu.isOwnMessage}
           canDelete={isGroup && group?.canDeleteMessages}
@@ -1860,6 +1947,16 @@ const MessageThread = ({ conversation, onClose }) => {
           message={forwardMessage}
           onClose={() => setForwardMessage(null)}
         />
+      )}
+      {showFullPicker && (
+        <div className={styles.fullPickerOverlay} onClick={() => setShowFullPicker(false)}>
+          <div className={styles.fullPickerContainer} onClick={e => e.stopPropagation()}>
+            <ReactionPicker
+              onSelect={(emoji) => handleReaction(showFullPicker, emoji)}
+              onClose={() => setShowFullPicker(false)}
+            />
+          </div>
+        </div>
       )}
       {showReportModal && (
         <ReportModal

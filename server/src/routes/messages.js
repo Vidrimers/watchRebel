@@ -403,7 +403,11 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
           reply_sender.display_name as reply_to_sender_name,
           reply_sender.id as reply_to_sender_id,
           fwd_sender.display_name as forward_from_name,
-          fwd_sender.avatar_url as forward_from_avatar
+          fwd_sender.avatar_url as forward_from_avatar,
+          (SELECT json_group_array(
+            json_object('emoji', mr.emoji, 'userId', mr.user_id, 'createdAt', mr.created_at,
+              'displayName', ru.display_name, 'avatarUrl', ru.avatar_url)
+          ) FROM message_reactions mr LEFT JOIN users ru ON mr.user_id = ru.id WHERE mr.message_id = m.id) as reactions_json
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
         LEFT JOIN messages reply_msg ON m.reply_to = reply_msg.id
@@ -477,6 +481,12 @@ router.get('/:conversationId', authenticateToken, async (req, res) => {
         avatarUrl: m.forward_from_avatar
       } : null,
       forwardMessageId: m.forward_message_id || null,
+      reactions: m.reactions_json ? JSON.parse(m.reactions_json).map(r => ({
+        emoji: r.emoji,
+        userId: r.userId,
+        createdAt: r.createdAt ? r.createdAt + 'Z' : null,
+        user: { displayName: r.displayName, avatarUrl: r.avatarUrl }
+      })) : [],
       sender: {
         displayName: m.sender_name,
         avatarUrl: m.sender_avatar
@@ -1463,6 +1473,193 @@ router.put('/:id/pin', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Ошибка закрепления сообщения:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * POST /api/messages/:messageId/reactions
+ * Добавить/обновить реакцию на сообщение
+ * Body: { emoji: string }
+ * Одна реакция на сообщение от каждого пользователя
+ */
+router.post('/:messageId/reactions', authenticateToken, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user.id;
+
+    if (!emoji || typeof emoji !== 'string' || emoji.trim().length === 0) {
+      return res.status(400).json({ error: 'Эмодзи не указан', code: 'MISSING_EMOJI' });
+    }
+
+    // Проверяем что сообщение существует
+    const msgCheck = await executeQuery(
+      'SELECT * FROM messages WHERE id = ?',
+      [messageId]
+    );
+    if (!msgCheck.success || msgCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Сообщение не найдено', code: 'MESSAGE_NOT_FOUND' });
+    }
+
+    const message = msgCheck.data[0];
+
+    // Проверяем доступ к чату
+    const convCheck = await executeQuery(
+      'SELECT * FROM conversations WHERE id = ?',
+      [message.conversation_id]
+    );
+    if (!convCheck.success || convCheck.data.length === 0) {
+      return res.status(404).json({ error: 'Чат не найден', code: 'CONVERSATION_NOT_FOUND' });
+    }
+
+    const conv = convCheck.data[0];
+    let isParticipant = false;
+    if (conv.is_group) {
+      const memberCheck = await executeQuery(
+        'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL',
+        [message.conversation_id, userId]
+      );
+      isParticipant = memberCheck.success && memberCheck.data.length > 0;
+    } else {
+      isParticipant = conv.user1_id === userId || conv.user2_id === userId;
+    }
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Нет доступа', code: 'FORBIDDEN' });
+    }
+
+    // Проверяем существующую реакцию
+    const existingReaction = await executeQuery(
+      'SELECT * FROM message_reactions WHERE message_id = ? AND user_id = ?',
+      [messageId, userId]
+    );
+
+    let reactionId;
+    let isUpdate = false;
+
+    if (existingReaction.success && existingReaction.data.length > 0) {
+      // Обновляем существующую реакцию
+      reactionId = existingReaction.data[0].id;
+      isUpdate = true;
+      await executeQuery(
+        'UPDATE message_reactions SET emoji = ?, created_at = datetime(\'now\') WHERE id = ?',
+        [emoji.trim(), reactionId]
+      );
+    } else {
+      // Создаём новую реакцию
+      reactionId = uuidv4();
+      await executeQuery(
+        'INSERT INTO message_reactions (id, message_id, user_id, emoji) VALUES (?, ?, ?, ?)',
+        [reactionId, messageId, userId, emoji.trim()]
+      );
+    }
+
+    // Получаем данные пользователя
+    const userResult = await executeQuery(
+      'SELECT display_name, avatar_url FROM users WHERE id = ?',
+      [userId]
+    );
+    const userName = userResult.success && userResult.data.length > 0 ? userResult.data[0].display_name : 'Пользователь';
+    const userAvatar = userResult.success && userResult.data.length > 0 ? userResult.data[0].avatar_url : null;
+
+    const reactionData = {
+      id: reactionId,
+      messageId,
+      userId,
+      emoji: emoji.trim(),
+      user: { displayName: userName, avatarUrl: userAvatar }
+    };
+
+    // WebSocket уведомление
+    const wsManager = req.app.get('wsManager');
+    if (wsManager) {
+      const notifyUserIds = conv.is_group
+        ? (await executeQuery(
+            'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+            [message.conversation_id, userId]
+          )).data?.map(m => m.user_id) || []
+        : [conv.user1_id === userId ? conv.user2_id : conv.user1_id];
+
+      notifyUserIds.forEach(uid => {
+        wsManager.sendToUser(uid, {
+          type: isUpdate ? 'message_reaction_updated' : 'message_reaction',
+          conversationId: message.conversation_id,
+          reaction: reactionData
+        });
+      });
+    }
+
+    res.status(201).json(reactionData);
+
+  } catch (error) {
+    console.error('Ошибка добавления реакции:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/messages/:messageId/reactions
+ * Удалить свою реакцию с сообщения
+ */
+router.delete('/:messageId/reactions', authenticateToken, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user.id;
+
+    const existingReaction = await executeQuery(
+      'SELECT * FROM message_reactions WHERE message_id = ? AND user_id = ?',
+      [messageId, userId]
+    );
+
+    if (!existingReaction.success || existingReaction.data.length === 0) {
+      return res.status(404).json({ error: 'Реакция не найдена', code: 'REACTION_NOT_FOUND' });
+    }
+
+    await executeQuery(
+      'DELETE FROM message_reactions WHERE message_id = ? AND user_id = ?',
+      [messageId, userId]
+    );
+
+    // Получаем conversation_id для WebSocket
+    const msgCheck = await executeQuery(
+      'SELECT conversation_id FROM messages WHERE id = ?',
+      [messageId]
+    );
+
+    if (msgCheck.success && msgCheck.data.length > 0) {
+      const conversationId = msgCheck.data[0].conversation_id;
+      const convCheck = await executeQuery(
+        'SELECT * FROM conversations WHERE id = ?',
+        [conversationId]
+      );
+
+      if (convCheck.success && convCheck.data.length > 0) {
+        const conv = convCheck.data[0];
+        const wsManager = req.app.get('wsManager');
+        if (wsManager) {
+          const notifyUserIds = conv.is_group
+            ? (await executeQuery(
+                'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND left_at IS NULL',
+                [conversationId, userId]
+              )).data?.map(m => m.user_id) || []
+            : [conv.user1_id === userId ? conv.user2_id : conv.user1_id];
+
+          notifyUserIds.forEach(uid => {
+            wsManager.sendToUser(uid, {
+              type: 'message_reaction_removed',
+              conversationId,
+              messageId,
+              userId
+            });
+          });
+        }
+      }
+    }
+
+    res.json({ message: 'Реакция удалена', messageId, userId });
+
+  } catch (error) {
+    console.error('Ошибка удаления реакции:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера', code: 'INTERNAL_ERROR' });
   }
 });

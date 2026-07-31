@@ -1,8 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './MessageContextMenu.module.css';
 
-const MessageContextMenu = ({ position, onClose, onReply, onForward, onPin, onDelete, isPinned, isOwnMessage, canDelete }) => {
+const DEFAULT_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡', '🔥', '🎉'];
+
+const MessageContextMenu = ({ position, onClose, onReply, onForward, onPin, onDelete, onReaction, onOpenFullPicker, isPinned, isOwnMessage, canDelete }) => {
   const menuRef = useRef(null);
+  const [emojis, setEmojis] = useState(DEFAULT_EMOJIS);
+
+  useEffect(() => {
+    try {
+      const usage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
+      const sorted = Object.entries(usage)
+        .sort((a, b) => b[1] - a[1])
+        .map(([emoji]) => emoji)
+        .slice(0, 8);
+      if (sorted.length >= 4) setEmojis(sorted);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -20,7 +34,6 @@ const MessageContextMenu = ({ position, onClose, onReply, onForward, onPin, onDe
     };
   }, [onClose]);
 
-  // Корректируем позицию чтобы меню не выходило за экран
   useEffect(() => {
     if (menuRef.current) {
       const rect = menuRef.current.getBoundingClientRect();
@@ -36,12 +49,49 @@ const MessageContextMenu = ({ position, onClose, onReply, onForward, onPin, onDe
     }
   }, [position]);
 
+  const handleEmojiClick = (emoji) => {
+    // Сохраняем частоту использования
+    try {
+      const usage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
+      usage[emoji] = (usage[emoji] || 0) + 1;
+      localStorage.setItem('emojiUsage', JSON.stringify(usage));
+    } catch {}
+    onReaction(emoji);
+    onClose();
+  };
+
+  const handleArrowClick = () => {
+    onClose();
+    setTimeout(() => onOpenFullPicker(), 50);
+  };
+
   return (
     <div
       ref={menuRef}
       className={styles.menu}
       style={{ top: position.y, left: position.x }}
     >
+      {/* Блок быстрых реакций */}
+      <div className={styles.reactionsBlock}>
+        {emojis.map((emoji) => (
+          <button
+            key={emoji}
+            className={styles.reactionBtn}
+            onClick={() => handleEmojiClick(emoji)}
+          >
+            {emoji}
+          </button>
+        ))}
+        <button
+          className={styles.reactionArrow}
+          onClick={handleArrowClick}
+          title="Все реакции"
+        >
+          →
+        </button>
+      </div>
+      <div className={styles.divider} />
+
       <button className={styles.menuItem} onClick={onReply}>
         <span className={styles.menuIcon}>↩</span>
         <span>Ответить</span>
@@ -51,7 +101,7 @@ const MessageContextMenu = ({ position, onClose, onReply, onForward, onPin, onDe
         <span>Переслать</span>
       </button>
       <button className={styles.menuItem} onClick={onPin}>
-        <span className={styles.menuIcon}>{isPinned ? '📌' : '📌'}</span>
+        <span className={styles.menuIcon}>📌</span>
         <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
       </button>
       {(isOwnMessage || canDelete) && (

@@ -121,6 +121,18 @@ export async function runMigrations() {
         UNIQUE(post_id, user_id)
       );
 
+      -- Таблица реакций на сообщения
+      CREATE TABLE IF NOT EXISTS message_reactions (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(message_id, user_id)
+      );
+
       -- Таблица прогресса просмотра серий
       CREATE TABLE IF NOT EXISTS episode_progress (
         id TEXT PRIMARY KEY,
@@ -307,6 +319,7 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
       CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+      CREATE INDEX IF NOT EXISTS idx_message_reactions_message ON message_reactions(message_id);
 
       -- Добавляем колонки для геометки и предложений медиа
       -- (проверяются отдельно ниже, чтобы не падать при дубликате)

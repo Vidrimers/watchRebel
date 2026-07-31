@@ -1652,3 +1652,145 @@
   0% { background: rgba(99, 102, 241, 0.2); }
   100% { background: transparent; }
 }
+
+/* === REACTIONS === */
+.reactionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.reactionBadge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-hover, #f0f0f0);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  font-size: 0.8rem;
+}
+
+.reactionBadge:hover {
+  background: var(--bg-secondary, #e0e0e0);
+  transform: scale(1.05);
+}
+
+.userReaction {
+  border-color: var(--accent-primary, #6366f1);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.ownMessage .userReaction {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.reactionEmoji {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.reactionCount {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+}
+
+.ownMessage .reactionCount {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Reaction button on hover */
+.reactionButtonWrap {
+  position: absolute;
+  bottom: 10px;
+  left: -14px;
+  z-index: 5;
+}
+
+.ownMessage .reactionButtonWrap {
+  left: auto;
+  right: -14px;
+}
+
+.reactionButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.message:hover .reactionButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.reactionButton:hover {
+  background: var(--bg-hover, #f0f0f0);
+  transform: scale(1.1);
+}
+
+.reactionPickerPopup {
+  position: absolute;
+  bottom: 34px;
+  left: 0;
+  z-index: 10;
+}
+
+.ownMessage .reactionPickerPopup {
+  left: auto;
+  right: 0;
+}
+
+/* Bounce animation for new reaction */
+@keyframes reactionBounce {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.reactionBadge {
+  animation: reactionBounce 0.3s ease;
+}
+
+/* Full picker overlay */
+.fullPickerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.fullPickerContainer {
+  animation: popIn 0.2s ease;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .reactionButtonWrap {
+    display: none;
+  }
+}

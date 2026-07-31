@@ -165,6 +165,32 @@ export const fetchPinnedMessage = createAsyncThunk(
   }
 );
 
+// Добавить/обновить реакцию на сообщение
+export const addMessageReaction = createAsyncThunk(
+  'messages/addMessageReaction',
+  async ({ messageId, emoji }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/messages/${messageId}/reactions`, { emoji });
+      return { messageId, reaction: response.data };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
+// Удалить реакцию с сообщения
+export const removeMessageReaction = createAsyncThunk(
+  'messages/removeMessageReaction',
+  async ({ messageId }, { rejectWithValue }) => {
+    try {
+      await api.delete(`/messages/${messageId}/reactions`);
+      return { messageId };
+    } catch (error) {
+      return handleError(error, rejectWithValue);
+    }
+  }
+);
+
 const messagesSlice = createSlice({
   name: 'messages',
   initialState: {
@@ -216,6 +242,25 @@ const messagesSlice = createSlice({
       const msg = state.messages.find(m => m.id === messageId);
       if (msg) {
         msg.replyTo = replyTo;
+      }
+    },
+    updateMessageReaction: (state, action) => {
+      const { messageId, reaction } = action.payload;
+      const msg = state.messages.find(m => m.id === messageId);
+      if (!msg) return;
+      if (!msg.reactions) msg.reactions = [];
+      const existingIdx = msg.reactions.findIndex(r => r.userId === reaction.userId);
+      if (existingIdx >= 0) {
+        msg.reactions[existingIdx] = reaction;
+      } else {
+        msg.reactions.push(reaction);
+      }
+    },
+    removeMessageReactionFromState: (state, action) => {
+      const { messageId, userId } = action.payload;
+      const msg = state.messages.find(m => m.id === messageId);
+      if (msg && msg.reactions) {
+        msg.reactions = msg.reactions.filter(r => r.userId !== userId);
       }
     }
   },
@@ -333,9 +378,40 @@ const messagesSlice = createSlice({
       // Fetch Pinned Message
       .addCase(fetchPinnedMessage.fulfilled, (state, action) => {
         state.pinnedMessage = action.payload;
+      })
+      // Add Message Reaction
+      .addCase(addMessageReaction.fulfilled, (state, action) => {
+        const { messageId, reaction } = action.payload;
+        const msg = state.messages.find(m => m.id === messageId);
+        if (!msg) return;
+        if (!msg.reactions) msg.reactions = [];
+        const existingIdx = msg.reactions.findIndex(r => r.userId === reaction.userId);
+        if (existingIdx >= 0) {
+          msg.reactions[existingIdx] = reaction;
+        } else {
+          msg.reactions.push(reaction);
+        }
+      })
+      .addCase(addMessageReaction.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      // Remove Message Reaction
+      .addCase(removeMessageReaction.fulfilled, (state, action) => {
+        const { messageId } = action.payload;
+        const msg = state.messages.find(m => m.id === messageId);
+        if (msg && msg.reactions) {
+          // Удаляем реакцию текущего пользователя
+          const userId = action.meta.arg.userId || null;
+          if (userId) {
+            msg.reactions = msg.reactions.filter(r => r.userId !== userId);
+          }
+        }
+      })
+      .addCase(removeMessageReaction.rejected, (state, action) => {
+        state.error = action.payload;
       });
   }
 });
 
-export const { clearError, setCurrentConversation, clearMessages, addNewMessage, removeMessage, setPinnedMessage, clearPinnedMessage } = messagesSlice.actions;
+export const { clearError, setCurrentConversation, clearMessages, addNewMessage, removeMessage, setPinnedMessage, clearPinnedMessage, patchMessageReplyTo, updateMessageReaction, removeMessageReactionFromState } = messagesSlice.actions;
 export default messagesSlice.reducer;
