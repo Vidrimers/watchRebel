@@ -1745,18 +1745,6 @@
   transform: scale(1.1);
 }
 
-.reactionPickerPopup {
-  position: absolute;
-  bottom: 34px;
-  right: 0;
-  z-index: 10;
-}
-
-.ownMessage .reactionPickerPopup {
-  right: auto;
-  left: 0;
-}
-
 /* Bounce animation for new reaction */
 @keyframes reactionBounce {
   0% { transform: scale(0.5); opacity: 0; }

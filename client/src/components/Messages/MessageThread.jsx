@@ -133,7 +133,6 @@ const MessageThread = ({ conversation, onClose }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [forwardMessage, setForwardMessage] = useState(null);
-  const [reactionTarget, setReactionTarget] = useState(null);
   const [showFullPicker, setShowFullPicker] = useState(false);
   const textareaRef = useRef(null);
 
@@ -889,7 +888,6 @@ const MessageThread = ({ conversation, onClose }) => {
 
   // Реакция на сообщение
   const handleReaction = (messageId, emoji) => {
-    // Сохраняем частоту использования
     try {
       const usage = JSON.parse(localStorage.getItem('emojiUsage') || '{}');
       usage[emoji] = (usage[emoji] || 0) + 1;
@@ -897,7 +895,6 @@ const MessageThread = ({ conversation, onClose }) => {
     } catch {}
 
     dispatch(addMessageReaction({ messageId, emoji }));
-    setReactionTarget(null);
     setShowFullPicker(false);
   };
 
@@ -1621,13 +1618,13 @@ const MessageThread = ({ conversation, onClose }) => {
                         );
                       })()}
                     </div>
-                    {/* Кнопка реакции при hover — desktop only */}
+                    {/* Кнопка реакции при hover — desktop only, открывает полный picker */}
                     <div className={styles.reactionButtonWrap}>
                       <button
                         className={styles.reactionButton}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setReactionTarget(reactionTarget === message.id ? null : message.id);
+                          setShowFullPicker(showFullPicker === message.id ? false : message.id);
                         }}
                         title="Реакция"
                       >
@@ -1638,15 +1635,6 @@ const MessageThread = ({ conversation, onClose }) => {
                           <path d="M8 14.5C8.5 15.5 10 17 12 17C14 17 15.5 15.5 16 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                         </svg>
                       </button>
-                      {reactionTarget === message.id && (
-                        <div className={styles.reactionPickerPopup}>
-                          <QuickReactionsBar
-                            onSelect={(emoji) => handleReaction(message.id, emoji)}
-                            onOpenFullPicker={() => { setReactionTarget(null); setShowFullPicker(message.id); }}
-                            onClose={() => setReactionTarget(null)}
-                          />
-                        </div>
-                      )}
                     </div>
                     {/* Кнопка быстрого ответа — desktop only */}
                     <button
