@@ -275,25 +275,15 @@
 
 .message {
   display: flex;
-  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
   max-width: 70%;
   position: relative;
 }
 
-.messageRow {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-
-.ownMessage .messageRow {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
-}
-
 .ownMessage {
   align-self: flex-end;
-  align-items: flex-end;
+  flex-direction: row-reverse;
 }
 
 .otherMessage {
@@ -429,8 +419,11 @@
   opacity: 1 !important;
 }
 
-/* Quick reply button — appears on hover below message bubble */
+/* Quick reply button — absolute, appears on hover below message */
 .quickReplyButton {
+  position: absolute;
+  bottom: -24px;
+  left: 0;
   height: 22px;
   padding: 0 8px;
   border-radius: 11px;
@@ -439,22 +432,24 @@
   color: var(--text-secondary, #666);
   font-size: 0.7rem;
   cursor: pointer;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  z-index: 2;
   white-space: nowrap;
-  align-self: flex-start;
-  margin-top: 2px;
-}
-
-.message:hover .quickReplyButton {
-  display: flex;
+  pointer-events: none;
 }
 
 .otherMessage .quickReplyButton {
-  margin-left: 40px; /* avatar 32px + gap 8px */
+  left: 40px;
+}
+
+.message:hover .quickReplyButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .quickReplyButton:hover {
