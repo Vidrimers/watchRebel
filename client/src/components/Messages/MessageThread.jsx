@@ -1942,13 +1942,11 @@ const MessageThread = ({ conversation, onClose }) => {
         />
       )}
       {showFullPicker && (
-        <div className={styles.fullPickerOverlay} onClick={() => setShowFullPicker(false)}>
-          <div className={styles.fullPickerContainer} onClick={e => e.stopPropagation()}>
-            <ReactionPicker
-              onSelect={(emoji) => handleReaction(showFullPicker, emoji)}
-              onClose={() => setShowFullPicker(false)}
-            />
-          </div>
+        <div className={styles.fullPickerContainer} onClick={e => e.stopPropagation()}>
+          <ReactionPicker
+            onSelect={(emoji) => handleReaction(showFullPicker, emoji)}
+            onClose={() => setShowFullPicker(false)}
+          />
         </div>
       )}
       {showReportModal && (
