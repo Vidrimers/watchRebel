@@ -422,9 +422,9 @@
 /* Quick reply button — absolute, appears on hover below message */
 .quickReplyButton {
   position: absolute;
-  bottom: -24px;
+  bottom: -17px;
   left: 0;
-  height: 22px;
+  height: 15px;
   padding: 0 8px;
   border-radius: 11px;
   background: var(--bg-primary, #fff);
