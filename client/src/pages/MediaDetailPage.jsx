@@ -194,6 +194,11 @@ const MediaDetailPage = () => {
       title: item.title || item.name
     });
     setShowListSelector(true);
+    // Прокручиваем к селектору списков
+    setTimeout(() => {
+      const selector = document.querySelector(`.${styles.selector}`);
+      if (selector) selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   };
 
   const handleRecAddToWatchlist = async (e, item) => {
@@ -209,6 +214,17 @@ const MediaDetailPage = () => {
       showToast('Не удалось добавить', 'error');
     }
   };
+
+  // Проверка: рекомендация уже в списке или watchlist
+  const getRecItemStatus = useCallback((item) => {
+    const tmdbId = item.id;
+    const type = item.media_type || mediaType;
+    const inWatchlist = watchlist.some(w => w.tmdbId === tmdbId && w.mediaType === type);
+    const inList = customLists.find(l =>
+      l.items && l.items.some(i => i.tmdbId === tmdbId && i.mediaType === type)
+    );
+    return { inWatchlist, inList };
+  }, [watchlist, customLists, mediaType]);
 
   const scrollRecommendations = (direction) => {
     if (recScrollRef.current) {
@@ -447,8 +463,9 @@ const MediaDetailPage = () => {
     : null;
 
   // Фильтруем списки по типу медиа
+  const relevantMediaType = recSelectedItem?.mediaType || selectedMedia?.media_type || mediaType;
   const relevantLists = customLists.filter(
-    list => list.mediaType === (selectedMedia.media_type || mediaType)
+    list => list.mediaType === relevantMediaType
   );
 
   const currentProgress = episodeProgress[mediaId] || [];
@@ -1093,7 +1110,9 @@ const MediaDetailPage = () => {
                 </button>
               )}
               <div className={styles.recommendationsScroll} ref={recScrollRef}>
-                {recommendations.slice(0, 20).map((item) => (
+                {recommendations.slice(0, 20).map((item) => {
+                  const recStatus = getRecItemStatus(item);
+                  return (
                   <div
                     key={item.id}
                     className={styles.recommendationCard}
@@ -1102,11 +1121,19 @@ const MediaDetailPage = () => {
                       className={styles.recommendationCardClickable}
                       onClick={() => navigate(`/media/${item.media_type || (selectedMedia.media_type || mediaType)}/${item.id}`)}
                     >
-                      <img
-                        src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/default-poster.png'}
-                        alt={item.title || item.name}
-                        className={styles.recommendationPoster}
-                      />
+                      <div className={styles.recommendationPosterWrap}>
+                        <img
+                          src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/default-poster.png'}
+                          alt={item.title || item.name}
+                          className={styles.recommendationPoster}
+                        />
+                        {recStatus.inWatchlist && (
+                          <span className={styles.recBadge}>Хочу посмотреть</span>
+                        )}
+                        {recStatus.inList && (
+                          <span className={styles.recBadge}>{recStatus.inList.name}</span>
+                        )}
+                      </div>
                       <div className={styles.recommendationInfo}>
                         <span className={styles.recommendationTitle}>{item.title || item.name}</span>
                         <div className={styles.recommendationMeta}>
@@ -1129,7 +1156,8 @@ const MediaDetailPage = () => {
                       ⋮
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               {recScrollState.canRight && (
                 <button

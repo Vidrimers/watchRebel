@@ -23,22 +23,21 @@ const ConfirmDialog = ({
   confirmButtonStyle = 'primary',
   confirmDisabled = false,
   onConfirm,
-  onCancel
+  onCancel,
+  onClose
 }) => {
   if (!isOpen) return null;
 
+  const handleCancel = onCancel || onClose;
+
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
-      onCancel();
+      handleCancel();
     }
   };
 
   const handleConfirm = () => {
     onConfirm();
-  };
-
-  const handleCancel = () => {
-    onCancel();
   };
 
   return (
