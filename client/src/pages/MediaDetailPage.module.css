@@ -144,6 +144,80 @@
   color: var(--primary-color, #6366f1);
 }
 
+/* Mini-хедер при скролле */
+.topBarScrolled::before {
+  opacity: 0.95;
+}
+
+.topBarScrolled {
+  gap: 10px;
+}
+
+.miniPoster {
+  width: 32px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.miniInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.miniTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.miniYear {
+  font-size: 12px;
+  color: var(--text-muted, #999);
+}
+
+.miniActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.miniActionBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: none;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.miniActionBtn:hover {
+  background: var(--bg-hover, #f8f9fa);
+  border-color: var(--primary-color, #6366f1);
+}
+
+.miniActionBtnActive {
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
+  color: #fff;
+}
+
+.miniActionBtnActive:hover {
+  background: var(--accent-primary-active, #4f46e5);
+  border-color: var(--accent-primary-active, #4f46e5);
+}
+
 /* Search preview dropdown */
 .topSearchPreview {
   position: absolute;

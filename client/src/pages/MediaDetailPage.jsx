@@ -56,6 +56,7 @@ const MediaDetailPage = () => {
   const [topSearchQuery, setTopSearchQuery] = useState('');
   const [showSearchPreview, setShowSearchPreview] = useState(false);
   const [topSearchLoading, setTopSearchLoading] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
 
@@ -121,6 +122,13 @@ const MediaDetailPage = () => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Scroll detection для mini-хедера
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 200);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleTopSearchResultClick = useCallback((result) => {
@@ -350,102 +358,147 @@ const MediaDetailPage = () => {
     <>
       {toastContainer}
       <div className={styles.mediaDetailPage}>
-      {/* Верхняя навигационная полоска */}
-      <div className={styles.topBar}>
-        <button className={styles.topBarBack} onClick={() => {
-          if (window.history.length > 1) navigate(-1);
-          else navigate('/');
-        }}>
-          ← Назад
-        </button>
-        <div className={styles.topBarSearch} ref={topSearchRef}>
-          <input
-            type="text"
-            placeholder="Поиск"
-            className={styles.topBarSearchInput}
-            value={topSearchQuery}
-            onChange={(e) => setTopSearchQuery(e.target.value)}
-            onFocus={() => topSearchQuery.trim() && setShowSearchPreview(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && topSearchQuery.trim()) {
-                setShowSearchPreview(false);
-                navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
-              }
-            }}
-          />
-          <button
-            className={styles.topBarSearchBtn}
-            onClick={() => {
-              setShowSearchPreview(false);
-              if (topSearchQuery.trim()) {
-                navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
-              } else {
-                navigate('/search');
-              }
-            }}
-          >
-            <Icon name="search" size="small" />
-          </button>
+      {/* Верхняя навигационная полоска / Mini-хедер */}
+      <div className={`${styles.topBar} ${isScrolled ? styles.topBarScrolled : ''}`}>
+        {isScrolled ? (
+          <>
+            <button className={styles.topBarBack} onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate('/');
+            }}>
+              ←
+            </button>
+            <img
+              src={posterUrl}
+              alt={selectedMedia.title || selectedMedia.name}
+              className={styles.miniPoster}
+            />
+            <div className={styles.miniInfo}>
+              <span className={styles.miniTitle}>{selectedMedia.title || selectedMedia.name}</span>
+              {releaseYear && <span className={styles.miniYear}>{releaseYear}</span>}
+            </div>
+            <div className={styles.miniActions}>
+              <button
+                className={`${styles.miniActionBtn} ${isInWatchlist ? styles.miniActionBtnActive : ''}`}
+                onClick={handleToggleWatchlist}
+              >
+                {isInWatchlist ? '✓ Смотреть' : '+ Смотреть'}
+              </button>
+              <button
+                className={styles.miniActionBtn}
+                onClick={() => setShowListSelector(!showListSelector)}
+              >
+                {currentList ? '✓ В списке' : '+ В список'}
+              </button>
+              <button
+                className={styles.miniActionBtn}
+                onClick={() => setShowShareModal(true)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <button className={styles.topBarBack} onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate('/');
+            }}>
+              ← Назад
+            </button>
+            <div className={styles.topBarSearch} ref={topSearchRef}>
+              <input
+                type="text"
+                placeholder="Поиск"
+                className={styles.topBarSearchInput}
+                value={topSearchQuery}
+                onChange={(e) => setTopSearchQuery(e.target.value)}
+                onFocus={() => topSearchQuery.trim() && setShowSearchPreview(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && topSearchQuery.trim()) {
+                    setShowSearchPreview(false);
+                    navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
+                  }
+                }}
+              />
+              <button
+                className={styles.topBarSearchBtn}
+                onClick={() => {
+                  setShowSearchPreview(false);
+                  if (topSearchQuery.trim()) {
+                    navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
+                  } else {
+                    navigate('/search');
+                  }
+                }}
+              >
+                <Icon name="search" size="small" />
+              </button>
 
-          {/* Preview результатов */}
-          {showSearchPreview && topSearchQuery.trim() && (
-            <div className={styles.topSearchPreview}>
-              {topSearchLoading ? (
-                <div className={styles.topSearchPreviewLoading}>Поиск...</div>
-              ) : Array.isArray(searchResults) && searchResults.length > 0 ? (
-                <>
-                  <ul className={styles.topSearchPreviewList}>
-                    {searchResults.slice(0, 5).map((result, index) => (
-                      <li
-                        key={`${result.type}-${result.data.id || result.data.tmdbId}-${index}`}
-                        className={styles.topSearchPreviewItem}
-                        onClick={() => handleTopSearchResultClick(result)}
-                      >
-                        {result.type === 'user' ? (
-                          <div className={styles.topSearchUserResult}>
-                            <UserAvatar user={result.data} size="small" />
-                            <span className={styles.topSearchUserName}>{result.data.displayName}</span>
-                            <span className={styles.topSearchUserType}>Пользователь</span>
-                          </div>
-                        ) : (
-                          <div className={styles.topSearchMediaResult}>
-                            <img
-                              src={result.data.posterPath ? `https://image.tmdb.org/t/p/w92${result.data.posterPath}` : '/default-poster.png'}
-                              alt={result.data.title}
-                              className={styles.topSearchMediaPoster}
-                            />
-                            <div className={styles.topSearchMediaInfo}>
-                              <span className={styles.topSearchMediaTitle}>{result.data.title}</span>
-                              <span className={styles.topSearchMediaType}>
-                                {result.data.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  {searchResults.length > 5 && (
-                    <div
-                      className={styles.topSearchPreviewFooter}
-                      onClick={() => {
-                        setShowSearchPreview(false);
-                        navigate(`/search?q=${encodeURIComponent(topSearchQuery)}`);
-                      }}
-                    >
-                      Показать все результаты ({searchResults.length})
-                    </div>
+              {/* Preview результатов */}
+              {showSearchPreview && topSearchQuery.trim() && (
+                <div className={styles.topSearchPreview}>
+                  {topSearchLoading ? (
+                    <div className={styles.topSearchPreviewLoading}>Поиск...</div>
+                  ) : Array.isArray(searchResults) && searchResults.length > 0 ? (
+                    <>
+                      <ul className={styles.topSearchPreviewList}>
+                        {searchResults.slice(0, 5).map((result, index) => (
+                          <li
+                            key={`${result.type}-${result.data.id || result.data.tmdbId}-${index}`}
+                            className={styles.topSearchPreviewItem}
+                            onClick={() => handleTopSearchResultClick(result)}
+                          >
+                            {result.type === 'user' ? (
+                              <div className={styles.topSearchUserResult}>
+                                <UserAvatar user={result.data} size="small" />
+                                <span className={styles.topSearchUserName}>{result.data.displayName}</span>
+                                <span className={styles.topSearchUserType}>Пользователь</span>
+                              </div>
+                            ) : (
+                              <div className={styles.topSearchMediaResult}>
+                                <img
+                                  src={result.data.posterPath ? `https://image.tmdb.org/t/p/w92${result.data.posterPath}` : '/default-poster.png'}
+                                  alt={result.data.title}
+                                  className={styles.topSearchMediaPoster}
+                                />
+                                <div className={styles.topSearchMediaInfo}>
+                                  <span className={styles.topSearchMediaTitle}>{result.data.title}</span>
+                                  <span className={styles.topSearchMediaType}>
+                                    {result.data.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      {searchResults.length > 5 && (
+                        <div
+                          className={styles.topSearchPreviewFooter}
+                          onClick={() => {
+                            setShowSearchPreview(false);
+                            navigate(`/search?q=${encodeURIComponent(topSearchQuery)}`);
+                          }}
+                        >
+                          Показать все результаты ({searchResults.length})
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className={styles.topSearchPreviewEmpty}>Ничего не найдено</div>
                   )}
-                </>
-              ) : (
-                <div className={styles.topSearchPreviewEmpty}>Ничего не найдено</div>
+                </div>
               )}
             </div>
-          )}
-        </div>
-        <button className={styles.topBarProfile} onClick={() => navigate('/profile')}>
-          <Icon name="user" size="medium" />
-        </button>
+            <button className={styles.topBarProfile} onClick={() => navigate('/profile')}>
+              <Icon name="user" size="medium" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Фоновое изображение */}
