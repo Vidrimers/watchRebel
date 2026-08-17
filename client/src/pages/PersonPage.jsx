@@ -163,7 +163,7 @@ const PersonPage = () => {
   );
 
   return (
-    <div className={styles.personPage}>
+    <>
       {/* Верхняя навигационная полоска */}
       <div className={styles.topBar}>
         <button className={styles.topBarBack} onClick={() => {
@@ -254,6 +254,7 @@ const PersonPage = () => {
         </button>
       </div>
 
+      <div className={styles.personPage}>
       <div className={styles.personHeader}>
         <div className={styles.photoSection}>
           {person.profile_path ? (
@@ -375,7 +376,8 @@ const PersonPage = () => {
           Свернуть
         </button>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
