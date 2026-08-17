@@ -60,6 +60,7 @@ const MediaDetailPage = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [activeRecMenu, setActiveRecMenu] = useState(null);
   const [recSelectedItem, setRecSelectedItem] = useState(null);
+  const [recScrollState, setRecScrollState] = useState({ canLeft: false, canRight: true });
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
   const recScrollRef = useRef(null);
@@ -206,6 +207,28 @@ const MediaDetailPage = () => {
       });
     }
   };
+
+  const checkRecScroll = useCallback(() => {
+    const el = recScrollRef.current;
+    if (!el) return;
+    setRecScrollState({
+      canLeft: el.scrollLeft > 10,
+      canRight: el.scrollLeft + el.clientWidth < el.scrollWidth - 10
+    });
+  }, []);
+
+  // Слушаем скролл рекомендаций
+  useEffect(() => {
+    const el = recScrollRef.current;
+    if (!el || recommendations.length === 0) return;
+    checkRecScroll();
+    el.addEventListener('scroll', checkRecScroll, { passive: true });
+    window.addEventListener('resize', checkRecScroll);
+    return () => {
+      el.removeEventListener('scroll', checkRecScroll);
+      window.removeEventListener('resize', checkRecScroll);
+    };
+  }, [recommendations, checkRecScroll]);
 
   const handleTopSearchResultClick = useCallback((result) => {
     setShowSearchPreview(false);
@@ -1049,12 +1072,14 @@ const MediaDetailPage = () => {
           <div className={styles.recommendationsSection}>
             <h2 className={styles.sectionTitle}>Рекомендации</h2>
             <div className={styles.recommendationsWrapper}>
-              <button
-                className={`${styles.recArrow} ${styles.recArrowLeft}`}
-                onClick={() => scrollRecommendations('left')}
-              >
-                ‹
-              </button>
+              {recScrollState.canLeft && (
+                <button
+                  className={`${styles.recArrow} ${styles.recArrowLeft}`}
+                  onClick={() => scrollRecommendations('left')}
+                >
+                  ‹
+                </button>
+              )}
               <div className={styles.recommendationsScroll} ref={recScrollRef}>
                 {recommendations.slice(0, 20).map((item) => (
                   <div
@@ -1112,12 +1137,14 @@ const MediaDetailPage = () => {
                   </div>
                 ))}
               </div>
-              <button
-                className={`${styles.recArrow} ${styles.recArrowRight}`}
-                onClick={() => scrollRecommendations('right')}
-              >
-                ›
-              </button>
+              {recScrollState.canRight && (
+                <button
+                  className={`${styles.recArrow} ${styles.recArrowRight}`}
+                  onClick={() => scrollRecommendations('right')}
+                >
+                  ›
+                </button>
+              )}
             </div>
           </div>
         )}
