@@ -1145,6 +1145,14 @@
   background: var(--bg-hover, #f8f9fa);
 }
 
+.recMenuStatus {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-success, #28a745);
+  border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+
 /* Актёры */
 .castSection {
   margin-bottom: 40px;

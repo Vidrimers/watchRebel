@@ -1174,32 +1174,48 @@ const MediaDetailPage = () => {
         )}
 
         {/* Portal для меню рекомендаций */}
-        {activeRecMenu && recMenuPos && createPortal(
-          <div
-            className={styles.recActionMenu}
-            style={{ position: 'fixed', top: recMenuPos.top, left: recMenuPos.left, zIndex: 9999 }}
-          >
-            <button
-              className={styles.recMenuItem}
-              onClick={(e) => {
-                const item = recommendations.find(r => r.id === activeRecMenu);
-                if (item) handleRecAddToList(e, item);
-              }}
+        {activeRecMenu && recMenuPos && (() => {
+          const recItem = recommendations.find(r => r.id === activeRecMenu);
+          const recStatus = recItem ? getRecItemStatus(recItem) : { inWatchlist: false, inList: null };
+          return createPortal(
+            <div
+              className={styles.recActionMenu}
+              style={{ position: 'fixed', top: recMenuPos.top, left: recMenuPos.left, zIndex: 9999 }}
             >
-              📋 Добавить в список
-            </button>
-            <button
-              className={styles.recMenuItem}
-              onClick={(e) => {
-                const item = recommendations.find(r => r.id === activeRecMenu);
-                if (item) handleRecAddToWatchlist(e, item);
-              }}
-            >
-              + Хочу посмотреть
-            </button>
-          </div>,
-          document.body
-        )}
+              {recStatus.inList && (
+                <div className={styles.recMenuStatus}>
+                  ✓ {recStatus.inList.name}
+                </div>
+              )}
+              {recStatus.inWatchlist && (
+                <div className={styles.recMenuStatus}>
+                  ✓ Хочу посмотреть
+                </div>
+              )}
+              {!recStatus.inList && (
+                <button
+                  className={styles.recMenuItem}
+                  onClick={(e) => {
+                    if (recItem) handleRecAddToList(e, recItem);
+                  }}
+                >
+                  📋 Добавить в список
+                </button>
+              )}
+              {!recStatus.inWatchlist && (
+                <button
+                  className={styles.recMenuItem}
+                  onClick={(e) => {
+                    if (recItem) handleRecAddToWatchlist(e, recItem);
+                  }}
+                >
+                  + Хочу посмотреть
+                </button>
+              )}
+            </div>,
+            document.body
+          );
+        })()}
 
       </div>
     </div>
