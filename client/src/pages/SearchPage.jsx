@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { searchMedia } from '../store/slices/mediaSlice';
-import { fetchLists } from '../store/slices/listsSlice';
+import { fetchLists, fetchWatchlist } from '../store/slices/listsSlice';
 import { clearSearch } from '../store/slices/mediaSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import UserAvatar from '../components/User/UserAvatar';
@@ -48,6 +48,7 @@ const SearchPage = () => {
   // Загрузка списков при монтировании
   useEffect(() => {
     dispatch(fetchLists());
+    dispatch(fetchWatchlist());
   }, [dispatch]);
 
   // Загрузка списка друзей при монтировании
