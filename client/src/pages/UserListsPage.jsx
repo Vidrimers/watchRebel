@@ -29,6 +29,10 @@ const UserListsPage = () => {
   const [showListSelector, setShowListSelector] = useState(false);
   const [selectedListId, setSelectedListId] = useState('');
   const [menuSelectedItem, setMenuSelectedItem] = useState(null);
+  const [personalNote, setPersonalNote] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newListName, setNewListName] = useState('');
+  const [creating, setCreating] = useState(false);
 
   // Загрузка данных пользователя и его списков
   useEffect(() => {
@@ -103,6 +107,9 @@ const UserListsPage = () => {
     e.stopPropagation();
     setActiveMenu(null);
     setSelectedListId('');
+    setPersonalNote('');
+    setShowCreateForm(false);
+    setNewListName('');
     setMenuSelectedItem(item);
     setShowListSelector(true);
   };
@@ -112,7 +119,7 @@ const UserListsPage = () => {
     try {
       await dispatch(addToList({
         listId: selectedListId,
-        media: { tmdbId: menuSelectedItem.tmdbId, mediaType: menuSelectedItem.mediaType }
+        media: { tmdbId: menuSelectedItem.tmdbId, mediaType: menuSelectedItem.mediaType, personalNote: personalNote.trim() || null }
       })).unwrap();
       showToast('Добавлено в список', 'success');
     } catch {
@@ -120,6 +127,29 @@ const UserListsPage = () => {
     }
     setShowListSelector(false);
     setMenuSelectedItem(null);
+  };
+
+  const handleCreateList = async (e) => {
+    e.preventDefault();
+    if (!newListName.trim() || !menuSelectedItem) return;
+    try {
+      setCreating(true);
+      const api = (await import('../services/api')).default;
+      const response = await api.post('/lists', { name: newListName.trim(), mediaType: menuSelectedItem.mediaType });
+      const newList = response.data;
+      await dispatch(addToList({
+        listId: newList.id,
+        media: { tmdbId: menuSelectedItem.tmdbId, mediaType: menuSelectedItem.mediaType, personalNote: personalNote.trim() || null }
+      })).unwrap();
+      await dispatch(fetchLists());
+      showToast('Список создан и контент добавлен', 'success');
+    } catch {
+      showToast('Не удалось создать список', 'error');
+    } finally {
+      setCreating(false);
+      setShowListSelector(false);
+      setMenuSelectedItem(null);
+    }
   };
 
   const handleAddToWatchlist = async (e, item) => {
@@ -361,16 +391,56 @@ const UserListsPage = () => {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>Добавить в список</h3>
             <p className={styles.modalItem}>{menuSelectedItem.title}</p>
-            <select value={selectedListId} onChange={(e) => setSelectedListId(e.target.value)} className={styles.modalSelect}>
-              <option value="">Выберите список</option>
-              {customLists.filter(l => l.mediaType === menuSelectedItem.mediaType).map(list => (
-                <option key={list.id} value={list.id}>{list.name}</option>
-              ))}
-            </select>
-            <div className={styles.modalActions}>
-              <button className={styles.modalCancel} onClick={() => { setShowListSelector(false); setMenuSelectedItem(null); }}>Отмена</button>
-              <button className={styles.modalConfirm} onClick={handleConfirmAddToList} disabled={!selectedListId}>Добавить</button>
-            </div>
+            {!showCreateForm ? (
+              <>
+                <select value={selectedListId} onChange={(e) => setSelectedListId(e.target.value)} className={styles.modalSelect}>
+                  <option value="">Выберите список</option>
+                  {customLists.filter(l => l.mediaType === menuSelectedItem.mediaType).map(list => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
+                <div className={styles.noteInputWrapper}>
+                  <textarea
+                    className={styles.noteInput}
+                    placeholder="Заметка (необязательно)..."
+                    value={personalNote}
+                    onChange={(e) => setPersonalNote(e.target.value)}
+                    rows={2}
+                    maxLength={500}
+                  />
+                  <span className={styles.noteCount}>{personalNote.length}/500</span>
+                </div>
+                <div className={styles.modalActions}>
+                  <button className={styles.createListBtn} onClick={() => setShowCreateForm(true)}>
+                    + Создать список
+                  </button>
+                  <div>
+                    <button className={styles.modalCancel} onClick={() => { setShowListSelector(false); setMenuSelectedItem(null); }}>Отмена</button>
+                    <button className={styles.modalConfirm} onClick={handleConfirmAddToList} disabled={!selectedListId}>Добавить</button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <form onSubmit={handleCreateList} className={styles.createForm}>
+                <input
+                  type="text"
+                  className={styles.createInput}
+                  placeholder="Название списка"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  autoFocus
+                  disabled={creating}
+                />
+                <div className={styles.createActions}>
+                  <button type="submit" className={styles.modalConfirm} disabled={creating || !newListName.trim()}>
+                    {creating ? 'Создание...' : 'Создать и добавить'}
+                  </button>
+                  <button type="button" className={styles.modalCancel} onClick={() => { setShowCreateForm(false); setNewListName(''); }} disabled={creating}>
+                    Назад
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>,
         document.body
