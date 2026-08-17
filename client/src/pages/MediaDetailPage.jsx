@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
@@ -9,7 +8,6 @@ import {
   addToList, 
   addToWatchlist,
   removeFromWatchlist,
-  removeFromList,
   fetchWatchlist,
   fetchEpisodeProgress,
   markEpisodeWatched,
@@ -22,6 +20,7 @@ import Icon from '../components/Common/Icon';
 import UserAvatar from '../components/User/UserAvatar';
 import ShareModal from '../components/Common/ShareModal';
 import NoteModal from '../components/Lists/NoteModal';
+import MediaActionMenu from '../components/Common/MediaActionMenu';
 import useConfirm from '../hooks/useConfirm.jsx';
 import useToast from '../hooks/useToast';
 import api from '../services/api';
@@ -61,10 +60,7 @@ const MediaDetailPage = () => {
   const [topSearchLoading, setTopSearchLoading] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
-  const [activeRecMenu, setActiveRecMenu] = useState(null);
-  const [recSelectedItem, setRecSelectedItem] = useState(null);
   const [recScrollState, setRecScrollState] = useState({ canLeft: false, canRight: true });
-  const [recMenuPos, setRecMenuPos] = useState(null);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
   const recScrollRef = useRef(null);
@@ -162,96 +158,6 @@ const MediaDetailPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  // Закрытие рекомендательного меню при клике вне
-  useEffect(() => {
-    if (activeRecMenu) {
-      const close = () => setActiveRecMenu(null);
-      document.addEventListener('click', close);
-      return () => document.removeEventListener('click', close);
-    }
-  }, [activeRecMenu]);
-
-  const toggleRecMenu = (e, tmdbId) => {
-    e.stopPropagation();
-    if (activeRecMenu === tmdbId) {
-      setActiveRecMenu(null);
-      setRecMenuPos(null);
-    } else {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setRecMenuPos({
-        top: rect.bottom + 4,
-        left: rect.right - 180
-      });
-      setActiveRecMenu(tmdbId);
-    }
-  };
-
-  const handleRecAddToList = (e, item) => {
-    e.stopPropagation();
-    setActiveRecMenu(null);
-    setSelectedListId('');
-    setPersonalNote('');
-    setRecSelectedItem({
-      tmdbId: item.id,
-      mediaType: item.media_type || mediaType,
-      title: item.title || item.name
-    });
-    setShowListSelector(true);
-  };
-
-  const handleRecAddToWatchlist = async (e, item) => {
-    e.stopPropagation();
-    setActiveRecMenu(null);
-    try {
-      await dispatch(addToWatchlist({
-        tmdbId: item.id,
-        mediaType: item.media_type || mediaType
-      })).unwrap();
-      showToast('Добавлено в "Хочу посмотреть"', 'success');
-    } catch {
-      showToast('Не удалось добавить', 'error');
-    }
-  };
-
-  const handleRecRemoveFromWatchlist = async (e, item) => {
-    e.stopPropagation();
-    setActiveRecMenu(null);
-    const type = item.media_type || mediaType;
-    const watchlistItem = watchlist.find(w => w.tmdbId === item.id && w.mediaType === type);
-    if (!watchlistItem) return;
-    try {
-      await dispatch(removeFromWatchlist(watchlistItem.id)).unwrap();
-      showToast('Удалено из "Хочу посмотреть"', 'success');
-    } catch {
-      showToast('Не удалось удалить', 'error');
-    }
-  };
-
-  const handleRecRemoveFromList = async (e, item, list) => {
-    e.stopPropagation();
-    setActiveRecMenu(null);
-    const type = item.media_type || mediaType;
-    const listItem = list.items?.find(i => i.tmdbId === item.id && i.mediaType === type);
-    if (!listItem) return;
-    try {
-      await dispatch(removeFromList({ listId: list.id, itemId: listItem.id })).unwrap();
-      showToast(`Удалено из "${list.name}"`, 'success');
-    } catch {
-      showToast('Не удалось удалить', 'error');
-    }
-  };
-
-  // Проверка: рекомендация уже в списке или watchlist
-  const getRecItemStatus = useCallback((item) => {
-    const tmdbId = item.id;
-    const type = item.media_type || mediaType;
-    const inWatchlist = watchlist.some(w => w.tmdbId === tmdbId && w.mediaType === type);
-    const inList = customLists.find(l =>
-      l.items && l.items.some(i => i.tmdbId === tmdbId && i.mediaType === type)
-    );
-    return { inWatchlist, inList };
-  }, [watchlist, customLists, mediaType]);
-
   const scrollRecommendations = (direction) => {
     if (recScrollRef.current) {
       const scrollAmount = recScrollRef.current.clientWidth * 0.8;
@@ -297,20 +203,14 @@ const MediaDetailPage = () => {
 
   // Обработка добавления в список
   const handleAddToList = async () => {
-    if (!selectedListId) return;
-
-    const mediaItem = recSelectedItem || (selectedMedia ? {
-      tmdbId: selectedMedia.id,
-      mediaType: selectedMedia.media_type || mediaType
-    } : null);
-    if (!mediaItem) return;
+    if (!selectedListId || !selectedMedia) return;
 
     try {
       await dispatch(addToList({
         listId: selectedListId,
         media: {
-          tmdbId: mediaItem.tmdbId,
-          mediaType: mediaItem.mediaType,
+          tmdbId: selectedMedia.id,
+          mediaType: selectedMedia.media_type || mediaType,
           personalNote: personalNote.trim() || null
         }
       })).unwrap();
@@ -318,7 +218,6 @@ const MediaDetailPage = () => {
       setShowListSelector(false);
       setSelectedListId('');
       setPersonalNote('');
-      setRecSelectedItem(null);
       showToast('Контент добавлен в список', 'success');
     } catch (error) {
       showToast('Не удалось добавить в список', 'error');
@@ -329,12 +228,7 @@ const MediaDetailPage = () => {
   const handleCreateList = async (e) => {
     e.preventDefault();
 
-    const mediaItem = recSelectedItem || (selectedMedia ? {
-      tmdbId: selectedMedia.id,
-      mediaType: selectedMedia.media_type || mediaType
-    } : null);
-
-    if (!newListName.trim() || !mediaItem) {
+    if (!newListName.trim() || !selectedMedia) {
       showToast('Введите название списка', 'error');
       return;
     }
@@ -344,7 +238,7 @@ const MediaDetailPage = () => {
 
       const response = await api.post('/lists', {
         name: newListName.trim(),
-        mediaType: mediaItem.mediaType
+        mediaType: selectedMedia.media_type || mediaType
       });
 
       const newList = response.data;
@@ -353,8 +247,8 @@ const MediaDetailPage = () => {
       await dispatch(addToList({
         listId: newList.id,
         media: {
-          tmdbId: mediaItem.tmdbId,
-          mediaType: mediaItem.mediaType,
+          tmdbId: selectedMedia.id,
+          mediaType: selectedMedia.media_type || mediaType,
           personalNote: personalNote.trim() || null
         }
       })).unwrap();
@@ -366,7 +260,6 @@ const MediaDetailPage = () => {
       setShowCreateForm(false);
       setShowListSelector(false);
       setPersonalNote('');
-      setRecSelectedItem(null);
       
       showToast('Список создан и контент добавлен', 'success');
 
@@ -489,9 +382,8 @@ const MediaDetailPage = () => {
     : null;
 
   // Фильтруем списки по типу медиа
-  const relevantMediaType = recSelectedItem?.mediaType || selectedMedia?.media_type || mediaType;
   const relevantLists = customLists.filter(
-    list => list.mediaType === relevantMediaType
+    list => list.mediaType === (selectedMedia?.media_type || mediaType)
   );
 
   const currentProgress = episodeProgress[mediaId] || [];
@@ -853,7 +745,7 @@ const MediaDetailPage = () => {
             )}
 
             {/* Селектор списка — показывается инлайн только для основного фильма */}
-            {showListSelector && !recSelectedItem && (
+            {showListSelector && (
               <div className={styles.selector}>
                 {!showCreateForm ? (
                   <>
@@ -1136,9 +1028,7 @@ const MediaDetailPage = () => {
                 </button>
               )}
               <div className={styles.recommendationsScroll} ref={recScrollRef}>
-                {recommendations.slice(0, 20).map((item) => {
-                  const recStatus = getRecItemStatus(item);
-                  return (
+                {recommendations.slice(0, 20).map((item) => (
                   <div
                     key={item.id}
                     className={styles.recommendationCard}
@@ -1153,12 +1043,13 @@ const MediaDetailPage = () => {
                           alt={item.title || item.name}
                           className={styles.recommendationPoster}
                         />
-                        {recStatus.inWatchlist && (
-                          <span className={styles.recBadge}>Хочу посмотреть</span>
-                        )}
-                        {recStatus.inList && (
-                          <span className={styles.recBadge}>{recStatus.inList.name}</span>
-                        )}
+                        <MediaActionMenu
+                          media={{
+                            tmdbId: item.id,
+                            mediaType: item.media_type || (selectedMedia.media_type || mediaType),
+                            title: item.title || item.name
+                          }}
+                        />
                       </div>
                       <div className={styles.recommendationInfo}>
                         <span className={styles.recommendationTitle}>{item.title || item.name}</span>
@@ -1172,18 +1063,8 @@ const MediaDetailPage = () => {
                         </div>
                       </div>
                     </div>
-
-                    {/* Кнопка действий */}
-                    <button
-                      className={styles.recActionBtn}
-                      onClick={(e) => toggleRecMenu(e, item.id)}
-                      title="Действия"
-                    >
-                      ⋮
-                    </button>
                   </div>
-                  );
-                })}
+                ))}
               </div>
               {recScrollState.canRight && (
                 <button
@@ -1195,139 +1076,6 @@ const MediaDetailPage = () => {
               )}
             </div>
           </div>
-        )}
-
-        {/* Portal для меню рекомендаций */}
-        {activeRecMenu && recMenuPos && (() => {
-          const recItem = recommendations.find(r => r.id === activeRecMenu);
-          const recStatus = recItem ? getRecItemStatus(recItem) : { inWatchlist: false, inList: null };
-          return createPortal(
-            <div
-              className={styles.recActionMenu}
-              style={{ position: 'fixed', top: recMenuPos.top, left: recMenuPos.left, zIndex: 9999 }}
-            >
-              {recStatus.inList && (
-                <button
-                  className={styles.recMenuStatus}
-                  onClick={(e) => {
-                    if (recItem) handleRecRemoveFromList(e, recItem, recStatus.inList);
-                  }}
-                >
-                  ✓ {recStatus.inList.name} <span className={styles.recMenuRemove}>✕</span>
-                </button>
-              )}
-              {recStatus.inWatchlist && (
-                <button
-                  className={styles.recMenuStatus}
-                  onClick={(e) => {
-                    if (recItem) handleRecRemoveFromWatchlist(e, recItem);
-                  }}
-                >
-                  ✓ Хочу посмотреть <span className={styles.recMenuRemove}>✕</span>
-                </button>
-              )}
-              {!recStatus.inList && (
-                <button
-                  className={styles.recMenuItem}
-                  onClick={(e) => {
-                    if (recItem) handleRecAddToList(e, recItem);
-                  }}
-                >
-                  📋 Добавить в список
-                </button>
-              )}
-              {!recStatus.inWatchlist && (
-                <button
-                  className={styles.recMenuItem}
-                  onClick={(e) => {
-                    if (recItem) handleRecAddToWatchlist(e, recItem);
-                  }}
-                >
-                  + Хочу посмотреть
-                </button>
-              )}
-            </div>,
-            document.body
-          );
-        })()}
-
-        {/* Portal для селектора списков (из рекомендаций) */}
-        {showListSelector && recSelectedItem && createPortal(
-          <div className={styles.selectorModalBackdrop} onClick={() => { setShowListSelector(false); setRecSelectedItem(null); }}>
-            <div className={styles.selectorModal} onClick={(e) => e.stopPropagation()}>
-              <h3 className={styles.selectorModalTitle}>Добавить в список</h3>
-              <p className={styles.selectorModalItem}>{recSelectedItem.title}</p>
-              {!showCreateForm ? (
-                <>
-                  <select
-                    value={selectedListId}
-                    onChange={(e) => setSelectedListId(e.target.value)}
-                    className={styles.select}
-                  >
-                    <option value="">Выберите список</option>
-                    {relevantLists.map(list => (
-                      <option key={list.id} value={list.id}>{list.name}</option>
-                    ))}
-                  </select>
-                  <div className={styles.noteInputWrapper}>
-                    <textarea
-                      className={styles.noteInput}
-                      placeholder="Заметка (необязательно)..."
-                      value={personalNote}
-                      onChange={(e) => setPersonalNote(e.target.value)}
-                      rows={2}
-                      maxLength={500}
-                    />
-                    <span className={styles.noteCount}>{personalNote.length}/500</span>
-                  </div>
-                  <div className={styles.selectorModalActions}>
-                    <button
-                      className={styles.createListButton}
-                      onClick={() => setShowCreateForm(true)}
-                    >
-                      + Создать список
-                    </button>
-                    <div>
-                      <button
-                        className={styles.cancelButton}
-                        onClick={() => { setShowListSelector(false); setRecSelectedItem(null); }}
-                      >
-                        Отмена
-                      </button>
-                      <button
-                        className={styles.confirmButton}
-                        onClick={handleAddToList}
-                        disabled={!selectedListId}
-                      >
-                        Добавить
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <form onSubmit={handleCreateList} className={styles.createForm}>
-                  <input
-                    type="text"
-                    className={styles.createInput}
-                    placeholder="Название списка"
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    autoFocus
-                    disabled={creating}
-                  />
-                  <div className={styles.createButtons}>
-                    <button type="submit" className={styles.submitButton} disabled={creating || !newListName.trim()}>
-                      {creating ? 'Создание...' : 'Создать'}
-                    </button>
-                    <button type="button" className={styles.cancelButton} onClick={() => { setShowCreateForm(false); setNewListName(''); }} disabled={creating}>
-                      Отмена
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>,
-          document.body
         )}
 
       </div>
