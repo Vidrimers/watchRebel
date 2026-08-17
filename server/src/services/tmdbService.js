@@ -256,7 +256,7 @@ class TMDbService {
     }
 
     return await this.makeRequest(`/movie/${movieId}`, {
-      append_to_response: 'credits,videos,images'
+      append_to_response: 'credits,videos,images,recommendations'
     });
   }
 
@@ -271,7 +271,7 @@ class TMDbService {
     }
 
     return await this.makeRequest(`/tv/${tvId}`, {
-      append_to_response: 'credits,videos,images'
+      append_to_response: 'credits,videos,images,recommendations'
     });
   }
 

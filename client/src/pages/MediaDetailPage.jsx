@@ -966,6 +966,39 @@ const MediaDetailPage = () => {
             />
           </div>
         )}
+
+        {/* Рекомендации */}
+        {selectedMedia.recommendations?.results?.length > 0 && (
+          <div className={styles.recommendationsSection}>
+            <h2 className={styles.sectionTitle}>Рекомендации</h2>
+            <div className={styles.recommendationsScroll}>
+              {selectedMedia.recommendations.results.slice(0, 20).map((item) => (
+                <div
+                  key={item.id}
+                  className={styles.recommendationCard}
+                  onClick={() => navigate(`/media/${item.media_type || (selectedMedia.media_type || mediaType)}/${item.id}`)}
+                >
+                  <img
+                    src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/default-poster.png'}
+                    alt={item.title || item.name}
+                    className={styles.recommendationPoster}
+                  />
+                  <div className={styles.recommendationInfo}>
+                    <span className={styles.recommendationTitle}>{item.title || item.name}</span>
+                    <div className={styles.recommendationMeta}>
+                      {(item.release_date || item.first_air_date) && (
+                        <span>{new Date(item.release_date || item.first_air_date).getFullYear()}</span>
+                      )}
+                      {item.vote_average > 0 && (
+                        <span className={styles.recommendationRating}>★ {item.vote_average.toFixed(1)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
     {confirmDialog}
