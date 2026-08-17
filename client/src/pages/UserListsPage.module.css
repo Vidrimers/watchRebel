@@ -215,41 +215,202 @@
   color: var(--text-secondary);
 }
 
-.overlay {
+.statusBadge {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.actionBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
 
-.mediaCard:hover .overlay {
+.posterContainer:hover .actionBtn {
   opacity: 1;
 }
 
-.addButton {
-  background-color: var(--accent-color);
-  color: var(--text-on-accent);
-  border: none;
-  padding: 10px 16px;
+.actionBtn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Action menu */
+.actionMenu {
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.menuStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 12px;
   font-weight: 500;
+  color: var(--color-success, #28a745);
+  border-bottom: 1px solid var(--border-color, #f0f0f0);
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.menuStatus:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: var(--color-danger, #dc3545);
+}
+
+.menuRemove {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+.menuStatus:hover .menuRemove {
+  opacity: 1;
+}
+
+.menuItem {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.2s;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
 }
 
-.addButton:hover {
-  background-color: var(--accent-hover);
+.menuItem:hover {
+  background: var(--bg-hover, #f8f9fa);
+}
+
+/* Modal */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--bg-secondary, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin: 0;
+}
+
+.modalItem {
+  font-size: 14px;
+  color: var(--text-muted, #999);
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--bg-primary, #f5f5f5);
+  border-radius: 6px;
+}
+
+.modalSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #333);
+  cursor: pointer;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.modalCancel {
+  padding: 10px 20px;
+  background: var(--bg-primary, #f5f5f5);
+  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalCancel:hover {
+  background: var(--bg-hover, #e9ecef);
+}
+
+.modalConfirm {
+  padding: 10px 20px;
+  background: var(--color-success, #28a745);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalConfirm:hover:not(:disabled) {
+  background: var(--color-success-border, #218838);
+}
+
+.modalConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mediaInfo {
