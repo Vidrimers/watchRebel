@@ -11,11 +11,25 @@
   z-index: 100;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   padding: 10px 20px;
-  background: var(--bg-secondary, #fff);
   border-bottom: 1px solid var(--border-color, #e0e0e0);
-  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.topBar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-secondary, #fff);
+  opacity: 0.5;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.topBar:hover::before {
+  opacity: 1;
 }
 
 .topBarBack {
@@ -28,7 +42,13 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary, #333);
+  opacity: 0.7;
   transition: all 0.2s ease;
+}
+
+.topBar:hover .topBarBack,
+.topBarBack:hover {
+  opacity: 1;
 }
 
 .topBarBack:hover {
@@ -53,7 +73,13 @@
   border-radius: 8px;
   background: var(--bg-input, #fff);
   color: var(--text-color, #333);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  opacity: 0.7;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+}
+
+.topBar:hover .topBarSearchInput,
+.topBarSearchInput:focus {
+  opacity: 1;
 }
 
 .topBarSearchInput:focus {
@@ -78,7 +104,12 @@
   background: var(--card-bg, #fff);
   color: var(--text-color, #333);
   cursor: pointer;
+  opacity: 0.7;
   transition: all 0.2s ease;
+}
+
+.topBar:hover .topBarSearchBtn {
+  opacity: 1;
 }
 
 .topBarSearchBtn:hover {
@@ -99,7 +130,12 @@
   background: none;
   color: var(--text-primary, #333);
   cursor: pointer;
+  opacity: 0.7;
   transition: all 0.2s ease;
+}
+
+.topBar:hover .topBarProfile {
+  opacity: 1;
 }
 
 .topBarProfile:hover {

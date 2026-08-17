@@ -38,7 +38,7 @@ const MediaDetailPage = () => {
   const { confirmDialog, showConfirm } = useConfirm();
   const { toastContainer, showToast } = useToast();
 
-  const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
+  const { selectedMedia } = useAppSelector((state) => state.media);
   const { customLists, episodeProgress, ratings, watchlist } = useAppSelector((state) => state.lists);
   const { user } = useAppSelector((state) => state.auth);
   const { userReviews, currentReview } = useAppSelector((state) => state.reviews);
@@ -55,10 +55,11 @@ const MediaDetailPage = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [topSearchQuery, setTopSearchQuery] = useState('');
   const [showSearchPreview, setShowSearchPreview] = useState(false);
+  const [topSearchLoading, setTopSearchLoading] = useState(false);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
 
-  const { searchResults, loading: searchLoading } = useAppSelector((state) => state.media);
+  const { searchResults } = useAppSelector((state) => state.media);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -97,11 +98,14 @@ const MediaDetailPage = () => {
     }
     if (topSearchQuery.trim().length > 0) {
       topSearchDebounceRef.current = setTimeout(() => {
-        dispatch(searchMedia({ query: topSearchQuery, filters: {} }));
+        setTopSearchLoading(true);
+        dispatch(searchMedia({ query: topSearchQuery, filters: {} }))
+          .finally(() => setTopSearchLoading(false));
         setShowSearchPreview(true);
       }, 300);
     } else {
       setShowSearchPreview(false);
+      setTopSearchLoading(false);
     }
     return () => {
       if (topSearchDebounceRef.current) clearTimeout(topSearchDebounceRef.current);
@@ -290,7 +294,7 @@ const MediaDetailPage = () => {
     }
   };
 
-  if (mediaLoading || !selectedMedia) {
+  if (!selectedMedia) {
     return (
       <div className={styles.loading}>
         <p>Загрузка...</p>
@@ -348,7 +352,10 @@ const MediaDetailPage = () => {
       <div className={styles.mediaDetailPage}>
       {/* Верхняя навигационная полоска */}
       <div className={styles.topBar}>
-        <button className={styles.topBarBack} onClick={() => navigate(-1)}>
+        <button className={styles.topBarBack} onClick={() => {
+          if (window.history.length > 1) navigate(-1);
+          else navigate('/');
+        }}>
           ← Назад
         </button>
         <div className={styles.topBarSearch} ref={topSearchRef}>
@@ -383,7 +390,7 @@ const MediaDetailPage = () => {
           {/* Preview результатов */}
           {showSearchPreview && topSearchQuery.trim() && (
             <div className={styles.topSearchPreview}>
-              {searchLoading ? (
+              {topSearchLoading ? (
                 <div className={styles.topSearchPreviewLoading}>Поиск...</div>
               ) : Array.isArray(searchResults) && searchResults.length > 0 ? (
                 <>
