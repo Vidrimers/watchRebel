@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { getMediaDetails } from '../store/slices/mediaSlice';
+import { getMediaDetails, searchMedia, setSearchQuery, clearSearch } from '../store/slices/mediaSlice';
 import { 
   fetchLists, 
   addToList, 
@@ -16,6 +16,7 @@ import { fetchUserReview, fetchReviewByPost } from '../store/slices/reviewsSlice
 import { fetchWall } from '../store/slices/wallSlice';
 import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../components/Media';
 import Icon from '../components/Common/Icon';
+import UserAvatar from '../components/User/UserAvatar';
 import ShareModal from '../components/Common/ShareModal';
 import NoteModal from '../components/Lists/NoteModal';
 import useConfirm from '../hooks/useConfirm.jsx';
@@ -52,6 +53,12 @@ const MediaDetailPage = () => {
   const [editingNoteText, setEditingNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [topSearchQuery, setTopSearchQuery] = useState('');
+  const [showSearchPreview, setShowSearchPreview] = useState(false);
+  const topSearchRef = useRef(null);
+  const topSearchDebounceRef = useRef(null);
+
+  const { searchResults, loading: searchLoading } = useAppSelector((state) => state.media);
 
   // Проверяем режим просмотра отзыва
   const reviewPostId = searchParams.get('reviewPost');
@@ -82,6 +89,46 @@ const MediaDetailPage = () => {
       }
     }
   }, [dispatch, mediaType, mediaId, user]);
+
+  // Debounce для верхнего поиска
+  useEffect(() => {
+    if (topSearchDebounceRef.current) {
+      clearTimeout(topSearchDebounceRef.current);
+    }
+    if (topSearchQuery.trim().length > 0) {
+      topSearchDebounceRef.current = setTimeout(() => {
+        dispatch(searchMedia({ query: topSearchQuery, filters: {} }));
+        setShowSearchPreview(true);
+      }, 300);
+    } else {
+      setShowSearchPreview(false);
+    }
+    return () => {
+      if (topSearchDebounceRef.current) clearTimeout(topSearchDebounceRef.current);
+    };
+  }, [topSearchQuery, dispatch]);
+
+  // Закрытие preview при клике вне
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (topSearchRef.current && !topSearchRef.current.contains(e.target)) {
+        setShowSearchPreview(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleTopSearchResultClick = useCallback((result) => {
+    setShowSearchPreview(false);
+    setTopSearchQuery('');
+    dispatch(clearSearch());
+    if (result.type === 'user') {
+      navigate(`/user/${result.data.id}`);
+    } else {
+      navigate(`/media/${result.data.mediaType}/${result.data.tmdbId}`);
+    }
+  }, [navigate, dispatch]);
 
   // Обработка добавления в список
   const handleAddToList = async () => {
@@ -299,6 +346,101 @@ const MediaDetailPage = () => {
     <>
       {toastContainer}
       <div className={styles.mediaDetailPage}>
+      {/* Верхняя навигационная полоска */}
+      <div className={styles.topBar}>
+        <button className={styles.topBarBack} onClick={() => navigate(-1)}>
+          ← Назад
+        </button>
+        <div className={styles.topBarSearch} ref={topSearchRef}>
+          <input
+            type="text"
+            placeholder="Поиск"
+            className={styles.topBarSearchInput}
+            value={topSearchQuery}
+            onChange={(e) => setTopSearchQuery(e.target.value)}
+            onFocus={() => topSearchQuery.trim() && setShowSearchPreview(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && topSearchQuery.trim()) {
+                setShowSearchPreview(false);
+                navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
+              }
+            }}
+          />
+          <button
+            className={styles.topBarSearchBtn}
+            onClick={() => {
+              setShowSearchPreview(false);
+              if (topSearchQuery.trim()) {
+                navigate(`/search?q=${encodeURIComponent(topSearchQuery.trim())}`);
+              } else {
+                navigate('/search');
+              }
+            }}
+          >
+            <Icon name="search" size="small" />
+          </button>
+
+          {/* Preview результатов */}
+          {showSearchPreview && topSearchQuery.trim() && (
+            <div className={styles.topSearchPreview}>
+              {searchLoading ? (
+                <div className={styles.topSearchPreviewLoading}>Поиск...</div>
+              ) : Array.isArray(searchResults) && searchResults.length > 0 ? (
+                <>
+                  <ul className={styles.topSearchPreviewList}>
+                    {searchResults.slice(0, 5).map((result, index) => (
+                      <li
+                        key={`${result.type}-${result.data.id || result.data.tmdbId}-${index}`}
+                        className={styles.topSearchPreviewItem}
+                        onClick={() => handleTopSearchResultClick(result)}
+                      >
+                        {result.type === 'user' ? (
+                          <div className={styles.topSearchUserResult}>
+                            <UserAvatar user={result.data} size="small" />
+                            <span className={styles.topSearchUserName}>{result.data.displayName}</span>
+                            <span className={styles.topSearchUserType}>Пользователь</span>
+                          </div>
+                        ) : (
+                          <div className={styles.topSearchMediaResult}>
+                            <img
+                              src={result.data.posterPath ? `https://image.tmdb.org/t/p/w92${result.data.posterPath}` : '/default-poster.png'}
+                              alt={result.data.title}
+                              className={styles.topSearchMediaPoster}
+                            />
+                            <div className={styles.topSearchMediaInfo}>
+                              <span className={styles.topSearchMediaTitle}>{result.data.title}</span>
+                              <span className={styles.topSearchMediaType}>
+                                {result.data.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {searchResults.length > 5 && (
+                    <div
+                      className={styles.topSearchPreviewFooter}
+                      onClick={() => {
+                        setShowSearchPreview(false);
+                        navigate(`/search?q=${encodeURIComponent(topSearchQuery)}`);
+                      }}
+                    >
+                      Показать все результаты ({searchResults.length})
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className={styles.topSearchPreviewEmpty}>Ничего не найдено</div>
+              )}
+            </div>
+          )}
+        </div>
+        <button className={styles.topBarProfile} onClick={() => navigate('/profile')}>
+          <Icon name="user" size="medium" />
+        </button>
+      </div>
+
       {/* Фоновое изображение */}
       {backdropUrl && (
         <div 
@@ -308,10 +450,6 @@ const MediaDetailPage = () => {
       )}
 
       <div className={styles.content}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
-          ← Назад
-        </button>
-
         <div className={styles.mainInfo}>
           {/* Постер */}
           <div className={styles.posterSection}>
