@@ -1097,10 +1097,6 @@
 
 /* Выпадающее меню рекомендации */
 .recActionMenu {
-  position: absolute;
-  top: 40px;
-  right: 8px;
-  z-index: 50;
   background: var(--card-bg, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;

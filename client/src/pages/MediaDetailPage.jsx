@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
@@ -61,6 +62,7 @@ const MediaDetailPage = () => {
   const [activeRecMenu, setActiveRecMenu] = useState(null);
   const [recSelectedItem, setRecSelectedItem] = useState(null);
   const [recScrollState, setRecScrollState] = useState({ canLeft: false, canRight: true });
+  const [recMenuPos, setRecMenuPos] = useState(null);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
   const recScrollRef = useRef(null);
@@ -168,7 +170,17 @@ const MediaDetailPage = () => {
 
   const toggleRecMenu = (e, tmdbId) => {
     e.stopPropagation();
-    setActiveRecMenu(activeRecMenu === tmdbId ? null : tmdbId);
+    if (activeRecMenu === tmdbId) {
+      setActiveRecMenu(null);
+      setRecMenuPos(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setRecMenuPos({
+        top: rect.bottom + 4,
+        left: rect.right - 180
+      });
+      setActiveRecMenu(tmdbId);
+    }
   };
 
   const handleRecAddToList = (e, item) => {
@@ -1116,24 +1128,6 @@ const MediaDetailPage = () => {
                     >
                       ⋮
                     </button>
-
-                    {/* Выпадающее меню */}
-                    {activeRecMenu === item.id && (
-                      <div className={styles.recActionMenu}>
-                        <button
-                          className={styles.recMenuItem}
-                          onClick={(e) => handleRecAddToList(e, item)}
-                        >
-                          📋 Добавить в список
-                        </button>
-                        <button
-                          className={styles.recMenuItem}
-                          onClick={(e) => handleRecAddToWatchlist(e, item)}
-                        >
-                          + Хочу посмотреть
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -1148,6 +1142,35 @@ const MediaDetailPage = () => {
             </div>
           </div>
         )}
+
+        {/* Portal для меню рекомендаций */}
+        {activeRecMenu && recMenuPos && createPortal(
+          <div
+            className={styles.recActionMenu}
+            style={{ position: 'fixed', top: recMenuPos.top, left: recMenuPos.left, zIndex: 9999 }}
+          >
+            <button
+              className={styles.recMenuItem}
+              onClick={(e) => {
+                const item = recommendations.find(r => r.id === activeRecMenu);
+                if (item) handleRecAddToList(e, item);
+              }}
+            >
+              📋 Добавить в список
+            </button>
+            <button
+              className={styles.recMenuItem}
+              onClick={(e) => {
+                const item = recommendations.find(r => r.id === activeRecMenu);
+                if (item) handleRecAddToWatchlist(e, item);
+              }}
+            >
+              + Хочу посмотреть
+            </button>
+          </div>,
+          document.body
+        )}
+
       </div>
     </div>
     {confirmDialog}
