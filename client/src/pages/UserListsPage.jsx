@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { fetchUserLists } from '../store/slices/listsSlice';
+import { fetchUserLists, fetchLists, fetchWatchlist } from '../store/slices/listsSlice';
 import UserPageLayout from '../components/Layout/UserPageLayout';
 import MediaActionMenu from '../components/Common/MediaActionMenu';
 import Icon from '../components/Common/Icon';
@@ -41,6 +41,9 @@ const UserListsPage = () => {
 
     if (userId) {
       fetchData();
+      // Загружаем свои списки и watchlist для проверки статуса
+      dispatch(fetchLists());
+      dispatch(fetchWatchlist());
     }
   }, [userId, dispatch]);
 
