@@ -1187,6 +1187,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .selectorModal {
@@ -1196,32 +1202,191 @@
   width: 90%;
   max-width: 420px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .selectorModalTitle {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary, #333);
-  margin: 0 0 4px 0;
+  margin: 0;
 }
 
 .selectorModalItem {
   font-size: 14px;
   color: var(--text-muted, #999);
-  margin: 0 0 16px 0;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--bg-primary, #f5f5f5);
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selectorModal .select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #333);
+  cursor: pointer;
+}
+
+.selectorModal .noteInputWrapper {
+  position: relative;
+}
+
+.selectorModal .noteInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #333);
+  box-sizing: border-box;
+}
+
+.selectorModal .noteInput:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+}
+
+.selectorModal .noteCount {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-size: 11px;
+  color: var(--text-secondary, #999);
 }
 
 .selectorModalActions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.selectorModalActions > div {
+  display: flex;
   gap: 8px;
 }
 
-.selectorModalActions .cancelButton,
-.selectorModalActions .confirmButton {
-  padding: 8px 16px;
+.selectorModal .createListButton {
+  padding: 10px 16px;
+  background: none;
+  border: 1px dashed var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectorModal .createListButton:hover {
+  border-color: var(--accent-primary, #6366f1);
+  color: var(--accent-primary, #6366f1);
+}
+
+.selectorModal .createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selectorModal .createInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #333);
+  box-sizing: border-box;
+}
+
+.selectorModal .createInput:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+}
+
+.selectorModal .createButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.selectorModal .submitButton {
+  padding: 10px 20px;
+  background: var(--color-success, #28a745);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectorModal .submitButton:hover:not(:disabled) {
+  background: var(--color-success-border, #218838);
+}
+
+.selectorModal .submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selectorModal .cancelButton {
+  padding: 10px 20px;
+  background: var(--bg-primary, #f5f5f5);
+  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectorModal .cancelButton:hover:not(:disabled) {
+  background: var(--bg-hover, #e9ecef);
+}
+
+.selectorModal .confirmButton {
+  padding: 10px 20px;
+  background: var(--color-success, #28a745);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectorModal .confirmButton:hover:not(:disabled) {
+  background: var(--color-success-border, #218838);
+}
+
+.selectorModal .confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Актёры */
