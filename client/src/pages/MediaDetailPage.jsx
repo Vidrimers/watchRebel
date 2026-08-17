@@ -57,6 +57,7 @@ const MediaDetailPage = () => {
   const [showSearchPreview, setShowSearchPreview] = useState(false);
   const [topSearchLoading, setTopSearchLoading] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
 
@@ -91,6 +92,15 @@ const MediaDetailPage = () => {
       }
     }
   }, [dispatch, mediaType, mediaId, user]);
+
+  // Загрузка рекомендаций
+  useEffect(() => {
+    if (mediaType && mediaId) {
+      api.get(`/media/${mediaType}/${mediaId}/recommendations`)
+        .then(res => setRecommendations(res.data.results || []))
+        .catch(() => {});
+    }
+  }, [mediaType, mediaId]);
 
   // Debounce для верхнего поиска
   useEffect(() => {
@@ -968,11 +978,11 @@ const MediaDetailPage = () => {
         )}
 
         {/* Рекомендации */}
-        {selectedMedia.recommendations?.results?.length > 0 && (
+        {recommendations.length > 0 && (
           <div className={styles.recommendationsSection}>
             <h2 className={styles.sectionTitle}>Рекомендации</h2>
             <div className={styles.recommendationsScroll}>
-              {selectedMedia.recommendations.results.slice(0, 20).map((item) => (
+              {recommendations.slice(0, 20).map((item) => (
                 <div
                   key={item.id}
                   className={styles.recommendationCard}

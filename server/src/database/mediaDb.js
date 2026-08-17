@@ -72,6 +72,10 @@ function initMediaCacheTable() {
     }
   });
 
+  // Добавляем колонки для рекомендаций (миграция)
+  db.exec(`ALTER TABLE media_cache ADD COLUMN recommendations TEXT`, () => {});
+  db.exec(`ALTER TABLE media_cache ADD COLUMN recommendations_updated_at DATETIME`, () => {});
+
   // Таблица кэша персон (актёры, режиссёры)
   db.exec(`
     CREATE TABLE IF NOT EXISTS person_cache (

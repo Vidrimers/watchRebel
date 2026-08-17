@@ -355,6 +355,40 @@ router.get('/:type/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/media/:type/:id/recommendations
+ * Получение рекомендаций (похожих фильмов/сериалов) с месячным кэшем
+ */
+router.get('/:type/:id/recommendations', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    if (type !== 'movie' && type !== 'tv') {
+      return res.status(400).json({ error: 'Тип должен быть movie или tv' });
+    }
+
+    const tmdbId = parseInt(id);
+    if (isNaN(tmdbId) || tmdbId <= 0) {
+      return res.status(400).json({ error: 'ID должен быть положительным числом' });
+    }
+
+    const cached = await mediaCacheService.getRecommendations(tmdbId, type);
+    if (cached) {
+      return res.json({ results: cached });
+    }
+
+    await tmdbService.initialize();
+    const data = await tmdbService.makeRequest(`/${type}/${tmdbId}/recommendations`);
+    const results = data.results || [];
+
+    await mediaCacheService.updateRecommendations(tmdbId, type, results);
+
+    res.json({ results });
+  } catch (error) {
+    console.error('Ошибка получения рекомендаций:', error);
+    res.status(500).json({ error: 'Ошибка получения рекомендаций' });
+  }
+});
+
+/**
  * GET /api/media/:type/:id/images
  * Получение изображений для фильма или сериала
  * 

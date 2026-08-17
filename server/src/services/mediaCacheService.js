@@ -54,6 +54,39 @@ class MediaCacheService {
     return result.success ? { tmdbId, mediaType } : null;
   }
 
+  async getRecommendations(tmdbId, mediaType) {
+    const result = await executeMediaQuery(
+      'SELECT recommendations, recommendations_updated_at FROM media_cache WHERE tmdb_id = ? AND media_type = ?',
+      [tmdbId, mediaType]
+    );
+    if (result.success && result.data.length > 0) {
+      const row = result.data[0];
+      if (!row.recommendations || !row.recommendations_updated_at) return null;
+
+      const updatedAt = new Date(row.recommendations_updated_at);
+      const now = new Date();
+      const daysDiff = (now - updatedAt) / (1000 * 60 * 60 * 24);
+
+      if (daysDiff > 30) return null;
+
+      try {
+        return JSON.parse(row.recommendations);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  async updateRecommendations(tmdbId, mediaType, recommendations) {
+    const result = await executeMediaQuery(
+      `UPDATE media_cache SET recommendations = ?, recommendations_updated_at = datetime('now')
+       WHERE tmdb_id = ? AND media_type = ?`,
+      [JSON.stringify(recommendations), tmdbId, mediaType]
+    );
+    return result.success;
+  }
+
   async getOrFetchMovie(movieId) {
     const cached = await this.getCachedMedia(movieId, 'movie');
     if (cached) return cached;
