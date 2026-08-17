@@ -18,8 +18,8 @@ import { EpisodeTracker, RatingSelector, ReviewEditor, ReviewDisplay } from '../
 import Icon from '../components/Common/Icon';
 import ShareModal from '../components/Common/ShareModal';
 import NoteModal from '../components/Lists/NoteModal';
-import useAlert from '../hooks/useAlert.jsx';
 import useConfirm from '../hooks/useConfirm.jsx';
+import useToast from '../hooks/useToast';
 import api from '../services/api';
 import styles from './MediaDetailPage.module.css';
 
@@ -34,8 +34,8 @@ const MediaDetailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { alertDialog, showAlert } = useAlert();
   const { confirmDialog, showConfirm } = useConfirm();
+  const { toastContainer, showToast } = useToast();
 
   const { selectedMedia, loading: mediaLoading } = useAppSelector((state) => state.media);
   const { customLists, episodeProgress, ratings, watchlist } = useAppSelector((state) => state.lists);
@@ -100,17 +100,9 @@ const MediaDetailPage = () => {
       setShowListSelector(false);
       setSelectedListId('');
       setPersonalNote('');
-      await showAlert({
-        title: 'Успешно!',
-        message: 'Контент добавлен в список',
-        type: 'success'
-      });
+      showToast('Контент добавлен в список', 'success');
     } catch (error) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось добавить в список',
-        type: 'error'
-      });
+      showToast('Не удалось добавить в список', 'error');
     }
   };
 
@@ -119,11 +111,7 @@ const MediaDetailPage = () => {
     e.preventDefault();
     
     if (!newListName.trim() || !selectedMedia) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Введите название списка',
-        type: 'error'
-      });
+      showToast('Введите название списка', 'error');
       return;
     }
 
@@ -155,19 +143,11 @@ const MediaDetailPage = () => {
       setShowListSelector(false);
       setPersonalNote('');
       
-      await showAlert({
-        title: 'Успешно!',
-        message: 'Список создан и контент добавлен',
-        type: 'success'
-      });
+      showToast('Список создан и контент добавлен', 'success');
 
     } catch (err) {
       console.error('Ошибка создания списка:', err);
-      await showAlert({
-        title: 'Ошибка',
-        message: err.response?.data?.error || 'Не удалось создать список',
-        type: 'error'
-      });
+      showToast(err.response?.data?.error || 'Не удалось создать список', 'error');
     } finally {
       setCreating(false);
     }
@@ -187,11 +167,7 @@ const MediaDetailPage = () => {
         if (watchlistItem) {
           await dispatch(removeFromWatchlist(watchlistItem.id)).unwrap();
           
-          await showAlert({
-            title: 'Успешно!',
-            message: 'Удалено из списка желаемого',
-            type: 'success'
-          });
+          showToast('Удалено из списка желаемого', 'success');
         }
       } else {
         await dispatch(addToWatchlist({
@@ -199,20 +175,10 @@ const MediaDetailPage = () => {
           mediaType: selectedMedia.media_type || mediaType
         })).unwrap();
         
-        await showAlert({
-          title: 'Успешно!',
-          message: 'Добавлено',
-          type: 'success'
-        });
+        showToast('Добавлено', 'success');
       }
     } catch (error) {
-      await showAlert({
-        title: 'Ошибка',
-        message: isInWatchlist 
-          ? 'Не удалось удалить'
-          : 'Не удалось добавить',
-        type: 'error'
-      });
+      showToast(isInWatchlist ? 'Не удалось удалить' : 'Не удалось добавить', 'error');
     }
   };
 
@@ -243,11 +209,7 @@ const MediaDetailPage = () => {
       setIsEditingNote(false);
       setEditingNoteText('');
     } catch (error) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось сохранить заметку',
-        type: 'error'
-      });
+      showToast('Не удалось сохранить заметку', 'error');
     } finally {
       setSavingNote(false);
     }
@@ -275,11 +237,7 @@ const MediaDetailPage = () => {
       setIsEditingNote(false);
       setEditingNoteText('');
     } catch (error) {
-      await showAlert({
-        title: 'Ошибка',
-        message: 'Не удалось удалить заметку',
-        type: 'error'
-      });
+      showToast('Не удалось удалить заметку', 'error');
     } finally {
       setSavingNote(false);
     }
@@ -339,7 +297,7 @@ const MediaDetailPage = () => {
 
   return (
     <>
-      {alertDialog}
+      {toastContainer}
       <div className={styles.mediaDetailPage}>
       {/* Фоновое изображение */}
       {backdropUrl && (
@@ -625,11 +583,7 @@ const MediaDetailPage = () => {
                     dispatch(fetchWall({ userId: user.id, limit: 20, offset: 0 }));
                   }
                   
-                  await showAlert({
-                    title: 'Оценка сохранена!',
-                    message: `Оценка ${rating}/10 добавлена`,
-                    type: 'success'
-                  });
+                  showToast(`Оценка ${rating}/10 добавлена`, 'success');
                 }}
               />
             )}
@@ -670,21 +624,13 @@ const MediaDetailPage = () => {
                   }
                   // Стена обновится автоматически через WebSocket
                   
-                  await showAlert({
-                    title: 'Отзыв опубликован!',
-                    message: 'Ваш отзыв успешно опубликован на стене',
-                    type: 'success'
-                  });
+                  showToast('Отзыв успешно опубликован на стене', 'success');
                 }}
                 onReviewDeleted={async () => {
                   // Стена обновится автоматически через WebSocket
                   // Отзыв уже удален из Redux state в reviewsSlice
                   
-                  await showAlert({
-                    title: 'Отзыв удален',
-                    message: 'Ваш отзыв успешно удален',
-                    type: 'success'
-                  });
+                  showToast('Отзыв удален', 'success');
                 }}
               />
             )}
