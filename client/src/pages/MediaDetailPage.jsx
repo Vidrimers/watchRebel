@@ -9,6 +9,7 @@ import {
   addToList, 
   addToWatchlist,
   removeFromWatchlist,
+  removeFromList,
   fetchWatchlist,
   fetchEpisodeProgress,
   markEpisodeWatched,
@@ -214,6 +215,34 @@ const MediaDetailPage = () => {
       showToast('Добавлено в "Хочу посмотреть"', 'success');
     } catch {
       showToast('Не удалось добавить', 'error');
+    }
+  };
+
+  const handleRecRemoveFromWatchlist = async (e, item) => {
+    e.stopPropagation();
+    setActiveRecMenu(null);
+    const type = item.media_type || mediaType;
+    const watchlistItem = watchlist.find(w => w.tmdbId === item.id && w.mediaType === type);
+    if (!watchlistItem) return;
+    try {
+      await dispatch(removeFromWatchlist(watchlistItem.id)).unwrap();
+      showToast('Удалено из "Хочу посмотреть"', 'success');
+    } catch {
+      showToast('Не удалось удалить', 'error');
+    }
+  };
+
+  const handleRecRemoveFromList = async (e, item, list) => {
+    e.stopPropagation();
+    setActiveRecMenu(null);
+    const type = item.media_type || mediaType;
+    const listItem = list.items?.find(i => i.tmdbId === item.id && i.mediaType === type);
+    if (!listItem) return;
+    try {
+      await dispatch(removeFromList({ listId: list.id, itemId: listItem.id })).unwrap();
+      showToast(`Удалено из "${list.name}"`, 'success');
+    } catch {
+      showToast('Не удалось удалить', 'error');
     }
   };
 
@@ -1183,14 +1212,24 @@ const MediaDetailPage = () => {
               style={{ position: 'fixed', top: recMenuPos.top, left: recMenuPos.left, zIndex: 9999 }}
             >
               {recStatus.inList && (
-                <div className={styles.recMenuStatus}>
-                  ✓ {recStatus.inList.name}
-                </div>
+                <button
+                  className={styles.recMenuStatus}
+                  onClick={(e) => {
+                    if (recItem) handleRecRemoveFromList(e, recItem, recStatus.inList);
+                  }}
+                >
+                  ✓ {recStatus.inList.name} <span className={styles.recMenuRemove}>✕</span>
+                </button>
               )}
               {recStatus.inWatchlist && (
-                <div className={styles.recMenuStatus}>
-                  ✓ Хочу посмотреть
-                </div>
+                <button
+                  className={styles.recMenuStatus}
+                  onClick={(e) => {
+                    if (recItem) handleRecRemoveFromWatchlist(e, recItem);
+                  }}
+                >
+                  ✓ Хочу посмотреть <span className={styles.recMenuRemove}>✕</span>
+                </button>
               )}
               {!recStatus.inList && (
                 <button

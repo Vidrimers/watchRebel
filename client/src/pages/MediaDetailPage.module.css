@@ -1146,11 +1146,36 @@
 }
 
 .recMenuStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   padding: 10px 14px;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-success, #28a745);
   border-bottom: 1px solid var(--border-color, #f0f0f0);
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.recMenuStatus:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: var(--color-danger, #dc3545);
+}
+
+.recMenuRemove {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+.recMenuStatus:hover .recMenuRemove {
+  opacity: 1;
 }
 
 /* Актёры */
