@@ -382,13 +382,13 @@ const MediaDetailPage = () => {
                 className={`${styles.miniActionBtn} ${isInWatchlist ? styles.miniActionBtnActive : ''}`}
                 onClick={handleToggleWatchlist}
               >
-                {isInWatchlist ? '✓ Смотреть' : '+ Смотреть'}
+                {isInWatchlist ? '✓ Хочу посмотреть' : '+ Хочу посмотреть'}
               </button>
               <button
                 className={styles.miniActionBtn}
                 onClick={() => setShowListSelector(!showListSelector)}
               >
-                {currentList ? '✓ В списке' : '+ В список'}
+                {currentList ? `✓ ${currentList.name}` : '+ В список'}
               </button>
               <button
                 className={styles.miniActionBtn}
