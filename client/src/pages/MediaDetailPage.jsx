@@ -131,6 +131,18 @@ const MediaDetailPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Escape для возврата
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (window.history.length > 1) navigate(-1);
+        else navigate('/');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   const handleTopSearchResultClick = useCallback((result) => {
     setShowSearchPreview(false);
     setTopSearchQuery('');
