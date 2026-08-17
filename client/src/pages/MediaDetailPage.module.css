@@ -962,6 +962,10 @@
   margin-bottom: 40px;
 }
 
+.recommendationsWrapper {
+  position: relative;
+}
+
 .recommendationsScroll {
   display: flex;
   gap: 16px;
@@ -969,27 +973,55 @@
   padding-bottom: 10px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
 .recommendationsScroll::-webkit-scrollbar {
-  height: 6px;
+  display: none;
 }
 
-.recommendationsScroll::-webkit-scrollbar-track {
-  background: var(--bg-secondary, #f0f0f0);
-  border-radius: 3px;
+.recArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #ddd);
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #333);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.recommendationsScroll::-webkit-scrollbar-thumb {
-  background: var(--border-color, #ccc);
-  border-radius: 3px;
+.recommendationsWrapper:hover .recArrow {
+  opacity: 1;
+}
+
+.recArrow:hover {
+  background: var(--bg-hover, #f8f9fa);
+}
+
+.recArrowLeft {
+  left: -12px;
+}
+
+.recArrowRight {
+  right: -12px;
 }
 
 .recommendationCard {
+  position: relative;
   flex: 0 0 160px;
-  cursor: pointer;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   background: var(--card-bg, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -999,6 +1031,12 @@
 .recommendationCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.recommendationCardClickable {
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .recommendationPoster {
@@ -1032,6 +1070,67 @@
 
 .recommendationRating {
   color: var(--rating-star-filled, #ffd700);
+}
+
+/* Action button на карточке рекомендации */
+.recActionBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.recommendationCard:hover .recActionBtn {
+  opacity: 1;
+}
+
+.recActionBtn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Выпадающее меню рекомендации */
+.recActionMenu {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  z-index: 20;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.recMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.recMenuItem:hover {
+  background: var(--bg-hover, #f8f9fa);
 }
 
 /* Актёры */

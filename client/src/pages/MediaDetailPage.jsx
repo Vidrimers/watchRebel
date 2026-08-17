@@ -58,8 +58,11 @@ const MediaDetailPage = () => {
   const [topSearchLoading, setTopSearchLoading] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [activeRecMenu, setActiveRecMenu] = useState(null);
+  const [recSelectedItem, setRecSelectedItem] = useState(null);
   const topSearchRef = useRef(null);
   const topSearchDebounceRef = useRef(null);
+  const recScrollRef = useRef(null);
 
   const { searchResults } = useAppSelector((state) => state.media);
 
@@ -153,6 +156,57 @@ const MediaDetailPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  // Закрытие рекомендательного меню при клике вне
+  useEffect(() => {
+    if (activeRecMenu) {
+      const close = () => setActiveRecMenu(null);
+      document.addEventListener('click', close);
+      return () => document.removeEventListener('click', close);
+    }
+  }, [activeRecMenu]);
+
+  const toggleRecMenu = (e, tmdbId) => {
+    e.stopPropagation();
+    setActiveRecMenu(activeRecMenu === tmdbId ? null : tmdbId);
+  };
+
+  const handleRecAddToList = (e, item) => {
+    e.stopPropagation();
+    setActiveRecMenu(null);
+    setSelectedListId('');
+    setPersonalNote('');
+    setRecSelectedItem({
+      tmdbId: item.id,
+      mediaType: item.media_type || mediaType,
+      title: item.title || item.name
+    });
+    setShowListSelector(true);
+  };
+
+  const handleRecAddToWatchlist = async (e, item) => {
+    e.stopPropagation();
+    setActiveRecMenu(null);
+    try {
+      await dispatch(addToWatchlist({
+        tmdbId: item.id,
+        mediaType: item.media_type || mediaType
+      })).unwrap();
+      showToast('Добавлено в "Хочу посмотреть"', 'success');
+    } catch {
+      showToast('Не удалось добавить', 'error');
+    }
+  };
+
+  const scrollRecommendations = (direction) => {
+    if (recScrollRef.current) {
+      const scrollAmount = recScrollRef.current.clientWidth * 0.8;
+      recScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const handleTopSearchResultClick = useCallback((result) => {
     setShowSearchPreview(false);
     setTopSearchQuery('');
@@ -166,14 +220,20 @@ const MediaDetailPage = () => {
 
   // Обработка добавления в список
   const handleAddToList = async () => {
-    if (!selectedListId || !selectedMedia) return;
+    if (!selectedListId) return;
+
+    const mediaItem = recSelectedItem || (selectedMedia ? {
+      tmdbId: selectedMedia.id,
+      mediaType: selectedMedia.media_type || mediaType
+    } : null);
+    if (!mediaItem) return;
 
     try {
       await dispatch(addToList({
         listId: selectedListId,
         media: {
-          tmdbId: selectedMedia.id,
-          mediaType: selectedMedia.media_type || mediaType,
+          tmdbId: mediaItem.tmdbId,
+          mediaType: mediaItem.mediaType,
           personalNote: personalNote.trim() || null
         }
       })).unwrap();
@@ -181,6 +241,7 @@ const MediaDetailPage = () => {
       setShowListSelector(false);
       setSelectedListId('');
       setPersonalNote('');
+      setRecSelectedItem(null);
       showToast('Контент добавлен в список', 'success');
     } catch (error) {
       showToast('Не удалось добавить в список', 'error');
@@ -190,8 +251,13 @@ const MediaDetailPage = () => {
   // Создание нового списка
   const handleCreateList = async (e) => {
     e.preventDefault();
-    
-    if (!newListName.trim() || !selectedMedia) {
+
+    const mediaItem = recSelectedItem || (selectedMedia ? {
+      tmdbId: selectedMedia.id,
+      mediaType: selectedMedia.media_type || mediaType
+    } : null);
+
+    if (!newListName.trim() || !mediaItem) {
       showToast('Введите название списка', 'error');
       return;
     }
@@ -201,7 +267,7 @@ const MediaDetailPage = () => {
 
       const response = await api.post('/lists', {
         name: newListName.trim(),
-        mediaType: selectedMedia.media_type || mediaType
+        mediaType: mediaItem.mediaType
       });
 
       const newList = response.data;
@@ -210,8 +276,8 @@ const MediaDetailPage = () => {
       await dispatch(addToList({
         listId: newList.id,
         media: {
-          tmdbId: selectedMedia.id,
-          mediaType: selectedMedia.media_type || mediaType,
+          tmdbId: mediaItem.tmdbId,
+          mediaType: mediaItem.mediaType,
           personalNote: personalNote.trim() || null
         }
       })).unwrap();
@@ -223,6 +289,7 @@ const MediaDetailPage = () => {
       setShowCreateForm(false);
       setShowListSelector(false);
       setPersonalNote('');
+      setRecSelectedItem(null);
       
       showToast('Список создан и контент добавлен', 'success');
 
@@ -981,31 +1048,76 @@ const MediaDetailPage = () => {
         {recommendations.length > 0 && (
           <div className={styles.recommendationsSection}>
             <h2 className={styles.sectionTitle}>Рекомендации</h2>
-            <div className={styles.recommendationsScroll}>
-              {recommendations.slice(0, 20).map((item) => (
-                <div
-                  key={item.id}
-                  className={styles.recommendationCard}
-                  onClick={() => navigate(`/media/${item.media_type || (selectedMedia.media_type || mediaType)}/${item.id}`)}
-                >
-                  <img
-                    src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/default-poster.png'}
-                    alt={item.title || item.name}
-                    className={styles.recommendationPoster}
-                  />
-                  <div className={styles.recommendationInfo}>
-                    <span className={styles.recommendationTitle}>{item.title || item.name}</span>
-                    <div className={styles.recommendationMeta}>
-                      {(item.release_date || item.first_air_date) && (
-                        <span>{new Date(item.release_date || item.first_air_date).getFullYear()}</span>
-                      )}
-                      {item.vote_average > 0 && (
-                        <span className={styles.recommendationRating}>★ {item.vote_average.toFixed(1)}</span>
-                      )}
+            <div className={styles.recommendationsWrapper}>
+              <button
+                className={`${styles.recArrow} ${styles.recArrowLeft}`}
+                onClick={() => scrollRecommendations('left')}
+              >
+                ‹
+              </button>
+              <div className={styles.recommendationsScroll} ref={recScrollRef}>
+                {recommendations.slice(0, 20).map((item) => (
+                  <div
+                    key={item.id}
+                    className={styles.recommendationCard}
+                  >
+                    <div
+                      className={styles.recommendationCardClickable}
+                      onClick={() => navigate(`/media/${item.media_type || (selectedMedia.media_type || mediaType)}/${item.id}`)}
+                    >
+                      <img
+                        src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/default-poster.png'}
+                        alt={item.title || item.name}
+                        className={styles.recommendationPoster}
+                      />
+                      <div className={styles.recommendationInfo}>
+                        <span className={styles.recommendationTitle}>{item.title || item.name}</span>
+                        <div className={styles.recommendationMeta}>
+                          {(item.release_date || item.first_air_date) && (
+                            <span>{new Date(item.release_date || item.first_air_date).getFullYear()}</span>
+                          )}
+                          {item.vote_average > 0 && (
+                            <span className={styles.recommendationRating}>★ {item.vote_average.toFixed(1)}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Кнопка действий */}
+                    <button
+                      className={styles.recActionBtn}
+                      onClick={(e) => toggleRecMenu(e, item.id)}
+                      title="Действия"
+                    >
+                      ⋮
+                    </button>
+
+                    {/* Выпадающее меню */}
+                    {activeRecMenu === item.id && (
+                      <div className={styles.recActionMenu}>
+                        <button
+                          className={styles.recMenuItem}
+                          onClick={(e) => handleRecAddToList(e, item)}
+                        >
+                          📋 Добавить в список
+                        </button>
+                        <button
+                          className={styles.recMenuItem}
+                          onClick={(e) => handleRecAddToWatchlist(e, item)}
+                        >
+                          + Хочу посмотреть
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <button
+                className={`${styles.recArrow} ${styles.recArrowRight}`}
+                onClick={() => scrollRecommendations('right')}
+              >
+                ›
+              </button>
             </div>
           </div>
         )}
