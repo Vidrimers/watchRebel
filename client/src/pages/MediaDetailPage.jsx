@@ -197,11 +197,6 @@ const MediaDetailPage = () => {
       title: item.title || item.name
     });
     setShowListSelector(true);
-    // Прокручиваем к селектору списков
-    setTimeout(() => {
-      const selector = document.querySelector(`.${styles.selector}`);
-      if (selector) selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
   };
 
   const handleRecAddToWatchlist = async (e, item) => {
@@ -857,8 +852,8 @@ const MediaDetailPage = () => {
               </div>
             )}
 
-            {/* Селектор списка */}
-            {showListSelector && (
+            {/* Селектор списка — показывается инлайн только для основного фильма */}
+            {showListSelector && !recSelectedItem && (
               <div className={styles.selector}>
                 {!showCreateForm ? (
                   <>
@@ -1255,6 +1250,85 @@ const MediaDetailPage = () => {
             document.body
           );
         })()}
+
+        {/* Portal для селектора списков (из рекомендаций) */}
+        {showListSelector && recSelectedItem && createPortal(
+          <div className={styles.selectorModalBackdrop} onClick={() => { setShowListSelector(false); setRecSelectedItem(null); }}>
+            <div className={styles.selectorModal} onClick={(e) => e.stopPropagation()}>
+              <h3 className={styles.selectorModalTitle}>Добавить в список</h3>
+              <p className={styles.selectorModalItem}>{recSelectedItem.title}</p>
+              {!showCreateForm ? (
+                <>
+                  <select
+                    value={selectedListId}
+                    onChange={(e) => setSelectedListId(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="">Выберите список</option>
+                    {relevantLists.map(list => (
+                      <option key={list.id} value={list.id}>{list.name}</option>
+                    ))}
+                  </select>
+                  <div className={styles.noteInputWrapper}>
+                    <textarea
+                      className={styles.noteInput}
+                      placeholder="Заметка (необязательно)..."
+                      value={personalNote}
+                      onChange={(e) => setPersonalNote(e.target.value)}
+                      rows={2}
+                      maxLength={500}
+                    />
+                    <span className={styles.noteCount}>{personalNote.length}/500</span>
+                  </div>
+                  <div className={styles.selectorModalActions}>
+                    <button
+                      className={styles.createListButton}
+                      onClick={() => setShowCreateForm(true)}
+                    >
+                      + Создать список
+                    </button>
+                    <div>
+                      <button
+                        className={styles.cancelButton}
+                        onClick={() => { setShowListSelector(false); setRecSelectedItem(null); }}
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        className={styles.confirmButton}
+                        onClick={handleAddToList}
+                        disabled={!selectedListId}
+                      >
+                        Добавить
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <form onSubmit={handleCreateList} className={styles.createForm}>
+                  <input
+                    type="text"
+                    className={styles.createInput}
+                    placeholder="Название списка"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    autoFocus
+                    disabled={creating}
+                  />
+                  <div className={styles.createButtons}>
+                    <button type="submit" className={styles.submitButton} disabled={creating || !newListName.trim()}>
+                      {creating ? 'Создание...' : 'Создать'}
+                    </button>
+                    <button type="button" className={styles.cancelButton} onClick={() => { setShowCreateForm(false); setNewListName(''); }} disabled={creating}>
+                      Отмена
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
 
       </div>
     </div>

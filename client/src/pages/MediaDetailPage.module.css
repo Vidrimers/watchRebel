@@ -1178,6 +1178,52 @@
   opacity: 1;
 }
 
+/* Модалка селектора списков (портал) */
+.selectorModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selectorModal {
+  background: var(--bg-secondary, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.selectorModalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin: 0 0 4px 0;
+}
+
+.selectorModalItem {
+  font-size: 14px;
+  color: var(--text-muted, #999);
+  margin: 0 0 16px 0;
+}
+
+.selectorModalActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.selectorModalActions .cancelButton,
+.selectorModalActions .confirmButton {
+  padding: 8px 16px;
+}
+
 /* Актёры */
 .castSection {
   margin-bottom: 40px;
