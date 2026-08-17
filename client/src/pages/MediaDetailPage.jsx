@@ -9,6 +9,7 @@ import {
   addToList, 
   addToWatchlist,
   removeFromWatchlist,
+  fetchWatchlist,
   fetchEpisodeProgress,
   markEpisodeWatched,
   fetchRatings
@@ -78,6 +79,7 @@ const MediaDetailPage = () => {
     if (mediaType && mediaId && user) {
       dispatch(getMediaDetails({ type: mediaType, id: mediaId }));
       dispatch(fetchLists());
+      dispatch(fetchWatchlist());
       dispatch(fetchRatings(user.id));
 
       // Если режим просмотра отзыва - загружаем отзыв по postId
