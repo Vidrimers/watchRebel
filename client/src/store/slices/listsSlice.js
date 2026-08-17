@@ -411,9 +411,22 @@ const listsSlice = createSlice({
       })
       .addCase(removeFromList.fulfilled, (state, action) => {
         const list = state.customLists.find(l => l.id === action.payload.listId);
+        let removedItem = null;
         if (list) {
+          removedItem = list.items.find(item => item.id === action.payload.itemId);
           list.items = list.items.filter(item => item.id !== action.payload.itemId);
         }
+
+        // Если фильм больше нигде не в списках — удаляем оценку из локального стейта
+        if (removedItem) {
+          const inAnyList = state.customLists.some(l =>
+            l.items && l.items.some(i => i.tmdbId === removedItem.tmdbId && i.mediaType === removedItem.mediaType)
+          );
+          if (!inAnyList) {
+            delete state.ratings[removedItem.tmdbId];
+          }
+        }
+
         state.loading = false;
         state.error = null;
       })

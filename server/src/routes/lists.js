@@ -786,6 +786,7 @@ router.delete('/:id/items/:itemId', authenticateToken, async (req, res) => {
     }
 
     // Удаляем элемент из списка
+    const item = itemCheck.data[0];
     const deleteResult = await executeQuery(
       'DELETE FROM list_items WHERE id = ?',
       [itemId]
@@ -796,6 +797,22 @@ router.delete('/:id/items/:itemId', authenticateToken, async (req, res) => {
         error: 'Ошибка удаления элемента из списка',
         code: 'DATABASE_ERROR' 
       });
+    }
+
+    // Проверяем, есть ли этот фильм в других списках пользователя
+    const otherListsCheck = await executeQuery(
+      `SELECT li.id FROM list_items li
+       JOIN custom_lists cl ON li.list_id = cl.id
+       WHERE cl.user_id = ? AND li.tmdb_id = ? AND li.media_type = ?`,
+      [userId, item.tmdb_id, item.media_type]
+    );
+
+    // Если фильма нет ни в одном другом списке — удаляем оценку
+    if (!otherListsCheck.success || otherListsCheck.data.length === 0) {
+      await executeQuery(
+        'DELETE FROM ratings WHERE user_id = ? AND tmdb_id = ? AND media_type = ?',
+        [userId, item.tmdb_id, item.media_type]
+      );
     }
 
     res.json({ 
