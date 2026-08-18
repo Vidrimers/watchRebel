@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchAllBugReports, fetchBugReportStats, fetchBugReportDetails, updateBugReportStatus, deleteBugReport, clearSelectedReport } from '../../store/slices/bugReportsSlice';
-import useAlert from '../../hooks/useAlert';
 import useConfirm from '../../hooks/useConfirm';
+import useToast from '../../hooks/useToast';
 import Icon from '../Common/Icon';
 import styles from './BugReportsManager.module.css';
 
@@ -13,7 +13,7 @@ import styles from './BugReportsManager.module.css';
  */
 const BugReportsManager = () => {
   const dispatch = useAppDispatch();
-  const { alertDialog, showAlert } = useAlert();
+  const { toastContainer, showToast } = useToast();
   const { confirmDialog, showConfirm } = useConfirm();
   const { allReports, allReportsLoading, allReportsError, stats, selectedReport, updateLoading } = useAppSelector((state) => state.bugReports);
   
@@ -126,17 +126,9 @@ const BugReportsManager = () => {
       
       handleCloseDetails();
       
-      await showAlert({
-        title: 'Успешно',
-        message: 'Статус багрепорта обновлён',
-        type: 'success'
-      });
+      showToast('Статус багрепорта обновлён', 'success');
     } catch (err) {
-      await showAlert({
-        title: 'Ошибка',
-        message: err.message || 'Не удалось обновить статус',
-        type: 'error'
-      });
+      showToast(err.message || 'Не удалось обновить статус', 'error');
     }
   };
 
@@ -159,23 +151,15 @@ const BugReportsManager = () => {
       // Перезагружаем статистику
       dispatch(fetchBugReportStats());
       
-      await showAlert({
-        title: 'Успешно',
-        message: 'Багрепорт удалён',
-        type: 'success'
-      });
+      showToast('Багрепорт удалён', 'success');
     } catch (err) {
-      await showAlert({
-        title: 'Ошибка',
-        message: err.message || 'Не удалось удалить багрепорт',
-        type: 'error'
-      });
+      showToast(err.message || 'Не удалось удалить багрепорт', 'error');
     }
   };
 
   return (
     <>
-      {alertDialog}
+      {toastContainer}
       {confirmDialog}
       <div className={styles.bugReportsManager}>
         <div className={styles.header}>
