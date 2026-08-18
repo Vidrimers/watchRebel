@@ -259,7 +259,7 @@ const MediaActionMenu = ({ media, triggerRef, showStatus = true, buttonClassName
         document.body
       )}
 
-      {toastContainer}
+      {toastContainer && createPortal(toastContainer, document.body)}
     </>
   );
 };
