@@ -24,6 +24,7 @@ const SearchPage = () => {
   
   const { searchResults, loading, error } = useAppSelector((state) => state.media);
   const { user } = useAppSelector((state) => state.auth);
+  const { customLists, watchlist } = useAppSelector((state) => state.lists);
   
   // Состояние для друзей
   const [friends, setFriends] = useState([]);
@@ -384,6 +385,20 @@ const SearchPage = () => {
                             <Icon name="star" size="small" /> {result.data.voteAverage.toFixed(1)}
                           </div>
                         )}
+                        {/* Статус */}
+                        {(() => {
+                          const inList = customLists.find(l =>
+                            l.items && l.items.some(i => i.tmdbId === result.data.tmdbId && i.mediaType === result.data.mediaType)
+                          );
+                          const inWatchlist = watchlist.some(w => w.tmdbId === result.data.tmdbId && w.mediaType === result.data.mediaType);
+                          if (!inList && !inWatchlist) return null;
+                          return (
+                            <div className={styles.statusRow}>
+                              {inList && <span className={styles.statusBadge}>✓ {inList.name}</span>}
+                              {inWatchlist && <span className={styles.statusBadge}>✓ Хочу посмотреть</span>}
+                            </div>
+                          );
+                        })()}
                       </div>
                       
                       {/* Меню действий */}

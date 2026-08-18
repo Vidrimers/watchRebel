@@ -369,6 +369,24 @@
   color: var(--rating-star-filled, #f59e0b);
 }
 
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-primary, #6366f1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .searchPage {
