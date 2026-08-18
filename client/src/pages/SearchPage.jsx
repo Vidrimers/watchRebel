@@ -382,18 +382,31 @@ const SearchPage = () => {
                         )}
                         {result.data.voteAverage > 0 && (
                           <div className={styles.mediaCardRating}>
-                            <Icon name="star" size="small" /> {result.data.voteAverage.toFixed(1)}
+                            <span><Icon name="star" size="small" /> {result.data.voteAverage.toFixed(1)}</span>
+                            {(() => {
+                              const inList = customLists.find(l =>
+                                l.items && l.items.some(i => i.tmdbId === result.data.tmdbId && i.mediaType === result.data.mediaType)
+                              );
+                              const inWatchlist = watchlist.some(w => w.tmdbId === result.data.tmdbId && w.mediaType === result.data.mediaType);
+                              if (!inList && !inWatchlist) return null;
+                              return (
+                                <>
+                                  {inList && <span className={styles.statusBadge}>✓ {inList.name}</span>}
+                                  {inWatchlist && <span className={styles.statusBadge}>✓ Хочу посмотреть</span>}
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
-                        {/* Статус */}
-                        {(() => {
+                        {/* Статус без рейтинга */}
+                        {(!result.data.voteAverage || result.data.voteAverage === 0) && (() => {
                           const inList = customLists.find(l =>
                             l.items && l.items.some(i => i.tmdbId === result.data.tmdbId && i.mediaType === result.data.mediaType)
                           );
                           const inWatchlist = watchlist.some(w => w.tmdbId === result.data.tmdbId && w.mediaType === result.data.mediaType);
                           if (!inList && !inWatchlist) return null;
                           return (
-                            <div className={styles.statusRow}>
+                            <div className={styles.mediaCardRating}>
                               {inList && <span className={styles.statusBadge}>✓ {inList.name}</span>}
                               {inWatchlist && <span className={styles.statusBadge}>✓ Хочу посмотреть</span>}
                             </div>
