@@ -349,24 +349,15 @@ const SearchPage = () => {
                   ) : (
                     // Карточка медиа
                     <div className={styles.mediaCard}>
-                      <div className={styles.mediaPosterWrap}>
-                        <img
-                          src={
-                            result.data.posterPath
-                              ? `https://image.tmdb.org/t/p/w185${result.data.posterPath}`
-                              : '/default-poster.png'
-                          }
-                          alt={result.data.title}
-                          className={styles.mediaPoster}
-                        />
-                        <MediaActionMenu
-                          media={{
-                            tmdbId: result.data.tmdbId,
-                            mediaType: result.data.mediaType,
-                            title: result.data.title
-                          }}
-                        />
-                      </div>
+                      <img
+                        src={
+                          result.data.posterPath
+                            ? `https://image.tmdb.org/t/p/w185${result.data.posterPath}`
+                            : '/default-poster.png'
+                        }
+                        alt={result.data.title}
+                        className={styles.mediaPoster}
+                      />
                       <div className={styles.mediaCardInfo}>
                         <h3 className={styles.mediaCardTitle}>{result.data.title}</h3>
                         <p className={styles.mediaCardType}>
@@ -394,6 +385,16 @@ const SearchPage = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Меню действий */}
+                      <MediaActionMenu
+                        media={{
+                          tmdbId: result.data.tmdbId,
+                          mediaType: result.data.mediaType,
+                          title: result.data.title
+                        }}
+                        showStatus={false}
+                      />
                     </div>
                   )}
                 </div>
