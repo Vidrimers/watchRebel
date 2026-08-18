@@ -369,6 +369,7 @@
   color: var(--rating-star-filled, #f59e0b);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
 }
