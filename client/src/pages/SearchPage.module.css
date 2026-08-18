@@ -321,12 +321,17 @@
   gap: 16px;
 }
 
+.mediaPosterWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .mediaPoster {
   width: 100px;
   height: 150px;
   border-radius: 8px;
   object-fit: cover;
-  flex-shrink: 0;
+  display: block;
 }
 
 .mediaCardInfo {
